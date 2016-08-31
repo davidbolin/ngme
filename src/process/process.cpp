@@ -99,7 +99,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd
   	dmu  = 0;
 
   	EV = h;
-  	update_nu();
+  	if(type_process != "CH")
+  		update_nu();
   	counter = 0;
   	store_param = 0;
 
@@ -263,12 +264,13 @@ void GHProcess::gradient( const int i ,
 
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
+      		
+      		
       		Eigen::VectorXd temp_2 = A * temp_1;
-
+			
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
-
+	
       		temp_3 += res;
-
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= Vv_mean * (trace_var / pow(sigma, 2));
 	}
@@ -437,7 +439,8 @@ void GHProcess::setupStoreTracj(const int Niter)
 
 void GHProcess::printIter()
 {
-	Rcpp::Rcout << "(nu, mu) = " << nu << ", " << mu;
+	if( type_process != "CH")
+		Rcpp::Rcout << "(nu, mu) = " << nu << ", " << mu;
 }
 
 Rcpp::List GHProcess::toList()

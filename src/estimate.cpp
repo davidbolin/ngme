@@ -59,7 +59,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 		
 	int sampleX = 1;
 	if(in_list.containsElementNamed("sampleX"))
-		sampleV = Rcpp::as<int> (in_list["sampleX"]);
+		sampleX = Rcpp::as<int> (in_list["sampleX"]);
 
 
 	
@@ -137,6 +137,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   }else{ process  = new GaussianProcess;}
 
   process->initFromList(processes_list, h);
+  
   process->setupStoreTracj(nIter);
   /*
   Simulation objects
@@ -174,10 +175,10 @@ List estimateLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << "\n";
       Kobj->print_parameters();
       mixobj->printIter();
+      Rcpp::Rcout << "\n";
       errObj->printIter();
       Rcpp::Rcout << "\n";
     }
-
     Eigen::SparseMatrix<double,0,int> K = Eigen::SparseMatrix<double,0,int>(Kobj->Q);
 
     // subsampling
@@ -197,11 +198,11 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//   building the residuals and sampling
       	//***************************************
       	//***************************************
-
+ 
+ 
       	// removing fixed effect from Y
       	mixobj->remove_cov(i, res);
-      	
-    	res -= A * process->Xs[i];
+    	  res -= A * process->Xs[i];
   			//***********************************
       	// mixobj sampling
     		//***********************************
@@ -211,7 +212,6 @@ List estimateLong_cpp(Rcpp::List in_list)
   			  mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
 
         mixobj->remove_inter(i, res);
-
       	//***********************************
     		// sampling processes
   			//***********************************
@@ -225,6 +225,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	res += A * process->Xs[i];
       	
+        
       	//Sample X|Y, V, sigma
 		if(sampleX){
         	if(type_MeasurementError == "Normal")
@@ -250,6 +251,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
       	//  computing gradients
       	//***************************************
+
       	if(iter >= nBurnin){
 
       		// mixobj gradient
@@ -271,6 +273,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       							process->mean_X(i));
 
       		// process gradient
+      		res += A * process->Xs[i];
           if(type_MeasurementError != "Normal"){
               
               process->gradient_v2(i,
