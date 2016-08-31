@@ -268,7 +268,7 @@ void GHProcess::gradient( const int i ,
       		
       		Eigen::VectorXd temp_2 = A * temp_1;
 			
-      		 Eigen::VectorXd temp_3 = - A * Xs[i];
+      		Eigen::VectorXd temp_3 = - A * Xs[i];
 	
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);

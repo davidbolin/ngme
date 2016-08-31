@@ -137,7 +137,6 @@ List estimateLong_cpp(Rcpp::List in_list)
   }else{ process  = new GaussianProcess;}
 
   process->initFromList(processes_list, h);
-  
   process->setupStoreTracj(nIter);
   /*
   Simulation objects

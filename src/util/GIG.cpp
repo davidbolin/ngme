@@ -53,7 +53,7 @@ Eigen::VectorXd sampleV_pre(gig &sampler,
       
   }else if(type == "CH"){
     for(int i = 0; i < h.size(); i++)
-      V[i] = sampler.sample( -0.5, 0, 0.25 * pow(h[i], 2)); 
+      V[i] = sampler.sample( -0.5, 0, 2*0.25 * pow(h[i], 2)); 
   	
   }else{
   	throw("sampleV_pre type must either be NIG, GAL or CH");
@@ -88,9 +88,10 @@ Eigen::VectorXd sampleV_post(gig &sampler,
     b.array() += (h * nu).array().square();
   }else if(type == "CH"){
     p.setOnes(h.size());
-    p *= -1.;
+    p.array() *= -1.;
+    b.array() *= 4 * 0.5;
     b.array() += (h ).array().square();
-  	b.array() *= 0.25;
+  	b.array() *= 2 * 0.25;
   }else{
   	throw("sampleV_pre type must either be NIG, GAL or CH");
   }
