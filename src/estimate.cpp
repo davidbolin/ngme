@@ -50,6 +50,19 @@ List estimateLong_cpp(Rcpp::List in_list)
       count++;
     }
 
+	//***********************************
+	//Debug setup
+	//***********************************
+	int sampleV = 1;
+	if(in_list.containsElementNamed("sampleV"))
+		sampleV = Rcpp::as<int> (in_list["sampleV"]);
+		
+	int sampleX = 1;
+	if(in_list.containsElementNamed("sampleX"))
+		sampleV = Rcpp::as<int> (in_list["sampleX"]);
+
+
+	
 	//**********************************
 	//operator setup
 	//***********************************
@@ -57,11 +70,11 @@ List estimateLong_cpp(Rcpp::List in_list)
 	operator_list["nIter"] = nIter;
 	std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
 	operatorMatrix* Kobj;
+	
 	operator_select(type_operator, &Kobj);
 	Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
 	Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
-
 	//Prior solver
 	cholesky_solver Qsolver;
 	Qsolver.init( Kobj->d, 0, 0, 0);
@@ -91,12 +104,12 @@ List estimateLong_cpp(Rcpp::List in_list)
 	MixedEffect *mixobj;
 	if(type_mixedEffect == "Normal")
     mixobj = new NormalMixedEffect;
-	else
+	else if(type_mixedEffect == "NIG")
 		mixobj   = new NIGMixedEffect;
-	
 	mixobj->initFromList(mixedEffect_list);
 	mixobj->setupStoreTracj(nIter);
-
+	
+  
   //**********************************
 	// measurement setup
 	//***********************************
@@ -110,7 +123,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   errObj->initFromList(measurementError_list);
   errObj->setupStoreTracj(nIter);
-
 	//**********************************
 	// stochastic processes setup
 	//***********************************
@@ -142,6 +154,14 @@ List estimateLong_cpp(Rcpp::List in_list)
 	b.setZero(Kobj->d);
 
   std::vector<int> longInd;
+  std::vector<Eigen::VectorXd> Vmean; 
+  Eigen::VectorXd count_vec(nindv);
+  Vmean.resize(nindv);
+  count_vec.setZero(nindv);
+  for(int i = 0; i < nindv; i++ )
+    	Vmean[i].setZero(h.size());
+  	
+  
   for (int i=0; i< nindv; i++) longInd.push_back(i);
 
   for(int iter=0; iter < nIter + nBurnin; iter++){
@@ -180,8 +200,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	// removing fixed effect from Y
       	mixobj->remove_cov(i, res);
-
-    		res -= A * process->Xs[i];
+      	
+    	res -= A * process->Xs[i];
   			//***********************************
       	// mixobj sampling
     		//***********************************
@@ -204,13 +224,14 @@ List estimateLong_cpp(Rcpp::List in_list)
     			z[j] =  normal(random_engine);
 
       	res += A * process->Xs[i];
+      	
       	//Sample X|Y, V, sigma
-
-        if(type_MeasurementError == "Normal")
-      		process->sample_X(i, z, res, Q, K, A, errObj->sigma, Solver[i]);
-        else
-          process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
-
+		if(sampleX){
+        	if(type_MeasurementError == "Normal")
+      			process->sample_X(i, z, res, Q, K, A, errObj->sigma, Solver[i]);
+        	else
+          	   process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
+		}
         res -= A * process->Xs[i];
 
         if(res.cwiseAbs().sum() > 1e16){
@@ -218,7 +239,8 @@ List estimateLong_cpp(Rcpp::List in_list)
         }
 
         // sample V| X
-        process->sample_V(i, rgig, K);
+        if(sampleV)
+        	process->sample_V(i, rgig, K);
 
         // random variance noise sampling
      		if(type_MeasurementError != "Normal"){
@@ -244,7 +266,9 @@ List estimateLong_cpp(Rcpp::List in_list)
   			  errObj->gradient(i, res);
 
       	  // operator gradient
-      		Kobj->gradient_add( process->Xs[i], process->Vs[i].cwiseInverse());
+      		Kobj->gradient_add( process->Xs[i], 
+      							process->Vs[i].cwiseInverse(),
+      							process->mean_X(i));
 
       		// process gradient
           if(type_MeasurementError != "Normal"){
@@ -267,6 +291,9 @@ List estimateLong_cpp(Rcpp::List in_list)
             }
       		}
       }
+        Vmean[i] += process->Vs[i];
+  		count_vec[i] += 1;
+
     }
     //**********************************
   	//  gradient step
@@ -279,6 +306,10 @@ List estimateLong_cpp(Rcpp::List in_list)
       process->step_theta(stepsize);
     }
   }
+  
+  for(int i = 0; i < nindv; i++ )
+  	Vmean[i].array() /= count_vec[i];
+  	
   if(silent == 0)
   	Rcpp::Rcout << "Done, storing results\n";
   // storing the results
@@ -293,6 +324,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   out_list["obs_list"]         = obs_list;
   out_list["Xs"]               = process->Xs;
   out_list["Vs"]               = process->Vs;
+  out_list["Vmean"]            = Vmean;
 
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
@@ -535,7 +567,9 @@ List estimateFisher(Rcpp::List in_list)
   			  errObj->gradient(i, res);
 
       	  // operator gradient
-      		Kobj->gradient_add( process->Xs[i], process->Vs[i].cwiseInverse());
+      		Kobj->gradient_add( process->Xs[i], 
+                              process->Vs[i].cwiseInverse(),
+                              process->mean_X(i));
 
       		// process gradient
           if(type_MeasurementError != "Normal"){

@@ -1,2 +1,5 @@
 useDynLib(LDMod)
 exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
+importFrom(Matrix)
+

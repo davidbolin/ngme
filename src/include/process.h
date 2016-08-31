@@ -36,6 +36,7 @@ class Process {
     virtual void setupStoreTracj(const int Niter){};
     virtual ~Process(){};
     virtual Rcpp::List toList() {};
+    virtual Eigen::VectorXd  mean_X(const int ) {Eigen::VectorXd temp(h.size()); return temp.setZero(h.size());};
     virtual void gradient( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -221,6 +222,7 @@ class GHProcess : public Process{
     			  
     Eigen::VectorXd  get_gradient();
     void  clear_gradient();
+    Eigen::VectorXd  mean_X(const int );
 };
 
 

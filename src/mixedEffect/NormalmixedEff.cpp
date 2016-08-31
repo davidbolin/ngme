@@ -72,9 +72,9 @@ Rcpp::List NormalMixedEffect::toList()
   }
   return(out);
 }
+ 
 void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
 {
-  
   int count =0;
   if(init_list.containsElementNamed("B_fixed"))
   {
@@ -95,7 +95,6 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     
   }else{ Bf.resize(0);}
   count = 0;
-  
   if(init_list.containsElementNamed("B_random"))
   {
     Rcpp::List Br_list = init_list["B_random"];
@@ -113,8 +112,10 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     npars += Br[0].cols();
   }else{ Br.resize(0);}
   
-  H_beta_random.setZero(Br[0].cols(), Br[0].cols());
-  if(Br[0].cols() > 0){
+  if(Br.size() > 0)
+  	H_beta_random.setZero(Br[0].cols(), Br[0].cols());
+  
+  if(Br.size() > 0){
     D = duplicatematrix(Br[0].cols());
     Dd = D.cast <double> (); 
   }
@@ -135,6 +136,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       U.setZero(Br[0].cols(), Br.size());
   }
+  
   Sigma_epsilon = 0;
   if(init_list.containsElementNamed("Sigma_epsilon"))
   	Sigma_epsilon  =1;
@@ -337,20 +339,6 @@ void NormalMixedEffect::step_Sigma(double stepsize)
     Sigma_vech = vech(Sigma);
 }
 
-void NormalMixedEffect::remove_cov(const int i, Eigen::VectorXd & Y)
-{
-  if(Br.size() > 0 )
-    Y -= Br[i] * beta_random;
-  if(Bf.size() > 0)
-    Y -= Bf[i] * beta_fixed;
-}
-void NormalMixedEffect::add_cov(const int    i, Eigen::VectorXd & Y)
-{
-  if(Br.size() > 0 )
-    Y += Br[i] * beta_random;
-  if(Bf.size() > 0)
-    Y += Bf[i] * beta_fixed;
-}
 
 void NormalMixedEffect::clear_gradient()
 {

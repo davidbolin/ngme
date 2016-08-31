@@ -1,7 +1,8 @@
 PKG_CPPFLAGS = -Iinclude
 PKG_CXXFLAGS = -DDEBUG  -std=c++11
 
-ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o
+ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
+		error/NormalVarianceError.o error/IGMeasuremenentError.o
 MIXED = mixedEffect/NormalmixedEff.o mixedEffect/mixedEff_util.o mixedEffect/GHmixedEff.o
 OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix.o operator/operator_helper.o
 PROCESS  = process/process.o 

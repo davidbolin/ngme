@@ -17,7 +17,7 @@ void NIGMixedEffect::printIter()
 
 	if(Br.size() > 0){
 		Rcpp::Rcout << "beta_r = " << beta_random.transpose() << "\n";
-		Rcpp::Rcout << "nu     = " << nu << "\n";
+		Rcpp::Rcout << "nu     = " ;
 	}
 }
 void NIGMixedEffect::setupStoreTracj(const int Niter)
@@ -108,8 +108,9 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       beta_random.setZero(Br[0].cols());
    
-     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
-    if(Br[0].cols() > 0){
+     
+    if(Br.size() > 0){
+      H_beta_random.setZero(Br[0].cols(), Br[0].cols());
       D = duplicatematrix(Br[0].cols());
       Dd = D.cast <double> (); 
     }
@@ -465,20 +466,6 @@ void NIGMixedEffect::step_beta_random(double stepsize)
 }
 
 
-void NIGMixedEffect::remove_cov(const int i, Eigen::VectorXd & Y)
-{
-  if(Br.size() > 0 )
-    Y -= Br[i] * beta_random;
-  if(Bf.size() > 0)
-    Y -= Bf[i] * beta_fixed;
-}
-void NIGMixedEffect::add_cov(const int i, Eigen::VectorXd & Y)
-{
-  if(Br.size() > 0 )
-    Y += Br[i] * beta_random;
-  if(Bf.size() > 0)
-    Y += Bf[i] * beta_fixed;
-}
 
 
 void NIGMixedEffect::clear_gradient()

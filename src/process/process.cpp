@@ -56,13 +56,13 @@ void GaussianProcess::simulate(const int i,
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd & h_in)
 {
-  npars = 2;
+  
   h = h_in;
   h2 = h.cwiseProduct(h);
   h_sum = h.sum();
   h_min = h.minCoeff();
   h3_mean = h.array().pow(3).sum()/h.size();
-  std::vector<std::string> check_names =  {"X","V","mu","nu"};
+  std::vector<std::string> check_names =  {"X","V"};
   check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
   Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
@@ -75,11 +75,27 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd
     	//Vs[i] = h;
       	Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
   	}
-
-  	mu = Rcpp::as< double > (init_list["mu"]);
-  	nu = Rcpp::as< double > (init_list["nu"]);
-
+  	
+  	
   	type_process = Rcpp::as<std::string> (init_list["noise"]);
+  	
+  	nu = 0;
+  	mu = 0;
+  	npars = 0;
+  	if(type_process != "CH"){
+		npars = 2;
+  		if(init_list.containsElementNamed("nu"))
+    		nu = Rcpp::as < double >( init_list["nu"]);
+  		else
+    		nu = 1.;
+    
+  		if(init_list.containsElementNamed("mu"))
+    		mu = Rcpp::as < double >( init_list["mu"]);
+  		else
+    		mu = 1.;
+    }
+
+  	
   	dmu  = 0;
 
   	EV = h;
@@ -231,11 +247,16 @@ void GHProcess::gradient( const int i ,
 			   			  const double trace_var)
 {
 
+	
   	counter++;
+  	
+  	if( type_process == "CH")
+  		return;
+  	
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
 	}else if(type_process=="GAL"){
-  	iV = Vs[i].cwiseInverse();
+  			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
 		    temp_1 -= h;
 
@@ -266,6 +287,9 @@ void GHProcess:: gradient_v2( const int i ,
 
   	counter++;
 
+  	if( type_process == "CH")
+  		return;
+  		
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
 	}else if(type_process=="GAL"){
@@ -309,12 +333,13 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
 
 void GHProcess::grad_nu(const int i)
 {
-// dnu
+	iV = Vs[i].cwiseInverse();
+	// dnu
 	if(type_process == "NIG"){
 		dnu  +=  0.5 *( h.size() / nu -   h2.dot(iV) - Vs[i].sum() + 2 * h_sum);
 	}else if(type_process == "GAL"){
-    Eigen::VectorXd temp(Vs[i].size());
-    temp.array() = Vs[i].array().log();
+    	Eigen::VectorXd temp(Vs[i].size());
+    	temp.array() = Vs[i].array().log();
 		dnu  +=  h_sum * (1. + log(nu)) + h.dot(temp) - Vs[i].sum() - h_digamma;
 	}
 
@@ -323,6 +348,14 @@ void GHProcess::grad_nu(const int i)
 
 void GHProcess::step_theta(const double stepsize)
 {
+
+
+	
+  	if( type_process == "CH"){
+  		counter = 0;
+  		return;
+  	}
+  		
 	step_mu(stepsize);
 	step_nu(stepsize);
 	counter = 0;
@@ -347,7 +380,7 @@ void GHProcess::step_nu(const double stepsize)
 {
   double nu_temp = -1;
   if(type_process == "NIG"){
-  	ddnu = -  h.size()/ pow(nu,2);
+  	ddnu = -  h.size()/ (0.5 * pow(nu,2));
   	ddnu *= counter;
   }else if(type_process == "GAL"){
   	ddnu = h_sum/ nu - h_trigamma;
@@ -370,8 +403,13 @@ void GHProcess::step_nu(const double stepsize)
 
 Eigen::VectorXd GHProcess::get_gradient()
 {
-  Rcpp::Rcout << "npars = " << npars << "\n";
+
 	Eigen::VectorXd  g(npars);
+	
+	
+  	if( type_process == "CH")
+  		return(g);
+	
 	g[0] = dmu;
 	g[1] = dnu;	
 	return(g);
@@ -385,11 +423,15 @@ void GHProcess::clear_gradient()
 
 void GHProcess::setupStoreTracj(const int Niter)
 {
+	
+	vec_counter = 0;
+	store_param = 1;
+	
+  	if( type_process == "CH")
+  		return;
 
 	mu_vec.resize(Niter);
 	nu_vec.resize(Niter);
-	vec_counter = 0;
-	store_param = 1;
 }
 
 
@@ -401,13 +443,17 @@ void GHProcess::printIter()
 Rcpp::List GHProcess::toList()
 {
   Rcpp::List out;
-  out["nu"]     = nu;
-  out["mu"]     = mu;
   out["X"]      = Xs;
   out["V"]      = Vs;
   out["noise"]  = type_process;
   out["Cov_theta"]   = Cov_theta;
 
+  if( type_process == "CH")
+	return(out);
+
+
+  out["nu"]     = nu;
+  out["mu"]     = mu;
   if(store_param)
   {
   	out["mu_vec"]     = mu_vec;
@@ -436,10 +482,10 @@ void GHProcess::update_nu()
   	{
 
   		EiV=  h2.cwiseInverse();
-      	EiV *=  1./pow(nu, 2);
+      	EiV *=  1./nu;
   		EiV += h.cwiseInverse();
 
-  		Vv_mean  = h_sum / (pow(nu, 2) * h.size());
+  		Vv_mean  = h_sum / ( nu * h.size());
   	}else if(type_process == "GAL"){
   		h_digamma  = 0;
   		h_trigamma = 0;
@@ -463,3 +509,10 @@ void GHProcess::update_nu()
   	}
   	H_mu =  (EV.sum() - EiV.dot(h2));
 }
+
+ Eigen::VectorXd  GHProcess::mean_X(const int i){
+ 
+ Eigen::VectorXd mean = -h + Vs[i]; 
+ mean.array() *= mu;
+ return mean;
+ }

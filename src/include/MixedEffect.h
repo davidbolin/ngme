@@ -39,10 +39,27 @@ class MixedEffect {
       					  const Eigen::VectorXd &,
       					  const Eigen::VectorXd &,
       					  const double  ) = 0;
-    virtual void remove_cov(const int , Eigen::VectorXd & )  = 0;
-    virtual void add_cov(const int    , Eigen::VectorXd & )  = 0;
-    virtual void add_inter(const int, Eigen::VectorXd &)     = 0;
-    virtual void remove_inter(const int, Eigen::VectorXd &)  = 0;
+    
+    void remove_inter(const int i, Eigen::VectorXd & Y) { if(Br.size()>0){
+    													  Y -= Br[i]*U.col(i);}};
+    void add_inter(const int i, Eigen::VectorXd & Y)    { if(Br.size()>0){
+    													 Y += Br[i]*U.col(i);} };
+    
+	void remove_cov(const int i, Eigen::VectorXd & Y)
+	{
+  		if(Br.size() > 0 )
+    		Y -= Br[i] * beta_random;
+  		if(Bf.size() > 0)
+    		Y -= Bf[i] * beta_fixed;
+	};
+	void add_cov(const int    i, Eigen::VectorXd & Y)
+	{
+  		if(Br.size() > 0 )
+    		Y += Br[i] * beta_random;
+  		if(Bf.size() > 0)
+    		Y += Bf[i] * beta_fixed;
+	};
+    
     // gradient for fixed variance noise
     virtual void gradient(const int , const Eigen::VectorXd&, const double ) = 0;
     // gradient for variable variance noise
@@ -104,10 +121,6 @@ class NormalMixedEffect  : public MixedEffect{
     NormalMixedEffect();
     void initFromList(Rcpp::List const &);
 
-    void remove_inter(const int i, Eigen::VectorXd & Y) {Y -= Br[i]*U.col(i);} ;
-    void add_inter(const int i, Eigen::VectorXd & Y)    {Y += Br[i]*U.col(i);} ;
-    void remove_cov(const int , Eigen::VectorXd & );
-    void add_cov(const int    , Eigen::VectorXd & );
     /* computes gradient for the parameters
     	@param index of individual
     	@param residuals
@@ -203,10 +216,6 @@ class NIGMixedEffect  : public MixedEffect{
       					  const Eigen::VectorXd & res,
       					  const Eigen::VectorXd & iV,
       					  const double log_sigma2_noise = 0);
-    void remove_inter(const int i, Eigen::VectorXd & Y) {Y -= Br[i]*U.col(i);} ;
-    void add_inter(const int i, Eigen::VectorXd & Y)    {Y += Br[i]*U.col(i);} ;
-    void remove_cov(const int , Eigen::VectorXd & );
-    void add_cov(const int    , Eigen::VectorXd & );
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,

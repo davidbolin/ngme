@@ -79,25 +79,23 @@ class GaussianMeasurementError : public MeasurementError{
 };
 
 
-class NIGMeasurementError : public MeasurementError{
-  private:
+class NormalVarianceMixtureBaseError : public MeasurementError{
+
+	public:
 		double dsigma;
 		double ddsigma;
-		double dnu;
-		double ddnu;
 		gig rgig;
     	double counter;
     	Eigen::VectorXd sigma_vec;
     	Eigen::VectorXd nu_vec;
 
-	public:
+
 	  int common_V;
 		double nu;
-		NIGMeasurementError();
+		NormalVarianceMixtureBaseError();
 		void gradient(const int , const Eigen::VectorXd&);
-		void step_theta(double stepsize);
-		void step_sigma(double stepsize);
-		void step_nu(double stepsize);
+		void step_theta(double );
+		void step_sigma(double );
 		void initFromList(Rcpp::List const &);
 		void sampleV(const int , const Eigen::VectorXd& , int = -1);
 		Rcpp::List toList();
@@ -109,7 +107,54 @@ class NIGMeasurementError : public MeasurementError{
 
 		void printIter(); //print iteration data
         void setupStoreTracj(const int ); // setups to store the tracjetory
+        virtual double simulate_V();
+        virtual double sample_V(const double, const int) {return -1;};
 
 };
+
+class NIGMeasurementError : public NormalVarianceMixtureBaseError{
+ 
+ 
+ 	public:
+		double dnu;
+		double ddnu;
+ 		NIGMeasurementError();
+ 		void printIter();
+ 		void setupStoreTracj(const int ) ;
+ 		Rcpp::List toList();
+		void initFromList(Rcpp::List const &);
+		double simulate_V();
+		double sample_V(const double, const int);
+		void gradient(const int , const Eigen::VectorXd&);
+		void step_nu(double );
+		void step_theta(double );
+		void clear_gradient();
+		Eigen::VectorXd get_gradient();
+		
+};
+
+class IGMeasurementError : public NormalVarianceMixtureBaseError{
+ 
+ 
+ 	public:
+ 		double digamma_nu;
+ 		double trigamma_nu;
+		double dnu;
+		double ddnu;
+ 		IGMeasurementError();
+ 		void printIter();
+ 		void setupStoreTracj(const int ) ;
+ 		Rcpp::List toList();
+		void initFromList(Rcpp::List const &);
+		double simulate_V();
+		double sample_V(const double, const int);
+		void gradient(const int , const Eigen::VectorXd&);
+		void step_nu(double );
+		void step_theta(double );
+		void clear_gradient();
+		Eigen::VectorXd get_gradient();
+		
+};
+
 
 #endif

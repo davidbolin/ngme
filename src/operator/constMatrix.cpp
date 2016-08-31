@@ -42,19 +42,21 @@ void constMatrix::gradient_init(int nsim, int nrep)
   ddtau  = 0;
 }
 
-void constMatrix::gradient_add( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
+void constMatrix::gradient_add( const Eigen::VectorXd & X, 
+								   const Eigen::VectorXd & iV,
+								   const Eigen::VectorXd & mean_KX)
 {
   Eigen::VectorXd vtmp = Q * X;
 
-  double xtQx =  vtmp.dot(iV.asDiagonal() * vtmp);
-  dtau +=  (d - xtQx)/ tau;
-  ddtau -=  (d + xtQx)/ pow(tau, 2);
+  double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
+  double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
+  dtau +=  (d - xtQx - xtQmean)/ tau;
+  ddtau -=  (d + xtQx) / pow(tau, 2);
 }
 
 void constMatrix::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
 {
-  this->gradient_init(1,1);
-  this->gradient_add(X,iV);
+  throw(" constMatrix::gradient depricated \n");
 }
 
 void constMatrix::print_parameters(){

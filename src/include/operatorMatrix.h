@@ -54,7 +54,9 @@ class operatorMatrix {
     virtual Rcpp::List output_list() = 0;
     virtual void gradient( const Eigen::VectorXd &, const Eigen::VectorXd & ){};
     virtual void gradient_init( const int, const int){};
-    virtual void gradient_add( const Eigen::VectorXd &, const Eigen::VectorXd & ){};
+    virtual void gradient_add( const Eigen::VectorXd & , 
+							   const Eigen::VectorXd & ,
+							   const Eigen::VectorXd & ){};
     virtual void step_theta(const double ){};
     virtual void print_parameters( ){};
     virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> & ){return 1;};
@@ -80,7 +82,9 @@ class constMatrix : public operatorMatrix{
 
 	void gradient(const Eigen::VectorXd &, const Eigen::VectorXd & );
   void gradient_init(const int, const int);
-  void gradient_add(const Eigen::VectorXd &, const Eigen::VectorXd & );
+  void gradient_add( const Eigen::VectorXd & , 
+							   const Eigen::VectorXd & ,
+							   const Eigen::VectorXd & );
 	void step_theta(const double);
   	double  dtau;
   	double ddtau;
@@ -129,7 +133,9 @@ class MaternOperator : public operatorMatrix{
     Rcpp::List output_list();
     void gradient( const Eigen::VectorXd &, const Eigen::VectorXd & );
     void gradient_init(const int, const int);
-    void gradient_add(const Eigen::VectorXd &, const Eigen::VectorXd & );
+    void gradient_add( const Eigen::VectorXd & , 
+							   const Eigen::VectorXd & ,
+							   const Eigen::VectorXd & );
     void step_theta(const double );
     Eigen::VectorXd kappaVec;
     void print_parameters();
