@@ -96,7 +96,7 @@ void MaternOperator::gradient_init(int nsim, int nrep)
 }
 
 
-void MaternOperator::gradient_add( const Eigen::VectorXd & X, 
+void MaternOperator::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX)
 {
@@ -106,13 +106,13 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   Eigen::VectorXd dKX = dtauQ * X;
   Eigen::VectorXd d2KX = d2tauQ * X;
   dtau -=  dKX.dot(iV.asDiagonal() * (KX - mean_KX));
-  ddtau -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() * KX));
+  ddtau -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() * (KX - mean_KX)));
 
   //compute gradients wrt kappa
   dKX = dkappaQ * X;
   d2KX = d2kappaQ * X;
-  dkappa -= dKX.dot(iV.asDiagonal() * KX);
-  ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() * KX));
+  dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
+  ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() *(KX - mean_KX)));
 
 }
 
@@ -168,7 +168,7 @@ Eigen::VectorXd  MaternOperator::get_gradient()
 {
 	Eigen::VectorXd g(npars);
 	g[0] = dtau;
-	g[1] = dkappa;  
+	g[1] = dkappa;
 	return(g);
 }
 void  MaternOperator::clear_gradient()
