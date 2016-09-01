@@ -5,11 +5,11 @@ ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o
 MIXED = mixedEffect/NormalmixedEff.o mixedEffect/mixedEff_util.o mixedEffect/GHmixedEff.o
 OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix.o operator/operator_helper.o
-PROCESS  = process/process.o 
+PROCESS  = process/process.o
 UTILS    = util/error_check.o util/rgig.o util/GIG.o util/MatrixAlgebra.o util/solver.o
 
-OBJECTS = RcppExports.o simulate.o predict.o estimate.o $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS) 
-
+OBJECTS = RcppExports.o  estimate.o $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
+#simulate.o predict.o
 $(SHLIB): $(OBJECTS)
 
 clean:

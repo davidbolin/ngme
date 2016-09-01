@@ -79,73 +79,121 @@ spde.basis <- function(x,right.boundary = 'neumann',left.boundary = 'neumann')
 
 
 
-create_operator <- function(locs, n, name = "matern",right.boundary = 'neumann',left.boundary='neumann')
+create_operator <- function(locs,
+                            n,
+                            name = "matern",
+                            right.boundary = 'neumann',
+                            left.boundary='neumann',
+                            common.grid = TRUE)
 {
   if(tolower(name) == "matern"){
-    return(create_matrices_Matern(locs, n, right.boundary = right.boundary,left.boundary = left.boundary))
+    return(create_matrices_Matern(locs, n, right.boundary = right.boundary,left.boundary = left.boundary,common.grid))
   }else{
-    return(create_matrices_FD2(locs, n))
+    return(create_matrices_FD2(locs, n,common.grid))
   }
 
 }
 #' creates matrices for Matern 1D operator
 #'
 #' @return operator_List list to to use in simulation and estimation object
-create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boundary='neumann')
+create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boundary='neumann',common.grid)
 {
-  min_l <- min(locs[[1]])
-  max_l <- max(locs[[1]])
-  if(length(locs) > 1){
-    for(i in 2:length(locs))
-    {
-      min_l <- min(min_l, min(locs[[i]]))
-      max_l <- max(max_l, max(locs[[i]]))
+  operator_List <- list()
+  if(common.grid || length(locs) == 1){
+    min_l <- min(locs[[1]])
+    max_l <- max(locs[[1]])
+    if(length(locs) > 1){
+      for(i in 2:length(locs))
+      {
+        min_l <- min(min_l, min(locs[[i]]))
+        max_l <- max(max_l, max(locs[[i]]))
+      }
     }
+    P <- seq(min_l, max_l, length.out = n)
+    MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
+    C = list(as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"))
+    Ci = list(as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"))
+    G = list(MatrixBlock$G)
+    Ce = list(MatrixBlock$Ce)
+    h = list(MatrixBlock$h)
+    loc = list(P)
+  } else {
+    C <- Ci <- G <- Ce <- h <- list()
+    if(length(n) == 1){
+      n <- rep(n,length(locs))
+    }
+    for(i in 1:length(locs))
+    {
+      P <- seq(min(locs[[i]],max(locs[[i]]),length.out = n[i]))
+    }
+    MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
+    C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"),
+    Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"),
+    G[[i]] = MatrixBlock$G,
+    Ce[[i]] = MatrixBlock$Ce,
+    h[[i]] = MatrixBlock$h,
   }
 
-  P <- seq(min_l, max_l, length.out = n)
-
-  MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
   operator_List <- list(type = 'Matern',
-                        C = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"),
-                        Ci = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"),
-                        G = MatrixBlock$G,
-                        Ce = MatrixBlock$Ce,
-                        h = MatrixBlock$h,
+                        C = C,
+                        Ci = Ci,
+                        G = G,
+                        Ce = Ce,
+                        h = h,
                         kappa = 0,
-                        loc   = P,
+                        loc   = loc,
                         right.boundary=right.boundary,
-                        left.boundary=left.boundary)
+                        left.boundary=left.boundary,
+                        common.grid)
   return(operator_List)
 }
 #' creates matrices for Finite difference operator, one sided
 #'
-create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary='neumann')
+create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary='neumann',common.grid)
 {
-  min_l <- min(locs[[1]])
-  max_l <- max(locs[[1]])
-  if(length(locs) > 1){
-    for(i in 2:length(locs))
-    {
-      min_l <- min(min_l, min(locs[[i]]))
-      max_l <- max(max_l, max(locs[[i]]))
+  if(common.grid || length(locs) == 1) {
+    min_l <- min(locs[[1]])
+    max_l <- max(locs[[1]])
+    if(length(locs) > 1){
+      for(i in 2:length(locs))
+      {
+        min_l <- min(min_l, min(locs[[i]]))
+        max_l <- max(max_l, max(locs[[i]]))
+      }
+    }
+    P <- seq(min_l, max_l, length.out = n)
+    vec_toeplitz <- rep(0, length=n)
+    h <- (P[2] - P[1])
+    vec_toeplitz[1] <- -1 / h # -1/h
+    vec_toeplitz[2] <- 1  / h  # 1/h
+    Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
+    Operator_1D[upper.tri(Operator_1D)] = 0
+    Operator_2D <- (h*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
+    # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
+    Q <- list(as(Operator_2D, "dgCMatrix"))
+    h <- list(rep(h,n))
+    loc <- list(P)
+  } else {
+    Q <- h <- list()
+    for(i in 1:length(locs)){
+      vec_toeplitz <- rep(0, length=n)
+      hi <- (locs[[i]][2] - locs[[i]][1])
+      vec_toeplitz[1] <- -1 / hi # -1/h
+      vec_toeplitz[2] <- 1  / hi  # 1/h
+      Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
+      Operator_1D[upper.tri(Operator_1D)] = 0
+      Operator_2D <- (hi*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
+      # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
+      Q[[i]] <- as(Operator_2D, "dgCMatrix")
+      h[[i]] <- rep(hi,n)
     }
   }
-  P <- seq(min_l, max_l, length.out = n)
-
-  vec_toeplitz <- rep(0, length=n)
-  h <- (P[2] - P[1])
-  vec_toeplitz[1] <- -1 / h # -1/h
-  vec_toeplitz[2] <- 1  / h  # 1/h
-  Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
-  Operator_1D[upper.tri(Operator_1D)] = 0
-  Operator_2D <- (h*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
-  # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
-  operator_List <- list(type   = 'fd2',
-                        Q      = as(Operator_2D, "dgCMatrix"),
-                        h      = rep(h, n),
-                        loc   = P,
-                        right.boundary = 'neumann',
-                        left.boundary='neumann')
+    operator_List <- list(type   = 'fd2',
+                          Q      = Q,
+                          h      = h,
+                          loc   = P,
+                          right.boundary = 'neumann',
+                          left.boundary='neumann',
+                          common.grid)
   return(operator_List)
 }

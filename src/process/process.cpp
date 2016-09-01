@@ -38,7 +38,7 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const Eigen::Vec
 
 void GaussianProcess::simulate(const int i,
   		                         Eigen::VectorXd & Z,
-			                         const Eigen::SparseMatrix<double,0,int> & A, 
+			                         const Eigen::SparseMatrix<double,0,int> & A,
                                const Eigen::SparseMatrix<double,0,int> & K,
 			                         Eigen::VectorXd& Y,
         cholesky_solver       & solver)
@@ -46,7 +46,7 @@ void GaussianProcess::simulate(const int i,
 	Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
     Q =  Q * iV.asDiagonal();
     Q =  Q * K;
-    
+
     Eigen::VectorXd b;
     b.setZero(K.rows());
   	Xs[i] = solver.rMVN(b, Z);
@@ -56,7 +56,7 @@ void GaussianProcess::simulate(const int i,
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd & h_in)
 {
-  
+
   h = h_in;
   h2 = h.cwiseProduct(h);
   h_sum = h.sum();
@@ -75,10 +75,10 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd
     	//Vs[i] = h;
       	Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
   	}
-  	
-  	
+
+
   	type_process = Rcpp::as<std::string> (init_list["noise"]);
-  	
+
   	nu = 0;
   	mu = 0;
   	npars = 0;
@@ -88,14 +88,14 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  Eigen::VectorXd
     		nu = Rcpp::as < double >( init_list["nu"]);
   		else
     		nu = 1.;
-    
+
   		if(init_list.containsElementNamed("mu"))
     		mu = Rcpp::as < double >( init_list["mu"]);
   		else
     		mu = 1.;
     }
 
-  	
+
   	dmu  = 0;
 
   	EV = h;
@@ -149,22 +149,22 @@ void GHProcess::sample_X(const int i,
 	//simulate from prior distribution
 void GHProcess::simulate(const int i,
 			  Eigen::VectorXd & Z,
-			  const Eigen::SparseMatrix<double,0,int> & A, 
+			  const Eigen::SparseMatrix<double,0,int> & A,
               const Eigen::SparseMatrix<double,0,int> & K,
 			  Eigen::VectorXd& Y,
 			  cholesky_solver  &  solver)
 {
- 
+
   Z *= Vs[i].cwiseSqrt();
   for(int ii = 0; ii < Z.size(); ii++)
   	Z[ii] += - mu * h[ii] + Vs[i][ii] * mu;
       Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
 
  Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
-      
-  
+
+
   Y += A * Xs[i];
-   
+
 }
 
 
@@ -248,12 +248,12 @@ void GHProcess::gradient( const int i ,
 			   			  const double trace_var)
 {
 
-	
+
   	counter++;
-  	
+
   	if( type_process == "CH")
   		return;
-  	
+
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
 	}else if(type_process=="GAL"){
@@ -264,12 +264,12 @@ void GHProcess::gradient( const int i ,
 
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
-      		
-      		
+
+
       		Eigen::VectorXd temp_2 = A * temp_1;
-			
+
       		Eigen::VectorXd temp_3 = - A * Xs[i];
-	
+
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= Vv_mean * (trace_var / pow(sigma, 2));
@@ -291,7 +291,7 @@ void GHProcess:: gradient_v2( const int i ,
 
   	if( type_process == "CH")
   		return;
-  		
+
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
 	}else if(type_process=="GAL"){
@@ -352,12 +352,12 @@ void GHProcess::step_theta(const double stepsize)
 {
 
 
-	
+
   	if( type_process == "CH"){
   		counter = 0;
   		return;
   	}
-  		
+
 	step_mu(stepsize);
 	step_nu(stepsize);
 	counter = 0;
@@ -407,13 +407,13 @@ Eigen::VectorXd GHProcess::get_gradient()
 {
 
 	Eigen::VectorXd  g(npars);
-	
-	
+
+
   	if( type_process == "CH")
   		return(g);
-	
+
 	g[0] = dmu;
-	g[1] = dnu;	
+	g[1] = dnu;
 	return(g);
 }
 
@@ -425,10 +425,10 @@ void GHProcess::clear_gradient()
 
 void GHProcess::setupStoreTracj(const int Niter)
 {
-	
+
 	vec_counter = 0;
 	store_param = 1;
-	
+
   	if( type_process == "CH")
   		return;
 
@@ -514,8 +514,8 @@ void GHProcess::update_nu()
 }
 
  Eigen::VectorXd  GHProcess::mean_X(const int i){
- 
- Eigen::VectorXd mean = -h + Vs[i]; 
+
+ Eigen::VectorXd mean = -h + Vs[i];
  mean.array() *= mu;
  return mean;
  }

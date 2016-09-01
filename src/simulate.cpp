@@ -44,27 +44,32 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	operatorMatrix* Kobj;
 	operator_select(type_operator, &Kobj);
 	Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
-	Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
-	//Prior solver
-	cholesky_solver Qsolver;
-	Qsolver.init( Kobj->d, 0, 0, 0);
-	Qsolver.analyze( Kobj->Q);
-	Qsolver.compute( Kobj->Q);
 
+	int common_grid = 1;
+	if(Kobj->nop>1){
+	  common_grid = 0;
+	}
 
 	//Create solvers for each patient
 	std::vector<  cholesky_solver >  Solver( nindv);
-	Eigen::SparseMatrix<double, 0, int> Q;
+	Eigen::SparseMatrix<double, 0, int> Q,K;
 
   counter = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    	List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-    	Solver[counter].init(Kobj->d, 0, 0, 0);
-    	Q = Eigen::SparseMatrix<double,0,int>(Kobj->Q.transpose());
-    	Q = Q  * Kobj->Q;
-    	Q = Q + As[counter].transpose()*As[counter];
-    	Solver[counter].analyze(Q);
-    	Solver[counter++].compute(Q);
+    List obs_tmp = Rcpp::as<Rcpp::List>( *it);
+	  if(common_grid == 1){
+	    K = Kobj->Q[0];
+	    Solver[counter].init(Kobj->d[0], 0, 0, 0);
+	  } else {
+	    K = Kobj->Q[counter];
+	    Solver[counter].init(Kobj->d[counter], 0, 0, 0);
+	  }
+
+    Q = K.transpose();
+    Q = Q  * K;
+    Q = Q + As[counter].transpose()*As[counter];
+    Solver[counter].analyze(Q);
+    Solver[counter++].compute(Q);
   }
 
 	//**********************************
@@ -111,9 +116,15 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   std::vector< Eigen::VectorXd > Xs( nindv);
   std::vector< Eigen::VectorXd > Zs( nindv);
   for(int i = 0; i < nindv; i++ ){
-    	Xs[i].resize( Kobj->d );
-    	Vs[i] = h;
-    	Zs[i].resize(Kobj->d);
+    	if(common_grid == 1){
+    	  Xs[i].resize( Kobj->d[0] );
+    	  Vs[i] = Kobj->h[0];
+    	  Zs[i].resize(Kobj->d[0]);
+    	} else {
+    	  Xs[i].resize( Kobj->d[i] );
+    	  Vs[i] = Kobj->h[i];
+    	  Zs[i].resize(Kobj->d[i]);
+    	}
   }
   	/*
   	Simulation objects
@@ -125,10 +136,10 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   	gig rgig;
   	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   	Eigen::VectorXd  z;
-  	z.setZero(Kobj->d);
+  	z.setZero(Kobj->d[0]);
 
   	Eigen::VectorXd b;
-  	b.setZero(Kobj->d);
+  	b.setZero(Kobj->d[0]);
 
     //*********************************************
     //        simulating the measurement error
@@ -150,21 +161,42 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
 
-      if(type_processes != "Normal")
-        Vs[i] = sampleV_pre(rgig, h, nu, type_processes );
+      if(type_processes != "Normal"){
+        if(common_grid){
+          Vs[i] = sampleV_pre(rgig, Kobj->h[0], nu, type_processes );
+        } else {
+          Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );
+        }
+      }
+
 
       iV.resize(Vs[i].size());
       iV.array() = Vs[i].array().inverse();
-
-      for(int ii =0; ii < Kobj->d; ii++){
+      int d;
+      if(common_grid){
+        d = Kobj->d[0];
+      } else {
+        d = Kobj->d[i];
+      }
+      Eigen::VectorXd h;
+      for(int ii =0; ii < d; ii++){
         z[ii] =   sqrt(Vs[i][ii]) * normal(random_engine);
-        if(type_processes != "Normal")
+        if(type_processes != "Normal"){
+          if(common_grid){
+            h = Kobj->h[0];
+          } else {
+            h = Kobj->h[i];
+          }
           z[ii] += - mu * h[ii] + Vs[i][ii] * mu;
-        z[ii];
+        }
       }
 
-      Eigen::SparseMatrix<double,0,int> K = Eigen::SparseMatrix<double,0,int>(Kobj->Q);
-      //	K *= sqrt(tau);
+      if(common_grid){
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+      } else {
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+      }
+
 
       Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  // performs a Cholesky factorization of A
 
@@ -180,9 +212,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   out_list["U"]    = mixobj->U;
   out_list["X"]    = Xs;
   out_list["Z"]    = Zs;
-  Eigen::SparseMatrix<double,0,int> K = Eigen::SparseMatrix<double,0,int>(Kobj->Q);
-      	//K *= sqrt(tau);
-  out_list["K"]    = K;
+  out_list["K"]    = Kobj->Q;
   if(type_processes != "Normal")
     out_list["V"] = Vs;
 

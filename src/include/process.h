@@ -25,7 +25,7 @@ class Process {
   	std::string type_process;
     Process() {};
     Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
-    
+
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
 
@@ -48,7 +48,7 @@ class Process {
     					            gig &,
                           const Eigen::SparseMatrix<double,0,int> &){};
 
-	
+
 	virtual void simulate_V(const int,
     			  gig &){};
     virtual void initFromList(const Rcpp::List &, const Eigen::VectorXd  &){};
@@ -86,14 +86,14 @@ class Process {
 	//simulate from prior distribution
     virtual  void simulate(const int ,
 			  Eigen::VectorXd & ,
-			  const Eigen::SparseMatrix<double,0,int> & , 
+			  const Eigen::SparseMatrix<double,0,int> & ,
               const Eigen::SparseMatrix<double,0,int> & ,
 			  Eigen::VectorXd& ,
 			 cholesky_solver  & ) = 0;
-	
-	
+
+
 	/*
-    	stores the covariance of the parameters 
+    	stores the covariance of the parameters
     */
 	void set_covariance(const Eigen::MatrixXd & Cov_in) {Cov_theta = Cov_in;};
 };
@@ -120,12 +120,12 @@ class GaussianProcess : public Process{
               const Eigen::VectorXd & iV_noise);
 
     Rcpp::List toList();
-    
-    
+
+
 	//simulate from prior distribution
     void  simulate(const int ,
 			  Eigen::VectorXd & ,
-			  const Eigen::SparseMatrix<double,0,int> & , 
+			  const Eigen::SparseMatrix<double,0,int> & ,
               const Eigen::SparseMatrix<double,0,int> & ,
 			  Eigen::VectorXd&,
 			  cholesky_solver  &  );
@@ -209,17 +209,17 @@ class GHProcess : public Process{
     void sample_V(const int,
     			  gig &,
                   const Eigen::SparseMatrix<double,0,int> &);
-	
+
 	//simulate from prior distribution
     void simulate(const int ,
 			  Eigen::VectorXd & ,
-			  const Eigen::SparseMatrix<double,0,int> & , 
+			  const Eigen::SparseMatrix<double,0,int> & ,
               const Eigen::SparseMatrix<double,0,int> & ,
 			  Eigen::VectorXd& ,
 			  cholesky_solver  &  );
 	void simulate_V(const int,
     			  gig &);
-    			  
+
     Eigen::VectorXd  get_gradient();
     void  clear_gradient();
     Eigen::VectorXd  mean_X(const int );
