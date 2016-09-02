@@ -3,6 +3,16 @@
 
 using namespace std;
 
+
+
+constMatrix::~constMatrix()
+{
+  Rcpp::Rcout << "in constMatrix::~constMatrix()\n";
+	//for(int i = 0; i < nop; i++)
+	 // Q[i].~sparseMatrix<double,0,int>();	
+	delete Q;
+}
+
 void constMatrix::initFromList(Rcpp::List const & init_list)
 {
 	npars  = 1;
@@ -19,19 +29,19 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
 
   nop = Q_list.size();
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
-  d = new int[nop];
-  loc = new Eigen::VectorXd[nop];
+  d.resize(nop);
+  loc.resize(nop); 
+  h.resize(nop); 
 
   for(int i=0;i<nop;i++){
-      SEXP tmp = Q_list[i];
-      Q[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(tmp);
+      //SEXP tmp = Q_list[i];
+      Q[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(Q_list[i]);
       d[i] = Q[i].rows();
       Q[i] *= tau;
 
-      tmp = loc_list[i];
-      loc[i]  = Rcpp::as< Eigen::VectorXd >(tmp);
-      tmp = h_list[i];
-      h[i]  = Rcpp::as< Eigen::VectorXd >(tmp);
+
+      loc[i]  = Rcpp::as< Eigen::VectorXd >( loc_list[i]);
+      h[i]  = Rcpp::as< Eigen::VectorXd >(h_list[i]);
       h_average[i] = h[i].sum() / h[i].size();
       m_loc[i] = loc[i].minCoeff();
   }
@@ -111,7 +121,7 @@ Rcpp::List constMatrix::output_list()
   Rcpp::List  List;
   List["tau"] = tau;
   List["tauVec"] = tauVec;
-  List["Q"] = Q;
+  //List["Q"] = Q;
   List["loc"] = loc;
   List["nIter"] = tauVec.size();
   List["h"] = h;

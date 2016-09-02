@@ -20,7 +20,7 @@ class Process {
   	std::vector< Eigen::VectorXd > Xs;
   	std::vector< Eigen::VectorXd >  Vs;
   	Eigen::SparseMatrix<double,0,int>  Q;
-  	Eigen::VectorXd  h;
+  	std::vector < Eigen::VectorXd > h;
   	Eigen::VectorXd  iV;
   	std::string type_process;
     Process() {};
@@ -36,7 +36,7 @@ class Process {
     virtual void setupStoreTracj(const int Niter){};
     virtual ~Process(){};
     virtual Rcpp::List toList() {};
-    virtual Eigen::VectorXd  mean_X(const int ) {Eigen::VectorXd temp(h.size()); return temp.setZero(h.size());};
+    virtual Eigen::VectorXd  mean_X(const int i) {Eigen::VectorXd temp(h[i].size()); return temp.setZero(h[i].size());};
     virtual void gradient( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -51,7 +51,7 @@ class Process {
 
 	virtual void simulate_V(const int,
     			  gig &){};
-    virtual void initFromList(const Rcpp::List &, const Eigen::VectorXd  &){};
+    virtual void initFromList(const Rcpp::List &, const std::vector <Eigen::VectorXd > &){};
     // sampling where the measurement noise is normal
     virtual void sample_X(const int i,
               Eigen::VectorXd & Z,
@@ -100,7 +100,7 @@ class Process {
 
 class GaussianProcess : public Process{
 
-	void initFromList(const Rcpp::List  &,const  Eigen::VectorXd &);
+	void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
 	void sample_X( const int i,
               Eigen::VectorXd & Z,
               const Eigen::VectorXd & Y,
@@ -165,7 +165,7 @@ class GHProcess : public Process{
 
 	double mu;
 	double nu;
-	void initFromList(const Rcpp::List  &, const Eigen::VectorXd &);
+	void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
 	void sample_X( const int i,
               Eigen::VectorXd & Z,
               const Eigen::VectorXd & Y,

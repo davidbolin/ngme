@@ -296,14 +296,14 @@ List estimateLong_cpp(Rcpp::List in_list)
                                 errObj->sigma,
                                 errObj->Vs[i].cwiseInverse(),
                                 errObj->EiV,
-                                Kobj->trace_variance(A));
+                                Kobj->trace_variance(A, i));
             }else{
               process->gradient(i,
                                 K,
                                 A,
                                 res,
                                 errObj->sigma,
-                                Kobj->trace_variance(A));
+                                Kobj->trace_variance(A, i));
             }
       		}
       }
@@ -406,7 +406,7 @@ List estimateFisher(Rcpp::List in_list)
 	count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     	List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-    	Solver[count].init(Kobj->d, 0, 0, 0);
+    	Solver[count].init(Kobj->d[count], 0, 0, 0);
       if(common_grid==1){
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
       } else {
@@ -455,7 +455,7 @@ List estimateFisher(Rcpp::List in_list)
   	process  = new GHProcess;
   }else{ process  = new GaussianProcess;}
 
-  process->initFromList(processes_list, h);
+  process->initFromList(processes_list, Kobj->h);
   /*
   Simulation objects
   */
@@ -466,10 +466,8 @@ List estimateFisher(Rcpp::List in_list)
   gig rgig;
 	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   Eigen::VectorXd  z;
-	z.setZero(Kobj->d);
 
-  Eigen::VectorXd b, Ysim;
-	b.setZero(Kobj->d);
+  Eigen::VectorXd  Ysim;
 
   std::vector<int> longInd;
 
@@ -504,7 +502,8 @@ List estimateFisher(Rcpp::List in_list)
 
       Eigen::VectorXd  Y = errObj->simulate( Ys[i]);
 	  mixobj->simulate(Y, i);
-
+  
+   z.setZero(Kobj->d[i]);
 	 for(int j =0; j < K.rows(); j++)
     			z[j] =  normal(random_engine);
 
@@ -542,7 +541,7 @@ List estimateFisher(Rcpp::List in_list)
   			iV.array() = process->Vs[i].array().inverse();
       	Q =  Q * iV.asDiagonal();
     		Q =  Q * K;
-        for(int j =0; j < Kobj->d; j++)
+        for(int j =0; j < Kobj->d[i]; j++)
     			z[j] =  normal(random_engine);
 
       	res += A * process->Xs[i];
@@ -600,14 +599,14 @@ List estimateFisher(Rcpp::List in_list)
                                 errObj->sigma,
                                 errObj->Vs[i].cwiseInverse(),
                                 errObj->EiV,
-                                Kobj->trace_variance(A));
+                                Kobj->trace_variance(A, i));
             }else{
               process->gradient(i,
                                 K,
                                 A,
                                 res,
                                 errObj->sigma,
-                                Kobj->trace_variance(A));
+                                Kobj->trace_variance(A, i));
             }
       		}
       }

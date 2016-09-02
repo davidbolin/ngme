@@ -16,7 +16,7 @@ double Trigamma(double x)
   return(R::trigamma(x));
 }
 
-void GaussianProcess::initFromList(const Rcpp::List & init_list,const Eigen::VectorXd & h_in)
+void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
   npars = 0;
   h = h_in;

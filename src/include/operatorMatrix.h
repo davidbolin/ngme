@@ -28,18 +28,17 @@ class operatorMatrix {
     solver * Qsolver;
   public:
     int nop;
-    Eigen::VectorXd * h;
-
+    std::vector<Eigen::VectorXd >  h;
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
 
 	int npars; // number of parameters
-    Eigen::VectorXd  * loc; // location of the position
+    std::vector<Eigen::VectorXd >  loc; // location of the position
     operatorMatrix() {Qsolver = NULL;};
     virtual ~operatorMatrix(){delete Qsolver;};
-    int * d; //dimension
+    std::vector<int > d; //dimension
     Eigen::SparseMatrix<double,0,int> *Q; // the generic matrix object
     //std::vector< Eigen::SparseMatrix<double,0,int> > Q;
-    Eigen::MatrixXd *K;                   // the generic matrix object if Q is full!
+    std::vector<Eigen::MatrixXd> K;                   // the generic matrix object if Q is full!
 
 
 
@@ -61,7 +60,7 @@ class operatorMatrix {
 							   const int){};
     virtual void step_theta(const double ){};
     virtual void print_parameters( ){};
-    virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> & ){return 1;};
+    virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> &, const int ){return 1;};
     double tau;
     Eigen::VectorXd  tauVec;
     int counter;
@@ -81,6 +80,7 @@ class constMatrix : public operatorMatrix{
     double * h_average;
   public:
 
+	~constMatrix();
 	void gradient(const Eigen::VectorXd &, const Eigen::VectorXd & );
   void gradient_init(const int, const int);
   void gradient_add( const Eigen::VectorXd & ,
@@ -105,7 +105,7 @@ class fd2Operator : public constMatrix {
 
 public:
   Rcpp::List output_list();
-  double trace_variance( const Eigen::SparseMatrix<double,0,int> & ) ;
+  double trace_variance( const Eigen::SparseMatrix<double,0,int> &, const int  ) ;
 };
 
 class MaternOperator : public operatorMatrix{
@@ -142,7 +142,7 @@ class MaternOperator : public operatorMatrix{
     void step_theta(const double );
     Eigen::VectorXd kappaVec;
     void print_parameters();
-    double trace_variance( const Eigen::SparseMatrix<double,0,int> & );
+    double trace_variance( const Eigen::SparseMatrix<double,0,int> &, const int );
 
     Eigen::VectorXd  get_gradient();
     void  clear_gradient();

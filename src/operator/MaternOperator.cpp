@@ -5,6 +5,7 @@
 
 void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const & solver_list)
 {
+/*
 	npars = 2;
   std::vector<std::string> check_names =  {"C", "G", "kappa", "tau","h"};
   check_Rcpplist(init_list, check_names, "MaternOperator::initFromList");
@@ -43,12 +44,13 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   (*Qepssolver).analyze(Q);
 
   this->set_matrices();
-
+*/
 }
 
 
 void MaternOperator::set_matrices()
 {
+/*
   double c = 0.5; //sqrt(gamma(alpha))/(sqrt(gamma(nu))*(4*pi)^(d/4))
   Q = c*tau*(pow(kappa,-1.5)*G + pow(kappa,0.5)*C);
   dkappaQ = c*tau*(-1.5*pow(kappa,-2.5)*G + 0.5*pow(kappa,-0.5)*C);
@@ -67,12 +69,14 @@ void MaternOperator::set_matrices()
   (*Qepssolver).compute(Qeps);
   double trje = (*Qepssolver).trace(dQeps);
   kappa_trace2 = (trje - kappa_trace)/eps;
+  */
 }
 
 
 Rcpp::List MaternOperator::output_list()
 {
   Rcpp::List  List;
+  /*
   List["type"] = "Matern";
   List["tau"] = tau;
   List["kappa"] = kappa;
@@ -83,6 +87,7 @@ Rcpp::List MaternOperator::output_list()
   List["nIter"] = tauVec.size();
   List["use.chol"] = use_chol;
   List["Cov_theta"]   = Cov_theta;
+  */
   return(List);
 }
 
@@ -98,8 +103,10 @@ void MaternOperator::gradient_init(int nsim, int nrep)
 
 void MaternOperator::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
-								   const Eigen::VectorXd & mean_KX)
+								   const Eigen::VectorXd & mean_KX,
+                   const int i)
 {
+/*
   Eigen::VectorXd KX = Q * X;
 
   //compute gradients wrt tau
@@ -113,7 +120,7 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   d2KX = d2kappaQ * X;
   dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
   ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() *(KX - mean_KX)));
-
+*/
 }
 
 void MaternOperator::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -158,10 +165,10 @@ void MaternOperator::step_theta(const double stepsize)
   	this->set_matrices();
 }
 
-double MaternOperator::trace_variance( const Eigen::SparseMatrix<double,0,int> & A)
+double MaternOperator::trace_variance( const Eigen::SparseMatrix<double,0,int> & A, int i)
 {
-	return(A.rows() * tau/ h_average);
-
+	//return(A.rows() * tau/ h_average);
+  return(-1);
 }
 
 Eigen::VectorXd  MaternOperator::get_gradient()
