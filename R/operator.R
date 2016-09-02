@@ -191,7 +191,7 @@ create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary
     operator_List <- list(type   = 'fd2',
                           Q      = Q,
                           h      = h,
-                          loc   = P,
+                          loc   = loc,
                           right.boundary = 'neumann',
                           left.boundary='neumann',
                           common.grid)

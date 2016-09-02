@@ -22,17 +22,16 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
  tau = 1.;
  if(init_list.containsElementNamed("tau"))
    tau = Rcpp::as<double >( init_list["tau"]);
-
   Rcpp::List Q_list  = Rcpp::as<Rcpp::List> (init_list["Q"]);
   Rcpp::List loc_list  = Rcpp::as<Rcpp::List> (init_list["loc"]);
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (init_list["h"]);
-
   nop = Q_list.size();
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
   d.resize(nop);
   loc.resize(nop); 
   h.resize(nop); 
-
+  h_average.resize(nop);
+  m_loc.resize(nop);
   for(int i=0;i<nop;i++){
       //SEXP tmp = Q_list[i];
       Q[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(Q_list[i]);
@@ -74,8 +73,10 @@ void constMatrix::gradient_init(int nsim, int nrep)
 void constMatrix::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX,
-								   const int ii)
+								  int ii)
 {
+	if(nop == 1)
+		ii = 0;
   Eigen::VectorXd vtmp = Q[ii] * X;
 
   double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
@@ -90,7 +91,7 @@ void constMatrix::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & i
 }
 
 void constMatrix::print_parameters(){
-  Rcpp::Rcout << "tau = " << tau << "\n";
+  Rcpp::Rcout << "tau = " << tau ;
 }
 
 void constMatrix::step_theta(const double stepsize)

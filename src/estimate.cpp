@@ -61,7 +61,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(in_list.containsElementNamed("sampleX"))
 		sampleX = Rcpp::as<int> (in_list["sampleX"]);
 
-
 	//**********************************
 	//operator setup
 	//***********************************
@@ -77,7 +76,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  common_grid = 0;
 	}
 	//Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
-
 	//Create solvers for each patient
 	std::vector<  cholesky_solver >  Solver( nindv);
 	Eigen::SparseMatrix<double, 0, int> Q, K;
@@ -266,7 +264,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
 
       	if(iter >= nBurnin){
-
+		
       		// mixobj gradient
       		mixobj->add_inter(i, res);
       	  if(type_MeasurementError != "Normal")
@@ -279,7 +277,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	  // measurent error  gradient
   			  errObj->gradient(i, res);
-
       	  // operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),

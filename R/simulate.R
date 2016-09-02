@@ -94,7 +94,7 @@ simulateLong.R <- function(loc,
   A <- list()
   for(i in 1:length(loc))
   {
-    A[[i]] <-  spde.A(x = operator_List$loc, loc = loc[[i]])
+    A[[i]] <-  spde.A(x = operator_List$loc[[1]], loc = loc[[i]])
   }
   
   Y = list()

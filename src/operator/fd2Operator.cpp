@@ -3,7 +3,10 @@
 
 using namespace std;
 
-double fd2Operator::trace_variance( const Eigen::SparseMatrix<double,0,int>& A, const int i){
+double fd2Operator::trace_variance( const Eigen::SparseMatrix<double,0,int>& A, int i){
+
+	if( nop == 1)
+		i = 0;
   Eigen::VectorXd  obs_loc = A * loc[i];
   obs_loc.array() -= m_loc[i];
   // covariance / h

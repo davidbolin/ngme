@@ -44,7 +44,7 @@ obs_list <- list()
 X <- list()
 V <- list()
 for(i in 1:length(locs)){
-  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc, loc = locs[[i]]), 
+  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
                         Y=output_sim$Y[[i]], 
                         locs = locs[[i]])
   X[[i]] <- rep(0, n) 
@@ -68,7 +68,7 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 2,
                nBurnin          = 100,   # steps before starting gradient estimation
-               silent           = 1, # print iteration info)
+               silent           = 0, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,
