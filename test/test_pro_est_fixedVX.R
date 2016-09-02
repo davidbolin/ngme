@@ -11,17 +11,17 @@ graphics.off()
 
 plot_flag <- TRUE
 
-noises <- c("NIG", "CH")
+noises <- c("NIG")#c("CH", "NIG")
 for(k in 1:length(noises)){
 npers <- 10
 nobs  <- 100
-nIter <- 200
+nIter <- 50
 n     <- 100 #n grid points
 
 nu_true <- 5
 mu_true <- 5
 nu_guess <- 2
-mu_guess <- 10
+mu_guess <- 2
 tau_geuss <- 2
 theta <- list()
 theta$sigma <- 0.1 # meas error
@@ -82,10 +82,11 @@ if(plot_flag){
 x11()
 par(mfrow=c(3,2))
 plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc, output_sim$X[[5]])
-lines(output$operator_list$loc, output$Xs[[5]],col='red',lty='dashed')
+lines(output$operator_list$loc[[1]], output_sim$X[[5]])
+lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
+n_ <- length(output$operator_list$tauVec)
 if(noises[k] != "CH"){
-  n_ <- length(output$operator_list$tauVec)
+  
   plot(output$processes_list$mu_vec)
   lines(c(1, n_), c( mu_true, mu_true), col='red' )
   plot(output$processes_list$nu_vec)
@@ -110,3 +111,4 @@ test_that(paste("tau with known X,V, noise = ",noises[k],sep=""),{
 })
 
 }
+

@@ -99,6 +99,7 @@ simulateLong.R <- function(loc,
   
   Y = list()
   X = list()
+  Zs = list()
   V = list()
   h <- operator_List$h[[1]]
   for(i in 1:nrep){
@@ -107,20 +108,23 @@ simulateLong.R <- function(loc,
     }else if (noise == "NIG"){
       V[[i]] =  rGIG(rep(-0.5, n),
                      rep( theta$nu, n),
-                     (h )^2 * theta$nu)
+                     h^2 * theta$nu)
       Z <- (- h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
       X[[i]] <- solve(K, Z)
+      Zs[[i]] <- Z
     }else if( noise == "GAL"){
       V[[i]] =  rgamma(n, h * theta$nu, rep(theta$nu, n)) + 10e-14
       Z <- (- h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
+      Zs[[i]] <- Z
       X[[i]] <- solve(K, Z)
     }else if( noise == "CH"){
       V[[i]] =  1/rgamma(n, 0.5, 0.25 * h^2) 
       Z <-  sqrt(V[[i]]) * rnorm(n)
+      Zs[[i]] <- Z
       X[[i]] <- solve(K, Z)
     }
     
     Y[[i]] = (B[[i]]%*%beta + A[[i]]%*%X[[i]] + sigma[i]*rnorm(dim(A[[i]])[1]))@x
   }
-  return(list(Y=Y, X=X, xloc = operator_List$mesh1d$loc, A=A, V= V))
+  return(list(Y=Y, X=X, xloc = operator_List$mesh1d$loc, A=A, V= V, Z = Zs))
 }

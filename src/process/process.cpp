@@ -94,11 +94,12 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h3_mean.resize(nindv);
   Vv_mean.resize(nindv);
   EiV.resize(nindv);
-  EV = h;
+  EV.resize(nindv);
   h_digamma.resize(nindv);
   h_trigamma.resize(nindv);
   
   for(int i =0; i < nindv; i++){
+    EV[i]      = h[i];
     h2[i]      = h[i].cwiseProduct(h[i]);
     h_sum[i]   = h[i].sum();
     h_min[i]   = h[i].minCoeff();
@@ -134,8 +135,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
     }
 
 
-  	dmu  = 0;
-
+  	dmu    = 0;
+	ddmu_1 = 0;
   	if(type_process != "CH")
   		update_nu();
   	counter = 0;
@@ -340,7 +341,7 @@ void GHProcess:: gradient_v2( const int i ,
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
       		Eigen::VectorXd temp_2 = A * temp_1;
-      		temp_2 *= iV_noise;
+      		temp_2.array() *= iV_noise[i];
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
@@ -358,7 +359,6 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
   		temp_1 = temp_1.cwiseProduct(iV);
 
   		temp_1.array() += 1.;
-
 		Eigen::VectorXd temp_2;
 		Eigen::VectorXd temp_3 =  Vs[i] ;
   		temp_3 -= h[i];
@@ -367,7 +367,6 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
 		temp_2 -= temp_3;
 		dmu    += temp_1.dot(temp_2);
 		ddmu_1 += H_mu[i];
-
 }
 
 void GHProcess::grad_nu(const int i)
@@ -376,12 +375,12 @@ void GHProcess::grad_nu(const int i)
 	// dnu
 	if(type_process == "NIG"){
 		dnu  +=  0.5 *( h[i].size() / nu -   h2[i].dot(iV) - Vs[i].sum() + 2 * h_sum[i]);
-    ddnu = -  h[i].size()/ (0.5 * pow(nu,2));
+    	ddnu -=   0.5 * h[i].size()/ pow(nu,2);
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
     	temp.array() = Vs[i].array().log();
 		dnu  +=  h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i];
-    ddnu = h_sum[i]/ nu - h_trigamma[i];
+    	ddnu -= h_sum[i]/ nu - h_trigamma[i];
 	}
 
 
@@ -412,7 +411,7 @@ void GHProcess::step_theta(const double stepsize)
 }
 
 void GHProcess::step_mu(const double stepsize)
-{
+{	
 	mu -= (stepsize / ddmu_1 ) * dmu;
 	ddmu_1 = 0;
 	ddmu_2 = 0;
@@ -421,7 +420,6 @@ void GHProcess::step_mu(const double stepsize)
 void GHProcess::step_nu(const double stepsize)
 {
   double nu_temp = -1;
-
   dnu /= ddnu;
   double stepsize_temp  = stepsize;
   while(nu_temp < 0)
@@ -519,7 +517,7 @@ void GHProcess::update_nu()
   	{
       for(int i =0; i < h2.size(); i++){
   		  EiV[i] =  h2[i].cwiseInverse();
-      	EiV[i] *=  1./nu;
+      	  EiV[i] *=  1./nu;
   		  EiV[i] += h[i].cwiseInverse();
 
   		  Vv_mean[i]  = h_sum[i] / ( nu * h[i].size());
@@ -544,14 +542,12 @@ void GHProcess::update_nu()
   			  EiV[i].setOnes(h[i].size());
   			  EiV[i].array() *= std::numeric_limits<double>::infinity();
   		  }
-        H_mu[i] =  (EV[i].sum() - EiV[i].dot(h2[i]));
+       
   		}
-  		
-  		
-
 
   	}
-  	
+  	 for(int i =0; i < h2.size(); i++)
+  	 	H_mu[i] =  (EV[i].sum() - EiV[i].dot(h2[i]));
 }
 
  Eigen::VectorXd  GHProcess::mean_X(const int i){

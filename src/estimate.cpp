@@ -196,6 +196,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       int i = longInd[ilong];
       Eigen::SparseMatrix<double,0,int> A = As[i];
       Eigen::VectorXd  Y = Ys[i];
+      z.setZero(Kobj->d[0]);
+      if(common_grid == 0)
+      	z.setZero(Kobj->d[i]);
       for(int ii = 0; ii < nSim; ii ++)
       {
       	Eigen::VectorXd  res = Y;
@@ -224,12 +227,12 @@ List estimateLong_cpp(Rcpp::List in_list)
   			Eigen::VectorXd iV(process->Vs[i].size());
   			iV.array() = process->Vs[i].array().inverse();
   			if(common_grid){
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0].transpose());
+  			  K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
   			} else {
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i].transpose());
+  			  K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
   			}
-    		Q = K;
-      	Q =  Q * iV.asDiagonal();
+    		Q = K.transpose();
+      		Q =  Q * iV.asDiagonal();
     		Q =  Q * K;
         for(int j =0; j < K.rows(); j++)
     			z[j] =  normal(random_engine);
@@ -284,6 +287,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       		// process gradient
       		res += A * process->Xs[i];
+      	  
           if(type_MeasurementError != "Normal"){
 
               process->gradient_v2(i,
