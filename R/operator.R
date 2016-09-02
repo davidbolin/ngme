@@ -126,11 +126,11 @@ create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boun
     {
       P <- seq(min(locs[[i]],max(locs[[i]]),length.out = n[i]))
       MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
-      C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"),
-      Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"),
-      G[[i]] = MatrixBlock$G,
-      Ce[[i]] = MatrixBlock$Ce,
-      h[[i]] = MatrixBlock$h,
+      C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix")
+      Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
+      G[[i]] = MatrixBlock$G
+      Ce[[i]] = MatrixBlock$Ce
+      h[[i]] = MatrixBlock$h
     }
   }
 
