@@ -17,6 +17,7 @@ class Process {
 	int npars;
   	int store_param;
   	int nindv; // number indiviuals
+  	std::vector< Eigen::VectorXd > EV;
   	std::vector< Eigen::VectorXd > Xs;
   	std::vector< Eigen::VectorXd >  Vs;
   	Eigen::SparseMatrix<double,0,int>  Q;
@@ -138,22 +139,22 @@ class GHProcess : public Process{
 
 	private:
 
-  		Eigen::VectorXd  h2;
-  		double h_sum;
-  		double h_min;
-  		double h_digamma;
-  		double h_trigamma;
+  		std::vector< Eigen::VectorXd > h2;
+  		std::vector< double > h_sum;
+  		std::vector< double >  h_min;
+  		std::vector< double >  h_digamma;
+  		std::vector< double >  h_trigamma;
+		std::vector< double >  h3_mean;
 		double dmu ;
 		double dnu, ddnu ;
-		Eigen::VectorXd EV;
-		Eigen::VectorXd EiV;
+		std::vector< Eigen::VectorXd > EiV;
 		Eigen::VectorXd mu_vec;
 		Eigen::VectorXd nu_vec;
 		int vec_counter;
 		double counter;
-		double H_mu, ddmu_1, ddmu_2;
-		double Vv_mean;
-		double h3_mean;
+		double  ddmu_1, ddmu_2;
+		std::vector< double > H_mu;
+		std::vector<double> Vv_mean;
 
 		void update_nu();
 		void grad_nu(const int);
