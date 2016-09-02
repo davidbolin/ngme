@@ -134,7 +134,8 @@ predictLong <- function( Y,
                  pred_type        = pred_type
   )
 
-  output <- predictLong_cpp(input)
+  #output <- predictLong_cpp(input)
+  output <- list()
   out_list <- list()
 
   if(return.samples){

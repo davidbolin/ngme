@@ -84,9 +84,9 @@ simulateLong.R <- function(loc,
     Q = (K%*%operator_List$Ci%*%K)
     R = chol(Q)
   }else{
-    K = tau*operator_List$Q
+    K = tau*operator_List$Q[[1]]
     
-    Ci = as(sparseMatrix(i=1:n,j=1:n,x=1/operator_List$h,dims=c(n, n)), "CsparseMatrix")
+    Ci = as(sparseMatrix(i=1:n,j=1:n,x=1/operator_List$h[[1]],dims=c(n, n)), "CsparseMatrix")
     Q = Matrix::t(K) %*% Ci %*% K
     R = chol(Q)
   }
@@ -100,21 +100,22 @@ simulateLong.R <- function(loc,
   Y = list()
   X = list()
   V = list()
+  h <- operator_List$h[[1]]
   for(i in 1:nrep){
     if(noise == "Normal"){
       X[[i]] = solve(R,rnorm(dim(R)[1]))
     }else if (noise == "NIG"){
       V[[i]] =  rGIG(rep(-0.5, n),
                      rep( theta$nu, n),
-                     (operator_List$h )^2 * theta$nu)
-      Z <- (- operator_List$h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
+                     (h )^2 * theta$nu)
+      Z <- (- h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
       X[[i]] <- solve(K, Z)
     }else if( noise == "GAL"){
-      V[[i]] =  rgamma(n, operator_List$h * theta$nu, rep(theta$nu, n)) + 10e-14
-      Z <- (- operator_List$h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
+      V[[i]] =  rgamma(n, h * theta$nu, rep(theta$nu, n)) + 10e-14
+      Z <- (- h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
       X[[i]] <- solve(K, Z)
     }else if( noise == "CH"){
-      V[[i]] =  1/rgamma(n, 0.5, 0.25 * operator_List$h^2) 
+      V[[i]] =  1/rgamma(n, 0.5, 0.25 * h^2) 
       Z <-  sqrt(V[[i]]) * rnorm(n)
       X[[i]] <- solve(K, Z)
     }

@@ -16,7 +16,6 @@ using namespace Rcpp;
 /*
 	Simulating from the prior model
 */
-// [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
 

@@ -19,14 +19,23 @@ double Trigamma(double x)
 void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
   npars = 0;
-  h.resize(h_in.size());
-  for(int i =0; i < h.size(); i++)
-    h[i] = h_in[i];
+  
   //iV = h.cwiseInverse();
   std::vector<std::string> check_names =  {"X"};
   check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   nindv = X_list.length();
+  
+  h.resize(nindv);
+  for(int i =0; i < nindv; i++){
+  	if(h_in.size() > 1)
+    	h[i] = h_in[i];
+    else
+    	h[i] = h_in[0];
+    
+  }
+  
+  
   Xs.resize(nindv);
   Vs.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
@@ -58,29 +67,46 @@ void GaussianProcess::simulate(const int i,
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)
 {
-  nindv = h_in.size();
+	std::vector<std::string> check_names =  {"X","V"};
+  check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
+  Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
+  Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  nindv = X_list.size();
+  Xs.resize(nindv);
+  Vs.resize(nindv);
+  
+  
   h.resize(nindv);
-  h2.resize(nindv);
   for(int i =0; i < nindv; i++){
-    h[i]       = h_in[i];
-    h2[i]      = h[i].cwiseProduct(h[i]);
-    h_sum[i]   = h[i].sum();
-    h_min[i]   = h[i].minCoeff();
-    h3_mean[i] = h[i].array().pow(3).sum()/h[i].size();
+  	if(h_in.size() > 1)
+    	h[i] = h_in[i];
+    else
+    	h[i] = h_in[0];
+    
   }
+  
+  
+ 
+  h2.resize(nindv);
+  h_sum.resize(nindv);
+  h_min.resize(nindv);
   H_mu.resize(nindv);
+  h3_mean.resize(nindv);
   Vv_mean.resize(nindv);
   EiV.resize(nindv);
   EV = h;
   h_digamma.resize(nindv);
   h_trigamma.resize(nindv);
   
-  std::vector<std::string> check_names =  {"X","V"};
-  check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
-  Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
-  Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
-  Xs.resize(nindv);
-  Vs.resize(nindv);
+  for(int i =0; i < nindv; i++){
+    h2[i]      = h[i].cwiseProduct(h[i]);
+    h_sum[i]   = h[i].sum();
+    h_min[i]   = h[i].minCoeff();
+    h3_mean[i] = h[i].array().pow(3).sum()/h[i].size();
+  }
+  
+  
+ 
   for(int i = 0; i < nindv; i++ ){
 
     	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);

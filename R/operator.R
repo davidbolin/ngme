@@ -89,7 +89,7 @@ create_operator <- function(locs,
   if(tolower(name) == "matern"){
     return(create_matrices_Matern(locs, n, right.boundary = right.boundary,left.boundary = left.boundary,common.grid))
   }else{
-    return(create_matrices_FD2(locs, n,common.grid))
+    return(create_matrices_FD2(locs, n, common.grid = common.grid))
   }
 
 }

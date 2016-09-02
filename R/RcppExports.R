@@ -9,11 +9,3 @@ estimateFisher <- function(in_list) {
     .Call('LDMod_estimateFisher', PACKAGE = 'LDMod', in_list)
 }
 
-predictLong_cpp <- function(in_list) {
-    .Call('LDMod_predictLong_cpp', PACKAGE = 'LDMod', in_list)
-}
-
-simulateLongGH_cpp <- function(in_list) {
-    .Call('LDMod_simulateLongGH_cpp', PACKAGE = 'LDMod', in_list)
-}
-

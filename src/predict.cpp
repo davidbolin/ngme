@@ -15,7 +15,7 @@
 using namespace Rcpp;
 
 
-// [[Rcpp::export]]
+
 List predictLong_cpp(Rcpp::List in_list)
 {
 
