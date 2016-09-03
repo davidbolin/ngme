@@ -186,6 +186,7 @@ create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary
       # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
       Q[[i]] <- as(Operator_2D, "dgCMatrix")
       h[[i]] <- rep(hi,n)
+      loc <- locs
     }
   }
     operator_List <- list(type   = 'fd2',

@@ -63,7 +63,7 @@ predictLong <- function( Y,
     locs.pred <- locs
   }
   common.grid = FALSE
-  if(length(operator_list$locs)==1){
+  if(length(operator_list$loc)==1){
     common.grid = TRUE
   }
   obs_list <- list()
