@@ -46,7 +46,7 @@ estimateLong <- function(Y,
 {
   obs_list <- list()
   common.grid = FALSE
-  if(lenght(operator_list$locs)==1){
+  if(length(operator_list$locs)==1){
     common.grid = TRUE
   }
   for(i in 1:length(locs))

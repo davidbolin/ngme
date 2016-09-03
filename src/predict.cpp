@@ -15,7 +15,7 @@
 using namespace Rcpp;
 
 
-
+// [[Rcpp::export]]
 List predictLong_cpp(Rcpp::List in_list)
 {
 
@@ -73,24 +73,28 @@ List predictLong_cpp(Rcpp::List in_list)
   operator_select(type_operator, &Kobj);
   Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
-  Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
 
-  //Prior solver
-  cholesky_solver Qsolver;
-  Qsolver.init( Kobj->d, 0, 0, 0);
-  Qsolver.analyze( Kobj->Q);
-  Qsolver.compute( Kobj->Q);
+  int common_grid = 1;
+  if(Kobj->nop>1){
+    common_grid = 0;
+  }
 
-  //Create solvers for each patient
   std::vector<  cholesky_solver >  Solver( nindv);
-  Eigen::SparseMatrix<double, 0, int> Q;
+  Eigen::SparseMatrix<double, 0, int> Q, K;
 
   count = 0;
   for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-    Solver[count].init(Kobj->d, 0, 0, 0);
-    Q = Eigen::SparseMatrix<double,0,int>(Kobj->Q.transpose());
-    Q = Q  * Kobj->Q;
+
+    if(common_grid == 1){
+      Solver[count].init(Kobj->d[0], 0, 0, 0);
+      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+    } else {
+      Solver[count].init(Kobj->d[count], 0, 0, 0);
+      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+    }
+    Q = K.transpose();
+    Q = Q * K;
     Q = Q + As[count].transpose()*As[count];
     Solver[count].analyze(Q);
     Solver[count].compute(Q);
@@ -150,7 +154,7 @@ List predictLong_cpp(Rcpp::List in_list)
     process  = new GHProcess;
   }else{ process  = new GaussianProcess;}
 
-  process->initFromList(processes_list, h);
+  process->initFromList(processes_list, Kobj->h);
   /*
   Simulation objects
   */
@@ -161,16 +165,15 @@ List predictLong_cpp(Rcpp::List in_list)
   gig rgig;
   rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   Eigen::VectorXd  z;
-  z.setZero(Kobj->d);
+  z.setZero(Kobj->d[0]);
 
   Eigen::VectorXd b, Ysim;
-  b.setZero(Kobj->d);
+  b.setZero(Kobj->d[0]);
 
   std::vector<int> longInd;
   for (int i=0; i< nindv; i++) longInd.push_back(i);
 
-  Eigen::SparseMatrix<double,0,int> K = Eigen::SparseMatrix<double,0,int>(Kobj->Q);
-  K *= sqrt(Kobj->tau);
+
 
   std::vector< Eigen::MatrixXd > WVec(nindv);
   std::vector< Eigen::MatrixXd > XVec(nindv);
@@ -227,13 +230,25 @@ List predictLong_cpp(Rcpp::List in_list)
         // sampling processes
         //***********************************
         //Rcpp::Rcout << "here3\n";
-        Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
+        if(common_grid){
+          K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+        } else {
+          K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+        }
         Eigen::VectorXd iV(process->Vs[i].size());
         iV.array() = process->Vs[i].array().inverse();
+
+        Q = K.transpose();
         Q =  Q * iV.asDiagonal();
         Q =  Q * K;
 
-        for(int j =0; j < Kobj->d; j++)
+        int d;
+        if(common_grid == 1){
+          d = Kobj->d[0];
+        } else {
+          d = Kobj->d[i];
+        }
+        for(int j =0; j < d; j++)
           z[j] =  normal(random_engine);
 
         res += A * process->Xs[i];

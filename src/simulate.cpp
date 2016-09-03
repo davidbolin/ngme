@@ -16,6 +16,7 @@ using namespace Rcpp;
 /*
 	Simulating from the prior model
 */
+// [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
 
@@ -57,19 +58,20 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>( *it);
 	  if(common_grid == 1){
-	    K = Kobj->Q[0];
 	    Solver[counter].init(Kobj->d[0], 0, 0, 0);
+	    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
 	  } else {
-	    K = Kobj->Q[counter];
 	    Solver[counter].init(Kobj->d[counter], 0, 0, 0);
+	    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[counter]);
 	  }
-
     Q = K.transpose();
     Q = Q  * K;
     Q = Q + As[counter].transpose()*As[counter];
     Solver[counter].analyze(Q);
-    Solver[counter++].compute(Q);
+    Solver[counter].compute(Q);
+    counter++;
   }
+
 
 	//**********************************
 	// mixed effect setup
@@ -211,7 +213,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   out_list["U"]    = mixobj->U;
   out_list["X"]    = Xs;
   out_list["Z"]    = Zs;
-  out_list["K"]    = Kobj->Q;
   if(type_processes != "Normal")
     out_list["V"] = Vs;
 

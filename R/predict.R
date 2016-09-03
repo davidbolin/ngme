@@ -62,6 +62,10 @@ predictLong <- function( Y,
   if(missing(locs.pred)){
     locs.pred <- locs
   }
+  common.grid = FALSE
+  if(length(operator_list$locs)==1){
+    common.grid = TRUE
+  }
   obs_list <- list()
 
   if(!missing(pInd) && !is.null(pInd)){
@@ -76,6 +80,10 @@ predictLong <- function( Y,
     mixedEffect_list$U  <- mixedEffect_list$U
     processes_list$X    <- processes_list$X[pInd]
     processes_list$V    <- processes_list$V[pInd]
+    if(!common.grid){
+      operator_list$Q <- operator_list$Q[pInd]
+      operator_list$loc <- operator_list$loc[pInd]
+    }
     n.patient = length(pInd)
   } else {
     if(is.list(Y)){
@@ -109,19 +117,34 @@ predictLong <- function( Y,
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
       }
+      if(common.grid){
+        obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc[[1]],
+                                         right.boundary = operator_list$right.boundary,
+                                         left.boundary = operator_list$left.boundary),
+                              Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
+                                             right.boundary = operator_list$right.boundary,
+                                             left.boundary = operator_list$left.boundary),
+                              Y=Y[[i]],
+                              pred_ind = pred.ind,
+                              obs_ind = obs.ind,
+                              locs = locs[[i]],
+                              Brandom_pred = Brandom.pred[[i]],
+                              Bfixed_pred = Bfixed.pred[[i]])
+      } else {
+        obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc[[i]],
+                                         right.boundary = operator_list$right.boundary,
+                                         left.boundary = operator_list$left.boundary),
+                              Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
+                                             right.boundary = operator_list$right.boundary,
+                                             left.boundary = operator_list$left.boundary),
+                              Y=Y[[i]],
+                              pred_ind = pred.ind,
+                              obs_ind = obs.ind,
+                              locs = locs[[i]],
+                              Brandom_pred = Brandom.pred[[i]],
+                              Bfixed_pred = Bfixed.pred[[i]])
+      }
 
-      obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc,
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Apred = spde.A(locs.pred[[i]],operator_list$loc,
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Y=Y[[i]],
-                            pred_ind = pred.ind,
-                            obs_ind = obs.ind,
-                            locs = locs[[i]],
-                            Brandom_pred = Brandom.pred[[i]],
-                            Bfixed_pred = Bfixed.pred[[i]])
   }
   input <- list( obs_list         = obs_list,
                  operator_list    = operator_list,
@@ -134,8 +157,7 @@ predictLong <- function( Y,
                  pred_type        = pred_type
   )
 
-  #output <- predictLong_cpp(input)
-  output <- list()
+  output <- predictLong_cpp(input)
   out_list <- list()
 
   if(return.samples){

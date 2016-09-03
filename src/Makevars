@@ -8,8 +8,7 @@ OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix
 PROCESS  = process/process.o
 UTILS    = util/error_check.o util/rgig.o util/GIG.o util/MatrixAlgebra.o util/solver.o
 
-OBJECTS = RcppExports.o  estimate.o $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
-#simulate.o predict.o
+OBJECTS = RcppExports.o  estimate.o simulate.o predict.o $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
 $(SHLIB): $(OBJECTS)
 
 clean:
