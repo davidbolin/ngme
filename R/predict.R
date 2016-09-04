@@ -117,6 +117,9 @@ predictLong <- function( Y,
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
       }
+      if(length(Y[[i]]) != length(locs[[i]])){
+        stop("Length of Y and locs differ.")
+      }
       if(common.grid){
         obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc[[1]],
                                          right.boundary = operator_list$right.boundary,

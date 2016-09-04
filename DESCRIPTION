@@ -9,4 +9,4 @@ Description: Functions for analysing longitudinal data
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
-Depends: Matrix
+Depends: Matrix, methods

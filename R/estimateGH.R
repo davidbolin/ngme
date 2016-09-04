@@ -49,7 +49,10 @@ estimateLong <- function(Y,
   if(length(operator_list$loc)==1){
     common.grid = TRUE
   }
-  for(i in 1:length(locs))
+  for(i in 1:length(locs)){
+    if(length(Y[[i]]) != length(locs[[i]])){
+      stop("Length of Y and locs differ.")
+    }
     if(common.grid){
       obs_list[[i]] <- list(A = spde.A(locs[[i]],
                                        operator_list$loc[[1]],
@@ -65,6 +68,7 @@ estimateLong <- function(Y,
                             Y=Y[[i]],
                             locs = locs[[i]])
     }
+  }
 
 
   input <- list( obs_list         = obs_list,
