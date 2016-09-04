@@ -84,12 +84,21 @@ create_operator <- function(locs,
                             name = "matern",
                             right.boundary = 'neumann',
                             left.boundary='neumann',
-                            common.grid = TRUE)
+                            common.grid = TRUE,
+                            extend)
 {
   if(tolower(name) == "matern"){
-    return(create_matrices_Matern(locs, n, right.boundary = right.boundary,left.boundary = left.boundary,common.grid))
+    return(create_matrices_Matern(locs,
+                                  n,
+                                  right.boundary = right.boundary,
+                                  left.boundary = left.boundary,
+                                  common.grid,
+                                  extend))
   }else{
-    return(create_matrices_FD2(locs, n, common.grid = common.grid))
+    return(create_matrices_FD2(locs,
+                               n,
+                               common.grid = common.grid,
+                               extend))
   }
 
 }
@@ -149,9 +158,59 @@ create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boun
 }
 #' creates matrices for Finite difference operator, one sided
 #'
-create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary='neumann',common.grid)
+create_matrices_FD2 <- function(locs,
+                                n,
+                                right.boundary = 'neumann',
+                                left.boundary='neumann',
+                                common.grid,
+                                extend)
 {
+  meshes <- create.meshes.1d(locs,n,common.grid,extend)
+  Q <- list()
   if(common.grid || length(locs) == 1) {
+    vec_toeplitz <- rep(0, length=n)
+    h <- meshes$h[[1]][1]
+    vec_toeplitz[1] <- -1 / h # -1/h
+    vec_toeplitz[2] <- 1  / h  # 1/h
+    Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
+    Operator_1D[upper.tri(Operator_1D)] = 0
+    Operator_2D <- (h*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
+    # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
+    Q[[1]] <-as(Operator_2D, "dgCMatrix")
+  } else {
+    if(length(n) == 1){
+      n = rep(n,length(locs))
+    }
+    for(i in 1:length(locs)){
+      vec_toeplitz <- rep(0, length=n[i])
+      h <- meshes$h[[i]][1]
+      vec_toeplitz[1] <- -1 / h
+      vec_toeplitz[2] <- 1  / h
+      Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
+      Operator_1D[upper.tri(Operator_1D)] = 0
+      Operator_2D <- (h*Operator_1D) %*% Operator_1D
+      Q[[i]] <- as(Operator_2D, "dgCMatrix")
+    }
+  }
+    operator_List <- list(type   = 'fd2',
+                          Q      = Q,
+                          h      = meshes$h,
+                          loc   = meshes$loc,
+                          right.boundary = 'neumann',
+                          left.boundary='neumann',
+                          common.grid)
+  return(operator_List)
+}
+
+create.meshes.1d <- function(locs,n,common.grid,extend)
+{
+  loc <- h <- list()
+  if(missing(extend)){
+    extend  = c(0,0)
+  } else if(length(extend) == 1) {
+    extend = rep(extend,2)
+  }
+  if(common.grid || length(locs)==1){
     min_l <- min(locs[[1]])
     max_l <- max(locs[[1]])
     if(length(locs) > 1){
@@ -161,40 +220,21 @@ create_matrices_FD2 <- function(locs, n,right.boundary = 'neumann',left.boundary
         max_l <- max(max_l, max(locs[[i]]))
       }
     }
-    P <- seq(min_l, max_l, length.out = n)
-    vec_toeplitz <- rep(0, length=n)
-    h <- (P[2] - P[1])
-    vec_toeplitz[1] <- -1 / h # -1/h
-    vec_toeplitz[2] <- 1  / h  # 1/h
-    Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
-    Operator_1D[upper.tri(Operator_1D)] = 0
-    Operator_2D <- (h*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
-    # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
-    Q <- list(as(Operator_2D, "dgCMatrix"))
-    h <- list(rep(h,n))
-    loc <- list(P)
+    loc_len = max_l - min_l
+    loc[[1]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n)
+    h[[1]] <- rep(loc[[i]][2] - loc[[i]][1],n)
   } else {
-    Q <- h <- list()
+    if(length(n) == 1){
+      n = rep(n,length(locs))
+    }
+    loc <- list()
     for(i in 1:length(locs)){
-      vec_toeplitz <- rep(0, length=n)
-      hi <- (locs[[i]][2] - locs[[i]][1])
-      vec_toeplitz[1] <- -1 / hi # -1/h
-      vec_toeplitz[2] <- 1  / hi  # 1/h
-      Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
-      Operator_1D[upper.tri(Operator_1D)] = 0
-      Operator_2D <- (hi*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
-      # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
-      Q[[i]] <- as(Operator_2D, "dgCMatrix")
-      h[[i]] <- rep(hi,n)
-      loc <- locs
+      min_l <- min(locs[[i]])
+      max_l <- max(locs[[i]])
+      loc_len = max_l - min_l
+      loc[[i]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n[i])
+      h[[i]] <- rep(loc[[i]][2] - loc[[i]][1],n[i])
     }
   }
-    operator_List <- list(type   = 'fd2',
-                          Q      = Q,
-                          h      = h,
-                          loc   = loc,
-                          right.boundary = 'neumann',
-                          left.boundary='neumann',
-                          common.grid)
-  return(operator_List)
+  return(list(loc = loc,h = h))
 }
