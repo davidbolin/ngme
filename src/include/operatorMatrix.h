@@ -25,32 +25,28 @@
 
 class operatorMatrix {
   protected:
-    solver * Qsolver;
+    solver ** Qsolver;
   public:
     int nop;
     std::vector<Eigen::VectorXd >  h;
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
-
-	int npars; // number of parameters
+	  int npars; // number of parameters
     std::vector<Eigen::VectorXd >  loc; // location of the position
-    operatorMatrix() {Qsolver = NULL;};
-    virtual ~operatorMatrix(){delete Qsolver;};
     std::vector<int > d; //dimension
     Eigen::SparseMatrix<double,0,int> *Q; // the generic matrix object
     //std::vector< Eigen::SparseMatrix<double,0,int> > Q;
     std::vector<Eigen::MatrixXd> K;                   // the generic matrix object if Q is full!
 
+    double tau;
+    Eigen::VectorXd  tauVec;
+    int counter;
 
-
-
-
+    operatorMatrix() {Qsolver = NULL;};
+    virtual ~operatorMatrix(){delete Qsolver;};
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
-
-
     virtual void initFromList(Rcpp::List const &)=0;
     virtual void initFromList(Rcpp::List const &, Rcpp::List const &) {Rcpp::Rcout << "initFromList(list1,list2) not implimented in operatorMatrix\n";};
-
     virtual Rcpp::List output_list() = 0;
     virtual void gradient( const Eigen::VectorXd &, const Eigen::VectorXd & ){};
     virtual void gradient_init( const int, const int){};
@@ -61,10 +57,6 @@ class operatorMatrix {
     virtual void step_theta(const double ){};
     virtual void print_parameters( ){};
     virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int ){return 1;};
-    double tau;
-    Eigen::VectorXd  tauVec;
-    int counter;
-
 
 	/*
     	stores the covariance of the parameters
@@ -112,23 +104,22 @@ class MaternOperator : public operatorMatrix{
   protected:
     double ldet;
 
-    Eigen::VectorXd  *h;
-    double h_average;
+    std::vector<double>  h_average;
     Eigen::VectorXd g,p;
     Eigen::SparseMatrix<double,0,int> *G, *C;
     double kappa, dkappa, ddkappa, dtau, ddtau;
     bool use_chol;
     double counter;
     int calc_det;
-    solver * Qepssolver;
-    void set_matrices();
-    SparseMatrix<double,0,int> d2tauQ, dtauQ, dkappaQ, d2kappaQ;
+    solver ** Qepssolver;
+    SparseMatrix<double,0,int> *d2tauQ, *dtauQ, *dkappaQ, *d2kappaQ;
     double tau_trace, tau_trace2, kappa_trace, kappa_trace2;
+    void set_matrices();
   public:
 
   	double tau;
-  	int n;
     MaternOperator(){ counter = 0;};
+    ~MaternOperator();
     void initFromList(Rcpp::List const &){Rcpp::Rcout << "Supply solver list when using initFromlist";};
     void initFromList(Rcpp::List const &, Rcpp::List const &);
 

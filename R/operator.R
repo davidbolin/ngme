@@ -105,41 +105,35 @@ create_operator <- function(locs,
 #' creates matrices for Matern 1D operator
 #'
 #' @return operator_List list to to use in simulation and estimation object
-create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boundary='neumann',common.grid)
+create_matrices_Matern <- function(locs,
+                                   n,
+                                   right.boundary = 'neumann',
+                                   left.boundary='neumann',
+                                   common.grid,
+                                   extend)
 {
+  meshes <- create.meshes.1d(locs,n,common.grid,extend)
   operator_List <- list()
   if(common.grid || length(locs) == 1){
-    min_l <- min(locs[[1]])
-    max_l <- max(locs[[1]])
-    if(length(locs) > 1){
-      for(i in 2:length(locs))
-      {
-        min_l <- min(min_l, min(locs[[i]]))
-        max_l <- max(max_l, max(locs[[i]]))
-      }
-    }
+
     P <- seq(min_l, max_l, length.out = n)
-    MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
+    MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary)
     C = list(as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"))
     Ci = list(as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"))
     G = list(MatrixBlock$G)
     Ce = list(MatrixBlock$Ce)
-    h = list(MatrixBlock$h)
-    loc = list(P)
   } else {
-    C <- Ci <- G <- Ce <- h <- list()
+    C <- Ci <- G <- Ce <- list()
     if(length(n) == 1){
       n <- rep(n,length(locs))
     }
     for(i in 1:length(locs))
     {
-      P <- seq(min(locs[[i]],max(locs[[i]]),length.out = n[i]))
-      MatrixBlock <- spde.basis(P,right.boundary=right.boundary,left.boundary=left.boundary)
+      MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
       C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix")
       Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
       G[[i]] = MatrixBlock$G
       Ce[[i]] = MatrixBlock$Ce
-      h[[i]] = MatrixBlock$h
     }
   }
 
@@ -148,9 +142,9 @@ create_matrices_Matern <- function(locs, n, right.boundary = 'neumann',left.boun
                         Ci = Ci,
                         G = G,
                         Ce = Ce,
-                        h = h,
+                        h = meshes$h,
                         kappa = 0,
-                        loc   = loc,
+                        loc   = meshes$loc,
                         right.boundary=right.boundary,
                         left.boundary=left.boundary,
                         common.grid)
