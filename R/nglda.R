@@ -3,7 +3,7 @@ nglda <- function(fixed, random, data = NULL,
                   reffects = "NIG",  error = "NIG", 
                   initials = list(), alpha = 0.1, step0 = 0.33, 
                   Niter = 1000, nSim = 2, silent = TRUE){
-  
+  #trial - to be deleted
   #fixed: two sided formula for fixed effects
   #random: one sided formula for random effects (id will be included in this formula)
   #timeVar: time variable
