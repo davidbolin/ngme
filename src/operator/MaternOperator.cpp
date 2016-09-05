@@ -73,7 +73,6 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
     h[i]  = Rcpp::as< Eigen::VectorXd >(h_list[i]);
 
     h_average[i] = h[i].sum() / h[i].size();
-    Rcpp::Rcout << "init solvers\n";
     (*Qsolver[i]).initFromList(d[i],solver_list);
     (*Qsolver[i]).analyze(Q[i]);
 
@@ -83,7 +82,6 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
 
 
   this->set_matrices();
-  Rcpp::Rcout << "end init\n";
 }
 
 

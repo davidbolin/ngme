@@ -72,7 +72,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     counter++;
   }
 
-
 	//**********************************
 	// mixed effect setup
 	//***********************************
@@ -127,6 +126,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     	  Zs[i].resize(Kobj->d[i]);
     	}
   }
+
   	/*
   	Simulation objects
   	*/
