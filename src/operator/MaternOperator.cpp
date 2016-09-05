@@ -31,7 +31,6 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   dtau = 0;
   use_chol = Rcpp::as<int>(solver_list["use.chol"]);
 
-
   Rcpp::List G_list  = Rcpp::as<Rcpp::List> (init_list["G"]);
   Rcpp::List C_list  = Rcpp::as<Rcpp::List> (init_list["C"]);
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (init_list["h"]);
@@ -41,6 +40,11 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   loc.resize(nop);
   h.resize(nop);
   h_average.resize(nop);
+  matrix_set.resize(nop);
+  tau_trace.resize(nop);
+  tau_trace2.resize(nop);
+  kappa_trace.resize(nop);
+  kappa_trace2.resize(nop);
 
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
   G = new Eigen::SparseMatrix<double,0,int>[nop];
@@ -54,7 +58,8 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   Qepssolver = new solver*[nop];
 
   for(int i=0;i<nop;i++){
-
+    Rcpp::Rcout << "init patient " << i << "\n";
+    matrix_set[i] = 0;
     if(use_chol==1){
       Qsolver[i] = new cholesky_solver;
       Qepssolver[i] = new cholesky_solver;
@@ -80,38 +85,42 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
     (*Qepssolver[i]).analyze(Q[i]);
   }
 
-
+  Rcpp::Rcout << "set matrices\n";
   this->set_matrices();
+  Rcpp::Rcout << "init done\n";
 }
 
 
 void MaternOperator::set_matrices()
 {
-  SparseMatrix<double,0,int> Qeps, dQeps;
-  double eps = 0.0001;
-  double kappa_eps = kappa + eps;
-  double trje, kappa_trace_i;
-  double c = 0.5; //sqrt(gamma(alpha))/(sqrt(gamma(nu))*(4*pi)^(d/4))
-  tau_trace = 0;
-  tau_trace2 = 0;
-  kappa_trace = 0;
-  kappa_trace2 = 0;
-
   for(int i=0;i<nop;i++){
+    this->set_matrix(i);
+  }
+}
+
+
+void MaternOperator::set_matrix(int i)
+{
+  if(matrix_set[i]==0){
+    SparseMatrix<double,0,int> Qeps, dQeps;
+    double eps = 0.0001;
+    double kappa_eps = kappa + eps;
+    double trje, kappa_trace_i;
+    double c = 0.5;
     Q[i] = c*tau*(pow(kappa,-1.5)*G[i] + pow(kappa,0.5)*C[i]);
     dkappaQ[i] = c*tau*(-1.5*pow(kappa,-2.5)*G[i] + 0.5*pow(kappa,-0.5)*C[i]);
     d2kappaQ[i] = c*tau*(1.5*2.5*pow(kappa,-3.5)*G[i] - 0.5*0.5*pow(kappa,-1.5)*C[i]);
     dtauQ[i] = c*(pow(kappa,-1.5)*G[i] + pow(kappa,0.5)*C[i]);
     (*Qsolver[i]).compute(Q[i]);
-    tau_trace += (*Qsolver[i]).trace(dtauQ[i]);
-    tau_trace2 += -tau_trace/tau;
+    tau_trace[i] = (*Qsolver[i]).trace(dtauQ[i]);
+    tau_trace2[i] = -tau_trace[i]/tau;
     kappa_trace_i = (*Qsolver[i]).trace(dkappaQ[i]);
-    kappa_trace += kappa_trace_i;
+    kappa_trace[i] = kappa_trace_i;
     Qeps = c*tau*(pow(kappa_eps,-1.5)*G[i] + pow(kappa_eps,0.5)*C[i]);
     dQeps = c*tau*(-1.5*pow(kappa_eps,-2.5)*G[i] + 0.5*pow(kappa_eps,-0.5)*C[i]);
     (*Qepssolver[i]).compute(Qeps);
     trje = (*Qepssolver[i]).trace(dQeps);
-    kappa_trace2 += (trje - kappa_trace_i)/eps;
+    kappa_trace2[i] = (trje - kappa_trace_i)/eps;
   }
 }
 
@@ -136,10 +145,15 @@ Rcpp::List MaternOperator::output_list()
 
 void MaternOperator::gradient_init(int nsim, int nrep)
 {
-  dtau =  nsim*tau_trace;
-  ddtau = nsim*tau_trace2;
-  dkappa = nsim*kappa_trace;
-  ddkappa = nsim*kappa_trace2;
+  //dtau =  nsim*tau_trace;
+  //ddtau = nsim*tau_trace2;
+  //dkappa = nsim*kappa_trace;
+  //ddkappa = nsim*kappa_trace2;
+
+  dtau =  0;
+  ddtau = 0;
+  dkappa = 0;
+  ddkappa = 0;
 }
 
 
@@ -148,6 +162,12 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & mean_KX,
                    const int i)
 {
+  this->set_matrix(i);
+  dtau +=  tau_trace[i];
+  ddtau += tau_trace2[i];
+  dkappa += kappa_trace[i];
+  ddkappa += kappa_trace2[i];
+
   Eigen::VectorXd KX = Q[i] * X;
 
   //compute gradients wrt tau
@@ -203,7 +223,11 @@ void MaternOperator::step_theta(const double stepsize)
 	clear_gradient();
 	ddtau   = 0;
 	ddkappa = 0;
-  	this->set_matrices();
+	for(int i=0;i<nop;i++){
+	  matrix_set[i] = 0;
+	}
+
+  //this->set_matrices();
 }
 
 double MaternOperator::trace_variance( const Eigen::SparseMatrix<double,0,int> & A, int i)
@@ -223,5 +247,4 @@ void  MaternOperator::clear_gradient()
 {
 	dkappa = 0;
 	dtau   = 0;
-
 };

@@ -104,17 +104,18 @@ class MaternOperator : public operatorMatrix{
   protected:
     double ldet;
 
-    std::vector<double>  h_average;
+    std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
     Eigen::VectorXd g,p;
     Eigen::SparseMatrix<double,0,int> *G, *C;
     double kappa, dkappa, ddkappa, dtau, ddtau;
     bool use_chol;
+    std::vector<int> matrix_set;
     double counter;
     int calc_det;
     solver ** Qepssolver;
     SparseMatrix<double,0,int> *d2tauQ, *dtauQ, *dkappaQ, *d2kappaQ;
-    double tau_trace, tau_trace2, kappa_trace, kappa_trace2;
     void set_matrices();
+    void set_matrix(const int);
   public:
 
   	double tau;
