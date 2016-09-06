@@ -216,7 +216,7 @@ create.meshes.1d <- function(locs,n,common.grid,extend)
     }
     loc_len = max_l - min_l
     loc[[1]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n)
-    h[[1]] <- rep(loc[[i]][2] - loc[[i]][1],n)
+    h[[1]] <- rep(loc[[1]][2] - loc[[1]][1],n)
   } else {
     if(length(n) == 1){
       n = rep(n,length(locs))
