@@ -17,7 +17,7 @@ void NIGMixedEffect::printIter()
 
 	if(Br.size() > 0){
 		Rcpp::Rcout << "beta_r = " << beta_random.transpose() << "\n";
-		Rcpp::Rcout << "nu     = " ;
+		Rcpp::Rcout << "nu     = " << nu << "\n";
 	}
 }
 void NIGMixedEffect::setupStoreTracj(const int Niter)

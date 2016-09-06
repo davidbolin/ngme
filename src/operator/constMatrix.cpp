@@ -1,3 +1,7 @@
+#ifndef __CONSTMATRIX__H__
+#define __CONSTMATRIX__H__
+
+
 #include "operatorMatrix.h"
 #include "error_check.h"
 
@@ -129,3 +133,5 @@ Rcpp::List constMatrix::output_list()
   List["Cov_theta"]   = Cov_theta;
   return(List);
 }
+
+#endif

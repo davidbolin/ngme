@@ -11,7 +11,7 @@
 #include "GIG.h"
 #include "MixedEffect.h"
 #include "measError.h"
-#include "process.h"
+#include "latentprocess.h"
 using namespace Rcpp;
 
 double estDigamma(double x)
