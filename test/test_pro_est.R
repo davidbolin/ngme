@@ -1,7 +1,4 @@
-#simulate V
-#simulate X
-#simulate Y
-#use second order RW
+# this test take long time!
 rm(list=ls())
 library(testthat)
 library(LDMod)
@@ -9,11 +6,10 @@ library(rGIG)
 library(methods)
 graphics.off()
 
-plot_flag <- TRUE
+plot_flag <- FALSE
 
 noises <- c("GAL", "CH", "NIG")
 for(k in 1:length(noises)){
-npers <- 10
 nobs  <- 100
 nIter <- 1400
 n     <- 100 #n grid points
@@ -68,7 +64,7 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 2,
                nBurnin          = 3000,   # steps before starting gradient estimation
-               silent           = 0, # print iteration info)
+               silent           = 1, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,
@@ -82,8 +78,8 @@ if(plot_flag){
 x11()
 par(mfrow=c(3,2))
 plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc, output_sim$X[[5]])
-lines(output$operator_list$loc, output$Xs[[5]],col='red',lty='dashed')
+lines(output$operator_list$loc[[1]], output_sim$X[[5]])
+lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
 n_ <- length(output$operator_list$tauVec)
 if(noises[k] != "CH"){
   

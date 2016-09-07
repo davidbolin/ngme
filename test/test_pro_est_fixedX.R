@@ -81,8 +81,8 @@ if(plot_flag){
 x11()
 par(mfrow=c(3,2))
 plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc, output_sim$X[[5]])
-lines(output$operator_list$loc, output$Xs[[5]],col='red',lty='dashed')
+lines(output$operator_list$loc[[1]], output_sim$X[[5]])
+lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
 n_ <- length(output$operator_list$tauVec)
 if(noises[k] != "CH"){
   
