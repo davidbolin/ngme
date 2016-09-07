@@ -58,7 +58,7 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   Qepssolver = new solver*[nop];
 
   for(int i=0;i<nop;i++){
-    Rcpp::Rcout << "init patient " << i << "\n";
+    //Rcpp::Rcout << "init patient " << i << "\n";
     matrix_set[i] = 0;
     if(use_chol==1){
       Qsolver[i] = new cholesky_solver;
@@ -85,9 +85,9 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
     (*Qepssolver[i]).analyze(Q[i]);
   }
 
-  Rcpp::Rcout << "set matrices\n";
+  //Rcpp::Rcout << "set matrices\n";
   this->set_matrices();
-  Rcpp::Rcout << "init done\n";
+  //Rcpp::Rcout << "init done\n";
 }
 
 

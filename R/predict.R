@@ -83,6 +83,11 @@ predictLong <- function( Y,
     if(!common.grid){
       operator_list$Q <- operator_list$Q[pInd]
       operator_list$loc <- operator_list$loc[pInd]
+      operator_list$h <- operator_list$h[pInd]
+      if(operator_list$type == "Matern"){
+        operator_list$C <- operator_list$C[pInd]
+        operator_list$G <- operator_list$G[pInd]
+      }
     }
     n.patient = length(pInd)
   } else {

@@ -58,7 +58,6 @@ List predictLong_cpp(Rcpp::List in_list)
   }
 
 
-
   //**********************************
   //operator setup
   //***********************************
@@ -143,8 +142,6 @@ List predictLong_cpp(Rcpp::List in_list)
   //  Rcpp::Rcout << " Setup process\n";
   //}
   Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-  Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
-
   std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
 
@@ -312,7 +309,7 @@ List predictLong_cpp(Rcpp::List in_list)
       }
     }
   }
-  Rcpp::Rcout << "store results\n";
+  //Rcpp::Rcout << "store results\n";
   // storing the results
   Rcpp::List out_list;
   out_list["XVec"] = XVec;

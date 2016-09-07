@@ -115,8 +115,6 @@ create_matrices_Matern <- function(locs,
   meshes <- create.meshes.1d(locs,n,common.grid,extend)
   operator_List <- list()
   if(common.grid || length(locs) == 1){
-
-    P <- seq(min_l, max_l, length.out = n)
     MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary)
     C = list(as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"))
     Ci = list(as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"))
