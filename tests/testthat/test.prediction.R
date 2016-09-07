@@ -52,7 +52,6 @@ test_that("Subset prediction", {
 
 test_that("Subset prediction NIG", {
 
-  library("LDMod")
   n.obs  <- 5
   n <- 10
   pred.type <- "Filter"
@@ -78,7 +77,7 @@ test_that("Subset prediction NIG", {
                             noise = "Normal",
                             Sigma_epsilon=1)
 
-  operator_list <- create_operator(locs, n, name = "Matern")
+  operator_list <- create_operator(locs, n, name = "Matern",common.grid = FALSE)
   operator_list$kappa <- 2
   operator_list$tau   <- 3
 
