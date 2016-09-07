@@ -174,31 +174,42 @@ predictLong <- function( Y,
   }
 
   out_list$locs <- locs.pred
+  out_list$Y.summary <- list()
   out_list$X.summary <- list()
   out_list$W.summary <- list()
 
   for(i in 1:length(locs)){
-
+    out_list$Y.summary[[i]] <- list()
     out_list$X.summary[[i]] <- list()
     out_list$W.summary[[i]] <- list()
+
+    out_list$Y.summary[[i]]$Mean <- apply(output$YVec[[i]],1,mean)
     out_list$X.summary[[i]]$Mean <- apply(output$XVec[[i]],1,mean)
     out_list$W.summary[[i]]$Mean <- apply(output$WVec[[i]],1,mean)
+
+    out_list$Y.summary[[i]]$Var  <- apply(output$YVec[[i]],1,var)
     out_list$X.summary[[i]]$Var  <- apply(output$XVec[[i]],1,var)
     out_list$W.summary[[i]]$Var  <- apply(output$WVec[[i]],1,var)
+
+    out_list$Y.summary[[i]]$Median <- apply(output$YVec[[i]],1,median)
     out_list$X.summary[[i]]$Median <- apply(output$XVec[[i]],1,median)
     out_list$W.summary[[i]]$Median <- apply(output$WVec[[i]],1,median)
 
     if(!is.null(quantiles)){
+      y.list <- list()
       x.list <- list()
       w.list <- list()
       for(c in 1:length(quantiles)){
         c.i <- list()
         c.i$level = quantiles[c]
+        c.i$field <- apply(output$YVec[[i]],1,quantile,probs=c(quantiles[c]))
+        y.list[[c]] = c.i
         c.i$field <- apply(output$XVec[[i]],1,quantile,probs=c(quantiles[c]))
         x.list[[c]] = c.i
         c.i$field <- apply(output$WVec[[i]],1,quantile,probs=c(quantiles[c]))
         w.list[[c]] = c.i
       }
+      out_list$Y.summary[[i]]$quantiles <- y.list
       out_list$X.summary[[i]]$quantiles <- x.list
       out_list$W.summary[[i]]$quantiles <- w.list
     }

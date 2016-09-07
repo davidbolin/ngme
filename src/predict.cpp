@@ -174,6 +174,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
   std::vector< Eigen::MatrixXd > WVec(nindv);
   std::vector< Eigen::MatrixXd > XVec(nindv);
+  std::vector< Eigen::MatrixXd > YVec(nindv);
 
   for(int i = 0; i < nindv; i++ ) {
     if(silent == 0){
@@ -182,6 +183,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
     XVec[i].resize(As_pred[i].rows(), nSim);
     WVec[i].resize(As_pred[i].rows(), nSim);
+    YVec[i].resize(As_pred[i].rows(), nSim);
     Eigen::MatrixXd random_effect = mixobj->Br[i];
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){
@@ -305,6 +307,9 @@ List predictLong_cpp(Rcpp::List in_list)
           WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
           XVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX;
           //Rcpp::Rcout << "here 6\n";
+
+          Eigen::VectorXd mNoise = errObj->simulate(AX);
+          YVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX + mNoise;
         }
       }
     }
@@ -312,6 +317,7 @@ List predictLong_cpp(Rcpp::List in_list)
   //Rcpp::Rcout << "store results\n";
   // storing the results
   Rcpp::List out_list;
+  out_list["YVec"] = YVec;
   out_list["XVec"] = XVec;
   out_list["WVec"] = WVec;
   return(out_list);
