@@ -9,9 +9,9 @@ library(rGIG)
 library(methods)
 graphics.off()
 
-plot_flag <- TRUE
+plot_flag <- FALSE
 
-noises <- c("NIG")#c("CH", "NIG")
+noises <- c("CH", "NIG")
 for(k in 1:length(noises)){
 npers <- 10
 nobs  <- 100
@@ -68,7 +68,7 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 2,
                nBurnin          = 100,   # steps before starting gradient estimation
-               silent           = 0, # print iteration info)
+               silent           = 1, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,

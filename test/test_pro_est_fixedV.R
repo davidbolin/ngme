@@ -11,11 +11,10 @@ graphics.off()
 
 plot_flag <- FALSE
 
-noises <- c("NIG","GAL", "CH")
+noises <- c("GAL","CH", "NIG")
 for(k in 1:length(noises)){
-npers <- 10
 nobs  <- 100
-nIter <- 2000
+nIter <- 200
 n     <- 100 #n grid points
 
 nu_true <- 20
@@ -41,8 +40,8 @@ output_sim <- simulateLong.R(locs,
                n = n)
 operator_list <- create_operator(locs, n, name = "fd2")
 obs_list <- list()
-X <- list()
-V <- list()
+X        <- list()
+V        <- list()
 for(i in 1:length(locs)){
   obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
                         Y=output_sim$Y[[i]], 
@@ -66,7 +65,7 @@ input <- list( obs_list         = obs_list,
                operator_list    = operator_list,
                processes_list   = processes_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
-               nSim             = 3,
+               nSim             = 1,
                nBurnin          = 100,   # steps before starting gradient estimation
                silent           = 1, # print iteration info)
                step0            = 1,
@@ -110,3 +109,8 @@ test_that(paste("tau with known X,V, noise = ",noises[k],sep=""),{
 })
 
 }
+
+#Eigen::VectorXd temp(Vs[i].size());
+#temp.array() = Vs[i].array().log();
+#dnu  +=  h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i];
+#ddnu += h_sum[i]/ nu - h_trigamma[i];

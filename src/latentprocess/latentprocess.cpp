@@ -137,8 +137,10 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
 
   	dmu    = 0;
 	ddmu_1 = 0;
-  	if(type_process != "CH")
+  	if(type_process != "CH"){
   		update_nu();
+  		clear_gradient();
+  		}
   	counter = 0;
   	store_param = 0;
 
@@ -346,6 +348,8 @@ void GHProcess:: gradient_v2( const int i ,
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		
+      		
 	}
 	grad_nu(i);
 }
@@ -371,17 +375,17 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
 
 void GHProcess::grad_nu(const int i)
 {
-	iV = Vs[i].cwiseInverse();
+ 	iV = Vs[i].cwiseInverse();
 	// dnu
 	if(type_process == "NIG"){
 		dnu  +=  0.5 *( h[i].size() / nu -   h2[i].dot(iV) - Vs[i].sum() + 2 * h_sum[i]);
     	ddnu -=   0.5 * h[i].size()/ pow(nu,2);
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
-    	temp.array() = Vs[i].array().log();
+    	temp.array() = Vs[i].array().log(); 
 		dnu  +=  h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i];
-    	ddnu -= h_sum[i]/ nu - h_trigamma[i];
-	}
+    	ddnu += h_sum[i]/ nu - h_trigamma[i];	
+	}	
 
 
 }
@@ -396,7 +400,6 @@ void GHProcess::step_theta(const double stepsize)
   		counter = 0;
   		return;
   	}
-
 	step_mu(stepsize);
 	step_nu(stepsize);
 	counter = 0;
