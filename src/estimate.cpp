@@ -180,6 +180,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       process->printIter();
       Rcpp::Rcout << "\n";
       Kobj->print_parameters();
+      Rcpp::Rcout << "\n";
       mixobj->printIter();
       Rcpp::Rcout << "\n";
       errObj->printIter();

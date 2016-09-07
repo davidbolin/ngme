@@ -85,7 +85,7 @@ create_operator <- function(locs,
                             right.boundary = 'neumann',
                             left.boundary='neumann',
                             common.grid = TRUE,
-                            extend)
+                            extend  = NULL)
 {
   if(tolower(name) == "matern"){
     return(create_matrices_Matern(locs,
@@ -110,7 +110,7 @@ create_matrices_Matern <- function(locs,
                                    right.boundary = 'neumann',
                                    left.boundary='neumann',
                                    common.grid,
-                                   extend)
+                                   extend = NULL)
 {
   meshes <- create.meshes.1d(locs,n,common.grid,extend)
   operator_List <- list()
@@ -157,7 +157,7 @@ create_matrices_FD2 <- function(locs,
                                 right.boundary = 'neumann',
                                 left.boundary='neumann',
                                 common.grid,
-                                extend)
+                                extend = NULL)
 {
   meshes <- create.meshes.1d(locs,n,common.grid,extend)
   Q <- list()
@@ -196,10 +196,10 @@ create_matrices_FD2 <- function(locs,
   return(operator_List)
 }
 
-create.meshes.1d <- function(locs,n,common.grid,extend)
+create.meshes.1d <- function(locs,n,common.grid,extend = NULL)
 {
   loc <- h <- list()
-  if(missing(extend)){
+  if(missing(extend) | is.null(extend)){
     extend  = c(0,0)
   } else if(length(extend) == 1) {
     extend = rep(extend,2)
