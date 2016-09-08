@@ -1,7 +1,6 @@
 #' @param   Y           - list with the observations
 #' @param   locs        - list with position of the observations (Y)
 #' @param mixedEffect_list -
-#' @param   meas_noise  - the aviable noise classes: Normal or NIG
 #' @param   noise       - the distribution of the mixed effect
 #' @param   B_random    - list for the random effect covariates (needs to be matrix, can be NULL)
 #' @param   B_fixed     - list for the fixed  effect covariates (needs to be matrix, can be NULL)
