@@ -31,9 +31,9 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   //     setting up the main data
   //**********************************
-  //if(silent == 0){
-  //  Rcpp::Rcout << " Setup data\n";
-  //}
+  if(silent == 0){
+    Rcpp::Rcout << " Setup data\n";
+  }
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
   int nindv = obs_list.length(); //count number of patients
   std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
@@ -61,9 +61,9 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   //operator setup
   //***********************************
-  //if(silent == 0){
-  //  Rcpp::Rcout << " Setup operator\n";
-  //}
+  if(silent == 0){
+    Rcpp::Rcout << " Setup operator\n";
+  }
   Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
   std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
   operator_list["nIter"] = 1;
@@ -102,9 +102,9 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   // mixed effect setup
   //***********************************
-  //if(silent == 0){
-  //  Rcpp::Rcout << " Setup mixed effect\n";
-  //}
+  if(silent == 0){
+    Rcpp::Rcout << " Setup mixed effect\n";
+  }
   Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
   std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
   MixedEffect *mixobj;
@@ -118,9 +118,9 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   // measurement setup
   //***********************************
-  //if(silent == 0){
-  //  Rcpp::Rcout << " Setup noise\n";
-  //}
+  if(silent == 0){
+    Rcpp::Rcout << " Setup noise\n";
+  }
   MeasurementError *errObj;
   Rcpp::List measurementError_list  = Rcpp::as<Rcpp::List> (in_list["measurementError_list"]);
   std::string type_MeasurementError= Rcpp::as <std::string> (measurementError_list["noise"]);
@@ -138,9 +138,9 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   // stochastic processes setup
   //***********************************
-  //if(silent == 0){
-  //  Rcpp::Rcout << " Setup process\n";
-  //}
+  if(silent == 0){
+    Rcpp::Rcout << " Setup process\n";
+  }
   Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
   std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 

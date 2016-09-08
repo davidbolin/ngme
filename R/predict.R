@@ -142,6 +142,7 @@ predictLong <- function( Y,
   out_list <- list()
 
   if(return.samples){
+    out_list$Y.samples <- output$YVec
     out_list$X.samples <- output$XVec
     out_list$W.samples <- output$WVec
   }

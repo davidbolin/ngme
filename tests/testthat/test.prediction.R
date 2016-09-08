@@ -102,10 +102,11 @@ test_that("Subset prediction NIG", {
 test_that("Normal coverage", {
   n.obs  <- 500
   n <- 100
+  n.rep <- 100
   pred.type <- "Filter"
-  nSim <- 10000
+  nSim <- 500
   Y <- locs <- B_random <- B_fixed  <- X <- V <- list()
-  for(i in 1:3)
+  for(i in 1:n.rep)
   {
     B_random[[i]] <- cbind(rep(1, n.obs), (1:n.obs) / n.obs )
     Y[[i]] <- rep(0,n.obs)

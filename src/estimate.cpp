@@ -36,6 +36,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 	//     setting up the main data
 	//**********************************
+	if(silent == 0){
+	  Rcpp::Rcout << " Setup data\n";
+	}
 	Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
 	int nindv = obs_list.length(); //count number of patients
   int nSubsample = ceil(pSubsample * nindv);
@@ -64,6 +67,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 	//operator setup
 	//***********************************
+	if(silent == 0){
+	  Rcpp::Rcout << " Setup operator\n";
+	}
 	Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
 	operator_list["nIter"] = nIter;
 	std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
@@ -101,6 +107,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 	// mixed effect setup
 	//***********************************
+	if(silent == 0){
+	  Rcpp::Rcout << " Setup mixed effect\n";
+	}
 	Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
 	std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
 	MixedEffect *mixobj;
@@ -115,6 +124,9 @@ List estimateLong_cpp(Rcpp::List in_list)
   //**********************************
 	// measurement setup
 	//***********************************
+	if(silent == 0){
+	  Rcpp::Rcout << " Setup noise\n";
+	}
   MeasurementError *errObj;
   Rcpp::List measurementError_list  = Rcpp::as<Rcpp::List> (in_list["measurementError_list"]);
   std::string type_MeasurementError= Rcpp::as <std::string> (measurementError_list["noise"]);
@@ -128,6 +140,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 	// stochastic processes setup
 	//***********************************
+	if(silent == 0){
+	  Rcpp::Rcout << " Setup process\n";
+	}
 	Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
 	Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
 	std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
@@ -268,7 +283,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
 
       	if(iter >= nBurnin){
-		
+
       		// mixobj gradient
       		mixobj->add_inter(i, res);
       	  if(type_MeasurementError != "Normal")
@@ -288,7 +303,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       		// process gradient
       		res += A * process->Xs[i];
-      	  
+
           if(type_MeasurementError != "Normal"){
 
               process->gradient_v2(i,
@@ -504,7 +519,7 @@ List estimateFisher(Rcpp::List in_list)
 
       Eigen::VectorXd  Y = errObj->simulate( Ys[i]);
 	  mixobj->simulate(Y, i);
-  
+
    z.setZero(Kobj->d[i]);
 	 for(int j =0; j < K.rows(); j++)
     			z[j] =  normal(random_engine);

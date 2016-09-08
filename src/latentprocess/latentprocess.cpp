@@ -19,23 +19,23 @@ double Trigamma(double x)
 void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
   npars = 0;
-  
+
   //iV = h.cwiseInverse();
   std::vector<std::string> check_names =  {"X"};
   check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   nindv = X_list.length();
-  
+
   h.resize(nindv);
   for(int i =0; i < nindv; i++){
   	if(h_in.size() > 1)
     	h[i] = h_in[i];
     else
     	h[i] = h_in[0];
-    
+
   }
-  
-  
+
+
   Xs.resize(nindv);
   Vs.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
@@ -74,19 +74,19 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   nindv = X_list.size();
   Xs.resize(nindv);
   Vs.resize(nindv);
-  
-  
+
+
   h.resize(nindv);
   for(int i =0; i < nindv; i++){
   	if(h_in.size() > 1)
     	h[i] = h_in[i];
     else
     	h[i] = h_in[0];
-    
+
   }
-  
-  
- 
+
+
+
   h2.resize(nindv);
   h_sum.resize(nindv);
   h_min.resize(nindv);
@@ -97,7 +97,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   EV.resize(nindv);
   h_digamma.resize(nindv);
   h_trigamma.resize(nindv);
-  
+
   for(int i =0; i < nindv; i++){
     EV[i]      = h[i];
     h2[i]      = h[i].cwiseProduct(h[i]);
@@ -105,9 +105,9 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
     h_min[i]   = h[i].minCoeff();
     h3_mean[i] = h[i].array().pow(3).sum()/h[i].size();
   }
-  
-  
- 
+
+
+
   for(int i = 0; i < nindv; i++ ){
 
     	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
@@ -348,8 +348,8 @@ void GHProcess:: gradient_v2( const int i ,
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
-      		
-      		
+
+
 	}
 	grad_nu(i);
 }
@@ -382,10 +382,10 @@ void GHProcess::grad_nu(const int i)
     	ddnu -=   0.5 * h[i].size()/ pow(nu,2);
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
-    	temp.array() = Vs[i].array().log(); 
+    	temp.array() = Vs[i].array().log();
 		dnu  +=  h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i];
-    	ddnu += h_sum[i]/ nu - h_trigamma[i];	
-	}	
+    	ddnu += h_sum[i]/ nu - h_trigamma[i];
+	}
 
 
 }
@@ -414,7 +414,7 @@ void GHProcess::step_theta(const double stepsize)
 }
 
 void GHProcess::step_mu(const double stepsize)
-{	
+{
 	mu -= (stepsize / ddmu_1 ) * dmu;
 	ddmu_1 = 0;
 	ddmu_2 = 0;
@@ -526,7 +526,7 @@ void GHProcess::update_nu()
   		  Vv_mean[i]  = h_sum[i] / ( nu * h[i].size());
       }
   	}else if(type_process == "GAL"){
-  		
+
 
   		for(int i =0; i < h.size() ; i++){
         h_digamma[i]  = 0;
@@ -545,7 +545,7 @@ void GHProcess::update_nu()
   			  EiV[i].setOnes(h[i].size());
   			  EiV[i].array() *= std::numeric_limits<double>::infinity();
   		  }
-       
+
   		}
 
   	}
