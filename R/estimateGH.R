@@ -25,6 +25,8 @@
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
 #' @param pSubsample      - precentage of data used in each gradient subsampling
+#' @param subsample.type  - Type of subsampling: 0 - uniform without replacement
+#'                                               1 - sample size weighted
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @parma silent          - print iteration info
@@ -37,6 +39,7 @@ estimateLong <- function(Y,
                          step0 = 0.5,
                          alpha = 0.1,
                          pSubsample = 1.,
+                         subsample.type = 1,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
@@ -76,6 +79,7 @@ estimateLong <- function(Y,
                  mixedEffect_list = mixedEffect_list,
                  processes_list   = processes_list,
                  pSubsample       = pSubsample,
+                 subsample_type   = subsample.type,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation

@@ -33,6 +33,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   int silent     = Rcpp::as< int    > (in_list["silent"]);
   double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   double step0     = Rcpp::as< double    > (in_list["step0"]);
+  int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -44,12 +45,14 @@ List estimateLong_cpp(Rcpp::List in_list)
   int nSubsample = ceil(pSubsample * nindv);
 	std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
 	std::vector< Eigen::VectorXd > Ys( nindv);
+	std::vector< int > Ysize(nindv);
 	int count;
 	count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     	List obs_tmp = Rcpp::as<Rcpp::List>(*it);
     	As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
     	Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
+    	Ysize[count] = Ys[count].size();
       count++;
     }
 
@@ -204,8 +207,21 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 
     // subsampling
-    //sample Nlong values without replacement from 1:nrep
-    std::random_shuffle(longInd.begin(), longInd.end());
+    if(subsample_type == 1){
+      //Uniform sampling without replacement from 1:nrep
+      std::random_shuffle(longInd.begin(), longInd.end());
+    } else if(subsample_type == 2){
+      //weighted by number of samples
+      std::default_random_engine subsample_generator;
+      std::discrete_distribution<int> distribution(begin(Ysize), end(Ysize));
+      for (int i=0; i<nSubsample; ++i) {
+        longInd[i] = distribution(subsample_generator);
+      }
+    }
+
+
+
+
     Kobj->gradient_init(nSubsample,nSim);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
