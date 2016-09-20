@@ -110,6 +110,8 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   double mu = 0;
   if(type_processes != "Normal"){
     nu  = Rcpp::as< double > (processes_list["nu"]);
+    if(type_processes != "NIG")
+    	nu = sqrt(nu);
     mu  = Rcpp::as< double > (processes_list["mu"]);
   }
 	std::vector< Eigen::VectorXd >   Vs( nindv);

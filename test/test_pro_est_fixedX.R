@@ -9,12 +9,16 @@ library(rGIG)
 library(methods)
 graphics.off()
 
-plot_flag <- FALSE
+plot_flag <- TRUE
 
-noises <- c("CH", "NIG")
+noises <- c("NIG") #c("CH", "NIG")
+for(j in 1:2){
+  common.grid = FALSE
+  if(j==1)
+    common.grid = TRUE
 for(k in 1:length(noises)){
 nobs  <- 100
-nIter <- 2000
+nIter <- 500
 n     <- 100 #n grid points
 
 nu_true <- 20
@@ -30,7 +34,7 @@ theta$mu    <- mu_true
 locs   <- list()
 for(i in 1:nobs)
 { 
-  locs[[i]]   <- seq(0, 1, length = nobs)
+  locs[[i]]   <- sort(runif( nobs))
 }
 
 output_sim <- simulateLong.R(locs, 
@@ -38,14 +42,21 @@ output_sim <- simulateLong.R(locs,
                noise = noises[k],
                operatorType = "fd2",
                n = n)
-operator_list <- create_operator(locs, n, name = "fd2")
+operator_list <- create_operator(locs, n, name = "fd2", common.grid = common.grid)
 obs_list <- list()
 X <- list()
 V <- list()
 for(i in 1:length(locs)){
-  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
-                        Y=output_sim$Y[[i]], 
-                        locs = locs[[i]])
+  if(j==2){
+    obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[i]], loc = locs[[i]]), 
+                          Y=output_sim$Y[[i]], 
+                          locs = locs[[i]])
+  }else{
+    obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
+                          Y=output_sim$Y[[i]], 
+                          locs = locs[[i]])
+    
+  }
   X[[i]] <- rep(0, n) 
   V[[i]] <- operator_list$h
 }
@@ -66,23 +77,24 @@ input <- list( obs_list         = obs_list,
                processes_list   = processes_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 3,
-               nBurnin          = 100,   # steps before starting gradient estimation
+               nBurnin          = 1000,   # steps before starting gradient estimation
                silent           = 1, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,
+               subsample_type   = 1,
                measurementError_list   = mError_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 0,
-               sampleV = 1
+               sampleV = 0
               )
 output <- estimateLong_cpp(input)
 if(plot_flag){
 x11()
 par(mfrow=c(3,2))
-plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc[[1]], output_sim$X[[5]])
-lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
+plot(locs[[1]],output_sim$Y[[1]])
+lines(output$operator_list$loc[[1]], output_sim$X[[1]])
+lines(output$operator_list$loc[[1]], output$Xs[[1]],col='red',lty='dashed')
 n_ <- length(output$operator_list$tauVec)
 if(noises[k] != "CH"){
   
@@ -109,4 +121,5 @@ test_that(paste("tau with known X,V, noise = ",noises[k],sep=""),{
   expect_equal( theta$tau, output$operator_list$tau, tolerance  = 0.1)
 })
 
+}
 }

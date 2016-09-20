@@ -6,17 +6,17 @@ library(rGIG)
 library(methods)
 graphics.off()
 
-plot_flag <- FALSE
+plot_flag <- TRUE
 
-noises <- c("GAL", "CH", "NIG")
+noises <- c("NIG")#c("GAL", "CH", "NIG")
 for(k in 1:length(noises)){
 nobs  <- 100
 nIter <- 1400
 n     <- 100 #n grid points
 
-nu_true <- 20
+nu_true <- 0.5
 mu_true <- 20
-nu_guess <- 20
+nu_guess <- 0.001
 mu_guess <- 20
 tau_geuss <- 0.5
 theta <- list()
@@ -64,10 +64,11 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 2,
                nBurnin          = 3000,   # steps before starting gradient estimation
-               silent           = 1, # print iteration info)
+               silent           = 0, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,
+               subsample_type   = 1,
                measurementError_list   = mError_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 1,

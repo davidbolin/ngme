@@ -11,9 +11,13 @@ graphics.off()
 
 plot_flag <- FALSE
 
+
+for(j in 1:2){
+  common.grid = FALSE
+  if(j==1)
+    common.grid = TRUE
 noises <- c("CH", "NIG")
 for(k in 1:length(noises)){
-npers <- 10
 nobs  <- 100
 nIter <- 50
 n     <- 100 #n grid points
@@ -31,7 +35,7 @@ theta$mu    <- mu_true
 locs   <- list()
 for(i in 1:nobs)
 { 
-  locs[[i]]   <- seq(0, 1, length = nobs)
+  locs[[i]]   <- sort(runif( nobs))
 }
 
 output_sim <- simulateLong.R(locs, 
@@ -39,14 +43,22 @@ output_sim <- simulateLong.R(locs,
                noise = noises[k],
                operatorType = "fd2",
                n = n)
-operator_list <- create_operator(locs, n, name = "fd2")
+operator_list <- create_operator(locs, n, name = "fd2", common.grid = common.grid)
 obs_list <- list()
 X <- list()
 V <- list()
 for(i in 1:length(locs)){
-  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
+  if(j==2){
+  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[i]], loc = locs[[i]]), 
                         Y=output_sim$Y[[i]], 
                         locs = locs[[i]])
+  }else{
+    
+    obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
+                          Y=output_sim$Y[[i]], 
+                          locs = locs[[i]])
+    
+  }
   X[[i]] <- rep(0, n) 
   V[[i]] <- operator_list$h
 }
@@ -111,4 +123,6 @@ test_that(paste("tau with known X,V, noise = ",noises[k],sep=""),{
 })
 
 }
+}
+
 

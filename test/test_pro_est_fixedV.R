@@ -9,7 +9,7 @@ library(rGIG)
 library(methods)
 graphics.off()
 
-plot_flag <- FALSE
+plot_flag <- TRUE
 
 noises <- c("GAL","CH", "NIG")
 for(k in 1:length(noises)){
@@ -67,10 +67,11 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 1,
                nBurnin          = 100,   # steps before starting gradient estimation
-               silent           = 1, # print iteration info)
+               silent           = 0, # print iteration info)
                step0            = 1,
                alpha            = 0.01,
                pSubsample       = 1,
+               subsample_type   = 1,
                measurementError_list   = mError_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 1,
@@ -80,9 +81,9 @@ output <- estimateLong_cpp(input)
 if(plot_flag){
 x11()
 par(mfrow=c(3,2))
-plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc, output_sim$X[[5]])
-lines(output$operator_list$loc, output$Xs[[5]],col='red',lty='dashed')
+plot(locs[[1]],output_sim$Y[[1]])
+lines(output$operator_list$loc[[1]], output_sim$X[[1]])
+lines(output$operator_list$loc[[1]], output$Xs[[1]],col='red',lty='dashed')
 if(noises[k] != "CH"){
   n_ <- length(output$operator_list$tauVec)
   plot(output$processes_list$mu_vec)

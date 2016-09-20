@@ -46,7 +46,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
 	std::vector< Eigen::VectorXd > Ys( nindv);
 	std::vector< double > Ysize(nindv);
-	std::vector< double > sampling_weights(nindv);
+	Eigen::VectorXd sampling_weights(nindv);
 	int count;
 	count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
@@ -55,15 +55,15 @@ List estimateLong_cpp(Rcpp::List in_list)
     Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
     Ysize[count] = (double) Ys[count].size();
     if(subsample_type == 1){
-    	 samling_weights[i] = 1.0;
+    	 sampling_weights[count] = 1.0;
     } else if(subsample_type == 2){
-  	  samling_weights[i] = Ysize[count];
+  	  sampling_weights[count] = Ysize[count];
   	} else if (subsample_type == 3){ //Biased sampling
-    	samling_weights[i] = 1.0;
+    	sampling_weights[count] = 1.0;
     }
     count++;
   }
-	subsample_type /= subsample_type.sum();
+	sampling_weights /= sampling_weights.sum();
 
 	//***********************************
 	//Debug setup
@@ -326,7 +326,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	  // operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),
-      							process->mean_X(i),i,w);
+      							process->mean_X(i),i);
 
       		// process gradient
       		res += A * process->Xs[i];
