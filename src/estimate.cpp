@@ -45,16 +45,25 @@ List estimateLong_cpp(Rcpp::List in_list)
   int nSubsample = ceil(pSubsample * nindv);
 	std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
 	std::vector< Eigen::VectorXd > Ys( nindv);
-	std::vector< int > Ysize(nindv);
+	std::vector< double > Ysize(nindv);
+	std::vector< double > sampling_weights(nindv);
 	int count;
 	count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    	List obs_tmp = Rcpp::as<Rcpp::List>(*it);
-    	As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
-    	Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
-    	Ysize[count] = Ys[count].size();
-      count++;
+    List obs_tmp = Rcpp::as<Rcpp::List>(*it);
+    As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
+    Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
+    Ysize[count] = (double) Ys[count].size();
+    if(subsample_type == 1){
+    	 samling_weights[i] = 1.0;
+    } else if(subsample_type == 2){
+  	  samling_weights[i] = Ysize[count];
+  	} else if (subsample_type == 3){ //Biased sampling
+    	samling_weights[i] = 1.0;
     }
+    count++;
+  }
+	subsample_type /= subsample_type.sum();
 
 	//***********************************
 	//Debug setup
@@ -213,19 +222,20 @@ List estimateLong_cpp(Rcpp::List in_list)
     } else if(subsample_type == 2){
       //weighted by number of samples
       std::default_random_engine subsample_generator;
-      std::discrete_distribution<int> distribution(begin(Ysize), end(Ysize));
+      std::discrete_distribution<int> distribution(Ysize.begin(), Ysize.end());
       for (int i=0; i<nSubsample; ++i) {
-        longInd[i] = distribution(subsample_generator);
+        longInd[i] = distribution(gammagenerator);
       }
+      //std::cout << std::endl << "P: ";
+      //for (double x:distribution.probabilities()) std::cout << x << " ";
     }
-
-
 
 
     Kobj->gradient_init(nSubsample,nSim);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
       int i = longInd[ilong];
+      double w = sampling_weights[i]; //TODO:: ADD WEIGHTING BY W TO ALL GRADIENTS!
       Eigen::SparseMatrix<double,0,int> A = As[i];
       Eigen::VectorXd  Y = Ys[i];
       z.setZero(Kobj->d[0]);
@@ -299,7 +309,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
 
       	if(iter >= nBurnin){
-
+      	  //TODO:: ADDD SCALING WITH W FOR MIX GRADIENT
       		// mixobj gradient
       		mixobj->add_inter(i, res);
       	  if(type_MeasurementError != "Normal")
@@ -311,17 +321,18 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 
       	  // measurent error  gradient
+      	  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
   			  errObj->gradient(i, res);
       	  // operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),
-      							process->mean_X(i),i);
+      							process->mean_X(i),i,w);
 
       		// process gradient
       		res += A * process->Xs[i];
 
           if(type_MeasurementError != "Normal"){
-
+                //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
               process->gradient_v2(i,
                                 K,
                                 A,
