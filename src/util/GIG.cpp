@@ -74,7 +74,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
 {
   Eigen::VectorXd  p, b;
   
-  b = (KX + mu * h) / sigma;
+  b = (KX +  mu * h) / sigma;
   b = b.array().square();
   double b_adj = 1e-14;
   double a  =  pow(mu / sigma, 2);
@@ -87,7 +87,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
     p.setOnes(h.size());
     p *= -1.;
     a += pow(nu, 2);
-    b.array() += (h * nu).array().square();
+    b.array() += (nu * h).array().square();
   }else if(type == "CH"){
     p.setOnes(h.size());
     p.array() *= -1.;

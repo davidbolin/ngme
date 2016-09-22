@@ -44,8 +44,8 @@ void NIGMixedEffect::setupStoreTracj(const int Niter)
 Rcpp::List NIGMixedEffect::toList()
 {
   Rcpp::List out;
-  out["Bf"]          = Bf;
-  out["Br"]          = Br;
+  out["B_fixed"]          = Bf;
+  out["B_random"]          = Br;
   out["beta_random"] = beta_random;
   out["beta_fixed"]  = beta_fixed;
   out["Sigma"]  = Sigma;

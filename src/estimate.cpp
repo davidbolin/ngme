@@ -702,6 +702,7 @@ List estimateFisher(Rcpp::List in_list)
   	}
   // storing the results
   Rcpp::List out_list;
+  out_list["obs_list"]         = obs_list;
   out_list["pSubsample"]       = pSubsample;
   out_list["nIter"]            = nIter;
   out_list["nSim"]             = nSim;
