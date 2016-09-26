@@ -1,5 +1,9 @@
-PKG_CPPFLAGS = -Iinclude
-PKG_CXXFLAGS = -DDEBUG  -std=c++11
+CC=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang
+CXX=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang++
+
+PKG_CPPFLAGS = -Iinclude -fopenmp
+PKG_CXXFLAGS = -DDEBUG  -std=c++11 -fopenmp
+PKG_LIBS= -fopenmp
 
 ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o

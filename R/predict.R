@@ -3,6 +3,11 @@
 #' @param   Brandom.pred - random effect covaraites at prediction locations
 #' @param   Bfixed.pred  - fixed effect covaraites at prediction locations
 #' @param   quantiles   - list of posterior quantiles to compute
+#' @param   excursions   - list of excursion probabilities to compute. Each list should contain:
+#'                type  - type of excursion '>' or '<'.
+#'                level - level to compute excursion probability for
+#'                process - which process to compute the probability for, 'X', 'W', 'Y','Xderivative' or 'Wderivative'
+#'
 #' @param   return.samples - return samples used for prediction?
 #' @param   type        - Type of prediction: Filter or Smoothing
 # All other parameters explained in help text for estimateGH.R
@@ -15,13 +20,16 @@ predictLong <- function( Y,
                          return.samples = FALSE,
                          type = "Filter",
                          quantiles = NULL,
+                         excursions = NULL,
+                         crps = FALSE,
                          mixedEffect_list,
                          measurment_list,
                          processes_list,
                          operator_list,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting prediction
-                         silent  = FALSE # print iteration info
+                         silent  = FALSE, # print iteration info
+                         max.num.threads = 2
 )
 {
   if(type=='Filter'){
@@ -70,6 +78,8 @@ predictLong <- function( Y,
       n.patient = 1
     }
   }
+  ind1 <- seq(1,nSim,by=2)
+  ind2 <- seq(2,nSim,by=2)
 
   for(i in 1:n.patient){
     if(is.list(locs)){
@@ -135,7 +145,8 @@ predictLong <- function( Y,
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
                  silent           = silent, # print iteration info)
-                 pred_type        = pred_type
+                 pred_type        = pred_type,
+                 n_threads        = max.num.threads
   )
 
   output <- predictLong_cpp(input)
@@ -146,6 +157,8 @@ predictLong <- function( Y,
     out_list$X.samples <- output$XVec
     out_list$W.samples <- output$WVec
   }
+
+  save(out_list, file = "/Users/davidbolin/Dropbox/research/nongaussian_fields/NonGaussianLDA/prediction_simulation_results.RData")
 
   out_list$locs <- locs.pred
   out_list$Y.summary <- list()
@@ -186,6 +199,46 @@ predictLong <- function( Y,
       out_list$Y.summary[[i]]$quantiles <- y.list
       out_list$X.summary[[i]]$quantiles <- x.list
       out_list$W.summary[[i]]$quantiles <- w.list
+    }
+    if(!is.null(excursions)){
+      for(c in 1:length(excursions)){
+        ex.i <- list(type = excursions[[c]]$type, level = excursions[[c]]$level)
+
+        if(excursions[[c]]$process == 'X'){
+          proc <- output$XVec[[i]]
+        } else if(excursions[[c]]$process == 'Y'){
+          proc <- output$YVec[[i]]
+        } else if(excursions[[c]]$process == 'W'){
+          proc <- output$WVec[[i]]
+        } else if(excursions[[c]]$process == 'Xderivative'){
+          proc <-t(t(apply(output$XVec[[i]],2,diff))/diff(locs.pred[[i]]))
+        } else if(excursions[[c]]$process == 'Wderivative'){
+          proc <-t(t(apply(output$WVec[[i]],2,diff))/diff(locs.pred[[i]]))
+        }
+        if(ex.i$type == '>'){
+          if(length(proc)>1){
+            ex.i$P <- apply(proc>ex.i$level,1,mean)
+          } else {
+            ex.i$P <- mean(proc>ex.i$level)
+          }
+        } else {
+          if(length(proc)>1){
+            ex.i$P <- apply(proc<ex.i$level,1,mean)
+          } else {
+            ex.i$P <- mean(proc<ex.i$level)
+          }
+        }
+        if(excursions[[c]]$process == 'X' || excursions[[c]]$process == 'Xderivative'){
+          out_list$X.summary[[i]]$excursions <- ex.i
+        } else if(excursions[[c]]$process == 'Y'){
+          out_list$Y.summary[[i]]$excursions <- ex.i
+        } else if(excursions[[c]]$process == 'W' || excursions[[c]]$process == 'Wderivative'){
+          out_list$W.summary[[i]]$excursions <- ex.i
+        }
+      }
+    }
+    if(crps){
+      out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
     }
   }
   return(out_list)

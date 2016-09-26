@@ -12,7 +12,13 @@
 #include "MixedEffect.h"
 #include "measError.h"
 #include "latentprocess.h"
+#ifdef _OPENMP
+#include<omp.h>
+#endif
 using namespace Rcpp;
+#define max(a,b) (((a)>(b))?(a):(b))
+#define min(a,b) (((a)<(b))?(a):(b))
+
 
 
 // [[Rcpp::export]]
@@ -27,6 +33,7 @@ List predictLong_cpp(Rcpp::List in_list)
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int silent     = Rcpp::as< int > (in_list["silent"]);
+  int n_threads  = Rcpp::as< int > (in_list["n_threads"]);
 
   //**********************************
   //     setting up the main data
@@ -80,7 +87,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
   std::vector<  cholesky_solver >  Solver( nindv);
   Eigen::SparseMatrix<double, 0, int> Q, K;
-
+//  Rcpp::Rcout << "d = " << Kobj->d[0] << "\n";
   count = 0;
   for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>( *it);
@@ -134,7 +141,6 @@ List predictLong_cpp(Rcpp::List in_list)
 
 
 
-
   //**********************************
   // stochastic processes setup
   //***********************************
@@ -152,15 +158,44 @@ List predictLong_cpp(Rcpp::List in_list)
   }else{ process  = new GaussianProcess;}
 
   process->initFromList(processes_list, Kobj->h);
+
+
+  //**********************************
+  // OpenMP setup
+  //***********************************
+  if(silent == 0){
+    Rcpp::Rcout << " Setup OMP: " << n_threads << "\n";
+  }
+#ifdef _OPENMP
+  Eigen::initParallel();
+  const int max_nP = omp_get_num_procs();
+  int nPtmp;
+  if(n_threads == 0){
+    nPtmp = max_nP;
+  } else {
+    nPtmp = min(max_nP, max(n_threads,1));
+  }
+  const int nP = nPtmp;
+  omp_set_num_threads(nP);
+#else
+  const int nP = 1;
+#endif
+
+
   /*
   Simulation objects
   */
-  std::mt19937 random_engine;
+
   std::normal_distribution<double> normal;
-  std::default_random_engine gammagenerator;
-  random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-  gig rgig;
-  rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+  std::vector<std::mt19937> random_engine(nP);
+  std::vector<gig> rgig(nP);
+  for (int i = 0; i < nP; ++i) {
+    random_engine[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    rgig[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  }
+
+
   Eigen::VectorXd  z;
   z.setZero(Kobj->d[0]);
 
@@ -176,9 +211,20 @@ List predictLong_cpp(Rcpp::List in_list)
   std::vector< Eigen::MatrixXd > XVec(nindv);
   std::vector< Eigen::MatrixXd > YVec(nindv);
 
+  int rank = 1;
+  double percent_done = 0;
+  int  d;
+  #pragma omp parallel for private(K,Q)
   for(int i = 0; i < nindv; i++ ) {
+    #ifdef _OPENMP
+      rank = omp_get_thread_num();
+    #endif
+
+    percent_done++;
     if(silent == 0){
-      Rcpp::Rcout << " Compute prediction for patient " << i << "\n";
+      std::stringstream stream;
+      stream << " Prediction " << 100*percent_done/nindv << " % done (" << rank<< ")\n";
+      Rcpp::Rcout << stream.str();
     }
 
     XVec[i].resize(As_pred[i].rows(), nSim);
@@ -187,133 +233,139 @@ List predictLong_cpp(Rcpp::List in_list)
     Eigen::MatrixXd random_effect = mixobj->Br[i];
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){
-      //if(silent == 0){
-      //  Rcpp::Rcout << " location = " << ipred << ": "<< obs_ind[i](ipred,0)<< " " << obs_ind[i](ipred,1) << "\n";
-      //  Rcpp::Rcout << " A size = " <<  As[i].rows() << " " << As[i].cols() << "\n";
-      //  Rcpp::Rcout << " Y size = " <<  Ys[i].size() << ", re = " << random_effect.rows() << ", fe = "<< fixed_effect.size() << "\n";
-      //}
       //extract data to use for prediction:
       Eigen::SparseMatrix<double,0,int> A = As[i].middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      Eigen::VectorXd  Y = Ys[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
+      Eigen::VectorXd Y = Ys[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
       mixobj->Br[i] = random_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
       mixobj->Bf[i] = fixed_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      //Rcpp::Rcout  << "here1111\n";
+
       for(int ii = 0; ii < nSim + nBurnin; ii ++){
         //Rcpp::Rcout << "iter = " << ii << "\n";
-        Eigen::VectorXd  res = Y;
-        //***************************************
-        //***************************************
+        Eigen::VectorXd res = Y;
         //   building the residuals and sampling
-        //***************************************
-        //***************************************
 
         // removing fixed effect from Y
         mixobj->remove_cov(i, res);
         res -= A * process->Xs[i];
+
+
         //***********************************
         // mixobj sampling
         //***********************************
         //Rcpp::Rcout << "here2\n";
-        if(type_MeasurementError == "Normal")
-          mixobj->sampleU( i, res, 2 * log(errObj->sigma));
-        else
+        if(type_MeasurementError == "Normal"){
+          //mixobj->sampleU( i, res, 2 * log(errObj->sigma),random_engine[rank]);
+          mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
+
+        } else {
           //errObj->Vs[i] = errObj->Vs[i].head(ipred+1);
-          mixobj->sampleU2( i,
+          // mixobj->sampleU2( i,
+          //                  res,
+          //                  errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
+          //                  2 * log(errObj->sigma));
+          mixobj->sampleU2_par( i,
                             res,
                             errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
+                            random_engine[rank],
                             2 * log(errObj->sigma));
+        }
 
-          mixobj->remove_inter(i, res);
+
+        mixobj->remove_inter(i, res);
 
         //***********************************
         // sampling processes
         //***********************************
         //Rcpp::Rcout << "here3\n";
+        Eigen::SparseMatrix<double, 0, int> Ki, Qi;
         if(common_grid){
-          K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+          Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
         } else {
-          K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+          Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
         }
         Eigen::VectorXd iV(process->Vs[i].size());
         iV.array() = process->Vs[i].array().inverse();
 
-        Q = K.transpose();
-        Q =  Q * iV.asDiagonal();
-        Q =  Q * K;
+        Qi = Ki.transpose();
+        Qi =  Qi * iV.asDiagonal();
+        Qi =  Qi * Ki;
+        //before here
 
-        int d;
+        // Rcpp::Rcout << "here4\n
+        int d = 1;
         if(common_grid == 1){
           d = Kobj->d[0];
         } else {
           d = Kobj->d[i];
         }
+        // Rcpp::Rcout << "here5\n";
+        Eigen::VectorXd zi;
+        zi.setZero(d);
         for(int j =0; j < d; j++)
-          z[j] =  normal(random_engine);
-
+          zi[j] =  normal(random_engine[rank]);
+        //Rcpp::Rcout << "here5.1\n";
         res += A * process->Xs[i];
         //Sample X|Y, V, sigma
 
-        if(type_MeasurementError == "Normal")
+        //Rcpp::Rcout << "here6\n";
+        //Rcpp::Rcout << d << "\n";
+        //Rcpp::Rcout << zi.size() << "\n";
+        if(type_MeasurementError == "Normal"){
           process->sample_X(i,
-                            z,
+                            zi,
                             res,
-                            Q,
-                            K,
+                            Qi,
+                            Ki,
                             A,
                             errObj->sigma,
                             Solver[i]);
-        else
+        } else {
           process->sample_Xv2( i,
-                               z,
+                               zi,
                                res,
-                               Q,
-                               K,
+                               Qi,
+                               Ki,
                                A,
                                errObj->sigma,
                                Solver[i],
                                errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse());
+        }
         res -= A * process->Xs[i];
+
+      //after here
+
+
 
         //if(res.cwiseAbs().sum() > 1e16){
         //  throw("res outof bound\n");
         //}
-
         // sample V| X
-        process->sample_V(i, rgig, K);
-
+        process->sample_V(i, rgig[rank], Ki);
         //***********************************
         // random variance noise sampling
         //***********************************
-        //Rcpp::Rcout << "here4\n";
+        //Rcpp::Rcout << "here8\n";
         if(type_MeasurementError != "Normal"){
           errObj->sampleV(i, res,obs_ind[i](ipred,0)+obs_ind[i](ipred,1));
         }
+
         // save samples
         if(ii >= nBurnin){
-          //if(silent == 0){
-          //  Rcpp::Rcout << " save samples << " << i << ", " << ipred << ", " << ii << "\n";
-          //}
-          //Rcpp::Rcout << "here 1\n";
           Eigen::SparseMatrix<double,0,int> Ai = As_pred[i];
           Ai = Ai.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
-          //Rcpp::Rcout << "here 2\n";
-          Eigen::VectorXd random_effect = Bfixed_pred[i]*mixobj->beta_fixed;
-          //Rcpp::Rcout << "here 3\n";
-          random_effect += Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
-          //Rcpp::Rcout << "here 4\n";
+          Eigen::VectorXd random_effect = Bfixed_pred[i]*mixobj->beta_fixed + Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
           Eigen::VectorXd random_effect_c = random_effect.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
           Eigen::VectorXd AX = Ai * process->Xs[i];
-          //Rcpp::Rcout << "here 5\n";
+          Eigen::VectorXd mNoise = errObj->simulate_par(AX,random_engine[rank]);
+
           WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
           XVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX;
-          //Rcpp::Rcout << "here 6\n";
-
-          Eigen::VectorXd mNoise = errObj->simulate(AX);
           YVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX + mNoise;
         }
       }
     }
   }
+
   //Rcpp::Rcout << "store results\n";
   // storing the results
   Rcpp::List out_list;

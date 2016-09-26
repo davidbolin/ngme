@@ -3,7 +3,7 @@
 
 
 
-void GaussianMeasurementError::printIter() 
+void GaussianMeasurementError::printIter()
 {
 	Rcpp::Rcout << "sigma = " << sigma;
 
@@ -22,11 +22,11 @@ GaussianMeasurementError::GaussianMeasurementError(){
   dsigma  = 0;
   ddsigma = 0;
   EV  = 1.;  // if there the random variance in the Noise E[V]
-  EiV = 1.; 
+  EiV = 1.;
   noise = "Normal";
   npars = 1;
   store_param = 0;
-} 
+}
 
 Rcpp::List GaussianMeasurementError::toList()
 {
@@ -36,7 +36,7 @@ Rcpp::List GaussianMeasurementError::toList()
   out["Cov_theta"]   = Cov_theta;
   if(store_param)
   	out["sigma_vec"] = sigma_vec;
-  
+
   return(out);
 }
 
@@ -48,7 +48,7 @@ void GaussianMeasurementError::initFromList(Rcpp::List const &init_list)
     sigma = 1.;
 }
 
-void GaussianMeasurementError::gradient(const int i, 
+void GaussianMeasurementError::gradient(const int i,
                                  const Eigen::VectorXd& res)
 {
     counter++;
@@ -66,7 +66,7 @@ void GaussianMeasurementError::step_theta(double stepsize)
     sigma_temp = sigma - stepsize * dsigma;
     stepsize *= 0.5;
     if(stepsize <= 1e-16)
-        throw("in GaussianMeasurementError:: can't make sigma it positive \n");   
+        throw("in GaussianMeasurementError:: can't make sigma it positive \n");
   }
   sigma = sigma_temp;
   clear_gradient();
@@ -82,16 +82,29 @@ std::vector< Eigen::VectorXd > GaussianMeasurementError::simulate(std::vector< E
 	std::vector< Eigen::VectorXd > residual( Y.size());
 	for(int i = 0; i < Y.size(); i++)
 		residual[i] =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y[i].size()) ));
-    
+
 	return(residual);
 }
+
 
 Eigen::VectorXd  GaussianMeasurementError::simulate(const Eigen::VectorXd & Y)
 {
 	Eigen::VectorXd residual =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y.size()) ));
 	return(residual);
 }
-Eigen::VectorXd  simulate( const Eigen::VectorXd &);
+
+
+Eigen::VectorXd  GaussianMeasurementError::simulate_par(const Eigen::VectorXd & Y,std::mt19937 & random_engine)
+{
+  std::normal_distribution<double> normal;
+  Eigen::VectorXd residual;
+  residual.setZero(Y.size());
+  for(int j =0; j < Y.size(); j++)
+    residual[j] =  sigma*normal(random_engine);
+
+  //Eigen::VectorXd residual =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y.size()) ));
+  return(residual);
+}
 
 void GaussianMeasurementError::clear_gradient()
 {

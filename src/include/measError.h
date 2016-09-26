@@ -33,7 +33,9 @@ class MeasurementError {
 
     // sampling from the prior model
   	virtual std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd > )  = 0;
+
   	virtual Eigen::VectorXd  simulate( const Eigen::VectorXd &)  = 0;
+  	virtual Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &)  = 0;
     /*
     	clear gradient
     */
@@ -67,6 +69,7 @@ class GaussianMeasurementError : public MeasurementError{
 		Rcpp::List toList();
 		std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd >);
 		Eigen::VectorXd  simulate( const Eigen::VectorXd &);
+		Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
 
 		void clear_gradient();
 
@@ -100,7 +103,9 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 		void sampleV(const int , const Eigen::VectorXd& , int = -1);
 		Rcpp::List toList();
 		std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd >);
+
 		Eigen::VectorXd  simulate( const Eigen::VectorXd &);
+		Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
 		void clear_gradient();
 
 		Eigen::VectorXd get_gradient();
@@ -113,8 +118,8 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 };
 
 class NIGMeasurementError : public NormalVarianceMixtureBaseError{
- 
- 
+
+
  	public:
 		double dnu;
 		double ddnu;
@@ -130,12 +135,12 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 		void step_theta(double );
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
-		
+
 };
 
 class IGMeasurementError : public NormalVarianceMixtureBaseError{
- 
- 
+
+
  	public:
  		double digamma_nu;
  		double trigamma_nu;
@@ -153,7 +158,7 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
 		void step_theta(double );
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
-		
+
 };
 
 

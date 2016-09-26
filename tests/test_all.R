@@ -10,7 +10,7 @@ n.pred <- 100
 pred.type <- "Filter"
 pSubsample = 0.1
 subsample.type = 2
-test.pred = FALSE
+test.pred = TRUE
 Y <- list()
 locs <- list()
 B_random <- list()

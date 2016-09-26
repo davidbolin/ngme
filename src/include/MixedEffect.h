@@ -5,8 +5,16 @@
 #include <RcppEigen.h>
 #include <random>
 #include <chrono>
+#include <string>
+#include <math.h>
 #include "MatrixAlgebra.h"
 #include "GIG.h"
+
+
+
+
+
+
 //TODO: fixed and random effects should be updated jointly if the are very correclated!!
 class MixedEffect {
 
@@ -17,11 +25,11 @@ class MixedEffect {
   	int vec_counter; // internal parameter counter
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter){}; // setups to store the tracjetory
-  	
-  	
+
+
   	int npars; // number of parameters
-  	
-  	
+
+
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
     Eigen::MatrixXd Sigma;
     int Sigma_epsilon;  // added for epsilon of normal noise to U to ensure Sigma pos def
@@ -34,17 +42,22 @@ class MixedEffect {
     virtual void initFromList(Rcpp::List const &)=0;
     virtual Rcpp::List toList()=0;
     virtual void sampleU(const int, const Eigen::VectorXd &,  const double ) = 0;
+    virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &) = 0;
     // sampleU2 is sampling with diagonal covariance matrix for the noise
     virtual void sampleU2(const int,
       					  const Eigen::VectorXd &,
       					  const Eigen::VectorXd &,
       					  const double  ) = 0;
-    
+    virtual void sampleU2_par(const int,
+                          const Eigen::VectorXd &,
+                          const Eigen::VectorXd &,
+                          std::mt19937 &,
+                          const double) = 0;
     void remove_inter(const int i, Eigen::VectorXd & Y) { if(Br.size()>0){
     													  Y -= Br[i]*U.col(i);}};
     void add_inter(const int i, Eigen::VectorXd & Y)    { if(Br.size()>0){
     													 Y += Br[i]*U.col(i);} };
-    
+
 	void remove_cov(const int i, Eigen::VectorXd & Y)
 	{
   		if(Br.size() > 0 )
@@ -59,7 +72,7 @@ class MixedEffect {
   		if(Bf.size() > 0)
     		Y += Bf[i] * beta_fixed;
 	};
-    
+
     // gradient for fixed variance noise
     virtual void gradient(const int , const Eigen::VectorXd&, const double ) = 0;
     // gradient for variable variance noise
@@ -68,13 +81,13 @@ class MixedEffect {
     					   const Eigen::VectorXd& ,
     					   const double,
     					   const double) = 0;
-    					   
-    // returns the gradient of all the parameters					   
+
+    // returns the gradient of all the parameters
     virtual Eigen::VectorXd get_gradient() = 0;
     virtual void step_theta(double stepsize) = 0;
     /*
     	simulates from the prior distribution
-		putting into Y 
+		putting into Y
     */
     virtual void simulate()                                 = 0;
     virtual void simulate(std::vector< Eigen::VectorXd > &) = 0;
@@ -84,7 +97,7 @@ class MixedEffect {
     */
 	virtual void clear_gradient() = 0;
     /*
-    	stores the covariance of the parameters 
+    	stores the covariance of the parameters
     */
 	void set_covariance(const Eigen::MatrixXd & Cov_in) {Cov_theta = Cov_in;};
 
@@ -99,8 +112,8 @@ class NormalMixedEffect  : public MixedEffect{
     Eigen::VectorXd dSigma_vech;
     Eigen::MatrixXd ddSigma;
     Eigen::VectorXd Sigma_vech;
-    
-    
+
+
     Eigen::MatrixXd betaf_vec;
     Eigen::MatrixXd betar_vec;
     Eigen::MatrixXd Sigma_vec;
@@ -134,11 +147,16 @@ class NormalMixedEffect  : public MixedEffect{
     			   const double EiV = 1.);
 
     void sampleU(const int, const Eigen::VectorXd &, const double ) ;
-    virtual void sampleU2(const int i,
+    void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
+    void sampleU2(const int i,
       					  const Eigen::VectorXd & res,
       					  const Eigen::VectorXd & iV,
       					  const double log_sigma2 = 0);
-
+    void sampleU2_par(const int i,
+                  const Eigen::VectorXd & res,
+                  const Eigen::VectorXd & iV,
+                  std::mt19937 & random_engine,
+                  const double log_sigma2 = 0);
 
     void step_theta(double stepsize);
     void step_Sigma(double stepsize);
@@ -149,15 +167,15 @@ class NormalMixedEffect  : public MixedEffect{
     void simulate(Eigen::VectorXd  & ,const int );
 
     Rcpp::List toList();
-    
-    
+
+
     /*
     	clear gradient
     */
 	void clear_gradient();
-	
-	
-    // returns the gradient of all the parameters					   
+
+
+    // returns the gradient of all the parameters
     Eigen::VectorXd get_gradient();
 
 };
@@ -173,14 +191,14 @@ class NIGMixedEffect  : public MixedEffect{
     Eigen::VectorXd dSigma_vech;
     Eigen::MatrixXd ddSigma;
     Eigen::VectorXd Sigma_vech;
-    
-    
+
+
     Eigen::MatrixXd betaf_vec;
     Eigen::MatrixXd betar_vec;
     Eigen::MatrixXd mu_vec;
     Eigen::VectorXd nu_vec;
     Eigen::MatrixXd Sigma_vec;
-    
+
 
 
     double  grad_nu; // gradient for shape parameter
@@ -212,10 +230,16 @@ class NIGMixedEffect  : public MixedEffect{
     void sampleV(const int);
     void initFromList(Rcpp::List const &);
     void sampleU(const int, const Eigen::VectorXd &, const double) ;
-    virtual void sampleU2(const int i,
+    void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
+    void sampleU2(const int i,
       					  const Eigen::VectorXd & res,
       					  const Eigen::VectorXd & iV,
       					  const double log_sigma2_noise = 0);
+    void sampleU2_par(const int i,
+                  const Eigen::VectorXd & res,
+                  const Eigen::VectorXd & iV,
+                  std::mt19937 & random_engine,
+                  const double log_sigma2_noise = 0);
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
@@ -230,7 +254,7 @@ class NIGMixedEffect  : public MixedEffect{
     void simulate();
     void simulate(std::vector< Eigen::VectorXd > & );
     void simulate(Eigen::VectorXd  & ,const int );
-    
+
     virtual void printIter(); //print iteration data
     virtual void setupStoreTracj(const int Niter); // setups to store the tracjetory
 
@@ -239,9 +263,9 @@ class NIGMixedEffect  : public MixedEffect{
     	clear gradient
     */
 	void clear_gradient();
-	
-	
-    // returns the gradient of all the parameters					   
+
+
+    // returns the gradient of all the parameters
     Eigen::VectorXd get_gradient();
 
 };
@@ -250,4 +274,5 @@ class NIGMixedEffect  : public MixedEffect{
 
 // sampling NormalCanoncial N_c(b, Q^) \propto e^{-x'Qx + bx}
 Eigen::VectorXd sample_Nc(const Eigen::VectorXd & ,const  Eigen::MatrixXd & );
+Eigen::VectorXd sample_Nc_par(const Eigen::VectorXd & ,const  Eigen::MatrixXd &,std::mt19937 &);
 #endif

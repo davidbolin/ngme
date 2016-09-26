@@ -2,7 +2,7 @@
 #include "error_check.h"
 
 
-void NormalVarianceMixtureBaseError::printIter() 
+void NormalVarianceMixtureBaseError::printIter()
 {
 	Rcpp::Rcout << "sigma = " << sigma;
 
@@ -36,7 +36,7 @@ Rcpp::List NormalVarianceMixtureBaseError::toList()
   out["nu"]          = nu;
   out["Cov_theta"]   = Cov_theta;
   out["noise"]       = noise;
-  
+
   if(store_param)
   	out["sigma_vec"] = sigma_vec;
 
@@ -83,13 +83,38 @@ Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate(const Eigen::VectorXd 
 	      double V = simulate_V();
 	      residual[ii] *=  sqrt(V);
 	    }
-	
+
 	}else{
 		  double V = simulate_V();
 	      residual.array() *=  sqrt(V);
 	}
-	
+
 	return(residual);
+}
+
+
+Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const Eigen::VectorXd & Y,std::mt19937 & random_engine)
+{
+  std::normal_distribution<double> normal;
+  Eigen::VectorXd residual;
+  residual.setZero(Y.size());
+  for(int j =0; j < Y.size(); j++)
+    residual[j] =  sigma*normal(random_engine);
+
+  //Eigen::VectorXd residual =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y.size()) ));
+  if(common_V == 0){
+    for(int ii = 0; ii < residual.size(); ii++)
+    {
+      double V = 1;//simulate_V();
+      residual[ii] *=  sqrt(V);
+    }
+
+  }else{
+    double V = 1;//simulate_V();
+    residual.array() *=  sqrt(V);
+  }
+
+  return(residual);
 }
 
 std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vector< Eigen::VectorXd > Y)
@@ -128,7 +153,7 @@ void NormalVarianceMixtureBaseError::sampleV(const int i, const Eigen::VectorXd&
     		double res2 = pow(res[j]/sigma, 2);
 	    	Vs[i][j] = sample_V(res2, -1);
 		}
-	    
+
 	} else {
 	  double tmp = res.array().square().sum()/pow(sigma, 2);
 	  double cv = sample_V(tmp, n_s);
@@ -154,11 +179,11 @@ void NormalVarianceMixtureBaseError::step_theta(double stepsize)
 {
   step_sigma(stepsize);
   NormalVarianceMixtureBaseError::clear_gradient();
-  
+
   counter = 0;
-  
+
   sigma_vec[vec_counter++] = sigma;
-  
+
 }
 
 void NormalVarianceMixtureBaseError::step_sigma(double stepsize)
