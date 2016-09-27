@@ -158,8 +158,6 @@ predictLong <- function( Y,
     out_list$W.samples <- output$WVec
   }
 
-  save(out_list, file = "/Users/davidbolin/Dropbox/research/nongaussian_fields/NonGaussianLDA/prediction_simulation_results.RData")
-
   out_list$locs <- locs.pred
   out_list$Y.summary <- list()
   out_list$X.summary <- list()
