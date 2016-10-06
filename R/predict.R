@@ -156,34 +156,41 @@ predictLong <- function( Y,
     out_list$Y.samples <- output$YVec
     out_list$X.samples <- output$XVec
     out_list$W.samples <- output$WVec
+    out_list$V.samples <- output$VVec
   }
 
   out_list$locs <- locs.pred
   out_list$Y.summary <- list()
   out_list$X.summary <- list()
   out_list$W.summary <- list()
+  out_list$V.summary <- list()
 
   for(i in 1:length(locs)){
     out_list$Y.summary[[i]] <- list()
     out_list$X.summary[[i]] <- list()
     out_list$W.summary[[i]] <- list()
+    out_list$V.summary[[i]] <- list()
 
     out_list$Y.summary[[i]]$Mean <- apply(output$YVec[[i]],1,mean)
     out_list$X.summary[[i]]$Mean <- apply(output$XVec[[i]],1,mean)
     out_list$W.summary[[i]]$Mean <- apply(output$WVec[[i]],1,mean)
+    out_list$V.summary[[i]]$Mean <- apply(output$VVec[[i]],1,mean)
 
     out_list$Y.summary[[i]]$Var  <- apply(output$YVec[[i]],1,var)
     out_list$X.summary[[i]]$Var  <- apply(output$XVec[[i]],1,var)
     out_list$W.summary[[i]]$Var  <- apply(output$WVec[[i]],1,var)
+    out_list$V.summary[[i]]$Var <- apply(output$VVec[[i]],1,var)
 
     out_list$Y.summary[[i]]$Median <- apply(output$YVec[[i]],1,median)
     out_list$X.summary[[i]]$Median <- apply(output$XVec[[i]],1,median)
     out_list$W.summary[[i]]$Median <- apply(output$WVec[[i]],1,median)
+    out_list$V.summary[[i]]$Median <- apply(output$VVec[[i]],1,median)
 
     if(!is.null(quantiles)){
       y.list <- list()
       x.list <- list()
       w.list <- list()
+      v.list <- list()
       for(c in 1:length(quantiles)){
         c.i <- list()
         c.i$level = quantiles[c]
@@ -193,10 +200,14 @@ predictLong <- function( Y,
         x.list[[c]] = c.i
         c.i$field <- apply(output$WVec[[i]],1,quantile,probs=c(quantiles[c]))
         w.list[[c]] = c.i
+        
+        c.i$field <- apply(output$VVec[[i]],1,quantile,probs=c(quantiles[c]))
+        v.list[[c]] = c.i
       }
       out_list$Y.summary[[i]]$quantiles <- y.list
       out_list$X.summary[[i]]$quantiles <- x.list
       out_list$W.summary[[i]]$quantiles <- w.list
+      out_list$V.summary[[i]]$quantiles <- v.list
     }
     if(!is.null(excursions)){
       for(c in 1:length(excursions)){

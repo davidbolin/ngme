@@ -292,9 +292,13 @@ List estimateLong_cpp(Rcpp::List in_list)
         res -= A * process->Xs[i];
 
         if(res.cwiseAbs().sum() > 1e16){
+        	Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process->Vs[i].cwiseInverse().maxCoeff() << "\n";
+        	Rcpp::Rcout << "Max process->Xs[i]= " << process->Xs[i].maxCoeff() << "\n";
+        	Rcpp::Rcout << "Min process->Xs[i]= " << process->Xs[i].minCoeff() << "\n";
+        	
+        	Rcpp::Rcout << "res out of bound\n";
           throw("res outof bound\n");
         }
-
         // sample V| X
         if(sampleV)
         	process->sample_V(i, rgig, K);

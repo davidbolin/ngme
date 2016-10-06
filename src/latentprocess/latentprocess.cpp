@@ -177,11 +177,12 @@ void GHProcess::sample_X(const int i,
   double sigma2  =pow(sigma, 2);
   Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
   solver.compute(Qi);
-  Eigen::VectorXd b = A.transpose()*Y/ sigma2;
+  Eigen::VectorXd b = A.transpose()*Y / sigma2;
   Eigen::VectorXd temp  =  - h[i];
   temp = temp.cwiseProduct(iV);
   temp.array() += 1.;
   temp *= mu;
+  Rcpp::Rcout << "IV  = " << iV << "\n";
   b +=  K.transpose() * temp;
   Xs[i] = solver.rMVN(b, Z);
 }
@@ -290,7 +291,6 @@ void GHProcess::gradient( const int i ,
 
 
   	counter++;
-
   	if( type_process == "CH")
   		return;
 
@@ -313,6 +313,7 @@ void GHProcess::gradient( const int i ,
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		
 	}
   grad_nu(i);
 }
@@ -343,12 +344,12 @@ void GHProcess:: gradient_v2( const int i ,
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
       		Eigen::VectorXd temp_2 = A * temp_1;
-      		temp_2.array() *= iV_noise[i];
+      		temp_2.cwiseProduct(iV_noise );
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
-
+			
 
 	}
 	grad_nu(i);

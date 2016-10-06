@@ -11,7 +11,6 @@ double dlambda_V(const double loglambda,
                  const int GAL)
 {
   double dlambda = 0;
-  double Vadj = 1e-12;
   if(GAL){
   for(int i=0; i < h.size(); i++){
     double h_lambda = exp(loglambda) * h[i];
@@ -22,7 +21,7 @@ double dlambda_V(const double loglambda,
       {
         dlambda -=  h_lambda * R::digamma(h_lambda + 1) - 1.;
       }
-    dlambda += h_lambda *  log(V(i) - Vadj + 1e-12) ;
+    dlambda += h_lambda *  log(V(i) ) ;
   }
   }else{
     double srqt_two = pow(2, 0.5);
@@ -80,8 +79,8 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   double a  =  pow(mu / sigma, 2);
   if(type == "GAL"){
     p = h * nu;
-    a += 2 * nu;
     p.array() -= 0.5;
+    a += 2 * nu;
     b.array() += b_adj;
   }else if(type == "NIG"){
     p.setOnes(h.size());
@@ -100,10 +99,12 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   Eigen::VectorXd V(KX.size());
   
-  double Vadj  = 1e-14;
+  
+  
   for(int i = 0; i < KX.size(); i++)
-      		V[i] = sampler.sample( p[i], a, b[i] ) ; 
-     
+  	V[i] = sampler.sample( p[i], a, b[i] ) ; 
+  
+   double Vadj  = 1e-13;  
     if(type == "GAL")
     	V.array() += Vadj;
   

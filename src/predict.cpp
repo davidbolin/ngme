@@ -208,6 +208,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
 
   std::vector< Eigen::MatrixXd > WVec(nindv);
+  std::vector< Eigen::MatrixXd > VVec(nindv);
   std::vector< Eigen::MatrixXd > XVec(nindv);
   std::vector< Eigen::MatrixXd > YVec(nindv);
 
@@ -230,6 +231,7 @@ List predictLong_cpp(Rcpp::List in_list)
     XVec[i].resize(As_pred[i].rows(), nSim);
     WVec[i].resize(As_pred[i].rows(), nSim);
     YVec[i].resize(As_pred[i].rows(), nSim);
+    VVec[i].resize(As_pred[i].rows(), nSim);
     Eigen::MatrixXd random_effect = mixobj->Br[i];
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){
@@ -361,6 +363,8 @@ List predictLong_cpp(Rcpp::List in_list)
           WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
           XVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX;
           YVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX + mNoise;
+          //V process
+          VVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = Ai * process->Vs[i];
         }
       }
     }
@@ -372,5 +376,6 @@ List predictLong_cpp(Rcpp::List in_list)
   out_list["YVec"] = YVec;
   out_list["XVec"] = XVec;
   out_list["WVec"] = WVec;
+  out_list["VVec"] = VVec;
   return(out_list);
 }
