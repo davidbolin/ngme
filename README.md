@@ -6,7 +6,7 @@
 * Add support for weighted subsampling
 * Add support for individual nu
 
-## # Interface # ##
+## Interface ##
 * Add reasonable starting values
 * Add checks of input dimensions to all functions
 * Add checks of initial values in estimation
