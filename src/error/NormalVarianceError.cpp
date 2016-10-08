@@ -24,6 +24,7 @@ NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError(){
   sigma     = 1;
   dsigma    = 0;
   ddsigma   = 0;
+  dsigma_old = 0;
   common_V  = 0;
   npars     = 0;
   rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -55,7 +56,7 @@ void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)
   else
     common_V  = 0;
 
-
+  dsigma_old = 0;
  int i = 0;
 
  if( init_list.containsElementNamed("Vs" )){
@@ -175,9 +176,9 @@ void NormalVarianceMixtureBaseError::gradient(const int i,
     ddsigma += - 2 * res.size()/pow(sigma, 2);
 }
 
-void NormalVarianceMixtureBaseError::step_theta(double stepsize)
+void NormalVarianceMixtureBaseError::step_theta(const double stepsize,const double learning_rate)
 {
-  step_sigma(stepsize);
+  step_sigma(stepsize, learning_rate);
   NormalVarianceMixtureBaseError::clear_gradient();
 
   counter = 0;
@@ -186,13 +187,15 @@ void NormalVarianceMixtureBaseError::step_theta(double stepsize)
 
 }
 
-void NormalVarianceMixtureBaseError::step_sigma(double stepsize)
+void NormalVarianceMixtureBaseError::step_sigma(double stepsize, const double learning_rate)
 {
-double sigma_temp = -1;
+	
+  double sigma_temp = -1;
   dsigma /= ddsigma;
+  dsigma_old += learning_rate * dsigma_old + dsigma;
   while(sigma_temp < 0)
   {
-    sigma_temp = sigma - stepsize * dsigma;
+    sigma_temp = sigma - stepsize * dsigma_old;
     stepsize *= 0.5;
     if(stepsize <= 1e-16)
         throw("in NormalVarianceMixtureBaseError:: can't make sigma it positive \n");

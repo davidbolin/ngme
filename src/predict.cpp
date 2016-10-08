@@ -214,7 +214,6 @@ List predictLong_cpp(Rcpp::List in_list)
 
   int rank = 1;
   double percent_done = 0;
-  int  d;
   #pragma omp parallel for private(K,Q)
   for(int i = 0; i < nindv; i++ ) {
     #ifdef _OPENMP

@@ -95,15 +95,15 @@ simulateLong.R <- function(loc,
     sigma <- rep(sigma,nrep)
   }
 
-  if(operatorType=="Matern"){
+  if(operatorType=="matern"){
     kappa = theta$kappa
-    K = sqrt(tau) * (operator_List$G + kappa*operator_List$C)
-    Q = (K%*%operator_List$Ci%*%K)
+    K = tau * (operator_List$G[[1]] + kappa*operator_List$C[[1]])
+    Q = (K%*%operator_List$Ci[[1]]%*%K)
     R = chol(Q)
   }else{
     K = tau*operator_List$Q[[1]]
-
     Ci = as(sparseMatrix(i=1:n,j=1:n,x=1/operator_List$h[[1]],dims=c(n, n)), "CsparseMatrix")
+    print(dim(Ci))
     Q = Matrix::t(K) %*% Ci %*% K
     R = chol(Q)
   }

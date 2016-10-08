@@ -90,6 +90,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h2.resize(nindv);
   h_sum.resize(nindv);
   h_min.resize(nindv);
+  
   H_mu.resize(nindv);
   h3_mean.resize(nindv);
   Vv_mean.resize(nindv);
@@ -105,6 +106,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
     h_min[i]   = h[i].minCoeff();
     h3_mean[i] = h[i].array().pow(3).sum()/h[i].size();
   }
+  h_MIN = *std::min_element(h_min.begin(), h_min.end());
 
 
 
@@ -120,6 +122,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
 
   	nu = 0;
   	mu = 0;
+  	dnu_prev = 0;
+  	dmu_prev = 0;
   	npars = 0;
   	if(type_process != "CH"){
 		npars = 2;
@@ -176,15 +180,19 @@ void GHProcess::sample_X(const int i,
   iV = Vs[i].cwiseInverse();
   double sigma2  =pow(sigma, 2);
   Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
-  solver.compute(Qi);
+  Eigen::VectorXd DQ_12 = Qi.diagonal().cwiseInverse().cwiseSqrt();
+  Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
+  for (int i = 0; i < Qi.rows(); i++) 
+    DQD.coeffRef(i,i) += 1e-16;
+  solver.compute(DQD);
   Eigen::VectorXd b = A.transpose()*Y / sigma2;
   Eigen::VectorXd temp  =  - h[i];
   temp = temp.cwiseProduct(iV);
   temp.array() += 1.;
   temp *= mu;
-  Rcpp::Rcout << "IV  = " << iV << "\n";
   b +=  K.transpose() * temp;
-  Xs[i] = solver.rMVN(b, Z);
+  b = b.cwiseProduct(DQ_12);
+  Xs[i] = DQ_12.cwiseProduct(solver.rMVN(b, Z));
 }
 
 	//simulate from prior distribution
@@ -392,7 +400,7 @@ void GHProcess::grad_nu(const int i)
 }
 
 
-void GHProcess::step_theta(const double stepsize)
+void GHProcess::step_theta(const double stepsize, const double learning_rate)
 {
 
 
@@ -401,8 +409,8 @@ void GHProcess::step_theta(const double stepsize)
   		counter = 0;
   		return;
   	}
-	step_mu(stepsize);
-	step_nu(stepsize);
+	step_nu(stepsize, learning_rate);
+	step_mu(stepsize, learning_rate);
 	counter = 0;
 
 	if(store_param)
@@ -414,24 +422,50 @@ void GHProcess::step_theta(const double stepsize)
 	clear_gradient();
 }
 
-void GHProcess::step_mu(const double stepsize)
+void GHProcess::step_mu(const double stepsize, const double learning_rate)
 {
-	mu -= (stepsize / ddmu_1 ) * dmu;
+	dmu /= -  ddmu_1;
+	
+  
+  if(std::abs(dmu_prev) > 10*std::abs(dmu))
+  	dmu_prev *= 0.1;
+  
+  dmu_prev = learning_rate * dmu_prev +  dmu; 
+  double step  = stepsize *  dmu_prev;
+	  
+	mu +=  step ;//(sqrt(cache_mu) + 1);
 	ddmu_1 = 0;
 	ddmu_2 = 0;
+	
 }
 
-void GHProcess::step_nu(const double stepsize)
+void GHProcess::step_nu(const double stepsize, const double learning_rate)
 {
   double nu_temp = -1;
-  dnu /= ddnu;
+  dnu /=  ddnu;
+  
+
+  dnu_prev = learning_rate * dnu_prev +    dnu;
+  double step  = dnu_prev;
+  
   double stepsize_temp  = stepsize;
   while(nu_temp < 0)
   {
-    nu_temp = nu - stepsize_temp * dnu;
+    nu_temp = nu - stepsize_temp * step;
     stepsize_temp *= 0.5;
     if(stepsize_temp <= 1e-16)
         throw("in GHProcess:: can't make nu it positive \n");
+  }
+  // checking min value
+  if(type_process=="GAL")
+  {
+  	if(nu_temp * h_MIN < 0.01)
+  		nu_temp = 0.01/h_MIN; 
+  	
+  }else if(type_process == "NIG"){
+  	
+  	if(nu_temp * h_MIN < 1e-10)
+  		nu_temp = 1e-10/h_MIN; 
   }
   nu = nu_temp;
 

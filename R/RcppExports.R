@@ -17,3 +17,7 @@ simulateLongGH_cpp <- function(in_list) {
     .Call('LDMod_simulateLongGH_cpp', PACKAGE = 'LDMod', in_list)
 }
 
+test_PreDiagsolver <- function(in_list) {
+    .Call('LDMod_test_PreDiagsolver', PACKAGE = 'LDMod', in_list)
+}
+

@@ -20,6 +20,7 @@ GaussianMeasurementError::GaussianMeasurementError(){
   counter = 0;
   sigma   = 0;
   dsigma  = 0;
+  dsigma_old = 0;
   ddsigma = 0;
   EV  = 1.;  // if there the random variance in the Noise E[V]
   EiV = 1.;
@@ -57,15 +58,17 @@ void GaussianMeasurementError::gradient(const int i,
     // res.size()/pow(sigma, 2) - 3 * E[res.array().square().sum()] /pow(sigma, 4);
     ddsigma += - 2 * res.size()/pow(sigma, 2);
 }
-void GaussianMeasurementError::step_theta(double stepsize)
+void GaussianMeasurementError::step_theta(const double stepsize, const double learning_rate)
 {
   double sigma_temp = -1;
   dsigma /= ddsigma;
+  dsigma_old = dsigma_old * learning_rate + dsigma;
+  double stepsize_temp  = stepsize;
   while(sigma_temp < 0)
   {
-    sigma_temp = sigma - stepsize * dsigma;
-    stepsize *= 0.5;
-    if(stepsize <= 1e-16)
+    sigma_temp = sigma - stepsize_temp * dsigma_old;
+    stepsize_temp *= 0.5;
+    if(stepsize_temp <= 1e-16)
         throw("in GaussianMeasurementError:: can't make sigma it positive \n");
   }
   sigma = sigma_temp;

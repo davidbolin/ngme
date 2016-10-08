@@ -22,7 +22,7 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
 	npars  = 1;
  std::vector<std::string> check_names =  {"Q","loc", "h"};
  check_Rcpplist(init_list, check_names, "constMatrix::initFromList");
-
+	dtau_old = 0;
  tau = 1.;
  if(init_list.containsElementNamed("tau"))
    tau = Rcpp::as<double >( init_list["tau"]);
@@ -98,16 +98,16 @@ void constMatrix::print_parameters(){
   Rcpp::Rcout << "tau = " << tau ;
 }
 
-void constMatrix::step_theta(const double stepsize)
+void constMatrix::step_theta(const double stepsize, const double learning_rate)
 {
-
 	dtau  /= ddtau;
-  dtau *= stepsize;
+  	dtau_old = learning_rate * dtau_old + dtau;
+  	double step = stepsize * dtau_old;
 	double tau_temp = -1.;
     while(tau_temp < 0)
     {
-    	dtau *= 0.5;
-        tau_temp = tau - dtau;
+    	step *= 0.5;
+        tau_temp = tau - step;
     }
   for(int i=0;i<nop;i++){
     Q[i] *= tau_temp/tau;

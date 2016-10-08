@@ -8,6 +8,7 @@ IGMeasurementError::IGMeasurementError() : NormalVarianceMixtureBaseError(){
   nu        = 1;
   dnu       = 0;
   ddnu      = 0;
+  dnu_old = 0;
   noise = "IG";
   
 }
@@ -106,15 +107,17 @@ void IGMeasurementError::gradient(const int i,
     }
 }
 
-void IGMeasurementError::step_nu(double stepsize)
+void IGMeasurementError::step_nu(const double stepsize, const double learning_rate)
 {
-double nu_temp = -1;
+	double nu_temp = -1;
   dnu /= ddnu;
+  double stepsize_temp  =stepsize;
+  dnu_old = dnu_old * learning_rate + dnu;
   while(nu_temp < 0)
   {
-    nu_temp = nu - stepsize * dnu;
-    stepsize *= 0.5;
-    if(stepsize <= 1e-16)
+    nu_temp = nu - stepsize_temp * dnu;
+    stepsize_temp *= 0.5;
+    if(stepsize_temp <= 1e-16)
         throw("in IGMeasurementError:: can't make nu it positive \n");
   }
   nu = nu_temp;
@@ -126,11 +129,11 @@ double nu_temp = -1;
 
 }
 
-void IGMeasurementError::step_theta(double stepsize)
+void IGMeasurementError::step_theta(const double stepsize, const double learning_rate)
 {
-  NormalVarianceMixtureBaseError::step_theta(stepsize);
+  NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
   
-  step_nu(stepsize);
+  step_nu(stepsize, learning_rate);
   clear_gradient();
   
 if(store_param)

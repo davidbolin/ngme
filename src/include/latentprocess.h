@@ -44,7 +44,7 @@ class Process {
 			   			  const Eigen::VectorXd& res,
 			   			  const double sigma,
 			   			  const double trace_var){};
-    virtual void step_theta(const double step){};
+    virtual void step_theta(const double stepsize, const double learning_rate = 0){};
     virtual void sample_V(const int,
     					            gig &,
                           const Eigen::SparseMatrix<double,0,int> &){};
@@ -142,11 +142,14 @@ class GHProcess : public Process{
   		std::vector< Eigen::VectorXd > h2;
   		std::vector< double > h_sum;
   		std::vector< double >  h_min;
+  		double h_MIN;
   		std::vector< double >  h_digamma;
   		std::vector< double >  h_trigamma;
 		std::vector< double >  h3_mean;
 		double dmu ;
 		double dnu, ddnu ;
+		double dnu_prev;
+		double dmu_prev;
 		std::vector< Eigen::VectorXd > EiV;
 		Eigen::VectorXd mu_vec;
 		Eigen::VectorXd nu_vec;
@@ -201,9 +204,9 @@ class GHProcess : public Process{
 			   			  const Eigen::VectorXd& iV_noise,
 			   			  const double EiV_noise,
 			   			  const double trace_var);
-    void step_theta(const double );
-    void step_mu(const double );
-    void step_nu(const double );
+    void step_theta(const double stepsize, const double learning_rate = 0);
+    void step_mu(const double, const double );
+    void step_nu(const double, const double);
     void printIter();
     Rcpp::List toList();
     void setupStoreTracj(const int);

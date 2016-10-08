@@ -50,3 +50,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_PreDiagsolver
+double test_PreDiagsolver(Rcpp::List in_list);
+RcppExport SEXP LDMod_test_PreDiagsolver(SEXP in_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type in_list(in_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_PreDiagsolver(in_list));
+    return rcpp_result_gen;
+END_RCPP
+}

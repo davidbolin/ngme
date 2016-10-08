@@ -28,7 +28,9 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   kappaVec.resize(nIter);
   tauVec.resize(nIter);
   dkappa = 0;
+  dkappa_old = 0;
   dtau = 0;
+  dtau_old = 0;
   use_chol = Rcpp::as<int>(solver_list["use.chol"]);
 
   Rcpp::List G_list  = Rcpp::as<Rcpp::List> (init_list["G"]);
@@ -169,7 +171,6 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   ddkappa += kappa_trace2[i];
 
   Eigen::VectorXd KX = Q[i] * X;
-
   //compute gradients wrt tau
   Eigen::VectorXd dKX = dtauQ[i] * X;
   Eigen::VectorXd d2KX;
@@ -182,6 +183,7 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   d2KX = d2kappaQ[i] * X;
   dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
   ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() *(KX - mean_KX)));
+  
 }
 
 void MaternOperator::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -195,26 +197,28 @@ void MaternOperator::print_parameters(){
 }
 
 
-void MaternOperator::step_theta(const double stepsize)
+void MaternOperator::step_theta(const double stepsize, const double learning_rate)
 {
 
-	dtau  /= ddtau;
-  dtau *= stepsize;
-	double tau_temp = -1.;
+  dtau  /= ddtau;
+  dtau_old = learning_rate * dtau_old + dtau;
+  double step = stepsize * dtau_old;
+  double tau_temp = -1.;
     while(tau_temp < 0)
     {
-    	dtau *= 0.5;
-        tau_temp = tau - dtau;
+    	step *= 0.5;
+        tau_temp = tau - step;
     }
 	tau = tau_temp;
 
 	dkappa  /= ddkappa;
-	dkappa *= stepsize;
+	dkappa_old = learning_rate * dkappa_old + dkappa;
+	step   = stepsize * dkappa_old;
 	double kappa_temp = -1.;
 	while(kappa_temp < 0)
 	{
 	  dkappa *= 0.5;
-	  kappa_temp = kappa - dkappa;
+	  kappa_temp = kappa - step;
 	}
 	kappa = kappa_temp;
 	tauVec[counter] = tau;

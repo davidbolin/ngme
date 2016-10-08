@@ -13,12 +13,12 @@ graphics.off()
 plot_flag <- TRUE
 
 nobs  <- 10
-nIter <- 1
+nIter <- 400
 n     <- 200 #n grid points
-  
-nu_true <- 1
+operatorType <- "matern"
+nu_true <- 30
 mu_true <- 1
-nu_guess <- 20
+nu_guess <- 10
 mu_guess <- 20
 tau_geuss <- 0.5
 theta <- list()
@@ -26,6 +26,7 @@ theta$sigma <- 0.1 # meas error
 theta$tau   <- 0.5
 theta$nu    <- nu_true
 theta$mu    <- mu_true
+theta$kappa <- 1
 locs   <- list()
 for(i in 1:nobs)
 { 
@@ -35,9 +36,10 @@ for(i in 1:nobs)
 output_sim <- simulateLong.R(locs, 
                              theta,
                              noise = "GAL",
-                             operatorType = "fd2",
+                             operatorType =operatorType,
                              n = n)
-operator_list <- create_operator(locs, n, name = "fd2")
+operator_list <- create_operator(locs, n, name = operatorType)
+
 obs_list <- list()
 X        <- list()
 V        <- list()
@@ -55,6 +57,7 @@ mError_list <- list(noise = "Normal",
 
 mixedEffect_list  <- list(noise="Normal")
 operator_list$tau <- tau_geuss
+operator_list$kappa <- theta$kappa
 processes_list <- list(nu = nu_guess, 
                        mu = mu_guess, 
                        X = output_sim$X, 
@@ -74,6 +77,6 @@ input <- list( obs_list         = obs_list,
                measurementError_list   = mError_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 1,
-               sampleV = 0
+               sampleV = 1
 )
 output <- estimateLong_cpp(input)

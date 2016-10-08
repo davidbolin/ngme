@@ -26,6 +26,8 @@
 class operatorMatrix {
   protected:
     solver ** Qsolver;
+    
+    
   public:
     int nop;
     std::vector<Eigen::VectorXd >  h;
@@ -54,7 +56,7 @@ class operatorMatrix {
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int){};
-    virtual void step_theta(const double ){};
+    virtual void step_theta(const double stepsize, const double learning_rate = 0){};
     virtual void print_parameters( ){};
     virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int ){return 1;};
 
@@ -70,6 +72,7 @@ class constMatrix : public operatorMatrix{
     Eigen::VectorXd v;
     std::vector<double>  m_loc;
     std::vector<double>  h_average;
+    
   public:
 
 	~constMatrix();
@@ -79,9 +82,10 @@ class constMatrix : public operatorMatrix{
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int);
-	void step_theta(const double);
+	void step_theta(const double stepsize, const double learning_rate = 0);
   	double  dtau;
   	double ddtau;
+	double dtau_old;
     void initFromList(Rcpp::List const &);
     void initFromList(Rcpp::List const &, Rcpp::List const &);
     Rcpp::List output_list();
@@ -108,6 +112,7 @@ class MaternOperator : public operatorMatrix{
     Eigen::VectorXd g,p;
     Eigen::SparseMatrix<double,0,int> *G, *C;
     double kappa, dkappa, ddkappa, dtau, ddtau;
+    double dtau_old, dkappa_old;
     bool use_chol;
     std::vector<int> matrix_set;
     double counter;
@@ -131,7 +136,7 @@ class MaternOperator : public operatorMatrix{
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int);
-    void step_theta(const double );
+    void step_theta(const double stepsize, const double learning_rate = 0);
     Eigen::VectorXd kappaVec;
     void print_parameters();
     double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int );

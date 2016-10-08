@@ -87,6 +87,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       beta_fixed.setZero(Bf[0].cols());
 
+	dbeta_f_old.setZero(Bf[0].cols());
      H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
   	npars += Bf[0].cols();
 
@@ -108,7 +109,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       beta_random.setZero(Br[0].cols());
 
-
+	dbeta_r_old.setZero(Br[0].cols());
     if(Br.size() > 0){
       H_beta_random.setZero(Br[0].cols(), Br[0].cols());
       D = duplicatematrix(Br[0].cols());
@@ -123,6 +124,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     npars += Sigma_vech.size();
     UUt.setZero(Sigma.cols() * Sigma.rows());
     dSigma_vech.setZero(Sigma_vech.size());
+    dSigma_vech_old.setZero(Sigma_vech.size());
     invSigma  = Sigma.inverse();
     if( init_list.containsElementNamed("U" ))
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
@@ -142,6 +144,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 
 
     gradMu.setZero(Br[0].cols(), 1);
+    gradMu_old.setZero(Br[0].cols(), 1);
     npars += Br[0].cols();
     gradMu_2.setZero(Br[0].cols(), 1);
 
@@ -151,7 +154,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       nu = 1.;
 
     npars += 1;
-
+	dnu_old = 0;
     grad_nu = 0.;
     EV  = 1.;
     EiV = 1. + 1./nu;
@@ -410,20 +413,20 @@ void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ )
   UUT.array() /= V(i);
   UUt    += vec( UUT);
 }
-void NIGMixedEffect::step_theta(double stepsize)
+void NIGMixedEffect::step_theta(const double stepsize, double const learning_rate)
 {
   if(Br.size() > 0){
-    step_beta_random(stepsize);
-    step_mu(stepsize);
-    step_Sigma(stepsize);
-    step_nu(stepsize);
+    step_beta_random(stepsize, learning_rate);
+    step_mu(stepsize, learning_rate);
+    step_Sigma(stepsize, learning_rate);
+    step_nu(stepsize, learning_rate);
     a_GIG = mu.transpose() * (invSigma * mu);
     a_GIG += nu;
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
   }
 
   if(Bf.size() > 0)
-    step_beta_fixed(stepsize);
+    step_beta_fixed(stepsize, learning_rate);
 
   counter = 0;
 
@@ -445,56 +448,63 @@ void NIGMixedEffect::step_theta(double stepsize)
 
 
 }
-void NIGMixedEffect::step_Sigma(double stepsize)
+void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rate)
 {
   double pos_def = 0;
-  iSkroniS     = kroneckerProduct(invSigma, invSigma);
-  UUt         -= counter * vec(Sigma);
-  dSigma_vech  = 0.5 * Dd.transpose() * iSkroniS * UUt;
-  ddSigma      = 0.5 * counter * Dd.transpose() * iSkroniS * Dd;
-  dSigma_vech  = ddSigma.ldlt().solve(dSigma_vech);
+  iSkroniS = kroneckerProduct(invSigma, invSigma);
+  UUt -= counter*vec(Sigma);
+  dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
+  ddSigma = 0.5 * counter * Dd.transpose() * iSkroniS * Dd;
+  dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
+  dSigma_vech_old *= learning_rate;
+  dSigma_vech_old += dSigma_vech;
+  
+  double stepsize_temp  = stepsize;
   while(pos_def <= 0){
     Eigen::VectorXd Sigma_vech_temp = Sigma_vech;
-    Sigma_vech_temp += stepsize * dSigma_vech;
+    Sigma_vech_temp += stepsize_temp * dSigma_vech_old;
     Eigen::VectorXd temp = Dd*Sigma_vech_temp;
     Sigma = veci(temp, Sigma.rows(), Sigma.cols());
-    stepsize *= 0.5;
+    stepsize_temp *= 0.5;
     SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
     pos_def = eig.eigenvalues().minCoeff();
-    if(stepsize <= 1e-16){
+    if(stepsize_temp <= 1e-16){
         Rcpp::Rcout << "Sigma = \n" << Sigma << "\n";
         Rcpp::Rcout << "pos_def = " << pos_def <<"\n";
-        throw("in NIGmidexeffect not pos def \n");
+        throw("in midexeffect not pos def \n");
     }
 
 
   }
-
 
     UUt.setZero(Sigma.cols() * Sigma.rows());
     invSigma  = Sigma.inverse();
     Sigma_vech = vech(Sigma);
 }
 
-void NIGMixedEffect::step_mu(double stepsize)
+void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
 {
-
-    mu += (0.5 * stepsize) *  H_beta_random.ldlt().solve(gradMu) / VV;
+	gradMu_old *= learning_rate;
+    gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
     // H_beta_random = H_mu_random
-    mu += (0.5 * stepsize) * (Sigma * gradMu_2)/ (counter * (2*EiV - EV));
+    gradMu_old += 0.5 * (Sigma * gradMu_2)/ (counter * (2*EiV - EV));
+    mu += stepsize * gradMu_old;
     gradMu_2.setZero(Br[0].cols(), 1);
 }
 
-void NIGMixedEffect::step_nu(double stepsize)
+void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
 {
+   
    grad_nu  *=  (nu * nu) / (2. * counter); //hessian
-  double nu_old = nu;
-  nu += stepsize  * grad_nu;
-  while(nu < 0){
-    nu = nu_old;
-    stepsize *= 0.5;
-    nu += stepsize  * grad_nu;
-    if(stepsize <= 1e-16){
+   
+  dnu_old = learning_rate * dnu_old + grad_nu;
+  double nu_temp = -1;
+  double step_size_temp = stepsize;
+  
+  while(nu_temp < 0){
+  	nu_temp = nu + stepsize  * grad_nu;
+    step_size_temp *= 0.5;
+    if(step_size_temp <= 1e-16){
         Rcpp::Rcout << "nu = \n" << nu << "\n";
         Rcpp::Rcout << "grad_nu = " << grad_nu <<"\n";
         throw("in NIGmidexeffect nu is zero \n");
@@ -505,18 +515,23 @@ void NIGMixedEffect::step_nu(double stepsize)
   EiV = 1. + 1./nu;
   VV = 1./nu;
 }
-void NIGMixedEffect::step_beta_fixed(double stepsize)
+void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learning_rate)
 {
-    beta_fixed += stepsize *  H_beta_fixed.ldlt().solve(grad_beta_f);
 
+	dbeta_f_old.array() *= learning_rate;
+	dbeta_f_old += H_beta_fixed.ldlt().solve(grad_beta_f);
+    beta_fixed += stepsize *  dbeta_f_old;
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
-
 }
-void NIGMixedEffect::step_beta_random(double stepsize)
+void NIGMixedEffect::step_beta_random(const double stepsize, const double learning_rate)
 {
-    beta_random += (0.5 * stepsize) *  H_beta_random.ldlt().solve(grad_beta_r);
-    beta_random += (0.5 * stepsize) * (Sigma * grad_beta_r2)/ (counter * EiV);
-
+	
+	dbeta_r_old.array() *= learning_rate;
+	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
+	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (counter * EiV);
+    beta_random += stepsize * dbeta_f_old;
+    grad_beta_r2.setZero(Br[0].cols());
+    H_beta_random.setZero(Br[0].cols(), Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
 }
 

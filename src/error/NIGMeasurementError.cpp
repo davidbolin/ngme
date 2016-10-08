@@ -40,6 +40,7 @@ Rcpp::List NIGMeasurementError::toList()
 }
 void NIGMeasurementError::initFromList(Rcpp::List const &init_list)
 {
+	
   NormalVarianceMixtureBaseError::initFromList(init_list);
   if(init_list.containsElementNamed("nu"))
     nu = Rcpp::as < double >( init_list["nu"]);
@@ -48,7 +49,7 @@ void NIGMeasurementError::initFromList(Rcpp::List const &init_list)
 
     EV  = 1.;
     EiV = 1. + 1./nu;
-
+	dnu_old = 0;
    npars += 1;
  int i = 0;
 
@@ -97,15 +98,17 @@ void NIGMeasurementError::gradient(const int i,
 
 }
 
-void NIGMeasurementError::step_nu(double stepsize)
+void NIGMeasurementError::step_nu(const double stepsize, const double learning_rate)
 {
 double nu_temp = -1;
   dnu /= ddnu;
+  dnu_old = learning_rate  * dnu_old + dnu;
+  double step_size = stepsize;
   while(nu_temp < 0)
   {
-    nu_temp = nu - stepsize * dnu;
-    stepsize *= 0.5;
-    if(stepsize <= 1e-16)
+    nu_temp = nu - step_size * dnu_old;
+    step_size *= 0.5;
+    if(step_size <= 1e-16)
         throw("in NIGMeasurementError:: can't make nu it positive \n");
   }
   nu = nu_temp;
@@ -115,11 +118,11 @@ double nu_temp = -1;
 
 }
 
-void NIGMeasurementError::step_theta(double stepsize)
+void NIGMeasurementError::step_theta(const double stepsize, const double learning_rate)
 {
-  NormalVarianceMixtureBaseError::step_theta(stepsize);
+  NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
 
-  step_nu(stepsize);
+  step_nu(stepsize, learning_rate);
   clear_gradient();
 
 if(store_param)

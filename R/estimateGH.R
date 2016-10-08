@@ -22,6 +22,7 @@
 #' @param nu              - shape parameter for NIG or GAL
 #' @param mu              - assymetric parameter for NIG or GAL
 #'
+#' @param learning_rate   - parameter for sthocastic gradient
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
 #' @param pSubsample      - precentage of data used in each gradient subsampling
@@ -38,6 +39,7 @@ estimateLong <- function(Y,
                          operator_list,
                          step0 = 0.5,
                          alpha = 0.1,
+                         learning_rate = 0, 
                          pSubsample = 1.,
                          subsample.type = 1,
                          nIter = 10,     # iterations to run the stochastic gradient
@@ -86,7 +88,8 @@ estimateLong <- function(Y,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  alpha            = alpha,
-                 common.grid      = common.grid
+                 common.grid      = common.grid,
+                 learning_rate    = learning_rate
               )
 
   output <- estimateLong_cpp(input)

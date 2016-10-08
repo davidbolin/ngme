@@ -26,7 +26,7 @@ class MeasurementError {
   	std::vector< Eigen::VectorXd > Vs;
     std::string noise;
     virtual void gradient(const int , const Eigen::VectorXd& ) = 0;
-    virtual void step_theta(double stepsize) = 0;
+    virtual void step_theta(const double stepsize,const double learning_rate = 0) = 0;
     virtual void initFromList(Rcpp::List const &)=0;
     virtual Rcpp::List toList()=0;
     virtual void sampleV(const int , const Eigen::VectorXd&, int = -1) = 0;
@@ -57,13 +57,14 @@ class GaussianMeasurementError : public MeasurementError{
 	private:
 		double dsigma;
 		double ddsigma;
+		double dsigma_old;
     	double counter;
     	Eigen::VectorXd sigma_vec;
 
 	public:
 		GaussianMeasurementError();
 		void gradient(const int , const Eigen::VectorXd&);
-		void step_theta(double stepsize);
+		void step_theta(const double stepsize,const double learning_rate = 0);
 		void initFromList(Rcpp::List const &);
 		void sampleV(const int i, const Eigen::VectorXd& res, int n_s = -1) {};
 		Rcpp::List toList();
@@ -87,6 +88,7 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 	public:
 		double dsigma;
 		double ddsigma;
+    	double dsigma_old;
 		gig rgig;
     	double counter;
     	Eigen::VectorXd sigma_vec;
@@ -97,8 +99,8 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 		double nu;
 		NormalVarianceMixtureBaseError();
 		void gradient(const int , const Eigen::VectorXd&);
-		void step_theta(double );
-		void step_sigma(double );
+		void step_theta(const double stepsize,const double learning_rate = 0);
+		void step_sigma(const double , const double);
 		void initFromList(Rcpp::List const &);
 		void sampleV(const int , const Eigen::VectorXd& , int = -1);
 		Rcpp::List toList();
@@ -119,7 +121,8 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 
 class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 
-
+	private:
+		double dnu_old;
  	public:
 		double dnu;
 		double ddnu;
@@ -131,8 +134,8 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 		double simulate_V();
 		double sample_V(const double, const int);
 		void gradient(const int , const Eigen::VectorXd&);
-		void step_nu(double );
-		void step_theta(double );
+		void step_nu(const double, const double );
+		void step_theta(const double stepsize,const double learning_rate = 0);
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
 
@@ -145,6 +148,7 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
  		double digamma_nu;
  		double trigamma_nu;
 		double dnu;
+		double dnu_old;
 		double ddnu;
  		IGMeasurementError();
  		void printIter();
@@ -154,8 +158,8 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
 		double simulate_V();
 		double sample_V(const double, const int);
 		void gradient(const int , const Eigen::VectorXd&);
-		void step_nu(double );
-		void step_theta(double );
+		void step_nu(const double ,const double);
+		void step_theta(const double stepsize,const double learning_rate = 0);
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
 
