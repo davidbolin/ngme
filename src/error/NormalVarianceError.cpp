@@ -187,17 +187,18 @@ void NormalVarianceMixtureBaseError::step_theta(const double stepsize,const doub
 
 }
 
-void NormalVarianceMixtureBaseError::step_sigma(double stepsize, const double learning_rate)
+void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, const double learning_rate)
 {
 	
   double sigma_temp = -1;
   dsigma /= ddsigma;
-  dsigma_old += learning_rate * dsigma_old + dsigma;
+  dsigma_old = learning_rate * dsigma_old + dsigma;
+  double stepsize_t = stepsize;
   while(sigma_temp < 0)
   {
-    sigma_temp = sigma - stepsize * dsigma_old;
-    stepsize *= 0.5;
-    if(stepsize <= 1e-16)
+    sigma_temp = sigma - stepsize_t * dsigma_old;
+    stepsize_t *= 0.5;
+    if(stepsize_t <= 1e-16)
         throw("in NormalVarianceMixtureBaseError:: can't make sigma it positive \n");
   }
   sigma = sigma_temp;

@@ -36,7 +36,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
   double learning_rate = 0;
   if(in_list.containsElementNamed("learning_rate"))
-  	double learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
 	//**********************************
 	//     setting up the main data
 	//**********************************
