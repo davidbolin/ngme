@@ -1,16 +1,17 @@
 graphics.off()
 library(LDMod)
 
-nIter <- 5000
+nIter <- 50
 n.pers <- 10
 nSim  <- 3
 n.obs  <- 10 + 10*(1:n.pers)
 n <- 100
 n.pred <- 100
+nBurnin = 100
 pred.type <- "Filter"
 pSubsample = 0.1
 subsample.type = 2
-test.pred = TRUE
+test.pred = FALSE
 Y <- list()
 locs <- list()
 B_random <- list()
@@ -79,6 +80,7 @@ res.est <- estimateLong(Y                = sim_res$Y,
                     nIter            = nIter,
                     nSim             = nSim,
                     locs             = locs,
+                    nBurnin           = nBurnin,
                     mixedEffect_list = mixedEffect_list,
                     measurment_list  = mError_list,
                     processes_list   = processes_list,

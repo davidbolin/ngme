@@ -37,7 +37,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   double learning_rate = 0;
   if(in_list.containsElementNamed("learning_rate"))
   	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
-  
+
   int debug = 0;
 	//**********************************
 	//     setting up the main data
@@ -51,6 +51,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
 	std::vector< Eigen::VectorXd > Ys( nindv);
 	std::vector< double > Ysize(nindv);
+	std::vector< int > burnin_done(nindv);
 	Eigen::VectorXd sampling_weights(nindv);
 	int count;
 	count = 0;
@@ -59,6 +60,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
     Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
     Ysize[count] = (double) Ys[count].size();
+    burnin_done[count] = 0;
     if(subsample_type == 1){
     	 sampling_weights[count] = 1.0;
     } else if(subsample_type == 2){
@@ -203,7 +205,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   for (int i=0; i< nindv; i++) longInd.push_back(i);
 
-  for(int iter=0; iter < nIter + nBurnin; iter++){
+  for(int iter=0; iter < nIter; iter++){
     /*
       printing output
     */
@@ -235,7 +237,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       //for (double x:distribution.probabilities()) std::cout << x << " ";
     }
 
-
+    double burnin_rate = 0;
     Kobj->gradient_init(nSubsample,nSim);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
@@ -246,7 +248,16 @@ List estimateLong_cpp(Rcpp::List in_list)
       z.setZero(Kobj->d[0]);
       if(common_grid == 0)
       	z.setZero(Kobj->d[i]);
-      for(int ii = 0; ii < nSim; ii ++)
+
+      int n_simulations = nSim;
+      int burnin_done_i = 0;
+      if(burnin_done[i] == 0){
+        burnin_rate +=1;
+        n_simulations += nBurnin;
+        burnin_done_i = nBurnin;
+        burnin_done[i] = 1;
+      }
+      for(int ii = 0; ii < n_simulations; ii ++)
       {
       	Eigen::VectorXd  res = Y;
       	//***************************************
@@ -262,7 +273,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   			//***********************************
       	// mixobj sampling
     		//***********************************
-    	
+
        if(debug)
        		Rcpp::Rcout << "estimate::sample mix \n";
       	if(type_MeasurementError == "Normal")
@@ -289,48 +300,48 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	res += A * process->Xs[i];
 
-		
-       if(debug)
-       		Rcpp::Rcout << "estimate::sample X\n";
+
+        if(debug)
+       	  Rcpp::Rcout << "estimate::sample X\n";
       	//Sample X|Y, V, sigma
-		if(sampleX){
-        	if(type_MeasurementError == "Normal")
+		    if(sampleX){
+          if(type_MeasurementError == "Normal")
       			process->sample_X(i, z, res, Q, K, A, errObj->sigma, Solver[i]);
         	else
-          	   process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
-		}
+          	process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
+		    }
         res -= A * process->Xs[i];
 
         if(res.cwiseAbs().sum() > 1e16){
         	Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process->Vs[i].cwiseInverse().maxCoeff() << "\n";
         	Rcpp::Rcout << "Max process->Xs[i]= " << process->Xs[i].maxCoeff() << "\n";
         	Rcpp::Rcout << "Min process->Xs[i]= " << process->Xs[i].minCoeff() << "\n";
-        	
+
         	Rcpp::Rcout << "res out of bound\n";
-          throw("res outof bound\n");
+        	throw("res outof bound\n");
         }
-        
-       if(debug)
-       		Rcpp::Rcout << "estimate::sample V\n";
+
+        if(debug)
+       	  Rcpp::Rcout << "estimate::sample V\n";
         // sample V| X
         if(sampleV)
-        	process->sample_V(i, rgig, K);
-		
-       if(debug)
-       		Rcpp::Rcout << "estimate::sample err V\n";
+          process->sample_V(i, rgig, K);
+
+        if(debug)
+         	Rcpp::Rcout << "estimate::sample err V\n";
         // random variance noise sampling
-     		if(type_MeasurementError != "Normal"){
+     	  if(type_MeasurementError != "Normal"){
       	  errObj->sampleV(i, res);
      		}
-		
+
       	//***************************************
       	//  computing gradients
       	//***************************************
-		
-       if(debug)
+
+        if(debug)
        		Rcpp::Rcout << "estimate::gradient step \n";
-      	if(iter >= nBurnin){
-      	
+      	if(ii >= burnin_done_i){
+
       	  //TODO:: ADDD SCALING WITH W FOR MIX GRADIENT
       		// mixobj gradient
       		mixobj->add_inter(i, res);
@@ -376,18 +387,21 @@ List estimateLong_cpp(Rcpp::List in_list)
   		count_vec[i] += 1;
 
     }
+    if(silent == 0)
+      Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample << "\n";
+
     //**********************************
   	//  gradient step
 	//***********************************
-    if(iter >= nBurnin){
-       if(debug)
-       		Rcpp::Rcout << "estimate::theta step\n";
-      double stepsize = step0 / pow(iter - nBurnin + 1, alpha);
-      mixobj->step_theta(stepsize, learning_rate);
-      errObj->step_theta(stepsize, learning_rate);
-      Kobj->step_theta(stepsize, learning_rate);
-      process->step_theta(stepsize, learning_rate);
-    }
+
+    if(debug)
+      Rcpp::Rcout << "estimate::theta step\n";
+    double stepsize = step0 / pow(iter + 1, alpha);
+    mixobj->step_theta(stepsize, learning_rate);
+    errObj->step_theta(stepsize, learning_rate);
+    Kobj->step_theta(stepsize, learning_rate);
+    process->step_theta(stepsize, learning_rate);
+
   }
 
   for(int i = 0; i < nindv; i++ )
