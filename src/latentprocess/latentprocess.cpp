@@ -464,8 +464,10 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate)
   	
   }else if(type_process == "NIG"){
   	
-  	if(nu_temp * h_MIN < 1e-10)
-  		nu_temp = 1e-10/h_MIN; 
+  	if(nu_temp * pow(h_MIN,2) < 5e-06){
+  		nu_temp =5e-06/pow(h_MIN,2); 
+  		dnu_prev = 0;
+  		}
   }
   nu = nu_temp;
 

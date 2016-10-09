@@ -37,6 +37,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   double learning_rate = 0;
   if(in_list.containsElementNamed("learning_rate"))
   	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  
+  int debug = 0;
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -260,6 +262,9 @@ List estimateLong_cpp(Rcpp::List in_list)
   			//***********************************
       	// mixobj sampling
     		//***********************************
+    	
+       if(debug)
+       		Rcpp::Rcout << "estimate::sample mix \n";
       	if(type_MeasurementError == "Normal")
     			mixobj->sampleU( i, res, 2 * log(errObj->sigma));
   			else
@@ -284,7 +289,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	res += A * process->Xs[i];
 
-
+		
+       if(debug)
+       		Rcpp::Rcout << "estimate::sample X\n";
       	//Sample X|Y, V, sigma
 		if(sampleX){
         	if(type_MeasurementError == "Normal")
@@ -303,10 +310,14 @@ List estimateLong_cpp(Rcpp::List in_list)
           throw("res outof bound\n");
         }
         
+       if(debug)
+       		Rcpp::Rcout << "estimate::sample V\n";
         // sample V| X
         if(sampleV)
         	process->sample_V(i, rgig, K);
-
+		
+       if(debug)
+       		Rcpp::Rcout << "estimate::sample err V\n";
         // random variance noise sampling
      		if(type_MeasurementError != "Normal"){
       	  errObj->sampleV(i, res);
@@ -315,7 +326,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
       	//  computing gradients
       	//***************************************
-
+		
+       if(debug)
+       		Rcpp::Rcout << "estimate::gradient step \n";
       	if(iter >= nBurnin){
       	
       	  //TODO:: ADDD SCALING WITH W FOR MIX GRADIENT
@@ -338,7 +351,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       		// process gradient
       		res += A * process->Xs[i];
-			
+
           if(type_MeasurementError != "Normal"){
                 //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
               process->gradient_v2(i,
@@ -367,6 +380,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   	//  gradient step
 	//***********************************
     if(iter >= nBurnin){
+       if(debug)
+       		Rcpp::Rcout << "estimate::theta step\n";
       double stepsize = step0 / pow(iter - nBurnin + 1, alpha);
       mixobj->step_theta(stepsize, learning_rate);
       errObj->step_theta(stepsize, learning_rate);

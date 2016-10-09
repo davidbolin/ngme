@@ -16,6 +16,7 @@ void NIGMixedEffect::printIter()
 
 
 	if(Br.size() > 0){
+		Rcpp::Rcout << "mu = " << mu.transpose() << "\n";
 		Rcpp::Rcout << "beta_r = " << beta_random.transpose() << "\n";
 		Rcpp::Rcout << "nu     = " << nu << "\n";
 		Rcpp::Rcout << "D(sigma) = " << Sigma.diagonal().transpose() << "\n";
@@ -485,7 +486,7 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
 
 void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
 {
-	gradMu_old *= learning_rate;
+	gradMu_old.array() *= learning_rate;
     gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
     // H_beta_random = H_mu_random
     gradMu_old += 0.5 * (Sigma * gradMu_2)/ (counter * (2*EiV - EV));
@@ -511,7 +512,7 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
         throw("in NIGmidexeffect nu is zero \n");
     }
   }
-
+	nu = nu_temp;
 
   EiV = 1. + 1./nu;
   VV = 1./nu;
