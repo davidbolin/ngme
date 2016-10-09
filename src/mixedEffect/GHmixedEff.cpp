@@ -527,14 +527,13 @@ void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learnin
 }
 void NIGMixedEffect::step_beta_random(const double stepsize, const double learning_rate)
 {
-	
 	dbeta_r_old.array() *= learning_rate;
 	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
 	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (counter * EiV);
-    beta_random += stepsize * dbeta_f_old;
-    grad_beta_r2.setZero(Br[0].cols());
-    H_beta_random.setZero(Br[0].cols(), Br[0].cols());
-    grad_beta_r2.setZero(Br[0].cols());
+	beta_random += stepsize * dbeta_r_old;
+	grad_beta_r2.setZero(Br[0].cols());
+  H_beta_random.setZero(Br[0].cols(), Br[0].cols());
+  grad_beta_r2.setZero(Br[0].cols());
 }
 
 
