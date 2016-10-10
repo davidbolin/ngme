@@ -1,8 +1,8 @@
 graphics.off()
 library(LDMod)
 
-nIter <- 50
-n.pers <- 10
+nIter <- 5
+n.pers <- 100
 nSim  <- 3
 n.obs  <- 10 + 10*(1:n.pers)
 n <- 100
@@ -11,7 +11,7 @@ nBurnin = 100
 pred.type <- "Filter"
 pSubsample = 0.1
 subsample.type = 2
-test.pred = FALSE
+test.pred = TRUE
 Y <- list()
 locs <- list()
 B_random <- list()
@@ -117,10 +117,11 @@ if(test.pred){
                       processes_list   = processes_list,
                       operator_list    = operator_list,
                       return.samples = TRUE,
-                      quantiles = c(0.05,0.95))
+                      quantiles = c(0.05,0.95),
+                      max.num.threads = 1)
 
 
-  x11()
+  #x11()
   k = 1
   plot(locs[[k]],sim_res$Y[[k]],ylim=c(min(res$X.summary[[k]]$quantiles[[1]]$field),
                                        max(res$X.summary[[k]]$quantiles[[2]]$field)))

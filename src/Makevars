@@ -1,10 +1,10 @@
 CC=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang
 CXX=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang++
 
-PKG_CPPFLAGS = -DDEBUG -Iinclude #-fopenmp
-PKG_CXXFLAGS = -DDEBUG  -std=c++11 #-fopenmp
-PKG_LIBS= -DDEBUG #-fopenmp
-R_XTRA_CPPFLAGS =  -I$(R_INCLUDE_DIR) 
+PKG_CPPFLAGS = -DNDEBUG -Iinclude #-fopenmp
+PKG_CXXFLAGS = -DNDEBUG  -std=c++11 #-fopenmp
+PKG_LIBS= -DNDEBUG #-fopenmp
+R_XTRA_CPPFLAGS =  -I$(R_INCLUDE_DIR)
 
 ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o
