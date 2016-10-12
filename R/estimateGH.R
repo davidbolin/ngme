@@ -39,7 +39,7 @@ estimateLong <- function(Y,
                          operator_list,
                          step0 = 0.5,
                          alpha = 0.1,
-                         learning_rate = 0, 
+                         learning_rate = 0,
                          pSubsample = 1.,
                          subsample.type = 1,
                          nIter = 10,     # iterations to run the stochastic gradient
@@ -93,7 +93,17 @@ estimateLong <- function(Y,
               )
 
   output <- estimateLong_cpp(input)
-  return(output)
+
+  output$operator_list$left.boundary <- operator_list$left.boundary
+  output$operator_list$right.boundary <- operator_list$right.boundary
+  output$operator_list$type <- operator_list$type
+  output$operator_list$Q <- operator_list$Q
+
+  output$measurementError_list$Vs <- measurement_list$Vs
+  output$measurementError_list$common_V <- measurement_list$common_V
+
+
+    return(output)
 }
 
 

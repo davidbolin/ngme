@@ -3,6 +3,12 @@ spde.A <- function(loc,x,right.boundary='neumann',left.boundary='neumann')
   if(min(loc)< min(x) || max(loc) > max(x))
     stop("locations outside support of basis")
 
+  if(is.null(right.boundary))
+    right.boundary='neumann'
+
+  if(is.null(left.boundary))
+    left.boundary='neumann'
+
   n.x  <- length(x)
   n.loc <- length(loc)
   i <- as.vector(cBind(1:n.loc,1:n.loc))
