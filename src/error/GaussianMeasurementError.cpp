@@ -58,7 +58,9 @@ void GaussianMeasurementError::gradient(const int i,
     // res.size()/pow(sigma, 2) - 3 * E[res.array().square().sum()] /pow(sigma, 4);
     ddsigma += - 2 * res.size()/pow(sigma, 2);
 }
-void GaussianMeasurementError::step_theta(const double stepsize, const double learning_rate)
+void GaussianMeasurementError::step_theta(const double stepsize, 
+										  const double learning_rate,
+										  const double polyak_rate)
 {
   double sigma_temp = -1;
   dsigma /= ddsigma;
@@ -75,8 +77,13 @@ void GaussianMeasurementError::step_theta(const double stepsize, const double le
   clear_gradient();
   counter = 0;
   ddsigma = 0;
-  if(store_param)
-  	sigma_vec[vec_counter++] = sigma;
+  if(store_param){
+  	if(vec_counter == 0 || polyak_rate == -1)
+  		sigma_vec[vec_counter] = sigma;
+  	else
+  		sigma_vec[vec_counter] = sigma;
+  	vec_counter++;
+  	}
 }
 
 

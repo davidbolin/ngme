@@ -23,6 +23,7 @@
 #' @param mu              - assymetric parameter for NIG or GAL
 #'
 #' @param learning_rate   - parameter for sthocastic gradient
+#' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
 #' @param pSubsample      - precentage of data used in each gradient subsampling
@@ -41,6 +42,7 @@ estimateLong <- function(Y,
                          alpha = 0.1,
                          learning_rate = 0,
                          pSubsample = 1.,
+                         polyak_rate = -1.,
                          subsample.type = 1,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
@@ -89,7 +91,8 @@ estimateLong <- function(Y,
                  step0            = step0,
                  alpha            = alpha,
                  common.grid      = common.grid,
-                 learning_rate    = learning_rate
+                 learning_rate    = learning_rate,
+                 polyak_rate      = polyak_rate
               )
 
   output <- estimateLong_cpp(input)

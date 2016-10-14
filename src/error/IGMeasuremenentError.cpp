@@ -129,16 +129,22 @@ void IGMeasurementError::step_nu(const double stepsize, const double learning_ra
 
 }
 
-void IGMeasurementError::step_theta(const double stepsize, const double learning_rate)
+void IGMeasurementError::step_theta(const double stepsize,
+									const double learning_rate,
+									const double polyak_rate)
 {
-  NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
+  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
   
-  step_nu(stepsize, learning_rate);
-  clear_gradient();
+  	step_nu(stepsize, learning_rate);
+  	clear_gradient();
   
-if(store_param)
-  	nu_vec[vec_counter-1] = nu; // -1 since NormalVarianceMixtureBaseError increase vec_counter
-  
+	if(store_param){
+
+		if(vec_counter ==1 || polyak_rate == -1)
+			nu_vec[vec_counter-1] = nu; // -1 since NormalVarianceMixtureBaseError increase vec_counter
+		else
+			nu_vec[vec_counter-1] =  polyak_rate * nu + (1- polyak_rate) * nu_vec[vec_counter-2];
+	}
 }
 
 void IGMeasurementError::clear_gradient()

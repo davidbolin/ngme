@@ -37,6 +37,10 @@ List estimateLong_cpp(Rcpp::List in_list)
   double learning_rate = 0;
   if(in_list.containsElementNamed("learning_rate"))
   	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  	
+  double polyak_rate = -1;
+  if(in_list.containsElementNamed("polyak_rate"))
+  	polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
   int debug = 0;
 	//**********************************
@@ -339,7 +343,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***************************************
 
         if(debug)
-       		Rcpp::Rcout << "estimate::gradient step \n";
+       		Rcpp::Rcout << "estimate::gradient calc \n";
       	if(ii >= burnin_done_i){
 
       	  //TODO:: ADDD SCALING WITH W FOR MIX GRADIENT
@@ -397,10 +401,20 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(debug)
       Rcpp::Rcout << "estimate::theta step\n";
     double stepsize = step0 / pow(iter + 1, alpha);
-    mixobj->step_theta(stepsize, learning_rate);
-    errObj->step_theta(stepsize, learning_rate);
-    Kobj->step_theta(stepsize, learning_rate);
-    process->step_theta(stepsize, learning_rate);
+    
+    double polyak_rate_temp = polyak_rate;
+    if(polyak_rate == 0)
+    	polyak_rate_temp = 1./ (iter + 1);
+    if(debug)
+    	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
+    mixobj->step_theta(stepsize,  learning_rate, polyak_rate_temp);
+    errObj->step_theta(stepsize,  learning_rate, polyak_rate_temp);
+    Kobj->step_theta(stepsize,    learning_rate, polyak_rate_temp);
+    process->step_theta(stepsize, learning_rate, polyak_rate_temp);
+    
+
+    if(debug)
+      Rcpp::Rcout << "estimate::theta step done\n";
 
   }
 

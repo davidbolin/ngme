@@ -325,7 +325,9 @@ void NormalMixedEffect::gradient(const int i,
       H_beta_fixed  +=  exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
     }
 }
-void NormalMixedEffect::step_theta(const double stepsize,const double learning_rate)
+void NormalMixedEffect::step_theta(const double stepsize,
+								   const double learning_rate,
+								   const double polyak_rate)
 {
   if(Br.size() > 0){
     step_beta_random(stepsize, learning_rate);
@@ -335,14 +337,29 @@ void NormalMixedEffect::step_theta(const double stepsize,const double learning_r
     step_beta_fixed(stepsize, learning_rate);
 
 if(store_param){
-    if(Bf.size() > 0)
-      betaf_vec.row(vec_counter)  = beta_fixed;
+    if(Bf.size() > 0){
+      if(vec_counter == 0 || polyak_rate == -1)
+      	betaf_vec.row(vec_counter)  = beta_fixed;
+      else{
+      	betaf_vec.row(vec_counter).array()  = polyak_rate * beta_fixed.array();
+      	betaf_vec.row(vec_counter).array()  += (1. - polyak_rate) * betaf_vec.row(vec_counter - 1).array();
+      }
+    }
     if(Br.size() > 0)
     {
-      betar_vec.row(vec_counter)  = beta_random;
-      Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
-      Sigma_vec.row(vec_counter)  = temp;
-    }
+    	Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
+    	if(vec_counter == 0 || polyak_rate == -1){	
+      		betar_vec.row(vec_counter)  = beta_random;
+      		Sigma_vec.row(vec_counter)  = temp;
+      	
+      	}else{
+      		betar_vec.row(vec_counter).array()   = polyak_rate * beta_random.array();
+      		betar_vec.row(vec_counter).array()  += (1 - polyak_rate) * betar_vec.row(vec_counter - 1).array();
+      	
+      		Sigma_vec.row(vec_counter).array()   = polyak_rate * temp.array();
+      		Sigma_vec.row(vec_counter).array()  +=  + (1 - polyak_rate) * Sigma_vec.row(vec_counter - 1).array();
+      	}	
+    }	
     vec_counter++;
   }
 

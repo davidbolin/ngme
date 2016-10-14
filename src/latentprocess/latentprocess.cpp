@@ -109,6 +109,16 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h_MIN = *std::min_element(h_min.begin(), h_min.end());
 
 
+	if(type_process == "CH"){
+	  Vv_mean.resize(h2.size());
+		for(int i =0; i < nindv; i++){
+			EV[i] = h2[i];
+			EV[i].array() *= 0.25 / (0.5+1);
+			Vv_mean[i] = h2[i].sum()/h2[i].size();
+			Vv_mean[i] *=  0.25 / (0.5+1);
+			
+			}
+	}
 
   for(int i = 0; i < nindv; i++ ){
 
@@ -125,18 +135,19 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   	dnu_prev = 0;
   	dmu_prev = 0;
   	npars = 0;
+  	npars = 1;
   	if(type_process != "CH"){
 		npars = 2;
   		if(init_list.containsElementNamed("nu"))
     		nu = Rcpp::as < double >( init_list["nu"]);
   		else
     		nu = 1.;
-
-  		if(init_list.containsElementNamed("mu"))
-    		mu = Rcpp::as < double >( init_list["mu"]);
-  		else
-    		mu = 1.;
-    }
+	}
+  	if(init_list.containsElementNamed("mu"))
+    	mu = Rcpp::as < double >( init_list["mu"]);
+  	else
+    	mu = 1.;
+    
 
 
   	dmu    = 0;
@@ -299,12 +310,12 @@ void GHProcess::gradient( const int i ,
 
 
   	counter++;
-  	if( type_process == "CH")
-  		return;
+  	//if( type_process == "CH")
+  	//	return;
 
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
-	}else if(type_process=="GAL"){
+	}else if(type_process=="GAL" || type_process=="CH"){
   			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
 		    temp_1 -= h[i];
@@ -323,6 +334,9 @@ void GHProcess::gradient( const int i ,
       		ddmu_1 -= Vv_mean[i] * (trace_var / pow(sigma, 2));
       		
 	}
+
+  if( type_process == "CH")
+  		return;
   grad_nu(i);
 }
 
@@ -338,12 +352,10 @@ void GHProcess:: gradient_v2( const int i ,
 
   	counter++;
 
-  	if( type_process == "CH")
-  		return;
 
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
-	}else if(type_process=="GAL"){
+	}else if(type_process=="GAL" || type_process=="CH"){
 			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
 		    temp_1 -= h[i];
@@ -360,6 +372,9 @@ void GHProcess:: gradient_v2( const int i ,
 			
 
 	}
+	
+  	if( type_process == "CH")
+  		return;
 	grad_nu(i);
 }
 
@@ -400,26 +415,39 @@ void GHProcess::grad_nu(const int i)
 }
 
 
-void GHProcess::step_theta(const double stepsize, const double learning_rate)
+void GHProcess::step_theta(const double stepsize, 
+						   const double learning_rate,
+						   const double polyak_rate)
 {
-
-
-
-  	if( type_process == "CH"){
-  		counter = 0;
-  		return;
-  	}
-	step_nu(stepsize, learning_rate);
 	step_mu(stepsize, learning_rate);
 	counter = 0;
+	if(store_param){
+		if(vec_counter == 0 || polyak_rate == -1)
+			mu_vec[vec_counter] = mu;
+		else
+			mu_vec[vec_counter] = polyak_rate * mu + (1- polyak_rate) * mu_vec[vec_counter-1];
+		
+	}
+  	
+  		
+  	
+	step_nu(stepsize, learning_rate);
+	
+	counter = 0;
 
+	clear_gradient();
+	if( type_process == "CH")
+  		return;
+	
 	if(store_param)
 	{
-		mu_vec[vec_counter] = mu;
-		nu_vec[vec_counter] = nu;
+		if(vec_counter == 0 || polyak_rate == -1)
+			nu_vec[vec_counter] = nu;
+		else
+			nu_vec[vec_counter] = polyak_rate * nu + (1- polyak_rate) * nu_vec[vec_counter-1];
+		
 		vec_counter++;
 	}
-	clear_gradient();
 }
 
 void GHProcess::step_mu(const double stepsize, const double learning_rate)
@@ -436,7 +464,6 @@ void GHProcess::step_mu(const double stepsize, const double learning_rate)
 	mu +=  step ;//(sqrt(cache_mu) + 1);
 	ddmu_1 = 0;
 	ddmu_2 = 0;
-	
 }
 
 void GHProcess::step_nu(const double stepsize, const double learning_rate)
@@ -479,12 +506,12 @@ Eigen::VectorXd GHProcess::get_gradient()
 {
 
 	Eigen::VectorXd  g(npars);
-
+	g[0] = dmu;
 
   	if( type_process == "CH")
   		return(g);
 
-	g[0] = dmu;
+	
 	g[1] = dnu;
 	return(g);
 }
@@ -501,10 +528,11 @@ void GHProcess::setupStoreTracj(const int Niter)
 	vec_counter = 0;
 	store_param = 1;
 
-  	if( type_process == "CH")
-  		return;
 
 	mu_vec.resize(Niter);
+	
+  	if( type_process == "CH")
+  		return;
 	nu_vec.resize(Niter);
 }
 
@@ -513,6 +541,8 @@ void GHProcess::printIter()
 {
 	if( type_process != "CH")
 		Rcpp::Rcout << "(nu, mu) = " << nu << ", " << mu;
+	else
+		Rcpp::Rcout << "mu = " <<  mu << "\n";
 }
 
 Rcpp::List GHProcess::toList()
@@ -582,15 +612,14 @@ void GHProcess::update_nu()
   			  EiV[i].setOnes(h[i].size());
   			  EiV[i].array() *= std::numeric_limits<double>::infinity();
   		  }
-
   		}
-
-  	}
+  	}else{ throw("no processes");}
   	 for(int i =0; i < h2.size(); i++)
   	 	H_mu[i] =  (EV[i].sum() - EiV[i].dot(h2[i]));
+
 }
 
- Eigen::VectorXd  GHProcess::mean_X(const int i){
+Eigen::VectorXd  GHProcess::mean_X(const int i){
 
  Eigen::VectorXd mean = -h[i] + Vs[i];
  mean.array() *= mu;

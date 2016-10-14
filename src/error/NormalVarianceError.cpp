@@ -176,14 +176,21 @@ void NormalVarianceMixtureBaseError::gradient(const int i,
     ddsigma += - 2 * res.size()/pow(sigma, 2);
 }
 
-void NormalVarianceMixtureBaseError::step_theta(const double stepsize,const double learning_rate)
+void NormalVarianceMixtureBaseError::step_theta(const double stepsize,
+												const double learning_rate,
+												const double polyak_rate)
 {
   step_sigma(stepsize, learning_rate);
   NormalVarianceMixtureBaseError::clear_gradient();
 
   counter = 0;
-
-  sigma_vec[vec_counter++] = sigma;
+	if(store_param){
+		if(vec_counter == 0 || polyak_rate == -1)
+  			sigma_vec[vec_counter] = sigma;
+  		else
+  			sigma_vec[vec_counter] = polyak_rate * sigma + (1 - polyak_rate) * sigma_vec[vec_counter];
+  		vec_counter++;
+  	}
 
 }
 

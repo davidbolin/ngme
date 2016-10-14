@@ -25,19 +25,19 @@ dnig <- function(x, delta, mu, nu, sigma)
 plot_GH_noise  <- function(res, dRE = c())
 {
   resid <- c()
-  for(i in 1:length(res$Y_list))
+  for(i in 1:length(res$obs_list))
   {
-    Y <- res$Y_list[[i]]
-    beta <- res$mixedeffect$beta_random + res$mixedeffect$U[,i]
-    resid <- rbind(resid, Y-res$mixedeffect$Br[[i]]%*%beta)
+    Y <- res$obs_list[[i]]$Y - res$mixedEffect_list$B_fixed[[i]]%*%res$mixedEffect_list$beta_fixed
+    beta <- res$mixedEffect_list$beta_random + res$mixedEffect_list$U[,i]
+    resid <- rbind(resid, Y-res$mixedEffect_list$B_random[[i]]%*%beta)
   }
   
   range_y <- c(min(resid), max(resid))
   x_ <- seq(range_y[1], range_y[2],length=100)
-  if(res$measerror$noise == 'NIG')
-    f <- dnig(x_, 0, 0, res$measerror$nu, res$measerror$sigma)
+  if(res$measurementError_list$noise == 'NIG')
+    f <- dnig(x_, 0, 0, res$measurementError_list$nu, res$measurementError_list$sigma)
   else
-    f <- dnorm(x_,sd = res$measerror$sigma)
+    f <- dnorm(x_,sd = res$measurementError_list$sigma)
   par(mfrow= c( ceiling((length(dRE) + 1)/2), 2) )
   hist(resid,50,prob=T, main='residual', xlab='x')
   lines(x_,
@@ -47,17 +47,17 @@ plot_GH_noise  <- function(res, dRE = c())
       for(i in 1:length(dRE))
       {
         j = dRE[i]
-        U = res$mixedeffect$U[j,]
+        U = res$mixedEffect_list$U[j,]
         x_ <- seq(min(U), max(U),length=100)
         hist(U,30,prob=T, main=paste('sample of centered RE ',j,sep=""), xlab='x')
-        if(res$mixedeffect$noise == 'NIG'){
+        if(res$mixedEffect_list$noise == 'NIG'){
           f <- dnig(x_,
-                   -res$mixedeffect$mu[j],
-                   res$mixedeffect$mu[j],
-                   res$mixedeffect$nu,
-                   sqrt(res$mixedeffect$Sigma[j, j]))
+                   -res$mixedEffect_list$mu[j],
+                   res$mixedEffect_list$mu[j],
+                   res$mixedEffect_list$nu,
+                   sqrt(res$mixedEffect_list$Sigma[j, j]))
         }else{
-          f <- dnorm(x_,sd = sqrt(res$mixedeffect$Sigma[j, j]))
+          f <- dnorm(x_,sd = sqrt(res$mixedEffect_list$Sigma[j, j]))
         }
         lines(x_,
               f,

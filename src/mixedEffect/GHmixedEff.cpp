@@ -415,7 +415,9 @@ void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ )
   UUT.array() /= V(i);
   UUt    += vec( UUT);
 }
-void NIGMixedEffect::step_theta(const double stepsize, double const learning_rate)
+void NIGMixedEffect::step_theta(const double stepsize, 
+								const double learning_rate,
+								const double polyak_rate)
 {
   if(Br.size() > 0){
     step_beta_random(stepsize, learning_rate);
@@ -435,8 +437,13 @@ void NIGMixedEffect::step_theta(const double stepsize, double const learning_rat
     clear_gradient();
 
   if(store_param){
-    if(Bf.size() > 0)
-      betaf_vec.row(vec_counter)  = beta_fixed;
+    if(Bf.size() > 0){
+      if(vec_counter == 0 || polyak_rate == -1)
+      	betaf_vec.row(vec_counter)  = beta_fixed;
+      else
+      	betaf_vec.row(vec_counter)  = polyak_rate * beta_fixed + (1 - polyak_rate) * betaf_vec.row(vec_counter - 1);
+      
+    }
     if(Br.size() > 0)
     {
       betar_vec.row(vec_counter)  = beta_random;
@@ -445,6 +452,26 @@ void NIGMixedEffect::step_theta(const double stepsize, double const learning_rat
       Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
       Sigma_vec.row(vec_counter)  = temp;
     }
+    if(Br.size() > 0)
+    {
+      	Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
+    	if(vec_counter == 0 || polyak_rate == -1){	
+      		betar_vec.row(vec_counter)  = beta_random;
+      		Sigma_vec.row(vec_counter)  = temp;
+      		mu_vec.row(vec_counter) = mu;
+      		nu_vec[vec_counter] = nu;
+      	}else{
+      		betar_vec.row(vec_counter).array()  = polyak_rate * beta_random.array();
+      		betar_vec.row(vec_counter).array()  +=  (1 - polyak_rate) * betar_vec.row(vec_counter - 1).array();
+      		Sigma_vec.row(vec_counter).array()  = polyak_rate * temp.array();
+      		Sigma_vec.row(vec_counter).array()  += (1 - polyak_rate) * Sigma_vec.row(vec_counter - 1).array();
+      		
+      		mu_vec.row(vec_counter)          = polyak_rate * mu.array();
+      		mu_vec.row(vec_counter).array() +=  (1 - polyak_rate) * mu_vec.row(vec_counter - 1).array();
+      		
+      		nu_vec[vec_counter]     = polyak_rate * nu + (1 - polyak_rate) * nu_vec[vec_counter - 1];
+      	}	
+    }	
     vec_counter++;
   }
 

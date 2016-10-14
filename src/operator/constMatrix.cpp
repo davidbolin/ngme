@@ -98,7 +98,9 @@ void constMatrix::print_parameters(){
   Rcpp::Rcout << "tau = " << tau ;
 }
 
-void constMatrix::step_theta(const double stepsize, const double learning_rate)
+void constMatrix::step_theta(const double stepsize, 
+							 const double learning_rate,
+							 const double polyak_rate)
 {
 	dtau  /= ddtau;
   	dtau_old = learning_rate * dtau_old + dtau;
@@ -114,7 +116,10 @@ void constMatrix::step_theta(const double stepsize, const double learning_rate)
   }
 
 	tau = tau_temp;
-	tauVec[counter] = tau;
+	if(counter == 0 || polyak_rate == -1)
+		tauVec[counter] = tau;
+	else
+		tauVec[counter] = polyak_rate * tau + (1 - polyak_rate) * tauVec[counter-1];
 
 	counter++;
 	clear_gradient();

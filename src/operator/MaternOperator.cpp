@@ -197,7 +197,9 @@ void MaternOperator::print_parameters(){
 }
 
 
-void MaternOperator::step_theta(const double stepsize, const double learning_rate)
+void MaternOperator::step_theta(const double stepsize, 
+                                const double learning_rate,
+                                const double polyak_rate)
 {
 
   dtau  /= ddtau;
@@ -221,8 +223,16 @@ void MaternOperator::step_theta(const double stepsize, const double learning_rat
 	  kappa_temp = kappa - step;
 	}
 	kappa = kappa_temp;
-	tauVec[counter] = tau;
-	kappaVec[counter] = kappa;
+	
+	if(counter == 0 || polyak_rate == -1)
+		tauVec[counter] = tau;
+	else
+		tauVec[counter] = polyak_rate * tau + (1 - polyak_rate) * tauVec[counter-1];
+			
+	if(counter == 0 || polyak_rate == -1)
+		kappaVec[counter] = kappa;
+	else
+		kappaVec[counter] = polyak_rate * kappa + (1 - polyak_rate) * kappaVec[counter-1];
 	counter++;
 	clear_gradient();
 	ddtau   = 0;

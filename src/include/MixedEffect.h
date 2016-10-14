@@ -85,7 +85,9 @@ class MixedEffect {
 
     // returns the gradient of all the parameters
     virtual Eigen::VectorXd get_gradient() = 0;
-    virtual void step_theta(const double stepsize, double const learning_rate = 0) = 0;
+    virtual void step_theta(const double stepsize, 
+    						const double  learning_rate = 0,
+    						const double polyak_rate = -1) = 0;
     /*
     	simulates from the prior distribution
 		putting into Y
@@ -160,7 +162,10 @@ class NormalMixedEffect  : public MixedEffect{
                   std::mt19937 & random_engine,
                   const double log_sigma2 = 0);
 
-    void step_theta(const double stepsize, const double learning_rate = 0);
+    
+    void step_theta(const double stepsize, 
+    				const double learning_Rate  = 0,
+    				const double polyak_rate   = -1);
     void step_Sigma(const double, const double );
     void step_beta_fixed(const double, const double );
     void step_beta_random(const double, const double );
@@ -251,7 +256,9 @@ class NIGMixedEffect  : public MixedEffect{
     			   const double EiV = 1.);
     void gradient(const int , const Eigen::VectorXd& , const double );
     void gradient_sigma(const int , Eigen::VectorXd& );
-    void step_theta(const double stepsize, const double learning_Rate  = 0);
+    void step_theta(const double stepsize, 
+    				const double learning_Rate  = 0,
+    				const double polyak_rate   = -1);
     void step_beta_fixed(const double stepsize, const double);
     void step_beta_random(const double stepsize, const double);
     Rcpp::List toList();
