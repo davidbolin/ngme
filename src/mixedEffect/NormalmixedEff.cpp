@@ -63,11 +63,17 @@ Rcpp::List NormalMixedEffect::toList()
   out["Cov_theta"]   = Cov_theta;
   if(store_param){
   if(Bf.size() > 0)
-	out["betaf_vec"] = betaf_vec;
+  	if(Bf.size() > 0){
+		 out["betaf_vec"] = betaf_vec;
+		 out["beta_fixed"] = betaf_vec.row(betaf_vec.rows() - 1);
+	}
 
    if(Br.size() > 0){
-		out["betar_vec"] = betar_vec;
-		out["Sigma_vec"] = Sigma_vec;
+		out["betar_vec"]   = betar_vec;
+		out["beta_random"] = betar_vec.row(betar_vec.rows() - 1);
+		out["Sigma_vec"]   = Sigma_vec;
+		Eigen::VectorXd temp = Sigma_vec.row(betar_vec.rows() - 1);
+		out["Sigma"]       = veci(temp, Sigma.rows(), Sigma.cols());
 	}
   }
   return(out);

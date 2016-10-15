@@ -37,9 +37,10 @@ Rcpp::List IGMeasurementError::toList()
   Rcpp::List out = NormalVarianceMixtureBaseError::toList();
   out["nu"]          = nu;
   
-  if(store_param)
+  if(store_param){
   	out["nu_vec"]    = nu_vec;
-  
+  	out["nu"]          = nu_vec[nu_vec.size() - 1];
+  }
   return(out);
 }
 void IGMeasurementError::initFromList(Rcpp::List const &init_list)

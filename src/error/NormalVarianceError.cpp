@@ -34,13 +34,15 @@ Rcpp::List NormalVarianceMixtureBaseError::toList()
   Rcpp::List out;
   out["noise"]       = noise;
   out["sigma"]       = sigma;
-  out["nu"]          = nu;
+  out["Vs"]          = Vs;
+  out["common_V"]          = common_V;
   out["Cov_theta"]   = Cov_theta;
   out["noise"]       = noise;
 
-  if(store_param)
+  if(store_param){
   	out["sigma_vec"] = sigma_vec;
-
+	out["sigma"]       = sigma_vec[sigma_vec.size() - 1];
+   }
   return(out);
 }
 void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)

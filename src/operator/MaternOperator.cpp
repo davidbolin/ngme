@@ -132,8 +132,8 @@ Rcpp::List MaternOperator::output_list()
   Rcpp::List  List;
 
   List["type"] = "Matern";
-  List["tau"] = tau;
-  List["kappa"] = kappa;
+  List["tau"] = tauVec[tauVec.size() - 1];
+  List["kappa"] = kappaVec[tauVec.size() - 1];
   List["tauVec"] = tauVec;
   List["kappaVec"] = kappaVec;
   //List["G"] = G;

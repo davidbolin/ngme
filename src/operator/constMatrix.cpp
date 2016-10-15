@@ -129,7 +129,7 @@ void constMatrix::step_theta(const double stepsize,
 Rcpp::List constMatrix::output_list()
 {
   Rcpp::List  List;
-  List["tau"] = tau;
+  List["tau"] = tauVec(tauVec.size() -1 );
   List["tauVec"] = tauVec;
   //List["Q"] = Q;
   List["loc"] = loc;

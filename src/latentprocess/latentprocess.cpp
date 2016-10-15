@@ -563,6 +563,8 @@ Rcpp::List GHProcess::toList()
   {
   	out["mu_vec"]     = mu_vec;
   	out["nu_vec"]     = nu_vec;
+  	out["nu"]         = nu_vec[nu_vec.size() - 1];
+    out["mu"]         = mu_vec[mu_vec.size() - 1];
   }
 
   return(out);

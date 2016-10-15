@@ -101,11 +101,7 @@ estimateLong <- function(Y,
   output$operator_list$right.boundary <- operator_list$right.boundary
   output$operator_list$type <- operator_list$type
   output$operator_list$Q <- operator_list$Q
-
-  output$measurementError_list$Vs <- measurment_list$Vs
-  output$measurementError_list$common_V <- measurment_list$common_V
-
-
+  
     return(output)
 }
 
