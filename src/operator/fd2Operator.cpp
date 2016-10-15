@@ -19,7 +19,7 @@ Rcpp::List fd2Operator::output_list()
 {
   Rcpp::List  List;
   List["fd2"] = "fd2";
-  List["tau"] = tau;
+  List["tau"] = tauVec(tauVec.size() -1 );
   List["tauVec"] = tauVec;
   //List["Q"] = Q;
   List["loc"] = loc;
