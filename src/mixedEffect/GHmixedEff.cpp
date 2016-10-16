@@ -421,7 +421,7 @@ void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ )
   UUT.array() /= V(i);
   UUt    += vec( UUT);
 }
-void NIGMixedEffect::step_theta(const double stepsize, 
+void NIGMixedEffect::step_theta(const double stepsize,
 								const double learning_rate,
 								const double polyak_rate)
 {
@@ -444,11 +444,19 @@ void NIGMixedEffect::step_theta(const double stepsize,
 
   if(store_param){
     if(Bf.size() > 0){
-      if(vec_counter == 0 || polyak_rate == -1)
-      	betaf_vec.row(vec_counter)  = beta_fixed;
-      else
-      	betaf_vec.row(vec_counter)  = polyak_rate * beta_fixed + (1 - polyak_rate) * betaf_vec.row(vec_counter - 1);
-      
+      if(vec_counter == 0 || polyak_rate == -1){
+        betaf_vec.row(vec_counter)  = beta_fixed;
+      } else {
+        betaf_vec.row(vec_counter)  = polyak_rate * beta_fixed;
+        betaf_vec.row(vec_counter) += (1 - polyak_rate) * betaf_vec.row(vec_counter - 1);
+        /*
+        Rcpp::Rcout << "----" << polyak_rate << "\n";
+        Rcpp::Rcout << beta_fixed.transpose() << "\n";
+        Rcpp::Rcout << betaf_vec.row(vec_counter - 1)  << "\n";
+        Rcpp::Rcout << betaf_vec.row(vec_counter)  << "\n";
+        Rcpp::Rcout << "----" << "\n";
+        */
+      }
     }
     if(Br.size() > 0)
     {
@@ -461,7 +469,7 @@ void NIGMixedEffect::step_theta(const double stepsize,
     if(Br.size() > 0)
     {
       	Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
-    	if(vec_counter == 0 || polyak_rate == -1){	
+    	if(vec_counter == 0 || polyak_rate == -1){
       		betar_vec.row(vec_counter)  = beta_random;
       		Sigma_vec.row(vec_counter)  = temp;
       		mu_vec.row(vec_counter) = mu;
@@ -471,13 +479,13 @@ void NIGMixedEffect::step_theta(const double stepsize,
       		betar_vec.row(vec_counter).array()  +=  (1 - polyak_rate) * betar_vec.row(vec_counter - 1).array();
       		Sigma_vec.row(vec_counter).array()  = polyak_rate * temp.array();
       		Sigma_vec.row(vec_counter).array()  += (1 - polyak_rate) * Sigma_vec.row(vec_counter - 1).array();
-      		
+
       		mu_vec.row(vec_counter)          = polyak_rate * mu.array();
       		mu_vec.row(vec_counter).array() +=  (1 - polyak_rate) * mu_vec.row(vec_counter - 1).array();
-      		
+
       		nu_vec[vec_counter]     = polyak_rate * nu + (1 - polyak_rate) * nu_vec[vec_counter - 1];
-      	}	
-    }	
+      	}
+    }
     vec_counter++;
   }
 
@@ -493,7 +501,7 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old *= learning_rate;
   dSigma_vech_old += dSigma_vech;
-  
+
   double stepsize_temp  = stepsize;
   while(pos_def <= 0){
     Eigen::VectorXd Sigma_vech_temp = Sigma_vech;
@@ -529,13 +537,13 @@ void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
 
 void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
 {
-   
+
    grad_nu  *=  (nu * nu) / (2. * counter); //hessian
-   
+
   dnu_old = learning_rate * dnu_old + grad_nu;
   double nu_temp = -1;
   double step_size_temp = stepsize;
-  
+
   while(nu_temp < 0){
   	nu_temp = nu + stepsize  * grad_nu;
     step_size_temp *= 0.5;
