@@ -109,14 +109,16 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     for( Rcpp::List::iterator it = Br_list.begin(); it != Br_list.end(); ++it ) {
       Br[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
     }
+    
+    if(init_list.containsElementNamed("beta_random"))
+      	beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
+    else
+    	beta_random.setZero(Br[0].cols());
+    
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
-    if(init_list.containsElementNamed("beta_random"))
-      beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
-    else
-      beta_random.setZero(Br[0].cols());
-
+    
 	dbeta_r_old.setZero(Br[0].cols());
     if(Br.size() > 0){
       H_beta_random.setZero(Br[0].cols(), Br[0].cols());
@@ -138,13 +140,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
     else
       U.setZero(Br[0].cols(), Br.size());
-    //
-    // variance components
-    if( init_list.containsElementNamed("V" ))
-      V = Rcpp::as< Eigen::VectorXd > (init_list["V"]) ;
-    else
-      V.setOnes(Br.size());
-
+    
     if( init_list.containsElementNamed("mu" ))
       mu = Rcpp::as< Eigen::MatrixXd > (init_list["mu"]) ;
     else
@@ -174,8 +170,15 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
     Sigma_epsilon = 0;
-  	if(init_list.containsElementNamed("Sigma_epsilon"))
-  		Sigma_epsilon  =1;
+  	//if(init_list.containsElementNamed("Sigma_epsilon"))
+  	//	Sigma_epsilon  =1;
+  	if( init_list.containsElementNamed("V" ))
+    	V = Rcpp::as< Eigen::VectorXd > (init_list["V"]) ;
+    else{
+    	 V.setZero(Br.size());
+    	 simulate();
+    }
+
 
   }else{ Br.resize(0);}
 }
@@ -255,7 +258,8 @@ void NIGMixedEffect::sampleU(const int i,
 
     Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * res);
     Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * Br[i];
-    Eigen::MatrixXd Qp  = invSigma / V(i);
+    Eigen::MatrixXd Qp  = invSigma;
+    Qp.array() /= V(i);
     b += Qp * (- mu + V(i) * mu);
     Q += Qp;
     U.col(i) = sample_Nc(b, Q);
@@ -428,8 +432,8 @@ void NIGMixedEffect::step_theta(const double stepsize,
   if(Br.size() > 0){
     step_beta_random(stepsize, learning_rate);
     step_mu(stepsize, learning_rate);
-    step_Sigma(stepsize, learning_rate);
     step_nu(stepsize, learning_rate);
+    step_Sigma(stepsize, learning_rate);
     a_GIG = mu.transpose() * (invSigma * mu);
     a_GIG += nu;
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
@@ -516,9 +520,24 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
         Rcpp::Rcout << "pos_def = " << pos_def <<"\n";
         throw("in midexeffect not pos def \n");
     }
-
+	
+	
 
   }
+  SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
+  //Rcpp::Rcout << "Sigma = " << Sigma  << "\n";
+  //Rcpp::Rcout << "eig = " << eig.eigenvalues() << "\n";
+  
+  if(pos_def <= 1e-6){
+  		dSigma_vech_old *= 0;
+  		gradMu_old      *= 0;
+  }
+  
+  if(pos_def <= 1e-14){
+		Rcpp::Rcout << "NIGMixedEffect:: Sigma almost singular \n" ;
+		throw("error");
+		
+	}
 
     UUt.setZero(Sigma.cols() * Sigma.rows());
     invSigma  = Sigma.inverse();
@@ -553,8 +572,13 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
         throw("in NIGmidexeffect nu is zero \n");
     }
   }
+  if(nu_temp  > 100){
+  		nu_temp =100; 
+      dnu_old = 0;
+  	}
 	nu = nu_temp;
 
+	
   EiV = 1. + 1./nu;
   VV = 1./nu;
 }

@@ -284,7 +284,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     			mixobj->sampleU( i, res, 2 * log(errObj->sigma));
   			else
   			  mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
-
+		//Rcpp::Rcout << "V[" << i << "," << ii <<  "] = " << ((NIGMixedEffect*) mixobj)->V[i] << "\n";
         mixobj->remove_inter(i, res);
       	//***********************************
     		// sampling processes
@@ -303,9 +303,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     			z[j] =  normal(random_engine);
 
       	res += A * process->Xs[i];
-
-
-        if(debug)
+		if(debug)
        	  Rcpp::Rcout << "estimate::sample X\n";
       	//Sample X|Y, V, sigma
 		    if(sampleX){
@@ -315,8 +313,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           	process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
 		    }
         res -= A * process->Xs[i];
-
-        if(res.cwiseAbs().sum() > 1e16){
+		if(res.cwiseAbs().sum() > 1e16){
         	Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process->Vs[i].cwiseInverse().maxCoeff() << "\n";
         	Rcpp::Rcout << "Max process->Xs[i]= " << process->Xs[i].maxCoeff() << "\n";
         	Rcpp::Rcout << "Min process->Xs[i]= " << process->Xs[i].minCoeff() << "\n";
