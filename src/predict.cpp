@@ -34,6 +34,7 @@ List predictLong_cpp(Rcpp::List in_list)
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int silent     = Rcpp::as< int > (in_list["silent"]);
   int n_threads  = Rcpp::as< int > (in_list["n_threads"]);
+  int mix_samp  = Rcpp::as< int > (in_list["mix_samp"]);
 
   //**********************************
   //     setting up the main data
@@ -269,14 +270,14 @@ List predictLong_cpp(Rcpp::List in_list)
           Rcpp::Rcout << "Sample mixed effect (" << rank  << ")\n";
         }
 
-        if(type_MeasurementError == "Normal"){
-          mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
-        } else {
-          mixobj->sampleU2_par( i,
-                            res,
-                            errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
-                          random_engine[rank],
-                            2 * log(errObj->sigma));
+        for(int kkk=0;kkk<mix_samp;kkk++){
+          if(type_MeasurementError == "Normal"){
+            mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
+          } else {
+            //mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
+            mixobj->sampleU2_par( i, res, errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
+                                  random_engine[rank], 2 * log(errObj->sigma));
+          }
         }
 
 

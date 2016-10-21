@@ -22,6 +22,7 @@ predictLong <- function( Y,
                          quantiles = NULL,
                          excursions = NULL,
                          crps = FALSE,
+                         crps.skip = 10,
                          mixedEffect_list,
                          measurment_list,
                          processes_list,
@@ -29,7 +30,8 @@ predictLong <- function( Y,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting prediction
                          silent  = FALSE, # print iteration info
-                         max.num.threads = 2
+                         max.num.threads = 2,
+                         repeat.mix = 10
 )
 {
   if(type=='Filter'){
@@ -78,8 +80,12 @@ predictLong <- function( Y,
       n.patient = 1
     }
   }
-  ind1 <- seq(1,nSim,by=2)
-  ind2 <- seq(2,nSim,by=2)
+
+  ind1 <- 1:nSim
+  ind2 <- 1+(nSim/2+ind1-1)%%nSim
+
+  ind3 <- seq(1,nSim,by=2)
+  ind4 <- seq(2,nSim,by=2)
 
   for(i in 1:n.patient){
     if(is.list(locs)){
@@ -146,7 +152,8 @@ predictLong <- function( Y,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
                  silent           = silent, # print iteration info)
                  pred_type        = pred_type,
-                 n_threads        = max.num.threads
+                 n_threads        = max.num.threads,
+                 mix_samp = repeat.mix
   )
 
   output <- predictLong_cpp(input)
@@ -200,7 +207,7 @@ predictLong <- function( Y,
         x.list[[c]] = c.i
         c.i$field <- apply(output$WVec[[i]],1,quantile,probs=c(quantiles[c]))
         w.list[[c]] = c.i
-        
+
         c.i$field <- apply(output$VVec[[i]],1,quantile,probs=c(quantiles[c]))
         v.list[[c]] = c.i
       }
@@ -247,7 +254,11 @@ predictLong <- function( Y,
       }
     }
     if(crps){
-      out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+      if(dim(output$YVec[[i]])[1]>1){
+        out_list$Y.summary[[i]]$crps     <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+      } else {
+        out_list$Y.summary[[i]]$crps     <- mean(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
+      }
     }
   }
   return(out_list)

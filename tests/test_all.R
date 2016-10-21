@@ -1,13 +1,14 @@
 graphics.off()
 library(LDMod)
 
+n.threads <- 1
 nIter <- 5
 n.pers <- 100
 nSim  <- 3
-n.obs  <- 10 + 10*(1:n.pers)
+n.obs  <- 10 + 2*(1:n.pers)
 n <- 100
 n.pred <- 100
-nBurnin = 100
+nBurnin = 10
 pred.type <- "Filter"
 pSubsample = 0.1
 subsample.type = 2
@@ -118,7 +119,7 @@ if(test.pred){
                       operator_list    = operator_list,
                       return.samples = TRUE,
                       quantiles = c(0.05,0.95),
-                      max.num.threads = 1)
+                      max.num.threads = n.threads)
 
 
   #x11()
