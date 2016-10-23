@@ -29,20 +29,23 @@ List estimateLong_cpp(Rcpp::List in_list)
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< double > (in_list["nIter"]);
 	int nSim       = Rcpp::as< double > (in_list["nSim"]);
-  int nBurnin    = Rcpp::as< double > (in_list["nBurnin"] );
-  int silent     = Rcpp::as< int    > (in_list["silent"]);
-  double alpha     = Rcpp::as< double    > (in_list["alpha"]);
-  double step0     = Rcpp::as< double    > (in_list["step0"]);
-  int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
-  double learning_rate = 0;
-  if(in_list.containsElementNamed("learning_rate"))
-  	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  	int nBurnin    = Rcpp::as< double > (in_list["nBurnin"] );
+  	int silent     = Rcpp::as< int    > (in_list["silent"]);
+  	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
+  	double step0     = Rcpp::as< double    > (in_list["step0"]);
+  	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  	double learning_rate = 0;
+  	int process_active = 0;
+  	if(in_list.containsElementNamed("processes_list"))
+  		process_active = 1;
+  	if(in_list.containsElementNamed("learning_rate"))
+  		learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
   	
-  double polyak_rate = -1;
-  if(in_list.containsElementNamed("polyak_rate"))
-  	polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
+  	double polyak_rate = -1;
+  	if(in_list.containsElementNamed("polyak_rate"))
+  		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
-  int debug = 0;
+  	int debug = 0;
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -60,19 +63,20 @@ List estimateLong_cpp(Rcpp::List in_list)
 	int count;
 	count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    List obs_tmp = Rcpp::as<Rcpp::List>(*it);
-    As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
-    Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
-    Ysize[count] = (double) Ys[count].size();
-    burnin_done[count] = 0;
-    if(subsample_type == 1){
+    	List obs_tmp = Rcpp::as<Rcpp::List>(*it);
+    	if(process_active)
+    		As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
+    	Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
+    	Ysize[count] = (double) Ys[count].size();
+    	burnin_done[count] = 0;
+    	if(subsample_type == 1){
     	 sampling_weights[count] = 1.0;
-    } else if(subsample_type == 2){
-  	  sampling_weights[count] = Ysize[count];
-  	} else if (subsample_type == 3){ //Biased sampling
-    	sampling_weights[count] = 1.0;
-    }
-    count++;
+    	} else if(subsample_type == 2){
+  	  		sampling_weights[count] = Ysize[count];
+  		} else if (subsample_type == 3){ //Biased sampling
+    		sampling_weights[count] = 1.0;
+    	}
+    	count++;
   }
 	sampling_weights /= sampling_weights.sum();
 
@@ -93,39 +97,43 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(silent == 0){
 	  Rcpp::Rcout << " Setup operator\n";
 	}
-	Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
-	operator_list["nIter"] = nIter;
-	std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
 	operatorMatrix* Kobj;
-	operator_select(type_operator, &Kobj);
-	Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
-
-	int common_grid = 1;
-	if(Kobj->nop>1){
-	  common_grid = 0;
-	}
 	//Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
 	//Create solvers for each patient
 	std::vector<  cholesky_solver >  Solver( nindv);
 	Eigen::SparseMatrix<double, 0, int> Q, K;
 
-	count = 0;
-	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    List obs_tmp = Rcpp::as<Rcpp::List>( *it);
+	int common_grid = 1;
+	if(process_active){
+		Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
+		operator_list["nIter"] = nIter;
+		std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
+	
+		operator_select(type_operator, &Kobj);
+		Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
-    if(common_grid == 1){
-      Solver[count].init(Kobj->d[0], 0, 0, 0);
-      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-    } else {
-      Solver[count].init(Kobj->d[count], 0, 0, 0);
-      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-    }
-    Q = K.transpose();
-    Q = Q * K;
-  	Q = Q + As[count].transpose()*As[count];
-    Solver[count].analyze(Q);
-  	Solver[count].compute(Q);
-    count++;
+		if(Kobj->nop>1)
+	  		common_grid = 0;
+	
+	
+		count = 0;
+		for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
+    		List obs_tmp = Rcpp::as<Rcpp::List>( *it);
+
+    		if(common_grid == 1){
+      			Solver[count].init(Kobj->d[0], 0, 0, 0);
+      			K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+    		} else {
+      			Solver[count].init(Kobj->d[count], 0, 0, 0);
+      			K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+    		}
+    		Q = K.transpose();
+    		Q = Q * K;
+  			Q = Q + As[count].transpose()*As[count];
+    		Solver[count].analyze(Q);
+  			Solver[count].compute(Q);
+    		count++;
+  		}
   }
 	//**********************************
 	// mixed effect setup
@@ -163,47 +171,53 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 	// stochastic processes setup
 	//***********************************
-	if(silent == 0){
-	  Rcpp::Rcout << " Setup process\n";
-	}
-	Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-	Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
-	std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
+	Process *process;
+	if(process_active){
+		if(silent == 0){
+	  		Rcpp::Rcout << " Setup process\n";
+		}
+		Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
+		Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
+		std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
-  Process *process;
+  
 
-  if (type_processes != "Normal"){
-  	process  = new GHProcess;
-  }else{ process  = new GaussianProcess;}
+  		if (type_processes != "Normal"){
+  			process  = new GHProcess;
+  		}else{ process  = new GaussianProcess;}
 
-  process->initFromList(processes_list, Kobj->h);
-  process->setupStoreTracj(nIter);
-  /*
-  Simulation objects
-  */
-  std::mt19937 random_engine;
+  		process->initFromList(processes_list, Kobj->h);
+  		process->setupStoreTracj(nIter);
+  	/*
+  		Simulation objects
+  	*/
+  	}
+  	std::mt19937 random_engine;
 	std::normal_distribution<double> normal;
   std::default_random_engine gammagenerator;
-	random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   gig rgig;
-	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   Eigen::VectorXd  z;
-	z.setZero(Kobj->d[0]);
-
   Eigen::VectorXd b, Ysim;
+  if(process_active){
+	z.setZero(Kobj->d[0]);
 	b.setZero(Kobj->d[0]);
+	}
 
   std::vector<int> longInd;
   std::vector<Eigen::VectorXd> Vmean;
   Eigen::VectorXd count_vec(nindv);
   Vmean.resize(nindv);
   count_vec.setZero(nindv);
+  if(process_active){
   for(int i = 0; i < nindv; i++ ){
-    if(common_grid){
-      Vmean[i].setZero(Kobj->h[0].size());
-    } else {
-      Vmean[i].setZero(Kobj->h[i].size());
-    }
+    	if(common_grid){
+      	Vmean[i].setZero(Kobj->h[0].size());
+    	} else {
+      	Vmean[i].setZero(Kobj->h[i].size());
+    	}
+  	}
   }
 
 
@@ -215,10 +229,12 @@ List estimateLong_cpp(Rcpp::List in_list)
     */
     if(silent == 0){
       Rcpp::Rcout << "i = " << iter << ": \n";
-      process->printIter();
-      Rcpp::Rcout << "\n";
-      Kobj->print_parameters();
-      Rcpp::Rcout << "\n";
+      if(process_active){
+      	process->printIter();
+      	Rcpp::Rcout << "\n";
+      	Kobj->print_parameters();
+      	Rcpp::Rcout << "\n";
+      }
       mixobj->printIter();
       Rcpp::Rcout << "\n";
       errObj->printIter();
@@ -242,16 +258,21 @@ List estimateLong_cpp(Rcpp::List in_list)
     }
 
     double burnin_rate = 0;
-    Kobj->gradient_init(nSubsample,nSim);
+    if(process_active)
+    	Kobj->gradient_init(nSubsample,nSim);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
       int i = longInd[ilong];
       double w = sampling_weights[i]; //TODO:: ADD WEIGHTING BY W TO ALL GRADIENTS!
-      Eigen::SparseMatrix<double,0,int> A = As[i];
+      Eigen::SparseMatrix<double,0,int> A;
+      if(process_active)
+      	A = As[i];
       Eigen::VectorXd  Y = Ys[i];
-      z.setZero(Kobj->d[0]);
-      if(common_grid == 0)
-      	z.setZero(Kobj->d[i]);
+      if(process_active){
+      	z.setZero(Kobj->d[0]);
+      	if(common_grid == 0)
+      		z.setZero(Kobj->d[i]);
+      }
 
       int n_simulations = nSim;
       int burnin_done_i = 0;
@@ -273,10 +294,11 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       	// removing fixed effect from Y
       	mixobj->remove_cov(i, res);
+      	if(process_active)
     	  res -= A * process->Xs[i];
-  			//***********************************
+  		//***********************************
       	// mixobj sampling
-    		//***********************************
+    	//***********************************
 
        if(debug)
        		Rcpp::Rcout << "estimate::sample mix \n";
@@ -289,6 +311,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       	//***********************************
     		// sampling processes
   			//***********************************
+  			if(process_active){
   			Eigen::VectorXd iV(process->Vs[i].size());
   			iV.array() = process->Vs[i].array().inverse();
   			if(common_grid){
@@ -307,27 +330,27 @@ List estimateLong_cpp(Rcpp::List in_list)
        	  Rcpp::Rcout << "estimate::sample X\n";
       	//Sample X|Y, V, sigma
 		    if(sampleX){
-          if(type_MeasurementError == "Normal")
-      			process->sample_X(i, z, res, Q, K, A, errObj->sigma, Solver[i]);
-        	else
-          	process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
-		    }
-        res -= A * process->Xs[i];
-		if(res.cwiseAbs().sum() > 1e16){
-        	Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process->Vs[i].cwiseInverse().maxCoeff() << "\n";
-        	Rcpp::Rcout << "Max process->Xs[i]= " << process->Xs[i].maxCoeff() << "\n";
-        	Rcpp::Rcout << "Min process->Xs[i]= " << process->Xs[i].minCoeff() << "\n";
+          		if(type_MeasurementError == "Normal")
+      				process->sample_X(i, z, res, Q, K, A, errObj->sigma, Solver[i]);
+        		else
+          		process->sample_Xv2( i, z, res, Q, K, A, errObj->sigma, Solver[i], errObj->Vs[i].cwiseInverse());
+		    	}
+        	res -= A * process->Xs[i];
+			if(res.cwiseAbs().sum() > 1e16){
+        		Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process->Vs[i].cwiseInverse().maxCoeff() << "\n";
+        		Rcpp::Rcout << "Max process->Xs[i]= " << process->Xs[i].maxCoeff() << "\n";
+        		Rcpp::Rcout << "Min process->Xs[i]= " << process->Xs[i].minCoeff() << "\n";
 
-        	Rcpp::Rcout << "res out of bound\n";
-        	throw("res outof bound\n");
-        }
+        		Rcpp::Rcout << "res out of bound\n";
+        		throw("res outof bound\n");
+        	}
 
-        if(debug)
-       	  Rcpp::Rcout << "estimate::sample V\n";
-        // sample V| X
-        if(sampleV)
-          process->sample_V(i, rgig, K);
-
+        	if(debug)
+       	  	Rcpp::Rcout << "estimate::sample V\n";
+        	// sample V| X
+        	if(sampleV)
+         	 process->sample_V(i, rgig, K);
+		}
         if(debug)
          	Rcpp::Rcout << "estimate::sample err V\n";
         // random variance noise sampling
@@ -356,11 +379,17 @@ List estimateLong_cpp(Rcpp::List in_list)
 		  // measurent error  gradient
       	  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
   			  errObj->gradient(i, res);
-      	  // operator gradient
+  			  
+      	  
+
+
+		  if(process_active){
+		  
+		  	// operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),
       							process->mean_X(i),i);
-
+		  
       		// process gradient
       		res += A * process->Xs[i];
 
@@ -382,9 +411,13 @@ List estimateLong_cpp(Rcpp::List in_list)
                                 errObj->sigma,
                                 Kobj->trace_variance(A, i));
             }
-      		}
+        }
       }
-        Vmean[i] += process->Vs[i];
+      		
+      }
+      	if(process_active)
+        	Vmean[i] += process->Vs[i];
+        
   		count_vec[i] += 1;
 
     }
@@ -400,14 +433,20 @@ List estimateLong_cpp(Rcpp::List in_list)
     double stepsize = step0 / pow(iter + 1, alpha);
     
     double polyak_rate_temp = polyak_rate;
+    double learning_rate_temp  =learning_rate;
     if(polyak_rate == 0)
     	polyak_rate_temp = 1./ (iter + 1);
+    //if(iter < 500)
+    //	learning_rate_temp = 0;
     if(debug)
     	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-    mixobj->step_theta(stepsize,  learning_rate, polyak_rate_temp);
-    errObj->step_theta(stepsize,  learning_rate, polyak_rate_temp);
-    Kobj->step_theta(stepsize,    learning_rate, polyak_rate_temp);
-    process->step_theta(stepsize, learning_rate, polyak_rate_temp);
+    
+    mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    errObj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    if(process_active){
+    	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
+    	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
+    }
     
 
     if(debug)
@@ -430,22 +469,23 @@ List estimateLong_cpp(Rcpp::List in_list)
   out_list["step0"]            = step0;
   out_list["alpha"]            = alpha;
   out_list["obs_list"]         = obs_list;
-  out_list["Xs"]               = process->Xs;
-  out_list["Vs"]               = process->Vs;
-  out_list["Vmean"]            = Vmean;
-
+  if(process_active){
+  	out_list["Xs"]               = process->Xs;
+  	out_list["Vs"]               = process->Vs;
+  	out_list["Vmean"]            = Vmean;
+  Rcpp::List process_list           = process->toList();
+  out_list["processes_list"]        = process_list;
+  Rcpp::List olist          = Kobj->output_list();
+  out_list["operator_list"] = olist;
+  }
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
 
 
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
+ 
 
-  Rcpp::List process_list           = process->toList();
-  out_list["processes_list"]        = process_list;
-
-  Rcpp::List olist          = Kobj->output_list();
-  out_list["operator_list"] = olist;
     return(out_list);
 }
 

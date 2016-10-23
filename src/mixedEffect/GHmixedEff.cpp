@@ -503,13 +503,13 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
   dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
   ddSigma = 0.5 * counter * Dd.transpose() * iSkroniS * Dd;
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
-  dSigma_vech_old *= learning_rate;
-  dSigma_vech_old += dSigma_vech;
-
+  dSigma_vech_old.array() *= learning_rate;
+  dSigma_vech_old.array() += dSigma_vech.array();
+	
   double stepsize_temp  = stepsize;
   while(pos_def <= 0){
     Eigen::VectorXd Sigma_vech_temp = Sigma_vech;
-    Sigma_vech_temp += stepsize_temp * dSigma_vech_old;
+    Sigma_vech_temp.array() += stepsize_temp * dSigma_vech_old.array();
     Eigen::VectorXd temp = Dd*Sigma_vech_temp;
     Sigma = veci(temp, Sigma.rows(), Sigma.cols());
     stepsize_temp *= 0.5;
