@@ -34,6 +34,9 @@ List estimateLong_cpp(Rcpp::List in_list)
   	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   	double step0     = Rcpp::as< double    > (in_list["step0"]);
   	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  	unsigned long seed = 0;
+  	if(in_list.containsElementNamed("seed"))
+  		seed = Rcpp::as< unsigned long    > (in_list["seed"]);
   	double learning_rate = 0;
   	int process_active = 0;
   	if(in_list.containsElementNamed("processes_list"))
@@ -194,10 +197,21 @@ List estimateLong_cpp(Rcpp::List in_list)
   	}
   	std::mt19937 random_engine;
 	std::normal_distribution<double> normal;
+    std::default_random_engine subsample_generator;
   std::default_random_engine gammagenerator;
-  random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   gig rgig;
-  rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  
+  if(in_list.containsElementNamed("seed")){
+  	//rgig.seed(seed);
+  	random_engine.seed(seed);
+  }else{
+  	random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  	//rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  }
+  
+  rgig.seed(random_engine());
+  gammagenerator.seed(random_engine());
+  subsample_generator.seed(random_engine());
   Eigen::VectorXd  z;
   Eigen::VectorXd b, Ysim;
   if(process_active){
@@ -245,10 +259,9 @@ List estimateLong_cpp(Rcpp::List in_list)
     // subsampling
     if(subsample_type == 1){
       //Uniform sampling without replacement from 1:nrep
-      std::random_shuffle(longInd.begin(), longInd.end());
+      std::shuffle(longInd.begin(), longInd.end(), gammagenerator);
     } else if(subsample_type == 2){
       //weighted by number of samples
-      std::default_random_engine subsample_generator;
       std::discrete_distribution<int> distribution(Ysize.begin(), Ysize.end());
       for (int i=0; i<nSubsample; ++i) {
         longInd[i] = distribution(gammagenerator);
@@ -263,6 +276,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
       int i = longInd[ilong];
+      
       double w = sampling_weights[i]; //TODO:: ADD WEIGHTING BY W TO ALL GRADIENTS!
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
@@ -594,9 +608,10 @@ List estimateFisher(Rcpp::List in_list)
   std::mt19937 random_engine;
 	std::normal_distribution<double> normal;
   std::default_random_engine gammagenerator;
-	random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   gig rgig;
 	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+	random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+	gammagenerator.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   Eigen::VectorXd  z;
 
   Eigen::VectorXd  Ysim;
@@ -620,7 +635,7 @@ List estimateFisher(Rcpp::List in_list)
 
     // subsampling
     //sample Nlong values without replacement from 1:nrep
-    std::random_shuffle(longInd.begin(), longInd.end());
+    std::shuffle(longInd.begin(), longInd.end(), random_engine);
     Kobj->gradient_init(nSubsample, nSim);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {

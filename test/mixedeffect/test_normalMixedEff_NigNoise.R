@@ -6,7 +6,8 @@ graphics.off()
 library(testthat)
 library(LDMod)
 library(rGIG)
-set.seed(1)
+seed <- 1
+set.seed(seed)
 nu <- 3
 n.pers <- 10
 n.obs  <- 200
@@ -43,7 +44,8 @@ res <- estimateME(Y = Y_list,
                   nIter = 3000,
                   silent = 0,
                   learning_rate = 0.,
-                  polyak_rate = 0.9)
+                  polyak_rate = 0.9,
+                  seed =  seed)
 
 
 test_that("simple Gaussian-IG random effect",

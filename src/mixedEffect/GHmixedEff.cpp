@@ -167,7 +167,10 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 
     a_GIG = mu.transpose() * (invSigma *  mu);
     a_GIG += nu;
-    rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    if(init_list.containsElementNamed("seed"))
+    	rgig.seed( Rcpp::as< unsigned long > (init_list["seed"]));
+    else
+    	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
     Sigma_epsilon = 0;
   	//if(init_list.containsElementNamed("Sigma_epsilon"))

@@ -11,10 +11,11 @@ graphics.off()
 library(LDMod)
 library(MASS)
 seed <- 2
-nIter <- 2000
-pSubsample <- 0.5
+
+nIter <- 1000
+pSubsample <- 0.1
 learning_rate <- 0.
-n.pers <- 500 #number of patients
+n.pers <- 5000 #number of patients
 n.obs  <- 50 #number of obs per patient
 
 COV_beta <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
@@ -63,18 +64,21 @@ par(mfrow=c(2,1))
 hist(beta_mat[,1],100)
 hist(beta_mat[,2],100)
 }
+ptm <- proc.time()
 res <- estimateME(Y = Y_list, 
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = meas_list,
                   nSim = 2,
-                  alpha = 0.5,
+                  alpha = 0.3,
                   pSubsample = pSubsample,
                   step0 = 0.3,
                   nIter = nIter,
-                  silent = 0,
+                  silent = 1,
                   learning_rate = learning_rate,
-                  polyak_rate = 0)
-if(1){
+                  polyak_rate = -1,
+                  seed = seed)
+print(proc.time() - ptm)
+if(0){
   x11()
   par(mfrow=c(3,1))
   mu_vec = res$mixedEffect_list$mu_vec
@@ -95,11 +99,11 @@ if(1){
 
 test_that("NIG-Gaussian random",
 {
-  expect_equal(c(res$mixedEffect_list$beta_random), betar, tolerance  = 0.2)
+  expect_equal(c(res$mixedEffect_list$beta_random), betar, tolerance  = 0.1)
 })
 test_that("NIG-Gaussian fixed",
 {
-  expect_equal(c(res$mixedEffect_list$beta_fixed), betaf, tolerance  = 0.2)
+  expect_equal(c(res$mixedEffect_list$beta_fixed), betaf, tolerance  = 0.1)
 })
 test_that("NIG-Gaussian mu",
 {
@@ -107,5 +111,9 @@ test_that("NIG-Gaussian mu",
 })
 test_that("NIG-Gaussian sigma",
 {
-  expect_equal(c(res$measurementError_list$sigma), sd_Y, tolerance  = 0.1)
+  expect_equal(c(res$measurementError_list$sigma), sd_Y, tolerance  = 0.01)
+})
+test_that("NIG-Gaussian nu",
+{
+            expect_equal(c(res$mixedEffect_list$nu), nu, tolerance  = 0.2)
 })

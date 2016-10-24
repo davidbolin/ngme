@@ -32,6 +32,7 @@
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @parma silent          - print iteration info
+#' @param seed            - (unsinged int) seed for debuging
 estimateLong <- function(Y,
                          locs,
                          mixedEffect_list,
@@ -46,7 +47,8 @@ estimateLong <- function(Y,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
-                         silent  = FALSE # print iteration info
+                         silent  = FALSE, # print iteration info
+                         seed    = NULL
                          )
 {
   obs_list <- list()
@@ -93,7 +95,11 @@ estimateLong <- function(Y,
                  learning_rate    = learning_rate,
                  polyak_rate      = polyak_rate
               )
-
+  
+  if(is.null(seed) == FALSE)
+    input <- setseed_ME(input, seed)
+  
+   
   output <- estimateLong_cpp(input)
 
   output$operator_list$left.boundary <- operator_list$left.boundary
@@ -138,6 +144,7 @@ estimateLong <- function(Y,
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @parma silent          - print iteration info
+#' @param seed            - (unsinged int) seed for debuging
 estimateME <- function(Y,
                          mixedEffect_list,
                          measurment_list,
@@ -150,7 +157,8 @@ estimateME <- function(Y,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
-                         silent  = FALSE # print iteration info
+                         silent  = FALSE, # print iteration info
+                         seed = NULL
 )
 {
   obs_list <- list()
@@ -175,9 +183,21 @@ estimateME <- function(Y,
                  polyak_rate      = polyak_rate
   )
   
+  
+  if(is.null(seed) == FALSE)
+    input <- setseed_ME(input, seed)
+  
   output <- estimateLong_cpp(input)
   
   return(output)
 }
 
-
+setseed_ME <- function(input, seed)
+{
+  seed.old <- sample.int(10^6, 1)
+  set.seed(seed)
+  input$seed                  <- sample.int(10^6, 1)
+  input$mixedEffect_list$seed <- sample.int(10^6, 1)
+  set.seed(seed.old)
+  return(input)
+}

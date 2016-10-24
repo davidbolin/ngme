@@ -49,7 +49,7 @@ res <- estimateME(Y = Y_list,
                   step0 = 1,
                   nIter = 2000,
                   silent = 0)
-
+print("done out of R")
 
 test_that("simple Gaussian-IG random effect",
 {
@@ -59,6 +59,7 @@ test_that("simple Gaussian-IG measurement sigma",
 {
   expect_equal(res$measurementError_list$sigma, sd_Y, tolerance  = 0.1)
 })
+
 if(1){
 x11()
 par(mfrow=c(3,1))
