@@ -23,7 +23,7 @@
 #' @param mu              - assymetric parameter for NIG or GAL
 #'
 #' @param learning_rate   - parameter for sthocastic gradient
-#' @param nBurnin_learningrate - don't start learning before 
+#' @param nBurnin_learningrate - don't start learning before
 #' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
@@ -44,6 +44,7 @@ estimateLong <- function(Y,
                          alpha = 0.3,
                          learning_rate = 0,
                          nBurnin_learningrate = NULL,
+                         nBurnin_base = 0,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
@@ -94,25 +95,26 @@ estimateLong <- function(Y,
                  nBurnin_learningrate = NULL,
                  silent           = silent, # print iteration info)
                  step0            = step0,
+                 nBurnin_base     = nBurnin_base,
                  alpha            = alpha,
                  common.grid      = common.grid,
                  learning_rate    = learning_rate,
                  polyak_rate      = polyak_rate
               )
-  
+
   if(is.null(nBurnin_learningrate) == FALSE)
     input$nBurnin_learningrate =  nBurnin_learningrate
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
-  
-   
+
+
   output <- estimateLong_cpp(input)
 
   output$operator_list$left.boundary <- operator_list$left.boundary
   output$operator_list$right.boundary <- operator_list$right.boundary
   output$operator_list$type <- operator_list$type
   output$operator_list$Q <- operator_list$Q
-  
+
     return(output)
 }
 
@@ -161,6 +163,7 @@ estimateME <- function(Y,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
+                         nBurnin_base = 0,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
@@ -172,9 +175,9 @@ estimateME <- function(Y,
   for(i in 1:length(Y)){
       obs_list[[i]] <- list(Y = Y[[i]])
   }
-  
-  
-  
+
+
+
   input <- list( obs_list         = obs_list,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
@@ -186,18 +189,19 @@ estimateME <- function(Y,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  alpha            = alpha,
+                 nBurnin_base = nBurnin_base,
                  learning_rate    = learning_rate,
                  polyak_rate      = polyak_rate
   )
-  
+
   if(is.null(nBurnin_learningrate) == FALSE)
     input$nBurnin_learningrate =  nBurnin_learningrate
-  
+
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
-  
+
   output <- estimateLong_cpp(input)
-  
+
   return(output)
 }
 

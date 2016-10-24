@@ -1,5 +1,5 @@
 ##
-# simple test that verifies that the model can correctly idenitfy the parameters, 
+# simple test that verifies that the model can correctly idenitfy the parameters,
 # Normal noise,
 # NIG   mixed effect.
 # from simulated data
@@ -11,20 +11,20 @@ graphics.off()
 library(LDMod)
 library(MASS)
 seed <- 2
-
-nIter <- 2000
-pSubsample <- 0.5
-learning_rate <- 0.
+nBurnin_base = 10
+nIter <- 1000
+pSubsample <- 0.05
+learning_rate <- 0.9
 n.pers <- 5000 #number of patients
 n.obs  <- 50 #number of obs per patient
 nBurnin <- 100
-COV_beta <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
+COV_beta <- matrix(c(0.05143384 , -0.0009525723 , -0.0009525723 , 1.778539e-05 ), nrow= 2 , ncol= 2 )
 sd_Y    <- 0.1 # error of the noise
 
 Br_list <- list()
 betar <- c(0.9,0.4)
 betaf <- c(1.)
-mu   <- c(0.2, -0.2)
+mu   <- c(-0.0906397 , -0.00919812 )
 nu <- 1
 betar_list <- list()
 Bf_list    <- list()
@@ -47,11 +47,11 @@ for(i in 1:n.pers)
 
 
 meas_list <- list(sigma_eps = sd_Y, noise = "Normal")
-mixedEffect_list <- list(B_random = Br_list, 
+mixedEffect_list <- list(B_random = Br_list,
                          B_fixed  = Bf_list,
-                         Sigma = COV_beta, 
+                         Sigma = COV_beta,
                          beta_random = c(0.,0.),
-                         beta_fixed  = c(0.),  
+                         beta_fixed  = c(0.),
                          mu          = 0*as.matrix(mu),
                          nu          = as.matrix(1.) + nu,
                          noise = "NIG")
@@ -64,7 +64,7 @@ par(mfrow=c(2,1))
 hist(beta_mat[,1],100)
 hist(beta_mat[,2],100)
 }
-res <- estimateME(Y = Y_list, 
+res <- estimateME(Y = Y_list,
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = meas_list,
                   nSim = 2,
@@ -72,6 +72,7 @@ res <- estimateME(Y = Y_list,
                   pSubsample = pSubsample,
                   step0 = 0.3,
                   nIter = nIter,
+                  nBurnin_base = nBurnin_base,
                   nBurnin = nBurnin,
                   silent = 0,
                   learning_rate = learning_rate,
@@ -91,7 +92,7 @@ if(1){
   lines(betar_vec[,2], col='red')
   lines(c(1, n_), c(betar[1], betar[1]))
   lines(c(1, n_), c(betar[2], betar[2]))
-  
+
   plot(res$mixedEffect_list$nu_vec, type='l', col='red' )
   lines(c(1, n_), c(nu, nu))
 }

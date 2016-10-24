@@ -29,7 +29,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< int > (in_list["nIter"]);
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
-  	int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
+  int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
+  int nBurnin_base    = Rcpp::as< int > (in_list["nBurnin_base"] );
   	int nBurnin_learningrate = nBurnin;
   	if(in_list.containsElementNamed("nBurnin_learningrate"))
   		nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
@@ -46,7 +47,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   		process_active = 1;
   	if(in_list.containsElementNamed("learning_rate"))
   		learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
-  	
+
   	double polyak_rate = -1;
   	if(in_list.containsElementNamed("polyak_rate"))
   		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
@@ -114,14 +115,14 @@ List estimateLong_cpp(Rcpp::List in_list)
 		Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
 		operator_list["nIter"] = nIter;
 		std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
-	
+
 		operator_select(type_operator, &Kobj);
 		Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
 		if(Kobj->nop>1)
 	  		common_grid = 0;
-	
-	
+
+
 		count = 0;
 		for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     		List obs_tmp = Rcpp::as<Rcpp::List>( *it);
@@ -186,7 +187,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 		Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
 		std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
-  
+
 
   		if (type_processes != "Normal"){
   			process  = new GHProcess;
@@ -203,7 +204,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     std::default_random_engine subsample_generator;
   std::default_random_engine gammagenerator;
   gig rgig;
-  
+
   if(in_list.containsElementNamed("seed")){
   	//rgig.seed(seed);
   	random_engine.seed(seed);
@@ -211,7 +212,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   	random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   	//rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   }
-  
+
   rgig.seed(random_engine());
   gammagenerator.seed(random_engine());
   subsample_generator.seed(random_engine());
@@ -279,7 +280,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
       int i = longInd[ilong];
-      
+
       double w = sampling_weights[i]; //TODO:: ADD WEIGHTING BY W TO ALL GRADIENTS!
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
@@ -292,12 +293,14 @@ List estimateLong_cpp(Rcpp::List in_list)
       }
 
       int n_simulations = nSim;
-      int burnin_done_i = 0;
+      int burnin_done_i = nBurnin_base;
       if(burnin_done[i] == 0){
         burnin_rate +=1;
         n_simulations += nBurnin;
         burnin_done_i = nBurnin;
         burnin_done[i] = 1;
+      } else {
+        n_simulations += nBurnin_base;
       }
       for(int ii = 0; ii < n_simulations; ii ++)
       {
@@ -396,17 +399,17 @@ List estimateLong_cpp(Rcpp::List in_list)
 		  // measurent error  gradient
       	  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
   			  errObj->gradient(i, res);
-  			  
-      	  
+
+
 
 
 		  if(process_active){
-		  
+
 		  	// operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),
       							process->mean_X(i),i);
-		  
+
       		// process gradient
       		res += A * process->Xs[i];
 
@@ -430,11 +433,11 @@ List estimateLong_cpp(Rcpp::List in_list)
             }
         }
       }
-      		
+
       }
       	if(process_active)
         	Vmean[i] += process->Vs[i];
-        
+
   		count_vec[i] += 1;
 
     }
@@ -448,7 +451,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(debug)
       Rcpp::Rcout << "estimate::theta  step\n";
     double stepsize = step0 / pow(iter + 1, alpha);
-    
+
     double polyak_rate_temp = polyak_rate;
     double learning_rate_temp  =learning_rate;
     if(polyak_rate == 0)
@@ -457,14 +460,14 @@ List estimateLong_cpp(Rcpp::List in_list)
     	learning_rate_temp = 0;
     if(debug)
     	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-    
+
     mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
     errObj->step_theta(stepsize,                   0, polyak_rate_temp);
     if(process_active){
     	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
     	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
     }
-    
+
 
     if(debug)
       Rcpp::Rcout << "estimate::theta step done\n";
@@ -501,7 +504,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
- 
+
 
     return(out_list);
 }
