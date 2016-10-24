@@ -1,4 +1,12 @@
+# Instruction for developer #
+
+* Before pushing make sure that works the following test can be run:
+	1.	test/mixedeffect/test_NIGMixedEffect.R
+
 # TODO #
+
+## structure ##
+* Add a file that automatically run all test files that needs to be run be fore pushing to bitbucket.
 
 ## Methods ##
 * Add joint sampling of Gaussian components?

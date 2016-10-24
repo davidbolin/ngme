@@ -64,7 +64,6 @@ par(mfrow=c(2,1))
 hist(beta_mat[,1],100)
 hist(beta_mat[,2],100)
 }
-ptm <- proc.time()
 res <- estimateME(Y = Y_list, 
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = meas_list,
@@ -77,7 +76,6 @@ res <- estimateME(Y = Y_list,
                   learning_rate = learning_rate,
                   polyak_rate = -1,
                   seed = seed)
-print(proc.time() - ptm)
 if(0){
   x11()
   par(mfrow=c(3,1))
