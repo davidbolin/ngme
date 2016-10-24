@@ -123,9 +123,9 @@ simulateLong.R <- function(loc,
     if(noise == "Normal"){
       X[[i]] = solve(R,rnorm(dim(R)[1]))
     }else if (noise == "NIG"){
-      V[[i]] =  rGIG(rep(-0.5, n),
+      V[[i]] =  LDMod::rGIG(rep(-0.5, n),
                      rep( theta$nu, n),
-                     h^2 * theta$nu)
+                     h^2 * theta$nu, sample.int(10^6, 1))
       Z <- (- h  + V[[i]]) * theta$mu + sqrt(V[[i]]) * rnorm(n)
       X[[i]] <- solve(K, Z)
       Zs[[i]] <- Z

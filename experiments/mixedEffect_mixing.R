@@ -9,10 +9,10 @@ sim <- 50000
 burnin = 10000
 library(rGIG)
 library(mvtnorm)
-nu.mixed <- 52.73648
-mu.mixed <- c(-1.60317 , -0.03240481 )
-beta_random <- c(4.716472,-0.01689046)
-Sigma <- matrix(c(4.944509e-05 , -6.860727e-05 , -6.860727e-05 , 0.0001004566 ), nrow= 2 , ncol= 2 )
+nu.mixed <- 0.9910863
+mu.mixed <- c(-0.0906397 , -0.00919812 )
+beta_random <- c(4.739068 , -0.03971646 )
+Sigma <- matrix(c(0.04879072 , -0.0008268011 , -0.0008268011 , 1.413677e-05 ), nrow= 2 , ncol= 2 )
 sigma_eps =  0.1442434
 source("Brandom.data")
 n <- dim(B_random)[1]
@@ -103,7 +103,7 @@ for(i in 1:sim){
 }
 x11()
 par(mfrow=c(3,1))
-acf(V1[burnin:sim])
+acf(V1[burnin:sim],200)
 plot(V1)
 plot(U1[,1])
 
@@ -134,6 +134,6 @@ for(i in 1:sim){
 V2 <- V2[1:sim]
 x11()
 par(mfrow=c(2,1))
-acf(V2)
+acf(V2[burnin:sim],200)
 plot(V2)
 }

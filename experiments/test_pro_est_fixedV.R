@@ -5,20 +5,20 @@
 rm(list=ls())
 library(testthat)
 library(LDMod)
+library(rGIG)
 library(methods)
 graphics.off()
 
 plot_flag <- TRUE
-seed <- 3
-set.seed(seed)
-noises <- c("NIG")
+
+noises <- c("GAL","CH", "NIG")
 for(k in 1:length(noises)){
-nobs  <- 500
-nIter <- 2000
+nobs  <- 100
+nIter <- 200
 n     <- 100 #n grid points
 
-nu_true <- 10
-mu_true <- 10
+nu_true <- 20
+mu_true <- 20
 nu_guess <- 20
 mu_guess <- 20
 tau_geuss <- 0.5
@@ -66,27 +66,24 @@ input <- list( obs_list         = obs_list,
                processes_list   = processes_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 1,
-               nBurnin          = 300,   # steps before starting gradient estimation
+               nBurnin          = 100,   # steps before starting gradient estimation
                silent           = 0, # print iteration info)
-               step0            = 0.3,
+               step0            = 1,
                alpha            = 0.01,
-               learning_rate    = 0.9g,
-               pSubsample       = 0.2,
-               polyak_rate      = -1,
-               subsample_type = 1,
+               pSubsample       = 1,
+               subsample_type   = 1,
                measurementError_list   = mError_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 1,
-               sampleV = 0,
-               seed   = seed
+               sampleV = 0
               )
 output <- estimateLong_cpp(input)
 if(plot_flag){
 x11()
 par(mfrow=c(3,2))
-plot(locs[[1]],output_sim$Y[[5]])
-lines(output$operator_list$loc[[1]], output_sim$X[[5]])
-lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
+plot(locs[[1]],output_sim$Y[[1]])
+lines(output$operator_list$loc[[1]], output_sim$X[[1]])
+lines(output$operator_list$loc[[1]], output$Xs[[1]],col='red',lty='dashed')
 if(noises[k] != "CH"){
   n_ <- length(output$operator_list$tauVec)
   plot(output$processes_list$mu_vec)

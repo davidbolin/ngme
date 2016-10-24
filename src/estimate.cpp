@@ -450,8 +450,8 @@ List estimateLong_cpp(Rcpp::List in_list)
     double learning_rate_temp  =learning_rate;
     if(polyak_rate == 0)
     	polyak_rate_temp = 1./ (iter + 1);
-    //if(iter < 500)
-    //	learning_rate_temp = 0;
+    if(iter < nBurnin)
+    	learning_rate_temp = 0;
     if(debug)
     	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
     
