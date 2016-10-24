@@ -27,9 +27,12 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
-	int nIter      = Rcpp::as< double > (in_list["nIter"]);
-	int nSim       = Rcpp::as< double > (in_list["nSim"]);
-  	int nBurnin    = Rcpp::as< double > (in_list["nBurnin"] );
+	int nIter      = Rcpp::as< int > (in_list["nIter"]);
+	int nSim       = Rcpp::as< int > (in_list["nSim"]);
+  	int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
+  	int nBurnin_learningrate = nBurnin;
+  	if(in_list.containsElementNamed("nBurnin_learningrate"))
+  		nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
   	int silent     = Rcpp::as< int    > (in_list["silent"]);
   	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   	double step0     = Rcpp::as< double    > (in_list["step0"]);
@@ -443,20 +446,20 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//***********************************
 
     if(debug)
-      Rcpp::Rcout << "estimate::theta step\n";
+      Rcpp::Rcout << "estimate::theta  step\n";
     double stepsize = step0 / pow(iter + 1, alpha);
     
     double polyak_rate_temp = polyak_rate;
     double learning_rate_temp  =learning_rate;
     if(polyak_rate == 0)
     	polyak_rate_temp = 1./ (iter + 1);
-    if(iter < nBurnin)
+    if(iter < nBurnin_learningrate)
     	learning_rate_temp = 0;
     if(debug)
     	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
     
     mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-    errObj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    errObj->step_theta(stepsize,                   0, polyak_rate_temp);
     if(process_active){
     	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
     	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);

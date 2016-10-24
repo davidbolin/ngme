@@ -9,14 +9,14 @@ library(methods)
 graphics.off()
 
 plot_flag <- TRUE
-seed <- 3
+seed <- 4
 set.seed(seed)
 noises <- c("NIG")
 for(k in 1:length(noises)){
 nobs  <- 500
 nIter <- 2000
 n     <- 100 #n grid points
-
+learning_rate <- 0.9
 nu_true <- 10
 mu_true <- 10
 nu_guess <- 20
@@ -70,7 +70,7 @@ input <- list( obs_list         = obs_list,
                silent           = 0, # print iteration info)
                step0            = 0.3,
                alpha            = 0.01,
-               learning_rate    = 0.9g,
+               learning_rate    = learning_rate,
                pSubsample       = 0.2,
                polyak_rate      = -1,
                subsample_type = 1,

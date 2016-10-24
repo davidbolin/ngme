@@ -10,9 +10,9 @@ burnin = 10000
 library(rGIG)
 library(mvtnorm)
 nu.mixed <- 0.9910863
-mu.mixed <- c(-0.0906397 , -0.00919812 )
+mu.mixed <- c(-0.2 , 0.2 )
 beta_random <- c(4.739068 , -0.03971646 )
-Sigma <- matrix(c(0.04879072 , -0.0008268011 , -0.0008268011 , 1.413677e-05 ), nrow= 2 , ncol= 2 )
+Sigma <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
 sigma_eps =  0.1442434
 source("Brandom.data")
 n <- dim(B_random)[1]

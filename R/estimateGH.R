@@ -23,6 +23,7 @@
 #' @param mu              - assymetric parameter for NIG or GAL
 #'
 #' @param learning_rate   - parameter for sthocastic gradient
+#' @param nBurnin_learningrate - don't start learning before 
 #' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
@@ -42,6 +43,7 @@ estimateLong <- function(Y,
                          step0 = 0.3,
                          alpha = 0.3,
                          learning_rate = 0,
+                         nBurnin_learningrate = NULL,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
@@ -89,6 +91,7 @@ estimateLong <- function(Y,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
+                 nBurnin_learningrate = NULL,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  alpha            = alpha,
@@ -97,6 +100,8 @@ estimateLong <- function(Y,
                  polyak_rate      = polyak_rate
               )
   
+  if(is.null(nBurnin_learningrate) == FALSE)
+    input$nBurnin_learningrate =  nBurnin_learningrate
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
   
@@ -152,6 +157,7 @@ estimateME <- function(Y,
                          step0 = 0.3,
                          alpha = 0.3,
                          learning_rate = 0,
+                         nBurnin_learningrate = NULL,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
@@ -184,6 +190,8 @@ estimateME <- function(Y,
                  polyak_rate      = polyak_rate
   )
   
+  if(is.null(nBurnin_learningrate) == FALSE)
+    input$nBurnin_learningrate =  nBurnin_learningrate
   
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)

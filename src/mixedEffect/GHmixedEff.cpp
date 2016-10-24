@@ -433,10 +433,10 @@ void NIGMixedEffect::step_theta(const double stepsize,
 								const double polyak_rate)
 {
   if(Br.size() > 0){
-    step_beta_random(stepsize, learning_rate);
-    step_mu(stepsize, learning_rate);
+    step_beta_random(stepsize, 0);
+    step_mu(stepsize, 0);
     step_nu(stepsize, learning_rate);
-    step_Sigma(stepsize, learning_rate);
+    step_Sigma(stepsize, 0);
     a_GIG = mu.transpose() * (invSigma * mu);
     a_GIG += nu;
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
