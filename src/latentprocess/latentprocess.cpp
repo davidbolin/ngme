@@ -200,7 +200,7 @@ void GHProcess::sample_X(const int i,
   Eigen::VectorXd temp  =  - h[i];
   temp = temp.cwiseProduct(iV);
   temp.array() += 1.;
-  temp *= mu;
+  temp.array() *= mu;
   b +=  K.transpose() * temp;
   b = b.cwiseProduct(DQ_12);
   Xs[i] = DQ_12.cwiseProduct(solver.rMVN(b, Z));

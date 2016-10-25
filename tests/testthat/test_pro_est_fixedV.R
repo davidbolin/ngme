@@ -7,17 +7,18 @@ library(testthat)
 library(LDMod)
 library(methods)
 graphics.off()
-pSubsample <- 0.1
-plot_flag <- TRUE
+
+plot_flag <- FALSE
 seed <- 4
 set.seed(seed)
 noises <- c("NIG")
 for(k in 1:length(noises)){
-nobs  <- 500
-nIter <- 2000
+  pSubsample <- 0.5
+  nBurnin <- 200
+nobs  <- 50
+nIter <- 1000 #100 is good enough
 n     <- 100 #n grid points
-learning_rate <- 0.9
-nBurnin_base = 1
+learning_rate <- 0.99
 nu_true <- 10
 mu_true <- 10
 nu_guess <- 20
@@ -65,13 +66,13 @@ processes_list <- list(nu = nu_guess,
 input <- list( obs_list         = obs_list,
                operator_list    = operator_list,
                processes_list   = processes_list,
-               nBurnin_base     = nBurnin_base,
+               nBurnin_base     = 3,
                nIter            = nIter,     # iterations to run the stochastic gradient
-               nSim             = 3,
-               nBurnin          = 0,   # steps before starting gradient estimation
-               silent           = 0, # print iteration info)
+               nSim             = 4,
+               nBurnin          = nBurnin,   # steps before starting gradient estimation
+               silent           = 1, # print iteration info)
                step0            = 0.3,
-               alpha            = 0.01,
+               alpha            = 0.1,
                learning_rate    = learning_rate,
                pSubsample       = pSubsample,
                polyak_rate      = -1,
@@ -83,7 +84,7 @@ input <- list( obs_list         = obs_list,
                seed   = seed
               )
 output <- estimateLong_cpp(input)
-print("done")
+
 if(plot_flag){
 x11()
 par(mfrow=c(3,2))

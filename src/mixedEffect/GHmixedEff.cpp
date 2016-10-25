@@ -640,6 +640,9 @@ Eigen::VectorXd NIGMixedEffect::get_gradient()
 
 		g[start] = grad_nu;
 		start += 1;
+		Eigen::MatrixXd UUt_temp = UUt;
+		UUt_temp -= counter*vec(Sigma);
+  		dSigma_vech = 0.5 * Dd.transpose() *  UUt_temp;
 		g.segment(start, dSigma_vech.size()) = dSigma_vech;
 	}
 	return(g);

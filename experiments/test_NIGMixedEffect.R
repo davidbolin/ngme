@@ -11,20 +11,23 @@ graphics.off()
 library(LDMod)
 library(MASS)
 seed <- 2
-nBurnin_base = 10
+nBurnin_base = 100
 nIter <- 1000
-pSubsample <- 0.05
-learning_rate <- 0.9
-n.pers <- 5000 #number of patients
+pSubsample <- 1.
+step0 = .8
+learning_rate <- .5
+n.pers <- 1000 #number of patients
 n.obs  <- 50 #number of obs per patient
+nSim <- 5
 nBurnin <- 100
-COV_beta <- matrix(c(0.05143384 , -0.0009525723 , -0.0009525723 , 1.778539e-05 ), nrow= 2 , ncol= 2 )
+#COV_beta <- matrix(c(0.05143384 , -0.0009525723 , -0.0009525723 , 1.778539e-05 ), nrow= 2 , ncol= 2 )
+COV_beta <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
 sd_Y    <- 0.1 # error of the noise
 
 Br_list <- list()
 betar <- c(0.9,0.4)
 betaf <- c(1.)
-mu   <- c(-0.0906397 , -0.00919812 )
+mu   <- c(-0.1 , 0.1 )
 nu <- 1
 betar_list <- list()
 Bf_list    <- list()
@@ -67,10 +70,10 @@ hist(beta_mat[,2],100)
 res <- estimateME(Y = Y_list,
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = meas_list,
-                  nSim = 2,
+                  nSim = nSim,
                   alpha = 0.3,
                   pSubsample = pSubsample,
-                  step0 = 0.3,
+                  step0 =step0,
                   nIter = nIter,
                   nBurnin_base = nBurnin_base,
                   nBurnin = nBurnin,

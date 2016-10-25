@@ -19,7 +19,7 @@ constMatrix::~constMatrix()
 
 void constMatrix::initFromList(Rcpp::List const & init_list)
 {
-	npars  = 1;
+  npars  = 1;
  std::vector<std::string> check_names =  {"Q","loc", "h"};
  check_Rcpplist(init_list, check_names, "constMatrix::initFromList");
 	dtau_old = 0;
@@ -51,7 +51,6 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
 
   int nIter = Rcpp::as<double>(init_list["nIter"]);
   tauVec.resize(nIter+1);
-  npars = 0;
   v.setZero(1);
   m.resize(1,1);
 
