@@ -243,7 +243,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   int npars =   mixobj->npars + errObj->npars;
   if(process_active)
     npars += process->npars; //+ Kobj->npars;
-  
+
   for(int iter=0; iter < nIter; iter++){
     /*
       printing output
@@ -280,15 +280,15 @@ List estimateLong_cpp(Rcpp::List in_list)
     double burnin_rate = 0;
     if(process_active)
     	Kobj->gradient_init(nSubsample,nSim);
-    	
+
     	Eigen::VectorXd  grad_last(npars); // grad_last helper vector
       grad_last.setZero(npars);
-      
+
     Eigen::MatrixXd grad_outer(nSubsample, npars); // outside person variation (subsampling)
     Eigen::MatrixXd Vgrad_inner(npars, npars); // outside person variation (subsampling)
     Eigen::VectorXd Ebias_inner(npars);
     Ebias_inner.array() *= 0;
-    Vgrad_inner.setZero(npars, npars);  
+    Vgrad_inner.setZero(npars, npars);
     for(int ilong = 0; ilong < nSubsample; ilong++ )
     {
       int i = longInd[ilong];
@@ -312,7 +312,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         burnin_done_i = nBurnin;
         burnin_done[i] = 1;
       }else {n_simulations += nBurnin_base;}
-      
+
       int count_inner = 0;
       Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
       for(int ii = 0; ii < n_simulations; ii ++)
@@ -446,53 +446,80 @@ List estimateLong_cpp(Rcpp::List in_list)
             }
         }
 		    // collects the gradient for computing estimate of variances
-		    grad_inner.block(0, count_inner, 
+		    grad_inner.block(0, count_inner,
                           mixobj->npars, 1)  = mixobj->get_gradient();
-		    grad_inner.block(mixobj->npars,count_inner, 
+		    grad_inner.block(mixobj->npars,count_inner,
                           errObj->npars, 1) = errObj->get_gradient();
 		    if(process_active){
-		      grad_inner.block(mixobj->npars + errObj->npars,count_inner, 
+		      grad_inner.block(mixobj->npars + errObj->npars,count_inner,
                          process->npars, 1).array() = process->get_gradient().array();
-		      //grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner, 
+		      //grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
               //              Kobj->npars, 1) = Kobj -> get_gradient();
-			}
-			// adjusting so we get last gradient not cumsum
-			Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
-			grad_inner.col(count_inner).array() -= grad_last.array();
-			grad_last = grad_last_temp;
+			  }
+			  // adjusting so we get last gradient not cumsum
+			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
+			  grad_inner.col(count_inner).array() -= grad_last.array();
+			  grad_last = grad_last_temp;
 		    count_inner++;
       }
-	    
+
       }
-      
+
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean();
       grad_outer.row(ilong) = Mgrad_inner;
-      
+
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
-      Ebias_inner.array() += centered.col(nSim-1).array();;
+
+      Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
       Eigen::MatrixXd cov = (centered * centered.transpose()) / double(grad_inner.cols() - 1);
       Vgrad_inner.array() += cov.array();
-      
-      	if(process_active)
-        	Vmean[i] += process->Vs[i];
+
+      if(process_active)
+        Vmean[i] += process->Vs[i];
 
   		count_vec[i] += 1;
 
     }
+    //Compute variance due to subsampling:
     Vgrad_inner.array() /=  double(grad_outer.rows() - 1);
+    Eigen::VectorXd std_grad = Vgrad_inner.diagonal();
+    std_grad.array() /= (nSim * nSubsample);
+
+    //Compute Bias due to not converged
     Ebias_inner.array() /=  double(grad_outer.rows() );
     Eigen::MatrixXd centered = grad_outer.rowwise() - grad_outer.colwise().mean();
-	 Eigen::MatrixXd cov = (centered.transpose() * centered) / double(grad_outer.rows() - 1);
-	  Eigen::VectorXd std_grad = Vgrad_inner.diagonal();
-	  std_grad.array() /= (nSim * nSubsample);
+
+
+	  //Compute MC variance
+	  Eigen::MatrixXd cov = (centered.transpose() * centered) / double(grad_outer.rows() - 1);
+	  Eigen::VectorXd std_grad_outer = cov.diagonal();
+
+	  //std_grad_outer.array() /= nSubsample;
+	  std_grad_outer.array() -= std_grad.array();
+
+	  std_grad.array() /= ( nSubsample);
+	  std_grad_outer.array() /= ( nSubsample);
+	  double sub_factor = (1-nSubsample/nindv);
+	  std_grad_outer.array() *= sub_factor;
+
+	  //compute total variance
+	  Eigen::VectorXd grad_var = std_grad;
+	  grad_var.array() += std_grad_outer.array();
+
+
+	  std_grad_outer.array()  = std_grad_outer.array().sqrt();
 	  std_grad.array()  = std_grad.array().sqrt();
-	  Rcpp::Rcout << "std[Inner] = " << std_grad << "\n";
-	  std_grad = cov.diagonal();
-	  std_grad.array() /= nSubsample;
-	  std_grad.array()  = std_grad.array().sqrt();
-	  Rcpp::Rcout << "std[Outer] = " << std_grad     << "\n";
-	  Rcpp::Rcout << "E[bias]     = " << Ebias_inner             << "\n";
+	  grad_var.array()  = grad_var.array().sqrt();
+
+	  if(silent == 0){
+	    Rcpp::Rcout << "Gibbs std = " << std_grad.transpose() << "\n";
+	    Rcpp::Rcout << "Outer std = " << std_grad_outer.transpose() << "\n";
+	    Rcpp::Rcout << "Total std = " << grad_var.transpose() << "\n";
+	    //Rcpp::Rcout << "E[bias]    = " << Ebias_inner.transpose()   << "\n";
+	  }
+
+
     if(silent == 0)
       Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample << "\n";
 

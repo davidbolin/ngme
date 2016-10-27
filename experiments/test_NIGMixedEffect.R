@@ -11,8 +11,8 @@ graphics.off()
 library(LDMod)
 library(MASS)
 seed <- 2
-nBurnin_base = 100
-nIter <- 1000
+nBurnin_base = 0
+nIter <- 100
 pSubsample <- 1.
 step0 = .8
 learning_rate <- .5

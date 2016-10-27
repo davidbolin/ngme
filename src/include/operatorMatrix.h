@@ -26,8 +26,8 @@
 class operatorMatrix {
   protected:
     solver ** Qsolver;
-    
-    
+
+
   public:
     int nop;
     std::vector<Eigen::VectorXd >  h;
@@ -56,7 +56,7 @@ class operatorMatrix {
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int){};
-    virtual void step_theta(const double stepsize, 
+    virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
     						const double polyak_rate   = -1){};
     virtual void print_parameters( ){};
@@ -74,7 +74,6 @@ class constMatrix : public operatorMatrix{
     Eigen::VectorXd v;
     std::vector<double>  m_loc;
     std::vector<double>  h_average;
-    
   public:
 
 	~constMatrix();
@@ -84,7 +83,7 @@ class constMatrix : public operatorMatrix{
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int);
-	void step_theta(const double stepsize, 
+	void step_theta(const double stepsize,
 					const double learning_rate = 0,
 					const double polyak_rate   = -1);
   	double  dtau;
@@ -94,7 +93,6 @@ class constMatrix : public operatorMatrix{
     void initFromList(Rcpp::List const &, Rcpp::List const &);
     Rcpp::List output_list();
     void print_parameters();
-
 
     Eigen::VectorXd  get_gradient() { Eigen::VectorXd g(1); g[0] = dtau; return(g);};
     void  clear_gradient() {dtau = 0;};
@@ -140,7 +138,7 @@ class MaternOperator : public operatorMatrix{
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   int);
-    void step_theta(const double stepsize, 
+    void step_theta(const double stepsize,
     				const double learning_rate = 0,
     				const double polyak_rate   = -1);
     Eigen::VectorXd kappaVec;

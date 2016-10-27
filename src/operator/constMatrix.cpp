@@ -13,7 +13,7 @@ constMatrix::~constMatrix()
 {
   Rcpp::Rcout << "in constMatrix::~constMatrix()\n";
 	//for(int i = 0; i < nop; i++)
-	 // Q[i].~sparseMatrix<double,0,int>();	
+	 // Q[i].~sparseMatrix<double,0,int>();
 	delete Q;
 }
 
@@ -32,8 +32,8 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   nop = Q_list.size();
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
   d.resize(nop);
-  loc.resize(nop); 
-  h.resize(nop); 
+  loc.resize(nop);
+  h.resize(nop);
   h_average.resize(nop);
   m_loc.resize(nop);
   for(int i=0;i<nop;i++){
@@ -97,7 +97,7 @@ void constMatrix::print_parameters(){
   Rcpp::Rcout << "tau = " << tau ;
 }
 
-void constMatrix::step_theta(const double stepsize, 
+void constMatrix::step_theta(const double stepsize,
 							 const double learning_rate,
 							 const double polyak_rate)
 {
