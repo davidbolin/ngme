@@ -15,11 +15,12 @@ predictLong <- function( Y,
                          locs,
                          pInd,
                          locs.pred,
-                         Brandom.pred,
+                         Brandom.pred = NULL,
                          Bfixed.pred,
                          return.samples = FALSE,
                          type = "Filter",
                          quantiles = NULL,
+                         predict.derivatives = NULL,
                          excursions = NULL,
                          crps = FALSE,
                          crps.skip = 10,
@@ -41,6 +42,13 @@ predictLong <- function( Y,
   } else {
     stop('Type needs to be either Filter or Smoothing.')
   }
+  use.random.effect = TRUE
+  if(is.null(mixedEffect_list$B_random)){
+    use.random.effect = FALSE
+  }
+  if(!use.random.effect && !missing(Brandom.pred)){
+    stop("Model not specified using random effects")
+  }
 
   if(missing(locs.pred)){
     locs.pred <- locs
@@ -55,12 +63,22 @@ predictLong <- function( Y,
     Y                   <- Y[pInd]
     locs                <- locs[pInd]
     locs.pred           <- locs.pred[pInd]
-    Brandom.pred        <- Brandom.pred[pInd]
     Bfixed.pred         <- Bfixed.pred[pInd]
     measurment_list$Vs  <- measurment_list$Vs[pInd]
     mixedEffect_list$B_fixed <- mixedEffect_list$B_fixed[pInd]
-    mixedEffect_list$B_random <- mixedEffect_list$B_random[pInd]
-    mixedEffect_list$U  <- mixedEffect_list$U
+    if(use.random.effect){
+      Brandom.pred        <- Brandom.pred[pInd]
+      mixedEffect_list$B_random <- mixedEffect_list$B_random[pInd]
+      if(!is.null(mixedEffect_list$U)){
+        mixedEffect_list$U  <- mixedEffect_list$U
+      }
+    }
+    if(!is.null(predict.derivatives)){
+      predict.derivatives$B_fixed <- predict.derivatives$B_fixed[pInd]
+      if(use.random.effect){
+        predict.derivatives$B_random <- predict.derivatives$B_random[pInd]
+      }
+    }
     processes_list$X    <- processes_list$X[pInd]
     processes_list$V    <- processes_list$V[pInd]
     if(!common.grid){
@@ -111,37 +129,55 @@ predictLong <- function( Y,
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
       }
+
       if(length(Y[[i]]) != length(locs[[i]])){
         stop("Length of Y and locs differ.")
       }
+      obs_list[[i]] <- list(Y=Y[[i]],
+                            pred_ind = pred.ind,
+                            obs_ind = obs.ind,
+                            locs = locs[[i]],
+                            Bfixed_pred = Bfixed.pred[[i]])
       if(common.grid){
-        obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc[[1]],
-                                         right.boundary = operator_list$right.boundary,
-                                         left.boundary = operator_list$left.boundary),
-                              Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
-                                             right.boundary = operator_list$right.boundary,
-                                             left.boundary = operator_list$left.boundary),
-                              Y=Y[[i]],
-                              pred_ind = pred.ind,
-                              obs_ind = obs.ind,
-                              locs = locs[[i]],
-                              Brandom_pred = Brandom.pred[[i]],
-                              Bfixed_pred = Bfixed.pred[[i]])
-      } else {
-        obs_list[[i]] <- list(A = spde.A(locs[[i]], operator_list$loc[[i]],
-                                         right.boundary = operator_list$right.boundary,
-                                         left.boundary = operator_list$left.boundary),
-                              Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
-                                             right.boundary = operator_list$right.boundary,
-                                             left.boundary = operator_list$left.boundary),
-                              Y=Y[[i]],
-                              pred_ind = pred.ind,
-                              obs_ind = obs.ind,
-                              locs = locs[[i]],
-                              Brandom_pred = Brandom.pred[[i]],
-                              Bfixed_pred = Bfixed.pred[[i]])
-      }
+        obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[1]],
+                                  right.boundary = operator_list$right.boundary,
+                                  left.boundary = operator_list$left.boundary)
+        obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
+                                  right.boundary = operator_list$right.boundary,
+                                   left.boundary = operator_list$left.boundary)
 
+      } else {
+        obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[i]],
+                                         right.boundary = operator_list$right.boundary,
+                                         left.boundary = operator_list$left.boundary)
+        obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
+                                             right.boundary = operator_list$right.boundary,
+                                             left.boundary = operator_list$left.boundary)
+      }
+      if(use.random.effect){
+        obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
+      }
+      if(!is.null(predict.derivatives)){
+        if(common.grid){
+          obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[1]],
+                                        right.boundary = operator_list$right.boundary,
+                                        left.boundary = operator_list$left.boundary)
+        } else {
+          obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[i]],
+                                        right.boundary = operator_list$right.boundary,
+                                        left.boundary = operator_list$left.boundary)
+        }
+        obs_list[[i]]$Bfixed_pred1 = predict.derivatives$Bfixed[[i]]
+        if(use.random.effect){
+          obs_list[[i]]$Brandom_pred1 = predict.derivatives$Brandom[[i]]
+        }
+    }
+  }
+  delta = 1
+  predict_derivative = 0
+  if(!is.null(predict.derivatives)){
+    delta = predict.derivatives$delta
+    predict_derivative = 1
   }
   input <- list( obs_list         = obs_list,
                  operator_list    = operator_list,
@@ -153,7 +189,10 @@ predictLong <- function( Y,
                  silent           = silent, # print iteration info)
                  pred_type        = pred_type,
                  n_threads        = max.num.threads,
-                 mix_samp = repeat.mix
+                 mix_samp = repeat.mix,
+                 use_random_effect = use.random.effect,
+                 derivative_scaling = delta,
+                 predict_derivative = predict_derivative
   )
 
   output <- predictLong_cpp(input)
@@ -164,6 +203,10 @@ predictLong <- function( Y,
     out_list$X.samples <- output$XVec
     out_list$W.samples <- output$WVec
     out_list$V.samples <- output$VVec
+    if(!is.null(predict.derivatives)){
+      out_list$Xderivative.samples <- output$XVec_deriv
+      out_list$Wderivative.samples <- output$WVec_deriv
+    }
   }
 
   out_list$locs <- locs.pred
@@ -171,6 +214,10 @@ predictLong <- function( Y,
   out_list$X.summary <- list()
   out_list$W.summary <- list()
   out_list$V.summary <- list()
+  if(!is.null(predict.derivatives)){
+    out_list$Xderivative.summary <- list()
+    out_list$Wderivative.summary <- list()
+  }
 
   for(i in 1:length(locs)){
     out_list$Y.summary[[i]] <- list()
@@ -193,11 +240,26 @@ predictLong <- function( Y,
     out_list$W.summary[[i]]$Median <- apply(output$WVec[[i]],1,median)
     out_list$V.summary[[i]]$Median <- apply(output$VVec[[i]],1,median)
 
+    if(!is.null(predict.derivatives)){
+      out_list$Xderivative.summary[[i]] <- list()
+      out_list$Wderivative.summary[[i]] <- list()
+      out_list$Xderivative.summary[[i]]$Mean <- apply(output$XVec_deriv[[i]],1,mean)
+      out_list$Wderivative.summary[[i]]$Mean <- apply(output$WVec_deriv[[i]],1,mean)
+      out_list$Xderivative.summary[[i]]$Var  <- apply(output$XVec_deriv[[i]],1,var)
+      out_list$Wderivative.summary[[i]]$Var  <- apply(output$WVec_deriv[[i]],1,var)
+      out_list$Xderivative.summary[[i]]$Median <- apply(output$XVec_deriv[[i]],1,median)
+      out_list$Wderivative.summary[[i]]$Median <- apply(output$WVec_deriv[[i]],1,median)
+    }
+
     if(!is.null(quantiles)){
       y.list <- list()
       x.list <- list()
       w.list <- list()
       v.list <- list()
+      if(!is.null(predict.derivatives)){
+        xd.list <- list()
+        wd.list <- list()
+      }
       for(c in 1:length(quantiles)){
         c.i <- list()
         c.i$level = quantiles[c]
@@ -207,9 +269,14 @@ predictLong <- function( Y,
         x.list[[c]] = c.i
         c.i$field <- apply(output$WVec[[i]],1,quantile,probs=c(quantiles[c]))
         w.list[[c]] = c.i
-
         c.i$field <- apply(output$VVec[[i]],1,quantile,probs=c(quantiles[c]))
         v.list[[c]] = c.i
+        if(!is.null(predict.derivatives)){
+          c.i$field <- apply(output$XVec_deriv[[i]],1,quantile,probs=c(quantiles[c]))
+          xd.list[[c]] = c.i
+          c.i$field <- apply(output$WVec_deriv[[i]],1,quantile,probs=c(quantiles[c]))
+          wd.list[[c]] = c.i
+        }
       }
       out_list$Y.summary[[i]]$quantiles <- y.list
       out_list$X.summary[[i]]$quantiles <- x.list
@@ -227,9 +294,9 @@ predictLong <- function( Y,
         } else if(excursions[[c]]$process == 'W'){
           proc <- output$WVec[[i]]
         } else if(excursions[[c]]$process == 'Xderivative'){
-          proc <-t(t(apply(output$XVec[[i]],2,diff))/diff(locs.pred[[i]]))
+          proc <- output$XVec_deriv[[i]]
         } else if(excursions[[c]]$process == 'Wderivative'){
-          proc <-t(t(apply(output$WVec[[i]],2,diff))/diff(locs.pred[[i]]))
+          proc <- output$WVec_deriv[[i]]
         }
         if(ex.i$type == '>'){
           if(length(proc)>1){
@@ -244,12 +311,16 @@ predictLong <- function( Y,
             ex.i$P <- mean(proc<ex.i$level)
           }
         }
-        if(excursions[[c]]$process == 'X' || excursions[[c]]$process == 'Xderivative'){
+        if(excursions[[c]]$process == 'X'){
           out_list$X.summary[[i]]$excursions <- ex.i
         } else if(excursions[[c]]$process == 'Y'){
           out_list$Y.summary[[i]]$excursions <- ex.i
-        } else if(excursions[[c]]$process == 'W' || excursions[[c]]$process == 'Wderivative'){
+        } else if(excursions[[c]]$process == 'W'){
           out_list$W.summary[[i]]$excursions <- ex.i
+        } else if(excursions[[c]]$process == 'Xderivative'){
+          out_list$Xderivative.summary[[i]]$excursions <- ex.i
+        } else if(excursions[[c]]$process == 'Wderivative'){
+          out_list$Wderivative.summary[[i]]$excursions <- ex.i
         }
       }
     }
@@ -262,4 +333,42 @@ predictLong <- function( Y,
     }
   }
   return(out_list)
+}
+
+updateLists <- function(mixedEffect_list,
+                        processes_list,
+                        operator_list,
+                        measurement_list,
+                        Bfixed,
+                        Brandom,
+                        locs)
+{
+  n.pred <- length(Bfixed)
+
+  mixedEffect_list$B_fixed <- Bfixed
+  if(!missing(Brandom)){
+    mixedEffect_list$B_random <- Brandom
+  }
+
+  X <- V <- Vin <- list()
+  for(i in 1:n.pred){
+    Vin[[i]] <- rep(1,length(locs[[i]]))
+    if(length(operator_list$h) == 1){
+      X[[i]] <- rep(0, length(operator_list$h[[1]]))
+      V[[i]] <- operator_list$h[[1]]
+    } else {
+      error("Not yet implemented")
+    }
+  }
+
+  processes_list$X <- X
+  if(!is.null(processes_list$V))
+    processes_list$V <- V
+
+  if(measurement_list$noise != "Normal")
+    measurement_list$Vs <- Vin
+
+  return(list(processes_list = processes_list,
+              measurement_list = measurement_list,
+              mixedEffect_list = mixedEffect_list))
 }

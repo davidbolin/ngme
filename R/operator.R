@@ -94,17 +94,17 @@ create_operator <- function(locs,
                             extend  = NULL)
 {
   if(tolower(name) == "matern"){
-    return(create_matrices_Matern(locs,
-                                  n,
+    return(create_matrices_Matern(locs = locs,
+                                  n = n,
                                   right.boundary = right.boundary,
                                   left.boundary = left.boundary,
-                                  common.grid,
-                                  extend))
+                                  common.grid = common.grid,
+                                  extend = extend))
   }else{
-    return(create_matrices_FD2(locs,
-                               n,
+    return(create_matrices_FD2(locs = locs,
+                               n = n,
                                common.grid = common.grid,
-                               extend))
+                               extend = extend))
   }
 
 }
@@ -115,7 +115,7 @@ create_matrices_Matern <- function(locs,
                                    n,
                                    right.boundary = 'neumann',
                                    left.boundary='neumann',
-                                   common.grid,
+                                   common.grid = TRUE,
                                    extend = NULL)
 {
   meshes <- create.meshes.1d(locs,n,common.grid,extend)
@@ -160,7 +160,7 @@ create_matrices_FD2 <- function(locs,
                                 n,
                                 right.boundary = 'neumann',
                                 left.boundary='neumann',
-                                common.grid,
+                                common.grid = TRUE,
                                 extend = NULL)
 {
   meshes <- create.meshes.1d(locs,n,common.grid,extend)

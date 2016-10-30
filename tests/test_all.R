@@ -4,15 +4,15 @@ library(LDMod)
 n.threads <- 1
 nIter <- 5
 n.pers <- 100
-nSim  <- 100
+nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
 n <- 100
 n.pred <- 100
 nBurnin = 10
 pred.type <- "Filter"
-pSubsample = 0.1
-subsample.type = 2
-test.pred = FALSE
+pSubsample = 0.99
+#subsample.type = 2
+test.pred = TRUE
 Y <- list()
 locs <- list()
 B_random <- list()
@@ -87,8 +87,7 @@ res.est <- estimateLong(Y                = sim_res$Y,
                     measurment_list  = mError_list,
                     processes_list   = processes_list,
                     operator_list    = operator_list,
-                    pSubsample = pSubsample,
-                    subsample.type = subsample.type)
+                    pSubsample = pSubsample)
 
 
 n.plots <- 3

@@ -35,6 +35,13 @@ List predictLong_cpp(Rcpp::List in_list)
   int silent     = Rcpp::as< int > (in_list["silent"]);
   int n_threads  = Rcpp::as< int > (in_list["n_threads"]);
   int mix_samp  = Rcpp::as< int > (in_list["mix_samp"]);
+  int use_random_effect = Rcpp::as< int > (in_list["use_random_effect"]);
+  int predict_derivative = Rcpp::as< int > (in_list["predict_derivative"]);
+  double deriv_scale = 1.0;
+  if(predict_derivative == 1){
+    deriv_scale = Rcpp::as< double > (in_list["derivative_scaling"]);
+  }
+
 
   //**********************************
   //     setting up the main data
@@ -43,24 +50,41 @@ List predictLong_cpp(Rcpp::List in_list)
     Rcpp::Rcout << " Setup data\n";
   }
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
+
   int nindv = obs_list.length(); //count number of patients
   std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
   std::vector< Eigen::SparseMatrix<double,0,int> > As_pred( nindv);
+  std::vector< Eigen::SparseMatrix<double,0,int> > As_pred_1( nindv);
+
   std::vector< Eigen::VectorXd > Ys( nindv);
   std::vector< Eigen::MatrixXd > pred_ind(nindv);
   std::vector< Eigen::MatrixXd > obs_ind(nindv);
   std::vector< Eigen::MatrixXd > Bfixed_pred(nindv);
   std::vector< Eigen::MatrixXd > Brandom_pred(nindv);
+
+  std::vector< Eigen::MatrixXd > Bfixed_pred_1(nindv);
+  std::vector< Eigen::MatrixXd > Brandom_pred_1(nindv);
+
+
   int count;
   count = 0;
   for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>(*it);
     As[count]            = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
     As_pred[count]       = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["Apred"]);
+    if(predict_derivative == 1){
+      As_pred_1[count]       = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["Apred1"]);
+      Bfixed_pred_1[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred1"]);
+      if(use_random_effect == 1){
+        Brandom_pred_1[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred1"]);
+      }
+    }
     pred_ind[count]      = Rcpp::as<Eigen::MatrixXd>(obs_tmp["pred_ind"]);
     obs_ind[count]       = Rcpp::as<Eigen::MatrixXd>(obs_tmp["obs_ind"]);
     Ys[count]            = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
-    Brandom_pred[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred"]);
+    if(use_random_effect == 1){
+      Brandom_pred[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred"]);
+    }
     Bfixed_pred[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred"]);
     count++;
   }
@@ -111,7 +135,7 @@ List predictLong_cpp(Rcpp::List in_list)
   // mixed effect setup
   //***********************************
   if(silent == 0){
-    Rcpp::Rcout << " Setup mixed effect\n";
+    Rcpp::Rcout << " Setup mixed effect: RE = " << use_random_effect << " \n";
   }
   Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
   std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
@@ -140,8 +164,6 @@ List predictLong_cpp(Rcpp::List in_list)
   errObj->initFromList(measurementError_list);
 
 
-
-
   //**********************************
   // stochastic processes setup
   //***********************************
@@ -151,9 +173,7 @@ List predictLong_cpp(Rcpp::List in_list)
   Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
   std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
-
   Process *process;
-
   if (type_processes != "Normal"){
     process  = new GHProcess;
   }else{ process  = new GaussianProcess;}
@@ -214,6 +234,8 @@ List predictLong_cpp(Rcpp::List in_list)
   std::vector< Eigen::MatrixXd > WVec(nindv);
   std::vector< Eigen::MatrixXd > VVec(nindv);
   std::vector< Eigen::MatrixXd > XVec(nindv);
+  std::vector< Eigen::MatrixXd > XVec_deriv(nindv);
+  std::vector< Eigen::MatrixXd > WVec_deriv(nindv);
   std::vector< Eigen::MatrixXd > YVec(nindv);
 
   /**
@@ -245,15 +267,26 @@ List predictLong_cpp(Rcpp::List in_list)
 
     XVec[i].setZero(As_pred[i].rows(), nSim);
     WVec[i].setZero(As_pred[i].rows(), nSim);
+    if(predict_derivative == 1){
+      XVec_deriv[i].setZero(As_pred[i].rows(), nSim);
+      WVec_deriv[i].setZero(As_pred[i].rows(), nSim);
+    }
     YVec[i].setZero(As_pred[i].rows(), nSim);
     VVec[i].setZero(As_pred[i].rows(), nSim);
-    Eigen::MatrixXd random_effect = mixobj->Br[i];
+    Eigen::MatrixXd random_effect;
+    if(use_random_effect == 1){
+      random_effect = mixobj->Br[i];
+    }
+
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
 
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){
       Eigen::SparseMatrix<double,0,int> A = As[i].middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
       Eigen::VectorXd Y = Ys[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      mixobj->Br[i] = random_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
+      if(use_random_effect == 1){
+        mixobj->Br[i] = random_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
+      }
+
       mixobj->Bf[i] = fixed_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
 
       for(int ii = 0; ii < nSim + nBurnin; ii ++){
@@ -380,9 +413,18 @@ List predictLong_cpp(Rcpp::List in_list)
           }
           Eigen::SparseMatrix<double,0,int> Ai = As_pred[i];
           Ai = Ai.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
-          Eigen::VectorXd random_effect = Bfixed_pred[i]*mixobj->beta_fixed + Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
+
+
+          Eigen::VectorXd random_effect;
+          if(use_random_effect == 1){
+            random_effect= Bfixed_pred[i]*mixobj->beta_fixed + Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
+          } else {
+            random_effect = Bfixed_pred[i]*mixobj->beta_fixed;
+          }
           Eigen::VectorXd random_effect_c = random_effect.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
           Eigen::VectorXd AX = Ai * process->Xs[i];
+
+
           Eigen::VectorXd mNoise = errObj->simulate_par(AX,random_engine[rank]);
 
           WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
@@ -390,8 +432,28 @@ List predictLong_cpp(Rcpp::List in_list)
           YVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX + mNoise;
           //V process
           VVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = Ai * process->Vs[i];
+          if(predict_derivative == 1){
+            Eigen::VectorXd random_effect_1;
+            if(use_random_effect == 1){
+              random_effect_1= Bfixed_pred_1[i]*mixobj->beta_fixed + Brandom_pred_1[i]*(mixobj->U.col(i)+mixobj->beta_random);
+            } else {
+              random_effect_1 = Bfixed_pred_1[i]*mixobj->beta_fixed;
+            }
+            Eigen::VectorXd random_effect_c_1 = random_effect_1.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
+            Eigen::SparseMatrix<double,0,int> Ai_1 = As_pred_1[i];
+            Ai_1 = Ai_1.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
+            Eigen::VectorXd AX_1 = Ai_1 * process->Xs[i];
+            WVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX_1 - AX;
+            XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 + AX_1 - random_effect_c + AX;
+          }
         }
       }
+
+    }
+
+    if(predict_derivative == 1){
+      WVec_deriv[i] /= deriv_scale;
+      XVec_deriv[i] /= deriv_scale;
     }
 
     double time_Ma = static_cast<double>(clock()-start)  / ticks_per_ms;
@@ -410,5 +472,10 @@ List predictLong_cpp(Rcpp::List in_list)
   out_list["XVec"] = XVec;
   out_list["WVec"] = WVec;
   out_list["VVec"] = VVec;
+  if(predict_derivative == 1)
+  {
+    out_list["XVec_deriv"] = XVec_deriv;
+    out_list["WVec_deriv"] = WVec_deriv;
+  }
   return(out_list);
 }
