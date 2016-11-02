@@ -109,16 +109,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h_MIN = *std::min_element(h_min.begin(), h_min.end());
 
 
-	if(type_process == "CH"){
-	  Vv_mean.resize(h2.size());
-		for(int i =0; i < nindv; i++){
-			EV[i] = h2[i];
-			EV[i].array() *= 0.25 / (0.5+1);
-			Vv_mean[i] = h2[i].sum()/h2[i].size();
-			Vv_mean[i] *=  0.25 / (0.5+1);
-			
-			}
-	}
+	
 
   for(int i = 0; i < nindv; i++ ){
 
@@ -129,12 +120,19 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
 
 
   	type_process = Rcpp::as<std::string> (init_list["noise"]);
-
+if(type_process == "CH"){
+	  Vv_mean.resize(h2.size());
+		for(int i =0; i < nindv; i++){
+			EV[i] = h2[i];
+			EV[i].array() *= 0.25 / (0.5+1);
+			Vv_mean[i] = h2[i].sum()/h2[i].size();
+			Vv_mean[i] *=  0.25 / (0.5+1);
+			}
+	}
   	nu = 0;
   	mu = 0;
   	dnu_prev = 0;
   	dmu_prev = 0;
-  	npars = 0;
   	npars = 1;
   	if(type_process != "CH"){
 		npars = 2;
@@ -148,7 +146,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   	else
     	mu = 1.;
     
-
+	if(type_process == "CH")
+		mu = 0.;
 
   	dmu    = 0;
 	ddmu_1 = 0;
@@ -308,14 +307,13 @@ void GHProcess::gradient( const int i ,
 			   			  const double trace_var)
 {
 
-
   	counter++;
   	//if( type_process == "CH")
   	//	return;
 
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
-	}else if(type_process=="GAL" || type_process=="CH"){
+	}else if(type_process=="GAL"){
   			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
 		    temp_1 -= h[i];
@@ -333,10 +331,14 @@ void GHProcess::gradient( const int i ,
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= Vv_mean[i] * (trace_var / pow(sigma, 2));
       		
+	}else if( type_process=="CH"){
+			
 	}
 
   if( type_process == "CH")
   		return;
+  
+  
   grad_nu(i);
 }
 
@@ -355,7 +357,7 @@ void GHProcess:: gradient_v2( const int i ,
 
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K);
-	}else if(type_process=="GAL" || type_process=="CH"){
+	}else if(type_process=="GAL" ){
 			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
 		    temp_1 -= h[i];
@@ -370,7 +372,8 @@ void GHProcess:: gradient_v2( const int i ,
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
 			
-
+	}else if( type_process=="CH"){
+			
 	}
 	
   	if( type_process == "CH")
@@ -397,6 +400,25 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
 		ddmu_1 += H_mu[i];
 }
 
+void GHProcess::gradient_mu_centered_CH(const int i, const Eigen::SparseMatrix<double,0,int> & K)
+{
+		// use the random variable KX/\sqrt{V} = mu/\sqrt{V} +  mu\sqrt{V} \sqrt{V^{-1}}Z
+		iV = Vs[i].cwiseInverse();
+		Eigen::VectorXd temp_1  =  - h[i];
+  		temp_1 = temp_1.cwiseProduct(iV);
+
+  		temp_1.array() += 1.;
+		Eigen::VectorXd temp_2;
+		Eigen::VectorXd temp_3 =  Vs[i] ;
+  		temp_3 -= h[i];
+		temp_3.array() *= mu;
+		temp_2 = K * Xs[i];
+		temp_2 -= temp_3;
+		dmu    += temp_1.dot(temp_2);
+		ddmu_1 += temp_3.dot(temp_3.cwiseProduct(iV));
+}
+
+
 void GHProcess::grad_nu(const int i)
 {
  	iV = Vs[i].cwiseInverse();
@@ -419,6 +441,9 @@ void GHProcess::step_theta(const double stepsize,
 						   const double learning_rate,
 						   const double polyak_rate)
 {
+	
+	if( type_process == "CH")
+  		return;
 	step_mu(stepsize, learning_rate);
 	counter = 0;
 	if(store_param){
@@ -430,15 +455,12 @@ void GHProcess::step_theta(const double stepsize,
 	}
   	
   		
-  	
 	step_nu(stepsize, learning_rate);
 	
 	counter = 0;
 
 	clear_gradient();
-	if( type_process == "CH")
-  		return;
-	
+  		
 	if(store_param)
 	{
 		if(vec_counter == 0 || polyak_rate == -1)
@@ -464,6 +486,7 @@ void GHProcess::step_mu(const double stepsize, const double learning_rate)
 	mu +=  step ;//(sqrt(cache_mu) + 1);
 	ddmu_1 = 0;
 	ddmu_2 = 0;
+	
 }
 
 void GHProcess::step_nu(const double stepsize, const double learning_rate)

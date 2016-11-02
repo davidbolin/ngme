@@ -11,7 +11,7 @@ graphics.off()
 plot_flag <- FALSE
 seed <- 4
 set.seed(seed)
-noises <- c("NIG")
+noises <- c("NIG","CH")
 for(k in 1:length(noises)){
   pSubsample <- 0.5
   nBurnin <- 200

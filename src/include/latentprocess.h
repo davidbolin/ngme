@@ -165,6 +165,8 @@ class GHProcess : public Process{
 		void grad_nu(const int);
 		void gradient_mu_centered(const int ,
 								  const Eigen::SparseMatrix<double,0,int> & );
+		void gradient_mu_centered_CH(const int ,
+								  const Eigen::SparseMatrix<double,0,int> & );
 
 	public:
 

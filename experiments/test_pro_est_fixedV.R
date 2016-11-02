@@ -7,19 +7,20 @@ library(testthat)
 library(LDMod)
 library(methods)
 graphics.off()
-pSubsample <- 0.1
+
 plot_flag <- TRUE
 seed <- 4
 set.seed(seed)
-noises <- c("NIG")
+noises <- c("CH")
 for(k in 1:length(noises)){
-nobs  <- 500
-nIter <- 2000
+  pSubsample <- 0.5
+  nBurnin <- 200
+nobs  <- 50
+nIter <- 1000 #100 is good enough
 n     <- 100 #n grid points
-learning_rate <- 0.9
-nBurnin_base = 1
+learning_rate <- 0.99
 nu_true <- 10
-mu_true <- 10
+mu_true <- 0
 nu_guess <- 20
 mu_guess <- 20
 tau_geuss <- 0.5
@@ -65,13 +66,13 @@ processes_list <- list(nu = nu_guess,
 input <- list( obs_list         = obs_list,
                operator_list    = operator_list,
                processes_list   = processes_list,
-               nBurnin_base     = nBurnin_base,
+               nBurnin_base     = 3,
                nIter            = nIter,     # iterations to run the stochastic gradient
-               nSim             = 3,
-               nBurnin          = 0,   # steps before starting gradient estimation
+               nSim             = 4,
+               nBurnin          = nBurnin,   # steps before starting gradient estimation
                silent           = 0, # print iteration info)
                step0            = 0.3,
-               alpha            = 0.01,
+               alpha            = 0.1,
                learning_rate    = learning_rate,
                pSubsample       = pSubsample,
                polyak_rate      = -1,
@@ -83,15 +84,16 @@ input <- list( obs_list         = obs_list,
                seed   = seed
               )
 output <- estimateLong_cpp(input)
-print("done")
+
 if(plot_flag){
 x11()
 par(mfrow=c(3,2))
 plot(locs[[1]],output_sim$Y[[5]])
 lines(output$operator_list$loc[[1]], output_sim$X[[5]])
 lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
+n_ <- length(output$operator_list$tauVec)
 if(noises[k] != "CH"){
-  n_ <- length(output$operator_list$tauVec)
+  
   plot(output$processes_list$mu_vec)
   lines(c(1, n_), c( mu_true, mu_true), col='red' )
   plot(output$processes_list$nu_vec)
