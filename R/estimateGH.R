@@ -92,7 +92,6 @@ estimateLong <- function(Y,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
-                 nBurnin_learningrate = NULL,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  nBurnin_base     = nBurnin_base,

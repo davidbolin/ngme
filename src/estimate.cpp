@@ -31,13 +31,16 @@ List estimateLong_cpp(Rcpp::List in_list)
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int nBurnin_base    = Rcpp::as< int > (in_list["nBurnin_base"] );
+  Rcpp::Rcout << "HERE\n";
   	int nBurnin_learningrate = nBurnin;
   	if(in_list.containsElementNamed("nBurnin_learningrate"))
   		nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
+  Rcpp::Rcout << "HERE 2\n";
   	int silent     = Rcpp::as< int    > (in_list["silent"]);
   	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   	double step0     = Rcpp::as< double    > (in_list["step0"]);
   	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  Rcpp::Rcout << "HERE 3\n";
   	unsigned long seed = 0;
   	if(in_list.containsElementNamed("seed"))
   		seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -47,7 +50,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   		process_active = 1;
   	if(in_list.containsElementNamed("learning_rate"))
   		learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
-
+	
+  Rcpp::Rcout << "HERE 4\n";
   	double polyak_rate = -1;
   	if(in_list.containsElementNamed("polyak_rate"))
   		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
