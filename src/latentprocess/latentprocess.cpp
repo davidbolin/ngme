@@ -509,8 +509,9 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate)
   // checking min value
   if(type_process=="GAL")
   {
-  	if(nu_temp * h_MIN < 0.01)
-  		nu_temp = 0.01/h_MIN; 
+  	if(nu_temp * h_MIN < 0.1)
+  		nu_temp = 0.1/h_MIN; 
+  		dnu_prev = 0;
   	
   }else if(type_process == "NIG"){
   	
