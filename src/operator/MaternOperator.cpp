@@ -23,6 +23,9 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   check_Rcpplist(solver_list, check_names2, "MaternOperator::initFromList");
 
   kappa = Rcpp::as<double>(init_list["kappa"]);
+  if(kappa < 0){
+    Rcpp::Rcout << "warning kappa negative\n";
+  }
   tau = Rcpp::as<double>(init_list["tau"]);
   int nIter = Rcpp::as<double>(init_list["nIter"]);
   kappaVec.resize(nIter);
@@ -162,8 +165,12 @@ void MaternOperator::gradient_init(int nsim, int nrep)
 void MaternOperator::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX,
-                   const int i)
+                   const int ii)
 {
+  int i = ii;
+  if(nop == 1)
+    i = 0;
+
   this->set_matrix(i);
   dtau +=  tau_trace[i];
   ddtau += tau_trace2[i];
@@ -183,7 +190,7 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   d2KX = d2kappaQ[i] * X;
   dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
   ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() *(KX - mean_KX)));
-  
+
 }
 
 void MaternOperator::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -197,7 +204,7 @@ void MaternOperator::print_parameters(){
 }
 
 
-void MaternOperator::step_theta(const double stepsize, 
+void MaternOperator::step_theta(const double stepsize,
                                 const double learning_rate,
                                 const double polyak_rate)
 {
@@ -223,12 +230,12 @@ void MaternOperator::step_theta(const double stepsize,
 	  kappa_temp = kappa - step;
 	}
 	kappa = kappa_temp;
-	
+
 	if(counter == 0 || polyak_rate == -1)
 		tauVec[counter] = tau;
 	else
 		tauVec[counter] = polyak_rate * tau + (1 - polyak_rate) * tauVec[counter-1];
-			
+
 	if(counter == 0 || polyak_rate == -1)
 		kappaVec[counter] = kappa;
 	else

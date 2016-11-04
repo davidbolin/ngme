@@ -117,6 +117,8 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	std::vector< Eigen::VectorXd >   Vs( nindv);
   std::vector< Eigen::VectorXd > Xs( nindv);
   std::vector< Eigen::VectorXd > Zs( nindv);
+
+
   for(int i = 0; i < nindv; i++ ){
     	if(common_grid == 1){
     	  Xs[i].resize( Kobj->d[0] );
@@ -163,7 +165,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     //*********************************************
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
-
       if(type_processes != "Normal"){
         if(common_grid){
           Vs[i] = sampleV_pre(rgig, Kobj->h[0], nu, type_processes );
@@ -182,6 +183,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
         d = Kobj->d[i];
       }
       Eigen::VectorXd h;
+
       for(int ii =0; ii < d; ii++){
         z[ii] =   sqrt(Vs[i][ii]) * normal(random_engine);
         if(type_processes != "Normal"){
@@ -195,20 +197,18 @@ List simulateLongGH_cpp(Rcpp::List in_list)
       }
 
       if(common_grid){
+
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
       } else {
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       }
 
-
       Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  // performs a Cholesky factorization of A
-
 
       Xs[i] = chol.solve(z);         // use the factorization to solve for the given right hand side
       Zs[i] = z;
       Ysim[i] += As[i] * Xs[i];
   }
-
 
   Rcpp::List out_list;
   out_list["Y"]    = Ysim;

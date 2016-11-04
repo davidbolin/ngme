@@ -2,8 +2,8 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 5
-n.pers <- 100
+nIter <- 100
+n.pers <- 1000
 nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
 n <- 100
@@ -11,8 +11,9 @@ n.pred <- 100
 nBurnin = 10
 pred.type <- "Filter"
 pSubsample = 0.99
+operator.type = "matern"
 #subsample.type = 2
-test.pred = TRUE
+test.pred = FALSE
 Y <- list()
 locs <- list()
 B_random <- list()
@@ -43,11 +44,12 @@ mixedEffect_list  <- list(B_random = B_random,
                           noise = "Normal",
                           Sigma_epsilon=1)
 
-operator_list <- create_operator(locs, n, name = "fd2")
 
-#operator_list$type  <- "matern"
-operator_list$type  <- "fd2"
-#operator_list$kappa <- -2
+operator_list <- create_operator(locs, n, name = operator.type)
+if(operator.type == "matern"){
+  operator_list$kappa <- 2
+}
+
 operator_list$tau   <- 15
 
 
@@ -87,14 +89,18 @@ res.est <- estimateLong(Y                = sim_res$Y,
                     measurment_list  = mError_list,
                     processes_list   = processes_list,
                     operator_list    = operator_list,
-                    pSubsample = pSubsample)
+                    pSubsample = pSubsample,
+                    silent = FALSE)
 
 
 n.plots <- 3
+if(operator.type == "matern")
+  n.plots = 4
+
 if(n.plots <= 3) {
   par(mfrow = c(1,3))
 } else {
-  par(mfrow = c(3,3))
+  par(mfrow = c(2,2))
 }
 matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects")
 lines(rep(mixedEffect_list$beta_fixed,length(res.est$mixedEffect_list$betaf_vec)),col=nIter)
@@ -104,7 +110,11 @@ matplot(t(matrix(rep(mixedEffect_list$beta_random,nIter),nrow=length(mixedEffect
 
 plot(res.est$operator_list$tauVec,type="l",main="process tau")
 lines(rep(operator_list$tau,nIter),col=2)
+if(operator.type == "matern"){
+  plot(res.est$operator_list$kappaVec,type="l",main="process kappa")
+  lines(rep(operator_list$kappa,nIter),col=2)
 
+}
 if(test.pred){
   res <- predictLong( Y = sim_res$Y,
                       locs.pred = locs.pred,

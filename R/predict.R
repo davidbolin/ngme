@@ -115,16 +115,19 @@ predictLong <- function( Y,
     if(type == "Filter"){
         pred.ind <- matrix(nrow = n.pred.i,ncol = 2)
         obs.ind  <- matrix(nrow = n.pred.i,ncol = 2)
-        for(j in 1:(n.pred.i-1)){
+
+        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= locs[[i]][1]]
+        pred.ind[1,] <- c(0,length(ind))
+        obs.ind[1,] <- c(0,0)
+        for(j in 2:n.pred.i){
           # pred.ind shows which values to save for the j:th prediction
-          ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] >= locs[[i]][j]) & (locs.pred[[i]] < locs[[i]][j+1])]
+          ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > locs[[i]][j-1]) & (locs.pred[[i]] <= locs[[i]][j])]
           pred.ind[j,] <- c(ind[1]-1,length(ind)) #first index and number of indices.
           # obs.ind shows which data to use for the j:th prediction
-          obs.ind[j,] <- c(0,j)
+          obs.ind[j,] <- c(0,j-1)
         }
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= locs[[i]][n.pred.i]]
-        pred.ind[n.pred.i,] <- c(ind[1]-1,length(ind))
-        obs.ind[n.pred.i,] <- c(0,n.pred.i)
+
+        obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
       } else {
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
@@ -133,6 +136,8 @@ predictLong <- function( Y,
       if(length(Y[[i]]) != length(locs[[i]])){
         stop("Length of Y and locs differ.")
       }
+    #print(pred.ind)
+    #print(obs.ind)
       obs_list[[i]] <- list(Y=Y[[i]],
                             pred_ind = pred.ind,
                             obs_ind = obs.ind,
@@ -326,9 +331,9 @@ predictLong <- function( Y,
     }
     if(crps){
       if(dim(output$YVec[[i]])[1]>1){
-        out_list$Y.summary[[i]]$crps     <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
       } else {
-        out_list$Y.summary[[i]]$crps     <- mean(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
+        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
       }
     }
   }
