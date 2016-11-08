@@ -107,6 +107,7 @@ void MaternOperator::set_matrices()
 void MaternOperator::set_matrix(int i)
 {
   if(matrix_set[i]==0){
+    matrix_set[i] = 1;
     SparseMatrix<double,0,int> Qeps, dQeps;
     double eps = 0.0001;
     double kappa_eps = kappa + eps;
@@ -226,7 +227,7 @@ void MaternOperator::step_theta(const double stepsize,
 	double kappa_temp = -1.;
 	while(kappa_temp < 0)
 	{
-	  dkappa *= 0.5;
+	  step *= 0.5;
 	  kappa_temp = kappa - step;
 	}
 	kappa = kappa_temp;
