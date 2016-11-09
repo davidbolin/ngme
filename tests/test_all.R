@@ -2,7 +2,7 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 2000
+nIter <- 100
 n.pers <- 100
 nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
@@ -10,7 +10,7 @@ n <- 100
 n.pred <- 100
 nBurnin = 10
 pred.type <- "Filter"
-pSubsample = 1
+pSubsample = 0.1
 operator.type = "matern"
 #subsample.type = 2
 test.pred = FALSE

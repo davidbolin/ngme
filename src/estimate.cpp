@@ -47,7 +47,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   		process_active = 1;
   	if(in_list.containsElementNamed("learning_rate"))
   		learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
-	
+
   	double polyak_rate = -1;
   	if(in_list.containsElementNamed("polyak_rate"))
   		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
@@ -513,9 +513,14 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  grad_var.array()  = grad_var.array().sqrt();
 
 	  if(silent == 0){
-	    Rcpp::Rcout << "Gibbs std = " << std_grad.transpose() << "\n";
-	    Rcpp::Rcout << "Outer std = " << std_grad_outer.transpose() << "\n";
-	    Rcpp::Rcout << "Total std = " << grad_var.transpose() << "\n";
+	    if(0){
+	      Rcpp::Rcout << "Gibbs std = " << std_grad.transpose() << "\n";
+	      Rcpp::Rcout << "Outer std = " << std_grad_outer.transpose() << "\n";
+	      Rcpp::Rcout << "Total std = " << grad_var.transpose() << "\n";
+	    } else {
+	      Rcpp::Rcout << "MC std = " << grad_var.sum() << " (Gibbs = "<< std_grad.sum() << ", Outer = " << std_grad_outer.sum() <<")\n";
+	    }
+
 	    //Rcpp::Rcout << "E[bias]    = " << Ebias_inner.transpose()   << "\n";
 	  }
 
