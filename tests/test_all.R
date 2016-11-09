@@ -2,7 +2,7 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 10000
+nIter <- 2000
 n.pers <- 100
 nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
@@ -10,7 +10,7 @@ n <- 100
 n.pred <- 100
 nBurnin = 10
 pred.type <- "Filter"
-pSubsample = 0.5
+pSubsample = 1
 operator.type = "matern"
 #subsample.type = 2
 test.pred = FALSE
@@ -82,7 +82,7 @@ processes_list$X <- sim_res$X
 if(operator.type == "matern"){
   operator_list$kappa <- 1
 }
-operator_list$tau   <- 5
+#operator_list$tau   <- 15
 
 
 res.est <- estimateLong(Y                = sim_res$Y,

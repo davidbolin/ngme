@@ -122,11 +122,18 @@ void MaternOperator::set_matrix(int i)
     tau_trace2[i] = -tau_trace[i]/tau;
     kappa_trace_i = (*Qsolver[i]).trace(dkappaQ[i]);
     kappa_trace[i] = kappa_trace_i;
-    Qeps = c*tau*(pow(kappa_eps,-1.5)*G[i] + pow(kappa_eps,0.5)*C[i]);
-    dQeps = c*tau*(-1.5*pow(kappa_eps,-2.5)*G[i] + 0.5*pow(kappa_eps,-0.5)*C[i]);
-    (*Qepssolver[i]).compute(Qeps);
-    trje = (*Qepssolver[i]).trace(dQeps);
-    kappa_trace2[i] = (trje - kappa_trace_i)/eps;
+    if(1){
+      Qeps = c*tau*(pow(kappa_eps,-1.5)*G[i] + pow(kappa_eps,0.5)*C[i]);
+      dQeps = c*tau*(-1.5*pow(kappa_eps,-2.5)*G[i] + 0.5*pow(kappa_eps,-0.5)*C[i]);
+      (*Qepssolver[i]).compute(Qeps);
+      trje = (*Qepssolver[i]).trace(dQeps);
+      kappa_trace2[i] = (trje - kappa_trace_i)/eps;
+    } else {
+      //tr(d(Q^-1*dQ) = tr(Q^-1*dQ*Q^-1*dQ) + tr(Q^-1*d2Q)
+      kappa_trace2[i] =(*Qsolver[i]).trace2(dkappaQ[i],dkappaQ[i]);
+      kappa_trace2[i] += (*Qsolver[i]).trace(d2kappaQ[i]);
+    }
+
   }
 }
 
@@ -178,7 +185,7 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   dkappa += kappa_trace[i];
   ddkappa += kappa_trace2[i];
 
-  Eigen::VectorXd KX = Q[i] * X;
+  Eigen::VectorXd KX = Q[i]*X;
   //compute gradients wrt tau
   Eigen::VectorXd dKX = dtauQ[i] * X;
   Eigen::VectorXd d2KX;
@@ -190,7 +197,8 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   dKX = dkappaQ[i] * X;
   d2KX = d2kappaQ[i] * X;
   dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
-  ddkappa -= 0.5*(dKX.dot(iV.asDiagonal() * dKX) + d2KX.dot(iV.asDiagonal() *(KX - mean_KX)));
+  ddkappa -= dKX.dot(iV.asDiagonal()*dKX);
+  ddkappa -= d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
 
 }
 
