@@ -147,8 +147,8 @@ Rcpp::List MaternOperator::output_list()
   List["kappa"] = kappaVec[tauVec.size() - 1];
   List["tauVec"] = tauVec;
   List["kappaVec"] = kappaVec;
-  List["G"] = G;
-  List["C"] = C;
+  //List["G"] = G;
+  //List["C"] = C;
   List["loc"] = loc;
   List["h"] = h;
   List["nIter"] = tauVec.size();

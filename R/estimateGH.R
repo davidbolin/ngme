@@ -112,9 +112,13 @@ estimateLong <- function(Y,
   output$operator_list$left.boundary <- operator_list$left.boundary
   output$operator_list$right.boundary <- operator_list$right.boundary
   output$operator_list$type <- operator_list$type
-  output$operator_list$Q <- operator_list$Q
-
-    return(output)
+  if(operator_list$type == "Matern"){
+    output$operator_list$G <- operator_list$G
+    output$operator_list$C <- operator_list$C
+  } else if(operator_list$type == "fd2"){
+    output$operator_list$Q <- operator_list$Q
+  }
+  return(output)
 }
 
 #'
