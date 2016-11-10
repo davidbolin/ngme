@@ -115,6 +115,8 @@ estimateLong <- function(Y,
   if(operator_list$type == "Matern"){
     output$operator_list$G <- operator_list$G
     output$operator_list$C <- operator_list$C
+    output$operator_list$loc = operator_list$loc
+    output$operator_list$h = operator_list$h
   } else if(operator_list$type == "fd2"){
     output$operator_list$Q <- operator_list$Q
   }
