@@ -2,7 +2,7 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 100
+nIter <- 500
 n.pers <- 100
 nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
@@ -24,22 +24,22 @@ B_fixed.pred <- list()
 Vin <- list()
 for(i in 1:n.pers)
 {
-  B_random[[i]] <- cbind(rep(1, n.obs[i]), (1:n.obs[i]) / n.obs[i] )
-  B_random.pred[[i]] <- cbind(rep(1, n.pred), (1:n.pred) / n.pred )
+  B_random[[i]] <- cbind(rep(1, n.obs[i]), 1000*(1:n.obs[i]))
+  B_random.pred[[i]] <- cbind(rep(1, n.pred), (1:n.pred))
 
   Y[[i]] <- rep(1,n.obs[i])
   locs[[i]] <- 1:n.obs[i]
   locs.pred[[i]] <- seq(from = 1, to = n.obs[i], length.out = n.pred)
   Vin[[i]] <- rep(1, n.obs[i])
 
-  B_fixed[[i]]  <- as.matrix(locs[[i]])
-  B_fixed.pred[[i]]  <- as.matrix(locs.pred[[i]])
+  B_fixed[[i]]  <- cbind(sqrt(locs[[i]]),1/locs[[i]])
+  B_fixed.pred[[i]]  <- cbind(sqrt(locs.pred[[i]]),1/locs.pred[[i]])
 }
 mError_list <- list(Vs = Vin, noise = "NIG", sigma = 0.1, nu = 1)
 mixedEffect_list  <- list(B_random = B_random,
                           B_fixed  = B_fixed,
-                          beta_random = as.matrix(c(2,-1)),
-                          beta_fixed  = as.matrix(c(.1)),
+                          beta_random = as.matrix(c(1,2)),
+                          beta_fixed  = as.matrix(c(1,2)),
                           Sigma = diag(c(0.1, 0.2)),
                           noise = "Normal",
                           Sigma_epsilon=1)
@@ -108,11 +108,10 @@ if(n.plots <= 3) {
 } else {
   par(mfrow = c(2,2))
 }
-matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects")
-lines(rep(mixedEffect_list$beta_fixed,length(res.est$mixedEffect_list$betaf_vec)),col=nIter)
+matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1)
+#matplot(t(matrix(rep(mixedEffect_list$beta_fixed,nIter),nrow=length(mixedEffect_list$beta_fixed),ncol = nIter)),add=TRUE,col=1,type="l")
 matplot(res.est$mixedEffect_list$betar_vec,type="l",main="random effects",col=1)
-matplot(t(matrix(rep(mixedEffect_list$beta_random,nIter),nrow=length(mixedEffect_list$beta_random),ncol = nIter)),add=TRUE,
-        col=2,type="l")
+#matplot(t(matrix(rep(mixedEffect_list$beta_random,nIter),nrow=length(mixedEffect_list$beta_random),ncol = nIter)),add=TRUE,col=1,type="l")
 
 plot(res.est$operator_list$tauVec,type="l",main="process tau")
 lines(rep(operator_list$tau,nIter),col=2)

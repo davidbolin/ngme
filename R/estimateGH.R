@@ -52,7 +52,8 @@ estimateLong <- function(Y,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
                          silent  = FALSE, # print iteration info
-                         seed    = NULL
+                         seed    = NULL,
+                         standardize.mixedEffects = TRUE
                          )
 {
   obs_list <- list()
@@ -78,6 +79,20 @@ estimateLong <- function(Y,
                                        left.boundary = operator_list$left.boundary),
                             Y=Y[[i]],
                             locs = locs[[i]])
+    }
+  }
+
+  if(standardize.mixedEffects){
+    Bf.list <- standardize.covariates(mixedEffect_list$B_fixed)
+    if(!is.null(Bf.list)){
+      mixedEffect_list$B_fixed <- Bf.list$B
+      mixedEffect_list$beta_fixed <- scale.beta(mixedEffect_list$beta_fixed,Bf.list)
+    }
+    Br.list <- standardize.covariates(mixedEffect_list$B_random)
+    if(!is.null(Br.list)){
+      mixedEffect_list$B_random <- Br.list$B
+      mixedEffect_list$beta_random <- scale.beta(mixedEffect_list$beta_random,Br.list)
+      mixedEffect_list$Sigma <- scale.sigma(mixedEffect_list$Sigma,Br.list)
     }
   }
 
@@ -108,6 +123,19 @@ estimateLong <- function(Y,
 
 
   output <- estimateLong_cpp(input)
+
+  if(standardize.mixedEffects){
+    if(!is.null(Bf.list)){
+      output$mixedEffect_list$beta_fixed <- scale.beta(output$mixedEffect_list$beta_fixed,Bf.list,inv=TRUE)
+      output$mixedEffect_list$betaf_vec <- scale.beta(output$mixedEffect_list$betaf_vec,Bf.list,inv=TRUE)
+    }
+    if(!is.null(Br.list)){
+      output$mixedEffect_list$beta_random <- scale.beta(output$mixedEffect_list$beta_random,Br.list,inv=TRUE)
+      output$mixedEffect_list$betar_vec <- scale.beta(output$mixedEffect_list$betar_vec,Br.list,inv=TRUE)
+      mixedEffect_list$Sigma <- scale.sigma(mixedEffect_list$Sigma,Br.list,inv=TRUE)
+    }
+  }
+
 
   output$operator_list$left.boundary <- operator_list$left.boundary
   output$operator_list$right.boundary <- operator_list$right.boundary
