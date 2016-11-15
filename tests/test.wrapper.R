@@ -2,7 +2,7 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 5000
+nIter <- 1000
 n.pers <- 1000
 nSim  <- 2
 n.obs  <- 30 + 0*(1:n.pers)
@@ -74,7 +74,7 @@ res.est <- estimate.wrapper(Y = sim_res$Y,
                             random.effect.distribution = "NIG",
                             process.distribution = "NIG",
                             estimation.options = list(nIter.gauss = 10,nIter = nIter,
-                                                      pSubsample = 0.05))
+                                                      pSubsample = 0.1))
 
 
 
