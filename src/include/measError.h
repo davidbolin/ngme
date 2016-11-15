@@ -129,6 +129,7 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 	private:
 		double dnu_old;
  	public:
+ 	  double term1,term2,term3;
 		double dnu;
 		double ddnu;
  		NIGMeasurementError();

@@ -109,16 +109,16 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     for( Rcpp::List::iterator it = Br_list.begin(); it != Br_list.end(); ++it ) {
       Br[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
     }
-    
+
     if(init_list.containsElementNamed("beta_random"))
       	beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
     else
     	beta_random.setZero(Br[0].cols());
-    
+
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
-    
+
 	dbeta_r_old.setZero(Br[0].cols());
     if(Br.size() > 0){
       H_beta_random.setZero(Br[0].cols(), Br[0].cols());
@@ -140,7 +140,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
     else
       U.setZero(Br[0].cols(), Br.size());
-    
+
     if( init_list.containsElementNamed("mu" ))
       mu = Rcpp::as< Eigen::MatrixXd > (init_list["mu"]) ;
     else
@@ -378,6 +378,8 @@ void NIGMixedEffect::gradient(const int i,
 
       // dnu
       grad_nu += 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+      term1 += V(i) + 1. / V(i) - 2.;
+      term2 += 1;
     }
     if(Bf.size() > 0){
       grad_beta_f   +=  exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
@@ -414,6 +416,8 @@ void NIGMixedEffect::gradient2(const int i,
 
       // dnu
       grad_nu += 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+      term1 += V(i) + 1. / V(i) - 2.;
+      term2 += 1;
     }
     if(Bf.size() > 0){
       grad_beta_f   +=  exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
@@ -508,7 +512,7 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old.array() *= learning_rate;
   dSigma_vech_old.array() += dSigma_vech.array();
-	
+
   double stepsize_temp  = stepsize;
   while(pos_def <= 0){
     Eigen::VectorXd Sigma_vech_temp = Sigma_vech;
@@ -523,23 +527,23 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
         Rcpp::Rcout << "pos_def = " << pos_def <<"\n";
         throw("in midexeffect not pos def \n");
     }
-	
-	
+
+
 
   }
   SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
   //Rcpp::Rcout << "Sigma = " << Sigma  << "\n";
   //Rcpp::Rcout << "eig = " << eig.eigenvalues() << "\n";
-  
+
   if(pos_def <= 1e-6){
   		dSigma_vech_old *= 0;
   		gradMu_old      *= 0;
   }
-  
+
   if(pos_def <= 1e-14){
 		Rcpp::Rcout << "NIGMixedEffect:: Sigma almost singular \n" ;
 		throw("error");
-		
+
 	}
 
     UUt.setZero(Sigma.cols() * Sigma.rows());
@@ -575,13 +579,15 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
         throw("in NIGmidexeffect nu is zero \n");
     }
   }
+  nu_temp = term1/term2;
   if(nu_temp  > 100){
-  		nu_temp =100; 
+  		nu_temp =100;
       dnu_old = 0;
   	}
+
 	nu = nu_temp;
 
-	
+
   EiV = 1. + 1./nu;
   VV = 1./nu;
 }

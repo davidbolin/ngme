@@ -44,7 +44,7 @@ class Process {
 			   			  const Eigen::VectorXd& res,
 			   			  const double sigma,
 			   			  const double trace_var){};
-    virtual void step_theta(const double stepsize, 
+    virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
     						const double polyak_rate   =  -1){};
     virtual void sample_V(const int,
@@ -169,7 +169,7 @@ class GHProcess : public Process{
 								  const Eigen::SparseMatrix<double,0,int> & );
 
 	public:
-
+  double term1,term2;
 
 	double mu;
 	double nu;

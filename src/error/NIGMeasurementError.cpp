@@ -43,7 +43,7 @@ Rcpp::List NIGMeasurementError::toList()
 }
 void NIGMeasurementError::initFromList(Rcpp::List const &init_list)
 {
-	
+
   NormalVarianceMixtureBaseError::initFromList(init_list);
   if(init_list.containsElementNamed("nu"))
     nu = Rcpp::as < double >( init_list["nu"]);
@@ -93,10 +93,15 @@ void NIGMeasurementError::gradient(const int i,
     if(common_V == 0){
     	dnu  += 0.5 * ( res.size() / nu + 2 * res.size() -   (Vs[i].array().sum() + iV.array().sum()) );
     	ddnu += - 0.5*res.size()/( nu * nu);
+    	term1 += res.size();
+    	term2 += Vs[i].array().sum() + iV.array().sum()- 2 * res.size();
+
     }else{
 
     	dnu  += 0.5 * ( 1. / nu + 2  -   (Vs[i][0] + iV[0]) );
     	ddnu += - 0.5*  1. / ( nu * nu);
+    	term1 += 1;
+    	term2 += Vs[i][0] + iV[0] -2;
     }
 
 }
@@ -114,6 +119,9 @@ double nu_temp = -1;
     if(step_size <= 1e-16)
         throw("in NIGMeasurementError:: can't make nu it positive \n");
   }
+  if(1){
+    nu_temp = term1/term2;
+  }
   nu = nu_temp;
   EV  = 1.;
   EiV = 1. + 1./nu;
@@ -121,7 +129,7 @@ double nu_temp = -1;
 
 }
 
-void NIGMeasurementError::step_theta(const double stepsize, 
+void NIGMeasurementError::step_theta(const double stepsize,
                                      const double learning_rate,
                                      const double polyak_rate)
 {
@@ -135,7 +143,7 @@ void NIGMeasurementError::step_theta(const double stepsize,
   			nu_vec[vec_counter-1] = nu; // -1 since NormalVarianceMixtureBaseError increase vec_counter
   		else
   			nu_vec[vec_counter-1] = polyak_rate * nu + (1 - polyak_rate) * nu_vec[vec_counter - 2];
-  	
+
   	}
 
 }
@@ -144,6 +152,8 @@ void NIGMeasurementError::clear_gradient()
 {
 	NormalVarianceMixtureBaseError::clear_gradient();
 	dnu    = 0;
+	term1= 0;
+	term2 = 0;
 }
 Eigen::VectorXd NIGMeasurementError::get_gradient()
 {

@@ -9,16 +9,22 @@ estimate.wrapper <- function(Y,
                              process.distribution,
                              individual.sigma = FALSE,
                              silent = FALSE,
-                             estimation.controls = list(learning.rate = 0,
-                                                        polyak_rate = 0.1,
-                                                        nBurnin = 100,
-                                                        nSim = 2,
-                                                        nIter.gauss = 1000,
-                                                        nIter = 10000,
-                                                        pSubsample = 0.1),
+                             estimation.options = NULL,
                              ...)
 {
 
+  estimation.controls = list(learning.rate = 0,
+                             polyak_rate = 0.1,
+                             nBurnin = 100,
+                             nSim = 2,
+                             nIter.gauss = 1000,
+                             nIter = 10000,
+                             pSubsample = 0.1)
+  if(!missing(estimation.options) && !is.null(estimation.options)){
+    for(i in 1:length(estimation.options)){
+      estimation.controls[names(estimation.options)[i]] = estimation.options[i]
+    }
+}
   if(!silent)
     cat("Setup lists\n")
   Vin <- list()

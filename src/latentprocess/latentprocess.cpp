@@ -35,7 +35,6 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
 
   }
 
-
   Xs.resize(nindv);
   Vs.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
@@ -74,6 +73,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   nindv = X_list.size();
   Xs.resize(nindv);
   Vs.resize(nindv);
+  term1 = 0;
+  term2 = 0;
 
 
   h.resize(nindv);
@@ -90,7 +91,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h2.resize(nindv);
   h_sum.resize(nindv);
   h_min.resize(nindv);
-  
+
   H_mu.resize(nindv);
   h3_mean.resize(nindv);
   Vv_mean.resize(nindv);
@@ -109,7 +110,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   h_MIN = *std::min_element(h_min.begin(), h_min.end());
 
 
-	
+
 
   for(int i = 0; i < nindv; i++ ){
 
@@ -145,7 +146,7 @@ if(type_process == "CH"){
     	mu = Rcpp::as < double >( init_list["mu"]);
   	else
     	mu = 1.;
-    
+
 	if(type_process == "CH")
 		mu = 0.;
 
@@ -192,7 +193,7 @@ void GHProcess::sample_X(const int i,
   Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
   Eigen::VectorXd DQ_12 = Qi.diagonal().cwiseInverse().cwiseSqrt();
   Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
-  for (int i = 0; i < Qi.rows(); i++) 
+  for (int i = 0; i < Qi.rows(); i++)
     DQD.coeffRef(i,i) += 1e-16;
   solver.compute(DQD);
   Eigen::VectorXd b = A.transpose()*Y / sigma2;
@@ -330,15 +331,15 @@ void GHProcess::gradient( const int i ,
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= Vv_mean[i] * (trace_var / pow(sigma, 2));
-      		
+
 	}else if( type_process=="CH"){
-			
+
 	}
 
   if( type_process == "CH")
   		return;
-  
-  
+
+
   grad_nu(i);
 }
 
@@ -371,11 +372,11 @@ void GHProcess:: gradient_v2( const int i ,
       		temp_3 += res;
       		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
-			
+
 	}else if( type_process=="CH"){
-			
+
 	}
-	
+
   	if( type_process == "CH")
   		return;
 	grad_nu(i);
@@ -425,7 +426,9 @@ void GHProcess::grad_nu(const int i)
 	// dnu
 	if(type_process == "NIG"){
 		dnu  +=  0.5 *( h[i].size() / nu -   h2[i].dot(iV) - Vs[i].sum() + 2 * h_sum[i]);
-    	ddnu -=   0.5 * h[i].size()/ pow(nu,2);
+    ddnu -=   0.5 * h[i].size()/ pow(nu,2);
+    term2 += h[i].size();
+    term1 += 	h2[i].dot(iV) + Vs[i].sum() - 2 * h_sum[i];
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
     	temp.array() = Vs[i].array().log();
@@ -437,11 +440,11 @@ void GHProcess::grad_nu(const int i)
 }
 
 
-void GHProcess::step_theta(const double stepsize, 
+void GHProcess::step_theta(const double stepsize,
 						   const double learning_rate,
 						   const double polyak_rate)
 {
-	
+
 	if( type_process == "CH")
   		return;
 	step_mu(stepsize, learning_rate);
@@ -451,23 +454,23 @@ void GHProcess::step_theta(const double stepsize,
 			mu_vec[vec_counter] = mu;
 		else
 			mu_vec[vec_counter] = polyak_rate * mu + (1- polyak_rate) * mu_vec[vec_counter-1];
-		
+
 	}
-  	
-  		
+
+
 	step_nu(stepsize, learning_rate);
-	
+
 	counter = 0;
 
 	clear_gradient();
-  		
+
 	if(store_param)
 	{
 		if(vec_counter == 0 || polyak_rate == -1)
 			nu_vec[vec_counter] = nu;
 		else
 			nu_vec[vec_counter] = polyak_rate * nu + (1- polyak_rate) * nu_vec[vec_counter-1];
-		
+
 		vec_counter++;
 	}
 }
@@ -475,29 +478,29 @@ void GHProcess::step_theta(const double stepsize,
 void GHProcess::step_mu(const double stepsize, const double learning_rate)
 {
 	dmu /= -  ddmu_1;
-	
-  
+
+
   if(std::abs(dmu_prev) > 10*std::abs(dmu))
   	dmu_prev *= 0.1;
-  
-  dmu_prev = learning_rate * dmu_prev +  dmu; 
+
+  dmu_prev = learning_rate * dmu_prev +  dmu;
   double step  = stepsize *  dmu_prev;
-	  
+
 	mu +=  step ;//(sqrt(cache_mu) + 1);
 	ddmu_1 = 0;
 	ddmu_2 = 0;
-	
+
 }
 
 void GHProcess::step_nu(const double stepsize, const double learning_rate)
 {
   double nu_temp = -1;
   dnu /=  ddnu;
-  
+
 
   dnu_prev = learning_rate * dnu_prev +    dnu;
   double step  = dnu_prev;
-  
+
   double stepsize_temp  = stepsize;
   while(nu_temp < 0)
   {
@@ -510,13 +513,13 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate)
   if(type_process=="GAL")
   {
   	if(nu_temp * h_MIN < 0.1)
-  		nu_temp = 0.1/h_MIN; 
+  		nu_temp = 0.1/h_MIN;
   		dnu_prev = 0;
-  	
+
   }else if(type_process == "NIG"){
-  	
+    nu_temp = term1/term2;
   	if(nu_temp * pow(h_MIN,2) < 5e-06){
-  		nu_temp =5e-06/pow(h_MIN,2); 
+  		nu_temp =5e-06/pow(h_MIN,2);
   		dnu_prev = 0;
   		}
   }
@@ -535,7 +538,7 @@ Eigen::VectorXd GHProcess::get_gradient()
   	if( type_process == "CH")
   		return(g);
 
-	
+
 	g[1] = dnu;
 	return(g);
 }
@@ -544,6 +547,8 @@ void GHProcess::clear_gradient()
 {
 	dnu = 0;
 	dmu = 0;
+	term1 = 0;
+	term2 = 0;
 }
 
 void GHProcess::setupStoreTracj(const int Niter)
@@ -554,7 +559,7 @@ void GHProcess::setupStoreTracj(const int Niter)
 
 
 	mu_vec.resize(Niter);
-	
+
   	if( type_process == "CH")
   		return;
 	nu_vec.resize(Niter);

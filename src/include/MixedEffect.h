@@ -85,7 +85,7 @@ class MixedEffect {
 
     // returns the gradient of all the parameters
     virtual Eigen::VectorXd get_gradient() = 0;
-    virtual void step_theta(const double stepsize, 
+    virtual void step_theta(const double stepsize,
     						const double  learning_rate = 0,
     						const double polyak_rate = -1) = 0;
     /*
@@ -162,8 +162,8 @@ class NormalMixedEffect  : public MixedEffect{
                   std::mt19937 & random_engine,
                   const double log_sigma2 = 0);
 
-    
-    void step_theta(const double stepsize, 
+
+    void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
     				const double polyak_rate   = -1);
     void step_Sigma(const double, const double );
@@ -211,7 +211,7 @@ class NIGMixedEffect  : public MixedEffect{
 	double dnu_old;
     double  grad_nu; // gradient for shape parameter
     Eigen::VectorXd gradMu; // gradient for skewness
-    Eigen::VectorXd gradMu_old; 
+    Eigen::VectorXd gradMu_old;
     Eigen::VectorXd gradMu_2;// second gradient for skewness
     Eigen::VectorXd grad_beta_r; // gradient for random intercept
     Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
@@ -227,7 +227,7 @@ class NIGMixedEffect  : public MixedEffect{
     void step_Sigma(const double, const double);
     void step_mu(const double , const double);
     void step_nu(const double, const double);
-
+    double term1,term2;
   public:
     Eigen::MatrixXi D;
     Eigen::MatrixXd Dd;
@@ -256,7 +256,7 @@ class NIGMixedEffect  : public MixedEffect{
     			   const double EiV = 1.);
     void gradient(const int , const Eigen::VectorXd& , const double );
     void gradient_sigma(const int , Eigen::VectorXd& );
-    void step_theta(const double stepsize, 
+    void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
     				const double polyak_rate   = -1);
     void step_beta_fixed(const double stepsize, const double);
