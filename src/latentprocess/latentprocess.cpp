@@ -521,7 +521,7 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate)
   	if(nu_temp * pow(h_MIN,2) < 5e-06){
   		nu_temp =5e-06/pow(h_MIN,2);
   		dnu_prev = 0;
-  		}
+  	}
   }
   nu = nu_temp;
 

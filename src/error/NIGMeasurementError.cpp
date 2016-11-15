@@ -121,6 +121,9 @@ double nu_temp = -1;
   }
   if(1){
     nu_temp = term1/term2;
+    if(nu_temp < 0){
+      nu_temp = 0.1;
+    }
   }
   nu = nu_temp;
   EV  = 1.;

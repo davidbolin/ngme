@@ -580,6 +580,9 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
     }
   }
   nu_temp = term1/term2;
+  if(nu_temp < 0){
+    nu_temp = 0.1;
+  }
   if(nu_temp  > 100){
   		nu_temp =100;
       dnu_old = 0;
