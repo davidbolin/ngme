@@ -224,3 +224,85 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 
 }
 
+
+// [[Rcpp::export]]
+List simulateLongME_cpp(Rcpp::List in_list)
+{
+
+  //**********************************
+  //setting up the main data
+  //**********************************
+  Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
+  int nindv = obs_list.length(); //count number of patients
+  std::vector< Eigen::VectorXd > Ys( nindv);
+  int counter = 0;
+  for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
+    List obs_tmp = Rcpp::as<Rcpp::List>(*it);
+    Ys[counter++] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
+  }
+
+  //**********************************
+  // mixed effect setup
+  //***********************************
+  Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
+  std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
+  MixedEffect *mixobj;
+  if(type_mixedEffect == "Normal")
+    mixobj = new NormalMixedEffect;
+  else
+    mixobj   = new NIGMixedEffect;
+
+  mixobj->initFromList(mixedEffect_list);
+
+
+  //***********************************
+  // measurement error setup
+  //***********************************
+  Rcpp::List MeasureError_list  = Rcpp::as<Rcpp::List> (in_list["measurment_list"]);
+  MeasurementError *errObj;
+  std::string MeasureNoise = Rcpp::as <std::string> (MeasureError_list["noise"]);
+  if(MeasureNoise == "Normal")
+    errObj = new GaussianMeasurementError;
+  else
+    errObj = new NIGMeasurementError;
+
+  errObj->initFromList(MeasureError_list);
+
+
+  /*
+  Simulation objects
+  */
+  std::mt19937 random_engine;
+  std::normal_distribution<double> normal;
+  std::default_random_engine gammagenerator;
+  random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+  gig rgig;
+  rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+
+  //*********************************************
+  //        simulating the measurement error
+  //*********************************************
+  std::vector< Eigen::VectorXd > Ysim = errObj->simulate( Ys);
+
+  //*********************************************
+  //        simulating the mixed effect
+  //*********************************************
+  mixobj->simulate();
+  for(int i = 0; i < Ysim.size(); i++)
+  {
+    mixobj->add_inter(i, Ysim[i]);
+    mixobj->add_cov(i, Ysim[i]);
+  }
+
+
+  Rcpp::List out_list;
+  out_list["Y"]    = Ysim;
+  out_list["U"]    = mixobj->U;
+
+  if(errObj->noise != "Normal")
+    out_list["V_noise"] = errObj->Vs;
+  return(out_list);
+
+}
+

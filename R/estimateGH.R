@@ -1,3 +1,121 @@
+estimate.wrapper <- function(Y,
+                             locs,
+                             B_random,
+                             B_fixed,
+                             operator.type = "fd2",
+                             n.process = NULL,
+                             measurement.distribution,
+                             random.effect.distribution,
+                             process.distribution,
+                             individual.sigma = FALSE,
+                             silent = FALSE,
+                             estimation.controls = list(learning.rate = 0,
+                                                        polyak_rate = 0.1,
+                                                        nBurnin = 100,
+                                                        nSim = 2,
+                                                        nIter.gauss = 1000,
+                                                        nIter = 10000,
+                                                        pSubsample = 0.1),
+                             ...)
+{
+
+  if(!silent)
+    cat("Setup lists\n")
+  Vin <- list()
+  for(i in 1:n.pers)
+  {
+    Vin[[i]] <- rep(1, length(Y[[i]]))
+  }
+  measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
+  mixedEffect_list  <- list(B_random = B_random,
+                            B_fixed  = B_fixed,
+                            noise = "Normal",
+                            Sigma_epsilon=1)
+
+  if(is.null(n.process)){
+    n.process = max(round(mean(unlist(lapply(locs,length)))),1)
+  }
+  operator_list <- create_operator(locs, n.process, name = operator.type)
+
+  process_list = list(noise = "Normal",
+                        nu  = 1,
+                        mu  = 0)
+  process_list$V <- list()
+  process_list$X <- list()
+  for(i in 1:length(locs))
+  {
+    process_list$X[[i]] <- rep(0,length(operator_list$h[[1]]))
+    process_list$V[[i]] <- operator_list$h[[1]]
+  }
+
+  #starting values for measurement error and mixed effects using OLS:
+  if(!silent)
+    cat("Calculate starting values\n")
+  mixedEffect_list <- ME.startvalues(Y,mixedEffect_list)
+  measurement_list$sigma = mixedEffect_list$sigma
+  if(1){
+    if(!is.null(process_list)){
+      #starting values for process:
+      operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
+      operator_list$type  <- operator.type
+      #estimate Gaussian process model
+      if(!silent)
+        cat("Estimate Gaussian")
+
+      res <- estimateLong(Y, locs,
+                          mixedEffect_list,
+                          measurement_list,
+                          process_list,
+                          operator_list,
+                          learning_rate = estimation.controls$learning.rate,
+                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                          polyak_rate = 0,
+                          nSim = 2,
+                          nBurnin = estimation.controls$nBurnin,
+                          nIter = estimation.controls$nIter.gauss,
+                          pSubsample = estimation.controls$pSubsample,
+                          ...)
+
+      if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
+        if(!silent)
+          cat("Estimate non-Gaussian")
+
+        res$mixedEffect_list$noise = random.effect.distribution
+        res$mixedEffect_list$nu = as.matrix(10)
+        res$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
+
+        res$processes_list$noise = process.distribution
+        res$processes_list$mu = 0
+        res$processes_list$nu = 10
+
+        res$measurementError_list$noise = measurement.distribution
+        res$measurementError_list$nu = 10
+        res$measurementError_list$common_V = individual.sigma
+        res$measurementError_list$Vs = Vin
+
+        res <- estimateLong(Y, locs,
+                            res$mixedEffect_list,
+                            res$measurementError_list,
+                            res$processes_list,
+                            res$operator_list,
+                            learning_rate = estimation.controls$learning.rate,
+                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                            polyak_rate = 0,
+                            nBurnin = estimation.controls$nBurnin,
+                            nIter = estimation.controls$nIter,
+                            pSubsample = estimation.controls$pSubsample,
+                            ...)
+
+      }
+
+    } else {
+      res <- estimateME(Y,mixedEffect_list, measurement_list, ...)
+    }
+  }
+
+  return(res)
+}
+
 #' @param   Y           - list with the observations
 #' @param   locs        - list with position of the observations (Y)
 #' @param mixedEffect_list -
@@ -53,7 +171,7 @@ estimateLong <- function(Y,
                          nBurnin = 10,   # steps before starting gradient estimation
                          silent  = FALSE, # print iteration info
                          seed    = NULL,
-                         standardize.mixedEffects = TRUE
+                         standardize.mixedEffects = FALSE
                          )
 {
   obs_list <- list()
@@ -246,4 +364,69 @@ setseed_ME <- function(input, seed)
   input$mixedEffect_list$seed <- sample.int(10^6, 1)
   set.seed(seed.old)
   return(input)
+}
+
+# Treat random effects as fixed effects to obtain start values using OLS
+ME.startvalues <- function(Y,mixedEffect_list)
+{
+  n = length(mixedEffect_list$B_fixed)
+  nc.f= dim(mixedEffect_list$B_fixed[[1]])[2]
+  nc.r = 0
+  if(!is.null(mixedEffect_list$B_random)){
+    nc.r= dim(mixedEffect_list$B_random[[1]])[2]
+  }
+  nc = nc.f + nc.r
+  BB = matrix(0,nc,nc)
+  BY = matrix(0,nc,1)
+
+  if(nc.r  > 0){
+    beta_r = matrix(0,n,nc.r)
+    I = diag(1,nc)
+
+    for(i in 1:n){
+
+      Bi = cBind(mixedEffect_list$B_fixed[[i]],mixedEffect_list$B_random[[i]])
+      BB = BB + t(Bi)%*%Bi
+      BY = BY + t(Bi)%*%Y[[i]]
+    }
+    beta = solve(BB,BY)
+    mixedEffect_list$beta_fixed = beta[1:nc.f]
+    mixedEffect_list$beta_random = beta[(nc.f+1):nc]
+    res = NULL
+    Sigma = matrix(0,nc.r,nc.r)
+    br = matrix(0,n,nc.r)
+    for(i in 1:n){
+      BB = solve(t(mixedEffect_list$B_random[[i]])%*%mixedEffect_list$B_random[[i]])
+      br[i,] = BB%*%t(mixedEffect_list$B_random[[i]])%*%(Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed)
+      res <- c(res,Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed - mixedEffect_list$B_random[[i]]%*%br[i,])
+    }
+    m = br - colMeans(br)
+    mixedEffect_list$Sigma = t(m)%*%m/n
+    mixedEffect_list$sigma = sqrt(var(res))
+  } else {
+    for(i in 1:n){
+      BB = BB + t(mixedEffect_list$B_fixed[[i]])%*%mixedEffect_list$B_fixed[[i]]
+      BY = BY + t(mixedEffect_list$B_fixed[[i]])%*%Y[[i]]
+    }
+    beta_fixed = solve(BB,BY)
+    for(i in 1:n){
+      res <- c(res,Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%beta_fixed)
+    }
+    mixedEffect_list$sigma = sqrt(var(res))
+  }
+  return(mixedEffect_list)
+}
+
+operator.startvalues <- function(Y,locs,mixedEffect_list,operator_list,measurement_list)
+{
+  if(operator_list$type == "fd2"){
+    operator_list$tau = 1/measurement_list$sigma
+  } else if(operator_list$type == "matern"){
+    operator_list$tau = 1/measurement_list$sigma
+    m = min(unlist(lapply(lapply(locs,range),min)))
+    M = max(unlist(lapply(lapply(locs,range),max)))
+    range = 0.5*(M-m)
+    operator_list$kappa = sqrt(8)/range
+  }
+  return(operator_list)
 }

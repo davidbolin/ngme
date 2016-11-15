@@ -64,6 +64,17 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// simulateLongME_cpp
+List simulateLongME_cpp(Rcpp::List in_list);
+RcppExport SEXP LDMod_simulateLongME_cpp(SEXP in_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::List >::type in_list(in_listSEXP);
+    __result = Rcpp::wrap(simulateLongME_cpp(in_list));
+    return __result;
+END_RCPP
+}
 // test_PreDiagsolver
 double test_PreDiagsolver(Rcpp::List in_list);
 RcppExport SEXP LDMod_test_PreDiagsolver(SEXP in_listSEXP) {

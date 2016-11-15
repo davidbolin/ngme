@@ -7,40 +7,57 @@ simulateLongPrior <- function( Y,
                                processes_list,
                                operator_list)
 {
-  common.grid = FALSE
-  if(length(operator_list$loc)==1){
-    common.grid = TRUE
-  }
-  obs_list <- list()
-  for(i in 1:length(locs)){
-    if(length(Y[[i]]) != length(locs[[i]])){
-      stop("Length of Y and locs differ.")
+  if(!missing(processes_list) && !is.null(processes_list)){
+    common.grid = FALSE
+    if(length(operator_list$loc)==1){
+      common.grid = TRUE
     }
-    if(common.grid){
-      obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                       operator_list$loc[[1]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Y=Y[[i]],
-                            locs = locs[[i]])
-    } else {
-      obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                       operator_list$loc[[i]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Y=Y[[i]],
-                            locs = locs[[i]])
+    obs_list <- list()
+    for(i in 1:length(locs)){
+      if(length(Y[[i]]) != length(locs[[i]])){
+        stop("Length of Y and locs differ.")
+      }
+      if(common.grid){
+        obs_list[[i]] <- list(A = spde.A(locs[[i]],
+                                         operator_list$loc[[1]],
+                                         right.boundary = operator_list$right.boundary,
+                                         left.boundary = operator_list$left.boundary),
+                              Y=Y[[i]],
+                              locs = locs[[i]])
+      } else {
+        obs_list[[i]] <- list(A = spde.A(locs[[i]],
+                                         operator_list$loc[[i]],
+                                         right.boundary = operator_list$right.boundary,
+                                         left.boundary = operator_list$left.boundary),
+                              Y=Y[[i]],
+                              locs = locs[[i]])
 
+      }
     }
-  }
 
-  input <- list( obs_list = obs_list,
-                 operator_list = operator_list,
-                 measurment_list = measurment_list,
-                 mixedEffect_list = mixedEffect_list,
-                 processes_list = processes_list)
+    input <- list( obs_list = obs_list,
+                   operator_list = operator_list,
+                   measurment_list = measurment_list,
+                   mixedEffect_list = mixedEffect_list,
+                   processes_list = processes_list)
+    output <- simulateLongGH_cpp(input)
+  } else {
+    obs_list <- list()
+    for(i in 1:length(locs)){
+      if(length(Y[[i]]) != length(locs[[i]])){
+        stop("Length of Y and locs differ.")
+      }
+      obs_list[[i]] <- list(Y=Y[[i]], locs = locs[[i]])
+    }
 
-  output <- simulateLongGH_cpp(input)
+    input <- list( obs_list = obs_list,
+                   measurment_list = measurment_list,
+                   mixedEffect_list = mixedEffect_list)
+
+    output <- simulateLongME_cpp(input)
+    }
+
+
   return(output)
 }
 

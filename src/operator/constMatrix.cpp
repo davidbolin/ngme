@@ -59,6 +59,9 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   counter = 0;
   tauVec[counter] = tau;
   counter++;
+  term1 = 0;
+  term2 = 0;
+  term3 = 0;
 
 }
 
@@ -71,6 +74,9 @@ void constMatrix::gradient_init(int nsim, int nrep)
 {
   dtau   = 0;
   ddtau  = 0;
+  term1 = 0;
+  term2 = 0;
+  term3 = 0;
 }
 
 void constMatrix::gradient_add( const Eigen::VectorXd & X,
@@ -86,6 +92,9 @@ void constMatrix::gradient_add( const Eigen::VectorXd & X,
   double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
   dtau +=  (d[ii] - xtQx - xtQmean)/ tau;
   ddtau -=  (d[ii] + xtQx) / pow(tau, 2);
+  term1 += xtQx/pow(tau,2);
+  term2 += xtQmean/tau;
+  term3 -= d[ii];
 }
 
 void constMatrix::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -110,11 +119,23 @@ void constMatrix::step_theta(const double stepsize,
     	step *= 0.5;
         tau_temp = tau - step;
     }
+
+    if(1){
+      tau_temp = -term2 + pow(term2*term2 - 4*term1*term3,0.5);
+      tau_temp /= 2*term1;
+      if(tau < 0)
+        tau = 1;
+
+      term1 = 0;
+      term2 = 0;
+      term3 = 0;
+    }
   for(int i=0;i<nop;i++){
     Q[i] *= tau_temp/tau;
   }
 
 	tau = tau_temp;
+
 	if(counter == 0 || polyak_rate == -1)
 		tauVec[counter] = tau;
 	else
