@@ -27,7 +27,7 @@ predictLong <- function( Y,
                          mixedEffect_list,
                          measurment_list,
                          processes_list,
-                         operator_list,
+                         operator_list = NULL,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting prediction
                          silent  = FALSE, # print iteration info
@@ -50,6 +50,14 @@ predictLong <- function( Y,
     stop("Model not specified using random effects")
   }
 
+  use.process = TRUE
+  if(missing(processes_list) || is.null(processes_list)){
+    use.process = FALSE
+  }
+
+  if(!missing(processes_list) && is.null(processes_list)){
+    stop("Operator list missing")
+  }
   if(missing(locs.pred)){
     locs.pred <- locs
   }
@@ -79,17 +87,20 @@ predictLong <- function( Y,
         predict.derivatives$B_random <- predict.derivatives$B_random[pInd]
       }
     }
-    processes_list$X    <- processes_list$X[pInd]
-    processes_list$V    <- processes_list$V[pInd]
-    if(!common.grid){
-      operator_list$Q <- operator_list$Q[pInd]
-      operator_list$loc <- operator_list$loc[pInd]
-      operator_list$h <- operator_list$h[pInd]
-      if(operator_list$type == "Matern"){
-        operator_list$C <- operator_list$C[pInd]
-        operator_list$G <- operator_list$G[pInd]
+    if(use.process){
+      processes_list$X    <- processes_list$X[pInd]
+      processes_list$V    <- processes_list$V[pInd]
+      if(!common.grid){
+        operator_list$Q <- operator_list$Q[pInd]
+        operator_list$loc <- operator_list$loc[pInd]
+        operator_list$h <- operator_list$h[pInd]
+        if(operator_list$type == "Matern"){
+          operator_list$C <- operator_list$C[pInd]
+          operator_list$G <- operator_list$G[pInd]
+        }
       }
     }
+
     n.patient = length(pInd)
   } else {
     if(is.list(Y)){
@@ -136,41 +147,46 @@ predictLong <- function( Y,
       if(length(Y[[i]]) != length(locs[[i]])){
         stop("Length of Y and locs differ.")
       }
-    #print(pred.ind)
-    #print(obs.ind)
+
       obs_list[[i]] <- list(Y=Y[[i]],
                             pred_ind = pred.ind,
                             obs_ind = obs.ind,
                             locs = locs[[i]],
                             Bfixed_pred = Bfixed.pred[[i]])
-      if(common.grid){
-        obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[1]],
-                                  right.boundary = operator_list$right.boundary,
-                                  left.boundary = operator_list$left.boundary)
-        obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
-                                  right.boundary = operator_list$right.boundary,
+      if(use.process){
+        if(common.grid){
+          obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[1]],
+                                   right.boundary = operator_list$right.boundary,
                                    left.boundary = operator_list$left.boundary)
+          obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
+                                       right.boundary = operator_list$right.boundary,
+                                       left.boundary = operator_list$left.boundary)
 
-      } else {
-        obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[i]],
-                                         right.boundary = operator_list$right.boundary,
-                                         left.boundary = operator_list$left.boundary)
-        obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
-                                             right.boundary = operator_list$right.boundary,
-                                             left.boundary = operator_list$left.boundary)
+        } else {
+          obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[i]],
+                                   right.boundary = operator_list$right.boundary,
+                                   left.boundary = operator_list$left.boundary)
+          obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
+                                       right.boundary = operator_list$right.boundary,
+                                       left.boundary = operator_list$left.boundary)
+        }
       }
+
       if(use.random.effect){
         obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
       }
+
       if(!is.null(predict.derivatives)){
-        if(common.grid){
-          obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[1]],
-                                        right.boundary = operator_list$right.boundary,
-                                        left.boundary = operator_list$left.boundary)
-        } else {
-          obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[i]],
-                                        right.boundary = operator_list$right.boundary,
-                                        left.boundary = operator_list$left.boundary)
+        if(use.process){
+          if(common.grid){
+            obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[1]],
+                                          right.boundary = operator_list$right.boundary,
+                                          left.boundary = operator_list$left.boundary)
+          } else {
+            obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[i]],
+                                          right.boundary = operator_list$right.boundary,
+                                          left.boundary = operator_list$left.boundary)
+          }
         }
         obs_list[[i]]$Bfixed_pred1 = predict.derivatives$Bfixed[[i]]
         if(use.random.effect){
@@ -185,10 +201,8 @@ predictLong <- function( Y,
     predict_derivative = 1
   }
   input <- list( obs_list         = obs_list,
-                 operator_list    = operator_list,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
-                 processes_list   = processes_list,
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
                  silent           = silent, # print iteration info)
@@ -197,8 +211,11 @@ predictLong <- function( Y,
                  mix_samp = repeat.mix,
                  use_random_effect = use.random.effect,
                  derivative_scaling = delta,
-                 predict_derivative = predict_derivative
-  )
+                 predict_derivative = predict_derivative)
+  if(use.process){
+    input$processes_list   = processes_list
+    input$operator_list    = operator_list
+  }
 
   output <- predictLong_cpp(input)
   out_list <- list()

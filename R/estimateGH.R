@@ -2,11 +2,12 @@ estimate.wrapper <- function(Y,
                              locs,
                              B_random,
                              B_fixed,
+                             use.process = TRUE,
                              operator.type = "fd2",
                              n.process = NULL,
-                             measurement.distribution,
-                             random.effect.distribution,
-                             process.distribution,
+                             measurement.distribution = "Normal",
+                             random.effect.distribution= "Normal",
+                             process.distribution= "Normal",
                              individual.sigma = FALSE,
                              silent = FALSE,
                              estimation.options = NULL,
@@ -37,21 +38,22 @@ estimate.wrapper <- function(Y,
                             B_fixed  = B_fixed,
                             noise = "Normal",
                             Sigma_epsilon=1)
+  if(use.process){
+    if(is.null(n.process)){
+      n.process = max(round(mean(unlist(lapply(locs,length)))),1)
+    }
+    operator_list <- create_operator(locs, n.process, name = operator.type)
 
-  if(is.null(n.process)){
-    n.process = max(round(mean(unlist(lapply(locs,length)))),1)
-  }
-  operator_list <- create_operator(locs, n.process, name = operator.type)
-
-  process_list = list(noise = "Normal",
+    process_list = list(noise = "Normal",
                         nu  = 1,
                         mu  = 0)
-  process_list$V <- list()
-  process_list$X <- list()
-  for(i in 1:length(locs))
-  {
-    process_list$X[[i]] <- rep(0,length(operator_list$h[[1]]))
-    process_list$V[[i]] <- operator_list$h[[1]]
+    process_list$V <- list()
+    process_list$X <- list()
+    for(i in 1:length(locs))
+    {
+      process_list$X[[i]] <- rep(0,length(operator_list$h[[1]]))
+      process_list$V[[i]] <- operator_list$h[[1]]
+    }
   }
 
   #starting values for measurement error and mixed effects using OLS:
@@ -59,14 +61,63 @@ estimate.wrapper <- function(Y,
     cat("Calculate starting values\n")
   mixedEffect_list <- ME.startvalues(Y,mixedEffect_list)
   measurement_list$sigma = mixedEffect_list$sigma
-  if(1){
-    if(!is.null(process_list)){
-      #starting values for process:
-      operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
-      operator_list$type  <- operator.type
+
+  if(use.process){
+    #starting values for process:
+    operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
+    operator_list$type  <- operator.type
+
+    if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
       #estimate Gaussian process model
       if(!silent)
         cat("Estimate Gaussian")
+
+        res <- estimateLong(Y, locs,
+                            mixedEffect_list,
+                            measurement_list,
+                            process_list,
+                            operator_list,
+                            learning_rate = estimation.controls$learning.rate,
+                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                            polyak_rate = 0,
+                            nSim = 2,
+                            nBurnin = estimation.controls$nBurnin,
+                            nIter = estimation.controls$nIter,
+                            pSubsample = estimation.controls$pSubsample,
+                            ...)
+
+      if(!silent)
+        cat("Estimate non-Gaussian")
+
+      res$mixedEffect_list$noise = random.effect.distribution
+      res$mixedEffect_list$nu = as.matrix(10)
+      res$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
+
+      res$processes_list$noise = process.distribution
+      res$processes_list$mu = 0
+      res$processes_list$nu = 10
+
+      res$measurementError_list$noise = measurement.distribution
+      res$measurementError_list$nu = 10
+      res$measurementError_list$common_V = individual.sigma
+      res$measurementError_list$Vs = Vin
+
+      res <- estimateLong(Y, locs,
+                            res$mixedEffect_list,
+                            res$measurementError_list,
+                            res$processes_list,
+                            res$operator_list,
+                            learning_rate = estimation.controls$learning.rate,
+                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                            polyak_rate = 0,
+                            nBurnin = estimation.controls$nBurnin,
+                            nIter = estimation.controls$nIter,
+                            pSubsample = estimation.controls$pSubsample,
+                            ...)
+
+    } else {
+      if(!silent)
+        cat("Estimate Model")
 
       res <- estimateLong(Y, locs,
                           mixedEffect_list,
@@ -78,21 +129,33 @@ estimate.wrapper <- function(Y,
                           polyak_rate = 0,
                           nSim = 2,
                           nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter.gauss,
+                          nIter = estimation.controls$nIter,
                           pSubsample = estimation.controls$pSubsample,
                           ...)
 
-      if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
+      }
+    } else {
+
+      if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
         if(!silent)
+          cat("Estimate Gaussian")
+        res <- estimateLong(Y, locs,
+                            mixedEffect_list,
+                            measurement_list,
+                            learning_rate = estimation.controls$learning.rate,
+                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                            polyak_rate = 0,
+                            nSim = 2,
+                            nBurnin = estimation.controls$nBurnin,
+                            nIter = estimation.controls$nIter.gauss,
+                            pSubsample = estimation.controls$pSubsample,
+                            ...)
+          if(!silent)
           cat("Estimate non-Gaussian")
 
         res$mixedEffect_list$noise = random.effect.distribution
         res$mixedEffect_list$nu = as.matrix(10)
         res$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
-
-        res$processes_list$noise = process.distribution
-        res$processes_list$mu = 0
-        res$processes_list$nu = 10
 
         res$measurementError_list$noise = measurement.distribution
         res$measurementError_list$nu = 10
@@ -112,11 +175,19 @@ estimate.wrapper <- function(Y,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
 
+      } else {
+        res <- estimateLong(Y, locs,
+                            mixedEffect_list,
+                            measurement_list,
+                            learning_rate = estimation.controls$learning.rate,
+                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                            polyak_rate = 0,
+                            nSim = 2,
+                            nBurnin = estimation.controls$nBurnin,
+                            nIter = estimation.controls$nIter,
+                            pSubsample = estimation.controls$pSubsample,
+                            ...)
       }
-
-    } else {
-      res <- estimateME(Y,mixedEffect_list, measurement_list, ...)
-    }
   }
 
   return(res)
@@ -181,28 +252,32 @@ estimateLong <- function(Y,
                          )
 {
   obs_list <- list()
-  common.grid = FALSE
-  if(length(operator_list$loc)==1){
-    common.grid = TRUE
+  use.process = TRUE
+  if(missing(processes_list) || is.null(processes_list)){
+    use.process = FALSE
+  }
+  if(use.process){
+    common.grid = FALSE
+    if(length(operator_list$loc)==1){
+      common.grid = TRUE
+    }
   }
   for(i in 1:length(locs)){
     if(length(Y[[i]]) != length(locs[[i]])){
       stop("Length of Y and locs differ.")
     }
-    if(common.grid){
-      obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                       operator_list$loc[[1]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Y=Y[[i]],
-                            locs = locs[[i]])
-    } else {
-      obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                       operator_list$loc[[i]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary),
-                            Y=Y[[i]],
-                            locs = locs[[i]])
+    obs_list[[i]] <- list(Y=Y[[i]],
+                          locs = locs[[i]])
+    if(use.process){
+      if(common.grid){
+        obs_list[[i]]$A = spde.A(locs[[i]],operator_list$loc[[1]],
+                                 right.boundary = operator_list$right.boundary,
+                                 left.boundary = operator_list$left.boundary)
+      } else {
+        obs_list[[i]]$A = spde.A(locs[[i]],operator_list$loc[[i]],
+                                 right.boundary = operator_list$right.boundary,
+                                 left.boundary = operator_list$left.boundary)
+      }
     }
   }
 
@@ -222,10 +297,8 @@ estimateLong <- function(Y,
 
 
   input <- list( obs_list         = obs_list,
-                 operator_list    = operator_list,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
-                 processes_list   = processes_list,
                  pSubsample       = pSubsample,
                  subsample_type   = subsample.type,
                  nIter            = nIter,     # iterations to run the stochastic gradient
@@ -235,16 +308,18 @@ estimateLong <- function(Y,
                  step0            = step0,
                  nBurnin_base     = nBurnin_base,
                  alpha            = alpha,
-                 common.grid      = common.grid,
                  learning_rate    = learning_rate,
-                 polyak_rate      = polyak_rate
-              )
+                 polyak_rate      = polyak_rate)
+  if(use.process){
+    input$processes_list   = processes_list
+    input$operator_list    = operator_list
+    input$common.grid      = common.grid
+  }
 
   if(is.null(nBurnin_learningrate) == FALSE)
     input$nBurnin_learningrate =  nBurnin_learningrate
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
-
 
   output <- estimateLong_cpp(input)
 
@@ -260,18 +335,20 @@ estimateLong <- function(Y,
     }
   }
 
-
-  output$operator_list$left.boundary <- operator_list$left.boundary
-  output$operator_list$right.boundary <- operator_list$right.boundary
-  output$operator_list$type <- operator_list$type
-  if(operator_list$type == "Matern"){
-    output$operator_list$G <- operator_list$G
-    output$operator_list$C <- operator_list$C
-    output$operator_list$loc = operator_list$loc
-    output$operator_list$h = operator_list$h
-  } else if(operator_list$type == "fd2"){
-    output$operator_list$Q <- operator_list$Q
+  if(use.process){
+    output$operator_list$left.boundary <- operator_list$left.boundary
+    output$operator_list$right.boundary <- operator_list$right.boundary
+    output$operator_list$type <- operator_list$type
+    if(operator_list$type == "Matern"){
+      output$operator_list$G <- operator_list$G
+      output$operator_list$C <- operator_list$C
+      output$operator_list$loc = operator_list$loc
+      output$operator_list$h = operator_list$h
+    } else if(operator_list$type == "fd2"){
+      output$operator_list$Q <- operator_list$Q
+    }
   }
+
   return(output)
 }
 
