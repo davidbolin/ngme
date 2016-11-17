@@ -119,7 +119,7 @@ double nu_temp = -1;
     if(step_size <= 1e-16)
         throw("in NIGMeasurementError:: can't make nu it positive \n");
   }
-  if(1){
+  if(learning_rate == 0){
     nu_temp = term1/term2;
     if(nu_temp < 0){
       nu_temp = 0.1;
