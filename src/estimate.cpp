@@ -12,6 +12,8 @@
 #include "MixedEffect.h"
 #include "measError.h"
 #include "latentprocess.h"
+#include "subSampleDiagnostic.h"
+
 using namespace Rcpp;
 
 double estDigamma(double x)
@@ -481,47 +483,15 @@ List estimateLong_cpp(Rcpp::List in_list)
   		count_vec[i] += 1;
 
     }
-    //Compute variance due to subsampling:
-    Vgrad_inner.array() /=  double(grad_outer.rows() - 1);
-    Eigen::VectorXd std_grad = Vgrad_inner.diagonal();
-    std_grad.array() /= (nSim * nSubsample);
+    
 
-    //Compute Bias due to not converged
-    Ebias_inner.array() /=  double(grad_outer.rows() );
-    Eigen::MatrixXd centered = grad_outer.rowwise() - grad_outer.colwise().mean();
-
-
-	  //Compute MC variance
-	  Eigen::MatrixXd cov = (centered.transpose() * centered) / double(grad_outer.rows() - 1);
-	  Eigen::VectorXd std_grad_outer = cov.diagonal();
-
-	  //std_grad_outer.array() /= nSubsample;
-	  std_grad_outer.array() -= std_grad.array();
-
-	  std_grad.array() /= ( nSubsample);
-	  std_grad_outer.array() /= ( nSubsample);
-	  double sub_factor = (1-nSubsample/nindv);
-	  std_grad_outer.array() *= sub_factor;
-
-	  //compute total variance
-	  Eigen::VectorXd grad_var = std_grad;
-	  grad_var.array() += std_grad_outer.array();
-
-
-	  std_grad_outer.array()  = std_grad_outer.array().sqrt();
-	  std_grad.array()  = std_grad.array().sqrt();
-	  grad_var.array()  = grad_var.array().sqrt();
-
-	  if(silent == 0){
-	    if(0){
-	      Rcpp::Rcout << "Gibbs std = " << std_grad.transpose() << "\n";
-	      Rcpp::Rcout << "Outer std = " << std_grad_outer.transpose() << "\n";
-	      Rcpp::Rcout << "Total std = " << grad_var.transpose() << "\n";
-	    } else {
-	      Rcpp::Rcout << "MC std = " << grad_var.sum() << " (Gibbs = "<< std_grad.sum() << ", Outer = " << std_grad_outer.sum() <<")\n";
-	    }
-
-	    //Rcpp::Rcout << "E[bias]    = " << Ebias_inner.transpose()   << "\n";
+ // check if nSubsample = grad_outer.rows()
+ 	  if(silent == 0){
+		subSampleDiag(Vgrad_inner, 
+					  grad_outer, 
+					  Ebias_inner,
+				      nSim * nSubsample,
+					  nSubsample/nindv);
 	  }
 
 

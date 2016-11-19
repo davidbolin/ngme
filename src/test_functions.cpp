@@ -1,6 +1,6 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
-
+#include "sample.h"
 #include "solver.h"
 
 // [[Rcpp::export]]
@@ -25,4 +25,13 @@ double test_PreDiagsolver(Rcpp::List in_list)
     Eigen::VectorXd res2 = Solver.rMVN(b_, z);
     res2 = res2.cwiseProduct(D_12);
     return((res - res2).sum());
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXi   sampleR(int n, Eigen::VectorXd w_in)
+{
+	Eigen::VectorXd w;
+  	w = w_in;
+  	w /= w.sum();
+  	return(ProbSampleNoReplace(n, w));
 }

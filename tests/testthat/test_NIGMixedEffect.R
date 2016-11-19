@@ -10,7 +10,9 @@ library(testthat)
 graphics.off()
 library(LDMod)
 library(MASS)
-seed <- 2
+seed     <- 2
+silent   <- 1
+plotflag <- 0
 
 nIter <- 1000
 pSubsample <- 0.1
@@ -72,11 +74,11 @@ res <- estimateME(Y = Y_list,
                   pSubsample = pSubsample,
                   step0 = 0.3,
                   nIter = nIter,
-                  silent = 1,
+                  silent = silent,
                   learning_rate = learning_rate,
                   polyak_rate = -1,
                   seed = seed)
-if(0){
+if(plotflag){
   x11()
   par(mfrow=c(3,1))
   mu_vec = res$mixedEffect_list$mu_vec
