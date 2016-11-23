@@ -43,7 +43,8 @@ class Process {
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
 			   			  const Eigen::VectorXd& res,
 			   			  const double sigma,
-			   			  const double trace_var){};
+			   			  const double trace_var,
+			   			  const double weight){};
     virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
     						const double polyak_rate   =  -1){};
@@ -84,7 +85,8 @@ class Process {
 			   			  const double sigma,
 			   			  const Eigen::VectorXd& iV_noise,
 			   			  const double EiV_noise,
-			   			  const double trace_var) {};
+			   			  const double trace_var,
+			   			  const double weight) {};
 
 	//simulate from prior distribution
     virtual  void simulate(const int ,
@@ -162,11 +164,10 @@ class GHProcess : public Process{
 		std::vector<double> Vv_mean;
 
 		void update_nu();
-		void grad_nu(const int);
+		void grad_nu(const int, const double);
 		void gradient_mu_centered(const int ,
-								  const Eigen::SparseMatrix<double,0,int> & );
-		void gradient_mu_centered_CH(const int ,
-								  const Eigen::SparseMatrix<double,0,int> & );
+								  const Eigen::SparseMatrix<double,0,int> & ,
+								  const double);
 
 	public:
   double term1,term2;
@@ -199,7 +200,8 @@ class GHProcess : public Process{
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
 			   			  const Eigen::VectorXd& res,
 			   			  const double sigma,
-			   			  const double trace_var);
+			   			  const double trace_var,
+			   			  const double weight);
 	void gradient_v2( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -207,7 +209,8 @@ class GHProcess : public Process{
 			   			  const double sigma,
 			   			  const Eigen::VectorXd& iV_noise,
 			   			  const double EiV_noise,
-			   			  const double trace_var);
+			   			  const double trace_var,
+			   			  const double weight);
     void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1);
     void step_mu(const double, const double );
     void step_nu(const double, const double);

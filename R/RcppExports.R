@@ -33,3 +33,7 @@ sampleR <- function(n, w_in) {
     .Call('LDMod_sampleR', PACKAGE = 'LDMod', n, w_in)
 }
 
+sample_internalR <- function(n, p_in, selected_in, w_in) {
+    .Call('LDMod_sample_internalR', PACKAGE = 'LDMod', n, p_in, selected_in, w_in)
+}
+

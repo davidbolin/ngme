@@ -166,16 +166,17 @@ void NormalVarianceMixtureBaseError::sampleV(const int i, const Eigen::VectorXd&
 }
 
 void NormalVarianceMixtureBaseError::gradient(const int i,
-                                 const Eigen::VectorXd& res)
+                                 const Eigen::VectorXd& res,
+                                 const double weight)
 {
     counter++;
     Eigen::VectorXd res_ = res;
     Eigen::VectorXd iV = Vs[i].cwiseInverse();
     //res_.array() *= iV.array();
-    dsigma += - res.size()/sigma + (res_.array().square()*iV.array()).sum() / pow(sigma, 3);
+    dsigma += weight * (- res.size()/sigma + (res_.array().square()*iV.array()).sum() / pow(sigma, 3) );
     // Expected fisher infromation
     // res.size()/pow(sigma, 2) - 3 * E[res.array().square().sum()] /pow(sigma, 4);
-    ddsigma += - 2 * res.size()/pow(sigma, 2);
+    ddsigma += weight * (- 2 * res.size()/pow(sigma, 2));
 }
 
 void NormalVarianceMixtureBaseError::step_theta(const double stepsize,

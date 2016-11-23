@@ -98,3 +98,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sample_internalR
+Rcpp::List sample_internalR(int n, Eigen::VectorXd p_in, Eigen::VectorXd selected_in, Eigen::VectorXd w_in);
+RcppExport SEXP LDMod_sample_internalR(SEXP nSEXP, SEXP p_inSEXP, SEXP selected_inSEXP, SEXP w_inSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type p_in(p_inSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type selected_in(selected_inSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type w_in(w_inSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_internalR(n, p_in, selected_in, w_in));
+    return rcpp_result_gen;
+END_RCPP
+}

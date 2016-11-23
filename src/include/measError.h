@@ -25,7 +25,9 @@ class MeasurementError {
   	double sigma;
   	std::vector< Eigen::VectorXd > Vs;
     std::string noise;
-    virtual void gradient(const int , const Eigen::VectorXd& ) = 0;
+    virtual void gradient(const int , 
+    					  const Eigen::VectorXd& ,
+    					  const double) = 0;
     virtual void step_theta(const double stepsize,const double learning_rate = 0,
     						const double polyak_rate = -1) = 0;
     virtual void initFromList(Rcpp::List const &)=0;
@@ -64,7 +66,9 @@ class GaussianMeasurementError : public MeasurementError{
 
 	public:
 		GaussianMeasurementError();
-		void gradient(const int , const Eigen::VectorXd&);
+		void gradient(const int , 
+					  const Eigen::VectorXd&,
+					  const double);
 		void step_theta(const double stepsize,
 						const double learning_rate = 0,
 						const double polyak_rate = -1);
@@ -101,7 +105,9 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 	  int common_V;
 		double nu;
 		NormalVarianceMixtureBaseError();
-		void gradient(const int , const Eigen::VectorXd&);
+		void gradient(const int , 
+					  const Eigen::VectorXd& ,
+					  const double);
 		void step_theta(const double stepsize,
 						const double learning_rate = 0,
 						const double polyak_rate = -1);
@@ -139,7 +145,9 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 		void initFromList(Rcpp::List const &);
 		double simulate_V();
 		double sample_V(const double, const int);
-		void gradient(const int , const Eigen::VectorXd&);
+		void gradient(const int , 
+					  const Eigen::VectorXd& ,
+					  const double );
 		void step_nu(const double, const double );
 		void step_theta(const double stepsize,
 						const double learning_rate = 0,
@@ -165,7 +173,9 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
 		void initFromList(Rcpp::List const &);
 		double simulate_V();
 		double sample_V(const double, const int);
-		void gradient(const int , const Eigen::VectorXd&);
+		void gradient(const int , 
+					  const Eigen::VectorXd&,
+					  const double);
 		void step_nu(const double ,const double);
 		void step_theta(const double stepsize,
 						const double learning_rate = 0,

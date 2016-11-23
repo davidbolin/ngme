@@ -75,11 +75,15 @@ class MixedEffect {
 	};
 
     // gradient for fixed variance noise
-    virtual void gradient(const int , const Eigen::VectorXd&, const double ) = 0;
+    virtual void gradient(const int , 
+    					  const Eigen::VectorXd&, 
+    					  const double,
+    					  const double ) = 0;
     // gradient for variable variance noise
     virtual void gradient2(const int ,
     					   const Eigen::VectorXd&,
     					   const Eigen::VectorXd& ,
+    					   const double,
     					   const double,
     					   const double) = 0;
 
@@ -127,6 +131,8 @@ class NormalMixedEffect  : public MixedEffect{
     Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
     Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
     Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
+    
+    double weight_total;
   public:
 
     Eigen::MatrixXi D;
@@ -143,12 +149,16 @@ class NormalMixedEffect  : public MixedEffect{
     	@param residuals
     	@param log_sigma2_noise (logarithm of the measurement error)
 	*/
-    void gradient(const int  , const Eigen::VectorXd&, const double );
+    void gradient(const int  , 
+     			  const Eigen::VectorXd&,
+     			  const double,
+     			  const double);
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
     			   const double log_sigma2_noise = 0,
-    			   const double EiV = 1.);
+    			   const double EiV = 1.,
+    			   const double weight = 1.);
 
     void sampleU(const int, const Eigen::VectorXd &, const double ) ;
     void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
@@ -206,6 +216,7 @@ class NIGMixedEffect  : public MixedEffect{
     Eigen::MatrixXd mu_vec;
     Eigen::VectorXd nu_vec;
     Eigen::MatrixXd Sigma_vec;
+    double weight_total;
 
 
 	double dnu_old;
@@ -253,9 +264,15 @@ class NIGMixedEffect  : public MixedEffect{
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
     			   const double log_sigma2_noise = 0,
-    			   const double EiV = 1.);
-    void gradient(const int , const Eigen::VectorXd& , const double );
-    void gradient_sigma(const int , Eigen::VectorXd& );
+    			   const double EiV = 1.,
+    			   const double weight = 1.);
+    void gradient(const int , 
+    			  const Eigen::VectorXd& ,
+    			  const double ,
+    			  const double);
+    void gradient_sigma(const int , 
+    					Eigen::VectorXd& ,
+    					const double);
     void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
     				const double polyak_rate   = -1);

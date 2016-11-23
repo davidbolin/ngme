@@ -7,6 +7,7 @@ NIGMixedEffect::NIGMixedEffect(){
   noise = "NIG";
   npars = 0;
   store_param  = 0;
+  weight_total = 0;
 }
 
 void NIGMixedEffect::printIter()
@@ -355,82 +356,86 @@ void NIGMixedEffect::sampleU2_par(const int i,
 
 void NIGMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
-                              const double log_sigma2_noise)
+                              const double log_sigma2_noise,
+                              const double weight)
 {
     Eigen::VectorXd res_  = res;
     if(Br.size() > 0){
 
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
-      gradient_sigma(i, U_);
+      gradient_sigma(i, U_, weight);
 
 
 
       res_ -= Br[i] * U.col(i);
-      grad_beta_r  += exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      grad_beta_r2 +=  (invSigma * U_)/V(i);
-      H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+      grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+      H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
 
-      gradMu   += ((-1 + V(i) )/V(i) ) * (invSigma * U_);
+      gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
 
-      gradMu_2 += (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
 
       // dnu
-      grad_nu += 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
-      term1 += V(i) + 1. / V(i) - 2.;
-      term2 += 1;
+      grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+      term1 += weight * (V(i) + 1. / V(i) - 2.);
+      term2 += weight * 1.;
     }
     if(Bf.size() > 0){
-      grad_beta_f   +=  exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-      H_beta_fixed  +=  exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+      grad_beta_f   +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      H_beta_fixed  +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
     }
     counter++;
+  weight_total += weight;
 }
 
 void NIGMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
                                  const Eigen::VectorXd& iV,
                                  const double log_sigma2_noise,  // = 0
-                                 const double EiV // = 0
+                                 const double EiV, // = 0
+                                 const double weight //  = 1
                                  )
 {
    Eigen::VectorXd res_  = res;
     if(Br.size() > 0){
 
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
-      gradient_sigma(i, U_);
+      gradient_sigma(i, U_, weight);
 
 
 
       res_ -= Br[i] * U.col(i);
-      grad_beta_r  += exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
-      grad_beta_r2 +=  (invSigma * U_)/V(i);
+      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
+      grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
 
 
-      gradMu   += ((-1 + V(i) )/V(i) ) * (invSigma * U_);
+      gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
 
-      gradMu_2 += (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
 
       // dnu
-      grad_nu += 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
-      term1 += V(i) + 1. / V(i) - 2.;
-      term2 += 1;
+      grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+      term1   += weight * (V(i) + 1. / V(i) - 2.);
+      term2   += weight * 1.;
     }
     if(Bf.size() > 0){
-      grad_beta_f   +=  exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
-      H_beta_fixed  +=  exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
+      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
+      H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
     }
     counter++;
+  weight_total += weight;
 }
 
-void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ )
+void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ ,const double weight)
 {
   Eigen::MatrixXd UUT =  (U_ * U_.transpose());
   UUT.array() /= V(i);
-  UUt    += vec( UUT);
+  UUt    += weight * vec( UUT);
 }
 void NIGMixedEffect::step_theta(const double stepsize,
 								const double learning_rate,
@@ -450,6 +455,7 @@ void NIGMixedEffect::step_theta(const double stepsize,
     step_beta_fixed(stepsize, learning_rate);
 
   counter = 0;
+  weight_total = 0;
 
     clear_gradient();
 
@@ -506,9 +512,9 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
 {
   double pos_def = 0;
   iSkroniS = kroneckerProduct(invSigma, invSigma);
-  UUt -= counter*vec(Sigma);
+  UUt -= weight_total * vec(Sigma);
   dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
-  ddSigma = 0.5 * counter * Dd.transpose() * iSkroniS * Dd;
+  ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old.array() *= learning_rate;
   dSigma_vech_old.array() += dSigma_vech.array();
@@ -556,15 +562,14 @@ void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
 	gradMu_old.array() *= learning_rate;
     gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
     // H_beta_random = H_mu_random
-    gradMu_old += 0.5 * (Sigma * gradMu_2)/ (counter * (2*EiV - EV));
+    gradMu_old += 0.5 * (Sigma * gradMu_2)/ (weight_total * (2*EiV - EV));
     mu += stepsize * gradMu_old;
     gradMu_2.setZero(Br[0].cols(), 1);
 }
 
 void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
 {
-
-   grad_nu  *=  (nu * nu) / (2. * counter); //hessian
+   grad_nu  *=  (nu * nu) / (2. * weight_total); //hessian
 
   dnu_old = learning_rate * dnu_old + grad_nu;
   double nu_temp = -1;
@@ -655,7 +660,7 @@ Eigen::VectorXd NIGMixedEffect::get_gradient()
 		g[start] = grad_nu;
 		start += 1;
 		Eigen::MatrixXd UUt_temp = UUt;
-		UUt_temp -= counter*vec(Sigma);
+		UUt_temp -= weight_total * vec(Sigma);
   		dSigma_vech = 0.5 * Dd.transpose() *  UUt_temp;
 		g.segment(start, dSigma_vech.size()) = dSigma_vech;
 	}

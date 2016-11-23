@@ -13,7 +13,7 @@
 #include "measError.h"
 #include "latentprocess.h"
 #include "subSampleDiagnostic.h"
-
+#include "sample.h"
 using namespace Rcpp;
 
 double estDigamma(double x)
@@ -40,6 +40,11 @@ List estimateLong_cpp(Rcpp::List in_list)
   	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   	double step0     = Rcpp::as< double    > (in_list["step0"]);
   	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  	
+  	double pSubsample2 = 0;
+  	if(subsample_type == 3) 
+  		pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+  	
   	unsigned long seed = 0;
   	if(in_list.containsElementNamed("seed"))
   		seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -240,8 +245,30 @@ List estimateLong_cpp(Rcpp::List in_list)
   	}
   }
 
+  // For sampling we have the following:
+  /*
+  	weight   -> the weight each observation has given it is selected
+  			  (note this not 1/p)
+  	p[i]     -> the probability of selecting indvual [i]
+  	m        -> expected number of samples we want for weighted sampling
+  	selected -> 1, 0 variable keeping track of which individuals being selected   
+  */	
+  Eigen::VectorXd weight(nindv), p_inv(nindv);
+  p_inv.setZero(nindv);
+  weight.setZero(nindv);
+  weight.array() += nindv / ((double) nSubsample);
+  Eigen::VectorXd p(nindv);
+  p.setZero(nindv);
+  Eigen::VectorXd p_N(nindv);
+  p_N.array() += 1. / nindv; 
+  p_inv.array() += 1. /nindv;
+  std::vector<int> selected(nindv, 0);
+
+
  for (int i=0; i< nindv; i++) longInd.push_back(i);
 
+	
+   		
   int npars =   mixobj->npars + errObj->npars;
   if(process_active)
     npars += process->npars; //+ Kobj->npars;
@@ -264,7 +291,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << "\n";
     }
 
-
+	int nSubsample_i = nSubsample;
     // subsampling
     if(subsample_type == 1){
       //Uniform sampling without replacement from 1:nrep
@@ -272,30 +299,52 @@ List estimateLong_cpp(Rcpp::List in_list)
     } else if(subsample_type == 2){
       //weighted by number of samples
       std::discrete_distribution<int> distribution(Ysize.begin(), Ysize.end());
-      for (int i=0; i<nSubsample; ++i) {
+      for (int i=0; i<nSubsample_i; ++i) {
         longInd[i] = distribution(gammagenerator);
       }
       //std::cout << std::endl << "P: ";
       //for (double x:distribution.probabilities()) std::cout << x << " ";
-    }
+    }else if(subsample_type == 3){
+    	//longInd
+    	longInd.resize(nSubsample, 0);
+    	selected.resize(nSubsample, 0);
+    	ProbSampleNoReplace(nSubsample, p_N, longInd, selected);
+    	weight.setZero(nindv);
+    	weight.array() += nindv / ((double) nSubsample);
+    	nSubsample_i = nSubsample;
+    	int m = int(pSubsample2 * nindv); // expected number of samples from the first part
+    	p  = p_inv;
+    		if(iter > 1){
+    			nSubsample_i += poissonSampling_internal( m,
+					  								  p, 
+					  								  weight,
+					  								  longInd,
+					  								  selected
+					  								  
+					  								 );
+			}
+			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
+			//weight.array() *= 1. / ( (double) nindv);
+			
+    	}
 
     double burnin_rate = 0;
     if(process_active)
-    	Kobj->gradient_init(nSubsample,nSim);
+    	Kobj->gradient_init(nSubsample_i,nSim);
 
     	Eigen::VectorXd  grad_last(npars); // grad_last helper vector
       grad_last.setZero(npars);
 
-    Eigen::MatrixXd grad_outer(nSubsample, npars); // outside person variation (subsampling)
+    Eigen::MatrixXd grad_outer(nSubsample_i, npars); // outside person variation (subsampling)
+    Eigen::MatrixXd grad_outer_unweighted(nSubsample_i, npars); // outside person variation (subsampling)
+    
     Eigen::MatrixXd Vgrad_inner(npars, npars); // outside person variation (subsampling)
     Eigen::VectorXd Ebias_inner(npars);
     Ebias_inner.array() *= 0;
     Vgrad_inner.setZero(npars, npars);
-    for(int ilong = 0; ilong < nSubsample; ilong++ )
+    for(int ilong = 0; ilong < nSubsample_i; ilong++ )
     {
       int i = longInd[ilong];
-
-      double w = sampling_weights[i]; //TODO:: ADD WEIGHTING BY W TO ALL GRADIENTS!
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
       	A = As[i];
@@ -401,32 +450,42 @@ List estimateLong_cpp(Rcpp::List in_list)
        		Rcpp::Rcout << "estimate::gradient calc \n";
       	if(ii >= burnin_done_i){
 
+
+			double w = weight[i];
       	  //TODO:: ADDD SCALING WITH W FOR MIX GRADIENT
       		// mixobj gradient
       		mixobj->add_inter(i, res);
       	  if(type_MeasurementError != "Normal")
-      		  mixobj->gradient2(i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma), errObj->EiV);
+      		  mixobj->gradient2(i,
+      		  					res, 
+      		  					errObj->Vs[i].cwiseInverse(), 
+      		  					2 * log(errObj->sigma), 
+      		  					errObj->EiV,
+      		  					w);
           else
-            mixobj->gradient(i, res, 2 * log(errObj->sigma));
-
+            mixobj->gradient(i, 
+            				 res,
+            				 2 * log(errObj->sigma),
+            				 w);
+			
       		mixobj->remove_inter(i, res);
 
 		  // measurent error  gradient
       	  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
-  			  errObj->gradient(i, res);
-
-
-
+  			  errObj->gradient(i, res, w);
 
 		  if(process_active){
 
 		  	// operator gradient
       		Kobj->gradient_add( process->Xs[i],
       							process->Vs[i].cwiseInverse(),
-      							process->mean_X(i),i);
+      							process->mean_X(i),
+      							i,
+      							w);
 
       		// process gradient
       		res += A * process->Xs[i];
+
 
           if(type_MeasurementError != "Normal"){
                 //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
@@ -437,16 +496,20 @@ List estimateLong_cpp(Rcpp::List in_list)
                                 errObj->sigma,
                                 errObj->Vs[i].cwiseInverse(),
                                 errObj->EiV,
-                                Kobj->trace_variance(A, i));
+                                Kobj->trace_variance(A, i),
+                                w);
             }else{
               process->gradient(i,
                                 K,
                                 A,
                                 res,
                                 errObj->sigma,
-                                Kobj->trace_variance(A, i));
+                                Kobj->trace_variance(A, i),
+                                w);
             }
         }
+        
+
 		    // collects the gradient for computing estimate of variances
 		    grad_inner.block(0, count_inner,
                           mixobj->npars, 1)  = mixobj->get_gradient();
@@ -461,42 +524,53 @@ List estimateLong_cpp(Rcpp::List in_list)
 			  // adjusting so we get last gradient not cumsum
 			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			  grad_inner.col(count_inner).array() -= grad_last.array();
+			  
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }
 
       }
-
+       // TODO::redo and move the above note i is the same always, and
+	   // we need both weighted unweighted
+	   // grad_inner.array() /= weight[i]; // dont use weight here(?)
+	   // do grad_outer_unweighted 
+			 
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean();
       grad_outer.row(ilong) = Mgrad_inner;
-
+	  grad_outer_unweighted.row(ilong) = Mgrad_inner;
+	  grad_outer_unweighted.row(ilong) /= weight[i]; 	
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
-
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
       Eigen::MatrixXd cov = (centered * centered.transpose()) / double(grad_inner.cols() - 1);
       Vgrad_inner.array() += cov.array();
-
       if(process_active)
         Vmean[i] += process->Vs[i];
-
+        
   		count_vec[i] += 1;
 
     }
     
-
- // check if nSubsample = grad_outer.rows()
+    // update weights given the gradient
+    // change here to unweighted gradient!
+    if(subsample_type == 3){
+    	Eigen::VectorXd W = gradientWeight(grad_outer_unweighted);
+    	
+		for( int id = 0; id < nSubsample_i; id++)
+			p_inv[longInd[id]] = W[id];
+	}
+		
  	  if(silent == 0){
 		subSampleDiag(Vgrad_inner, 
 					  grad_outer, 
 					  Ebias_inner,
-				      nSim * nSubsample,
-					  nSubsample/nindv);
+				      nSim * nSubsample_i,
+					  nSubsample_i / nindv);
 	  }
 
 
     if(silent == 0)
-      Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample << "\n";
+      Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample_i << "\n";
 
     //**********************************
   	//  gradient step
@@ -781,21 +855,30 @@ List estimateFisher(Rcpp::List in_list)
       		// mixobj gradient
       		mixobj->add_inter(i, res);
       	  if(type_MeasurementError != "Normal")
-      		  mixobj->gradient2(i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma), errObj->EiV);
+      		  mixobj->gradient2(i, 
+                              res, 
+                              errObj->Vs[i].cwiseInverse(), 
+                              2 * log(errObj->sigma), 
+                              errObj->EiV,
+                              1.);
           else
-            mixobj->gradient(i, res, 2 * log(errObj->sigma));
+            mixobj->gradient(i, 
+                             res, 
+                             2 * log(errObj->sigma),
+                             1.);
 
       		mixobj->remove_inter(i, res);
 
 
       	  // measurent error  gradient
-  			  errObj->gradient(i, res);
+  			  errObj->gradient(i, res, 1.);
 
       	  // operator gradient
       		Kobj->gradient_add( process->Xs[i],
                               process->Vs[i].cwiseInverse(),
                               process->mean_X(i),
-                              i);
+                              i,
+                              1. );
 
       		// process gradient
           if(type_MeasurementError != "Normal"){
@@ -806,14 +889,16 @@ List estimateFisher(Rcpp::List in_list)
                                 errObj->sigma,
                                 errObj->Vs[i].cwiseInverse(),
                                 errObj->EiV,
-                                Kobj->trace_variance(A, i));
+                                Kobj->trace_variance(A, i),
+                                1.);
             }else{
               process->gradient(i,
                                 K,
                                 A,
                                 res,
                                 errObj->sigma,
-                                Kobj->trace_variance(A, i));
+                                Kobj->trace_variance(A, i),
+                                1.);
             }
       		}
       }

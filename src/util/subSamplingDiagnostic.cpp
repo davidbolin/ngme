@@ -1,5 +1,28 @@
 #include "subSampleDiagnostic.h"
 
+Eigen::VectorXd gradientWeight(Eigen::MatrixXd grad_outer)
+{
+	Eigen::VectorXd w;
+	
+	Eigen::MatrixXd centered = grad_outer.rowwise() - grad_outer.colwise().mean();
+	Eigen::MatrixXd cov = (centered.transpose() * centered) / double(grad_outer.rows() - 1);
+	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov, Eigen::EigenvaluesOnly);
+	double pos_def = eig.eigenvalues().minCoeff();
+  if(pos_def <= 1e-16){
+    	Eigen::VectorXd D_inv_cov  = cov.diagonal().cwiseInverse();
+      w  =(grad_outer.cwiseProduct(D_inv_cov.asDiagonal() * grad_outer)).colwise().sum();
+  }else{
+      // w =  grad_outer.cwiseProduct(cov.ldlt().solve(  grad_outer )).colwise().sum();
+  }
+  Eigen::MatrixXd gT = grad_outer.transpose();
+  Eigen::VectorXd D_inv_cov  = cov.diagonal().cwiseInverse();
+  w  = (gT.cwiseProduct(D_inv_cov.asDiagonal() * gT)).colwise().sum();
+  Eigen::MatrixXd ww = (gT.cwiseProduct(D_inv_cov.asDiagonal() * gT)).colwise().sum();
+  Eigen::MatrixXd w2 =  (D_inv_cov.asDiagonal() * gT).transpose();
+	return w;
+}
+
+
 void subSampleDiag( Eigen::MatrixXd Vgrad_inner,
 							   Eigen::MatrixXd grad_outer,
 							   Eigen::VectorXd Ebias_inner,

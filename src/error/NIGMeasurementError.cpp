@@ -86,22 +86,23 @@ double NIGMeasurementError::sample_V(const double res2_j, const int n_s)
 
 
 void NIGMeasurementError::gradient(const int i,
-                                 const Eigen::VectorXd& res)
+                                 const Eigen::VectorXd& res,
+                                 const double weight)
 {
-    NormalVarianceMixtureBaseError::gradient(i, res);
+    NormalVarianceMixtureBaseError::gradient(i, res, weight);
     Eigen::VectorXd iV = Vs[i].cwiseInverse();
     if(common_V == 0){
-    	dnu  += 0.5 * ( res.size() / nu + 2 * res.size() -   (Vs[i].array().sum() + iV.array().sum()) );
-    	ddnu += - 0.5*res.size()/( nu * nu);
-    	term1 += res.size();
-    	term2 += Vs[i].array().sum() + iV.array().sum()- 2 * res.size();
+    	dnu   += weight * (0.5 * ( res.size() / nu + 2 * res.size() -   (Vs[i].array().sum() + iV.array().sum()) ));
+    	ddnu  += weight * (- 0.5*res.size()/( nu * nu));
+    	term1 += weight * res.size();
+    	term2 += weight * (Vs[i].array().sum() + iV.array().sum()- 2 * res.size());
 
     }else{
 
-    	dnu  += 0.5 * ( 1. / nu + 2  -   (Vs[i][0] + iV[0]) );
-    	ddnu += - 0.5*  1. / ( nu * nu);
-    	term1 += 1;
-    	term2 += Vs[i][0] + iV[0] -2;
+    	dnu   += weight * (0.5 * ( 1. / nu + 2  -   (Vs[i][0] + iV[0]) ));
+    	ddnu  += weight * (- 0.5*  1. / ( nu * nu));
+    	term1 += weight * 1;
+    	term2 += weight *( Vs[i][0] + iV[0] -2);
     }
 
 }

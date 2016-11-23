@@ -55,7 +55,8 @@ class operatorMatrix {
     virtual void gradient_add( const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
-							   int){};
+							   int,
+							   const double){};
     virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
     						const double polyak_rate   = -1){};
@@ -82,7 +83,8 @@ class constMatrix : public operatorMatrix{
   void gradient_add( const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
-							   int);
+							   int,
+							   const double);
 	void step_theta(const double stepsize,
 					const double learning_rate = 0,
 					const double polyak_rate   = -1);
@@ -137,7 +139,8 @@ class MaternOperator : public operatorMatrix{
     void gradient_add( const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
 							   const Eigen::VectorXd & ,
-							   int);
+							   int,
+							   const double);
     void step_theta(const double stepsize,
     				const double learning_rate = 0,
     				const double polyak_rate   = -1);

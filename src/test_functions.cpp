@@ -35,3 +35,28 @@ Eigen::VectorXi   sampleR(int n, Eigen::VectorXd w_in)
   	w /= w.sum();
   	return(ProbSampleNoReplace(n, w));
 }
+
+
+// [[Rcpp::export]]
+Rcpp::List  sample_internalR(int n, 
+                                   Eigen::VectorXd p_in,
+                                   Eigen::VectorXd selected_in,
+                                   Eigen::VectorXd w_in)
+{
+  std::vector<int> ans;
+  std::vector<int> selected(p_in.size());
+  for(int i = 0; i < p_in.size(); i++)
+    selected[i] = (int) (selected_in[i]);
+  
+  
+  Eigen::VectorXd p;
+  p = p_in;
+  p /= p.sum();
+  Rcpp::List out;
+  poissonSampling_internal(n, p, w_in, ans, selected);
+  
+  out["ans"]   = ans;
+  out["w_in"]  = w_in;
+  out["selected"]  = selected;
+  return(out);
+}

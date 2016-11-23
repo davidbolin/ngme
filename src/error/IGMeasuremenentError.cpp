@@ -92,19 +92,20 @@ double IGMeasurementError::sample_V(const double res2_j, const int n_s)
 
 
 void IGMeasurementError::gradient(const int i,
-                                 const Eigen::VectorXd& res)
+                                 const Eigen::VectorXd& res,
+                                 const double weight)
 {
-    NormalVarianceMixtureBaseError::gradient(i, res);
+    NormalVarianceMixtureBaseError::gradient(i, res, weight);
     Eigen::VectorXd iV = Vs[i].cwiseInverse();
     if(common_V == 0){
     	double logV = Vs[i].array().log().sum();
-    	dnu  +=  res.size() *  (1. + log(nu)  - digamma_nu) - logV - iV.array().sum() ;
-    	ddnu += res.size() * (1/ nu - trigamma_nu);
+    	dnu  += weight * ( res.size() *  (1. + log(nu)  - digamma_nu) - logV - iV.array().sum());
+    	ddnu += weight * (res.size() * (1/ nu - trigamma_nu) );
     }else{
     
     	double logV = log(Vs[i][0]);
-    	dnu  +=   (1. + log(nu)  - digamma_nu) - logV - iV[0] ;
-    	ddnu +=  (1/ nu - trigamma_nu);
+    	dnu  +=  weight * ( (1. + log(nu)  - digamma_nu) - logV - iV[0] );
+    	ddnu +=  weight * (1/ nu - trigamma_nu);
     }
 }
 

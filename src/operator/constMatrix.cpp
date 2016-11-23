@@ -82,7 +82,8 @@ void constMatrix::gradient_init(int nsim, int nrep)
 void constMatrix::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX,
-								  int ii)
+								  int ii,
+								  const double weight)
 {
 	if(nop == 1)
 		ii = 0;
@@ -90,11 +91,11 @@ void constMatrix::gradient_add( const Eigen::VectorXd & X,
 
   double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
   double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
-  dtau +=  (d[ii] - xtQx - xtQmean)/ tau;
-  ddtau -=  (d[ii] + xtQx) / pow(tau, 2);
-  term1 += xtQx/pow(tau,2);
-  term2 += xtQmean/tau;
-  term3 -= d[ii];
+  dtau +=  weight *  (d[ii] - xtQx - xtQmean)/ tau;
+  ddtau -= weight * (d[ii] + xtQx) / pow(tau, 2);
+  term1 += weight * xtQx/pow(tau,2);
+  term2 += weight * xtQmean/tau;
+  term3 -= weight * d[ii];
 }
 
 void constMatrix::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)

@@ -175,32 +175,33 @@ void MaternOperator::gradient_init(int nsim, int nrep)
 void MaternOperator::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX,
-                   const int ii)
+                   const int ii,
+                   const double weight)
 {
   int i = ii;
   if(nop == 1)
     i = 0;
 
   this->set_matrix(i);
-  dtau +=  tau_trace[i];
-  ddtau += tau_trace2[i];
-  dkappa += kappa_trace[i];
-  ddkappa += kappa_trace2[i];
+  dtau    += weight * tau_trace[i];
+  ddtau   += weight * tau_trace2[i];
+  dkappa  += weight * kappa_trace[i];
+  ddkappa += weight * kappa_trace2[i];
 
   Eigen::VectorXd KX = Q[i]*X;
   //compute gradients wrt tau
   Eigen::VectorXd dKX = dtauQ[i] * X;
   Eigen::VectorXd d2KX;
   //Eigen::VectorXd d2KX = d2tauQ * X;
-  dtau -=  dKX.dot(iV.asDiagonal() * (KX - mean_KX));
-  ddtau -= 0.5*(dKX.dot(iV.asDiagonal() * dKX));// + d2KX.dot(iV.asDiagonal() * (KX - mean_KX)));
+  dtau -=  weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
+  ddtau -= weight * 0.5*(dKX.dot(iV.asDiagonal() * dKX));// + d2KX.dot(iV.asDiagonal() * (KX - mean_KX)));
 
   //compute gradients wrt kappa
-  dKX = dkappaQ[i] * X;
-  d2KX = d2kappaQ[i] * X;
-  dkappa -= dKX.dot(iV.asDiagonal() * (KX - mean_KX));
-  ddkappa -= dKX.dot(iV.asDiagonal()*dKX);
-  ddkappa -= d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
+  dKX      = dkappaQ[i] * X;
+  d2KX     = d2kappaQ[i] * X;
+  dkappa  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
+  ddkappa -= weight * dKX.dot(iV.asDiagonal()*dKX);
+  ddkappa -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
 
 }
 

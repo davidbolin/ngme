@@ -305,7 +305,8 @@ void GHProcess::gradient( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
 			   			  const Eigen::VectorXd& res,
 			   			  const double sigma,
-			   			  const double trace_var)
+			   			  const double trace_var,
+			   			  const double weight)
 {
 
   	counter++;
@@ -313,7 +314,7 @@ void GHProcess::gradient( const int i ,
   	//	return;
 
 	if( type_process == "NIG"){
-		gradient_mu_centered(i, K);
+		gradient_mu_centered(i, K, weight);
 	}else if(type_process=="GAL"){
   			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
@@ -329,8 +330,8 @@ void GHProcess::gradient( const int i ,
       		Eigen::VectorXd temp_3 = - A * Xs[i];
 
       		temp_3 += res;
-      		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
-      		ddmu_1 -= Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
+      		ddmu_1 -= weight  *Vv_mean[i] * (trace_var / pow(sigma, 2));
 
 	}else if( type_process=="CH"){
 
@@ -340,7 +341,7 @@ void GHProcess::gradient( const int i ,
   		return;
 
 
-  grad_nu(i);
+  grad_nu(i, weight);
 }
 
 void GHProcess:: gradient_v2( const int i ,
@@ -350,14 +351,15 @@ void GHProcess:: gradient_v2( const int i ,
 			   			  const double sigma,
 			   			  const Eigen::VectorXd& iV_noise,
 			   			  const double EiV_noise,
-			   			  const double trace_var)
+			   			  const double trace_var,
+			   			  const double weight)
 {
 
   	counter++;
 
 
 	if( type_process == "NIG"){
-		gradient_mu_centered(i, K);
+		gradient_mu_centered(i, K, weight);
 	}else if(type_process=="GAL" ){
 			iV = Vs[i].cwiseInverse();
 		    Eigen::VectorXd temp_1  =  Vs[i];
@@ -370,8 +372,8 @@ void GHProcess:: gradient_v2( const int i ,
       		temp_2.cwiseProduct(iV_noise );
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
       		temp_3 += res;
-      		dmu    += temp_2.dot(temp_3) / pow(sigma,2);
-      		ddmu_1 -= EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
+      		ddmu_1 -= weight * EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
 
 	}else if( type_process=="CH"){
 
@@ -379,12 +381,14 @@ void GHProcess:: gradient_v2( const int i ,
 
   	if( type_process == "CH")
   		return;
-	grad_nu(i);
+	grad_nu(i, weight);
 }
 
 
 
-void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<double,0,int> & K)
+void GHProcess::gradient_mu_centered(const int i, 
+									 const Eigen::SparseMatrix<double,0,int> & K,
+									 const double weight)
 {
 		iV = Vs[i].cwiseInverse();
 		Eigen::VectorXd temp_1  =  - h[i];
@@ -397,30 +401,12 @@ void GHProcess::gradient_mu_centered(const int i, const Eigen::SparseMatrix<doub
 		temp_3.array() *= mu;
 		temp_2 = K * Xs[i];
 		temp_2 -= temp_3;
-		dmu    += temp_1.dot(temp_2);
-		ddmu_1 += H_mu[i];
-}
-
-void GHProcess::gradient_mu_centered_CH(const int i, const Eigen::SparseMatrix<double,0,int> & K)
-{
-		// use the random variable KX/\sqrt{V} = mu/\sqrt{V} +  mu\sqrt{V} \sqrt{V^{-1}}Z
-		iV = Vs[i].cwiseInverse();
-		Eigen::VectorXd temp_1  =  - h[i];
-  		temp_1 = temp_1.cwiseProduct(iV);
-
-  		temp_1.array() += 1.;
-		Eigen::VectorXd temp_2;
-		Eigen::VectorXd temp_3 =  Vs[i] ;
-  		temp_3 -= h[i];
-		temp_3.array() *= mu;
-		temp_2 = K * Xs[i];
-		temp_2 -= temp_3;
-		dmu    += temp_1.dot(temp_2);
-		ddmu_1 += temp_3.dot(temp_3.cwiseProduct(iV));
+		dmu    += weight * temp_1.dot(temp_2);
+		ddmu_1 += weight * H_mu[i];
 }
 
 
-void GHProcess::grad_nu(const int i)
+void GHProcess::grad_nu(const int i, const double weight)
 {
  	iV = Vs[i].cwiseInverse();
 	// dnu
@@ -432,8 +418,8 @@ void GHProcess::grad_nu(const int i)
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
     	temp.array() = Vs[i].array().log();
-		dnu  +=  h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i];
-    	ddnu += h_sum[i]/ nu - h_trigamma[i];
+		dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i]);
+    	ddnu += weight * ( h_sum[i]/ nu - h_trigamma[i] );
 	}
 
 

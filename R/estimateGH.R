@@ -225,6 +225,8 @@ estimate.wrapper <- function(Y,
 #' @param pSubsample      - precentage of data used in each gradient subsampling
 #' @param subsample.type  - Type of subsampling: 0 - uniform without replacement
 #'                                               1 - sample size weighted
+#'                                               3 - weighted sampling by gradient size
+#' @param pSubsample2     - precentage of data used in each gradient subsampling weighted by gradient
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @parma silent          - print iteration info
@@ -243,6 +245,7 @@ estimateLong <- function(Y,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
+                         pSubsample2 = 0.3,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
@@ -300,6 +303,7 @@ estimateLong <- function(Y,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
                  pSubsample       = pSubsample,
+                 pSubsample2      = pSubsample2,
                  subsample_type   = subsample.type,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
@@ -395,6 +399,7 @@ estimateME <- function(Y,
                          learning_rate = 0,
                          nBurnin_learningrate = NULL,
                          pSubsample = 1.,
+                         pSubsample2 = 0.3,
                          polyak_rate = -1.,
                          subsample.type = 1,
                          nBurnin_base = 0,
@@ -416,6 +421,7 @@ estimateME <- function(Y,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
                  pSubsample       = pSubsample,
+                 pSubsample2      = pSubsample2,
                  subsample_type   = subsample.type,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
