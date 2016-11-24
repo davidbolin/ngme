@@ -148,6 +148,7 @@ int poissonSampling_internal( int nans,
   revsort(pdat, perm, n);
   int counter = 0;
   double rem = 0; // reminder
+  
   for (i = 0; i < n; i++) {
     U = unif_rand();
     int j = perm[i];
@@ -164,7 +165,7 @@ int poissonSampling_internal( int nans,
     		rem += p_temp - 1.;
     }else{
     	if( weight[j] > 0)
-    		weight[j] = 1. - (1. - 1./weight[j]) * (1 - p_temp);
+    		weight[j] = 1./( 1. - (1. - 1./weight[j]) * (1 - p_temp));
     	else
     		weight[j] =  1./p_temp;
     }

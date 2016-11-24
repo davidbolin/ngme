@@ -307,23 +307,37 @@ List estimateLong_cpp(Rcpp::List in_list)
     }else if(subsample_type == 3){
     	//longInd
     	longInd.resize(nSubsample, 0);
-    	selected.resize(nSubsample, 0);
-    	ProbSampleNoReplace(nSubsample, p_N, longInd, selected);
-    	weight.setZero(nindv);
-    	weight.array() += nindv / ((double) nSubsample);
-    	nSubsample_i = nSubsample;
+    	std::fill(longInd.begin(), longInd.end(), 0);
+    	std::fill(selected.begin(), selected.end(), 0);
     	int m = int(pSubsample2 * nindv); // expected number of samples from the first part
+    	weight.setZero(nindv);
+    	if(iter <= 10){
+    		ProbSampleNoReplace(m+nSubsample, p_N, longInd, selected);
+    		weight.array() += nindv / ((double) (nSubsample + m));
+    		nSubsample_i = nSubsample;
+    	}else{
+    		ProbSampleNoReplace(nSubsample, p_N, longInd, selected);
+    		weight.array() += nindv / ((double) nSubsample);
+    		nSubsample_i = nSubsample;
+    	}
+    	
+    	
+    	
     	p  = p_inv;
-    		if(iter > 1){
+    	//p = p_N;
+    		if(iter > 10){
     			nSubsample_i += poissonSampling_internal( m,
 					  								  p, 
 					  								  weight,
 					  								  longInd,
 					  								  selected
-					  								  
 					  								 );
 			}
+			//double w_sum = 0;
+			//for(int ilong = 0; ilong < nSubsample_i; ilong++ )
+			//	w_sum += weight[longInd[ilong]];
 			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
+			//Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
 			//weight.array() *= 1. / ( (double) nindv);
 			
     	}

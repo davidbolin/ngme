@@ -14,7 +14,7 @@ seed     <- 5
 silent   <- 0
 plotflag <- 1
 
-nIter <- 200
+nIter <- 600
 pSubsample <- 0.1
 learning_rate <- 0.
 n.pers <- 5000 #number of patients
@@ -71,10 +71,10 @@ res <- estimateME(Y = Y_list,
                   measurment_list = meas_list,
                   nSim = 2,
                   alpha = 0.3,
-                  pSubsample = pSubsample,
+                  pSubsample = 2*pSubsample,
                   pSubsample2 = pSubsample,
-                  subsample.type = 3,
-                  step0 = 0.3,
+                  subsample.type = 1,
+                  step0 = 0.6,
                   nIter = nIter,
                   silent = silent,
                   learning_rate = learning_rate,
@@ -103,10 +103,10 @@ res <- estimateME(Y = Y_list,
                   measurment_list = meas_list,
                   nSim = 2,
                   alpha = 0.3,
-                  pSubsample = 2*pSubsample,
+                  pSubsample = pSubsample,
                   pSubsample2 = pSubsample,
-                  subsample.type = 1,
-                  step0 = 0.3,
+                  subsample.type = 3,
+                  step0 = 0.6,
                   nIter = nIter,
                   silent = silent,
                   learning_rate = learning_rate,

@@ -584,12 +584,15 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
         throw("in NIGmidexeffect nu is zero \n");
     }
   }
+  /*
   if(learning_rate == 0){
     nu_temp = term1/term2;
     if(nu_temp < 0){
       nu_temp = 0.1;
     }
   }
+  */
+  
   if(nu_temp  > 100){
   		nu_temp =100;
       dnu_old = 0;
@@ -599,7 +602,6 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
   }
 
 	nu = nu_temp;
-
 
   EiV = 1. + 1./nu;
   VV = 1./nu;
