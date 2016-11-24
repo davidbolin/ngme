@@ -14,7 +14,7 @@ seed     <- 5
 silent   <- 0
 plotflag <- 1
 
-nIter <- 600
+nIter <- 1000
 pSubsample <- 0.1
 learning_rate <- 0.
 n.pers <- 5000 #number of patients

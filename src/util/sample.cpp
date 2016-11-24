@@ -160,7 +160,7 @@ int poissonSampling_internal( int nans,
     		counter++;	
     	}
     }	
-    if( p_temp > 1){ // ensure that the expected number actually is m
+    if( p_temp >= 1){ // ensure that the expected number actually is m
     		weight[j ]  = 1.;
     		rem += p_temp - 1.;
     }else{
@@ -171,6 +171,24 @@ int poissonSampling_internal( int nans,
     }
     
   }
+  /*
+  if(counter < 0.5* nans)
+  {
+  	double p_sum = 0;
+  	double p_max = 0;
+  	double p_min = 1;
+  	for(int i = 0; i < n; i++){
+  		p_sum += p[i];
+  		if(p[i]> p_max){p_max = p[i];} 
+  		if(p[i]< p_min){p_min = p[i];} 
+  	}
+  		for(int i = 0; i < n; i++)
+  			Rcpp::Rcout << "p[" << i << "] = " << p[i] << "\n";
+  	Rcpp::Rcout << "rem = " << rem << "\n";
+  	Rcpp::Rcout << "counter2 = " << counter2 << "\n";
+  	Rcpp::Rcout << "counter = " << counter << "\n";
+  		Rcpp::Rcout << "max,min, sum  = " << p_max << "," << p_min << "," << p_sum << "\n";
+  }*/
   free(perm);
   return(counter);
 }

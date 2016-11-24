@@ -260,8 +260,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   Eigen::VectorXd p(nindv);
   p.setZero(nindv);
   Eigen::VectorXd p_N(nindv);
+  p_N.setZero(nindv);
   p_N.array() += 1. / nindv; 
-  p_inv.array() += 1. /nindv;
   std::vector<int> selected(nindv, 0);
 
 
@@ -314,7 +314,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     	if(iter <= 10){
     		ProbSampleNoReplace(m+nSubsample, p_N, longInd, selected);
     		weight.array() += nindv / ((double) (nSubsample + m));
-    		nSubsample_i = nSubsample;
+    		nSubsample_i = nSubsample + m;
     	}else{
     		ProbSampleNoReplace(nSubsample, p_N, longInd, selected);
     		weight.array() += nindv / ((double) nSubsample);
@@ -322,23 +322,31 @@ List estimateLong_cpp(Rcpp::List in_list)
     	}
     	
     	
-    	
-    	p  = p_inv;
-    	//p = p_N;
+    	p = p_N;
     		if(iter > 10){
     			nSubsample_i += poissonSampling_internal( m,
-					  								  p, 
+					  								  p_inv, 
 					  								  weight,
 					  								  longInd,
 					  								  selected
 					  								 );
 			}
-			//double w_sum = 0;
-			//for(int ilong = 0; ilong < nSubsample_i; ilong++ )
-			//	w_sum += weight[longInd[ilong]];
+			/*
+			double w_sum = 0, selected_sum = 0;
+			for(int k = 0; k < nindv; k++)
+				selected_sum += selected[k];
+			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
+				w_sum += weight[longInd[ilong]];
 			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
-			//Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
-			//weight.array() *= 1. / ( (double) nindv);
+			Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
+			Rcpp::Rcout << "selected_sum = " << selected_sum <<"\n";
+			Rcpp::Rcout << "selected = " << selected.size() <<"\n";
+			*/
+			double w_sum = 0;
+			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
+				w_sum += weight[longInd[ilong]];
+			Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
+			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
 			
     	}
 
