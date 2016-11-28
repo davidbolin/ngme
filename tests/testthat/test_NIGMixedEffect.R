@@ -11,7 +11,7 @@ graphics.off()
 library(LDMod)
 library(MASS)
 seed     <- 2
-silent   <- 0
+silent   <- 1
 plotflag <- 1
 
 nIter <- 1000

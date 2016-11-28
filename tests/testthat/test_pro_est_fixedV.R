@@ -7,22 +7,28 @@ library(testthat)
 library(LDMod)
 library(methods)
 graphics.off()
-
-plot_flag <- FALSE
+silent <- 1
+plot_flag <- TRUE
 seed <- 4
+learning_rate <- 0.7
 set.seed(seed)
 noises <- c("NIG","CH")
 for(k in 1:length(noises)){
   pSubsample <- 0.5
   nBurnin <- 200
 nobs  <- 50
-nIter <- 1000 #100 is good enough
+nIter <- 2000 #100 is good enough
 n     <- 100 #n grid points
-learning_rate <- 0.99
 nu_true <- 10
 mu_true <- 10
 nu_guess <- 20
 mu_guess <- 20
+if(noises[k]=="CH")
+{
+  mu_true  <- 0
+  mu_guess <- 0
+  
+}
 tau_geuss <- 0.5
 theta <- list()
 theta$sigma <- 0.1 # meas error
@@ -70,7 +76,7 @@ input <- list( obs_list         = obs_list,
                nIter            = nIter,     # iterations to run the stochastic gradient
                nSim             = 4,
                nBurnin          = nBurnin,   # steps before starting gradient estimation
-               silent           = 1, # print iteration info)
+               silent           = silent, # print iteration info)
                step0            = 0.3,
                alpha            = 0.1,
                learning_rate    = learning_rate,
@@ -81,6 +87,7 @@ input <- list( obs_list         = obs_list,
                mixedEffect_list = mixedEffect_list,
                sampleX = 1,
                sampleV = 0,
+               nBurnin_learningrate =0,
                seed   = seed
               )
 output <- estimateLong_cpp(input)

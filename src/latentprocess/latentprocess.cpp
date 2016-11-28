@@ -145,10 +145,8 @@ if(type_process == "CH"){
   	if(init_list.containsElementNamed("mu"))
     	mu = Rcpp::as < double >( init_list["mu"]);
   	else
-    	mu = 1.;
+    	mu = 0.;
 
-	if(type_process == "CH")
-		mu = 0.;
 
   	dmu    = 0;
 	ddmu_1 = 0;
@@ -464,7 +462,6 @@ void GHProcess::step_theta(const double stepsize,
 void GHProcess::step_mu(const double stepsize, const double learning_rate)
 {
 	dmu /= -  ddmu_1;
-
 
   if(std::abs(dmu_prev) > 10*std::abs(dmu))
   	dmu_prev *= 0.1;
