@@ -265,13 +265,17 @@ List estimateLong_cpp(Rcpp::List in_list)
   std::vector<int> selected(nindv, 0);
 
 
- for (int i=0; i< nindv; i++) longInd.push_back(i);
-
-	
    		
   int npars =   mixobj->npars + errObj->npars;
   if(process_active)
-    npars += process->npars; //+ Kobj->npars;
+    npars += process->npars + Kobj->npars;
+    
+ Eigen::MatrixXd Fisher_information(npars, npars); // If computing the fisher information
+ Fisher_information.array() *= 0;
+ for (int i=0; i< nindv; i++) longInd.push_back(i);
+
+	
+
 
   for(int iter=0; iter < nIter; iter++){
     /*
@@ -370,6 +374,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
       	A = As[i];
+      	// if fisher
       Eigen::VectorXd  Y = Ys[i];
       if(process_active){
       	z.setZero(Kobj->d[0]);
@@ -386,6 +391,9 @@ List estimateLong_cpp(Rcpp::List in_list)
         burnin_done[i] = 1;
       }else {n_simulations += nBurnin_base;}
 
+		
+      	// if fisher
+      	// burnin_done[i] = 0
       int count_inner = 0;
       Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
       for(int ii = 0; ii < n_simulations; ii ++)
@@ -540,13 +548,13 @@ List estimateLong_cpp(Rcpp::List in_list)
 		    if(process_active){
 		      grad_inner.block(mixobj->npars + errObj->npars,count_inner,
                          process->npars, 1).array() = process->get_gradient().array();
-		      //grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
-              //              Kobj->npars, 1) = Kobj -> get_gradient();
+		      grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
+                            Kobj->npars, 1) = Kobj -> get_gradient();
 			  }
 			  // adjusting so we get last gradient not cumsum
 			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			  grad_inner.col(count_inner).array() -= grad_last.array();
-			  
+			  Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(n_simulations * weight[i]);
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }
@@ -564,7 +572,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
-      Eigen::MatrixXd cov = (centered * centered.transpose()) / double(grad_inner.cols() - 1);
+      // multiplied by weighted since other wise we double weight it!
+      Eigen::MatrixXd cov = (centered * centered.transpose()) / (weight[i]*   double(grad_inner.cols() - 1));
       Vgrad_inner.array() += cov.array();
       if(process_active)
         Vmean[i] += process->Vs[i];
