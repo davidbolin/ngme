@@ -107,7 +107,7 @@ void NIGMeasurementError::gradient(const int i,
 
 }
 
-void NIGMeasurementError::step_nu(const double stepsize, const double learning_rate)
+void NIGMeasurementError::step_nu(const double stepsize, const double learning_rate,const int burnin)
 {
 double nu_temp = -1;
   dnu /= ddnu;
@@ -120,7 +120,7 @@ double nu_temp = -1;
     if(step_size <= 1e-16)
         throw("in NIGMeasurementError:: can't make nu it positive \n");
   }
-  if(learning_rate == 0){
+  if(burnin == 1){
     nu_temp = term1/term2;
     if(nu_temp < 0){
       nu_temp = 0.1;
@@ -135,11 +135,12 @@ double nu_temp = -1;
 
 void NIGMeasurementError::step_theta(const double stepsize,
                                      const double learning_rate,
-                                     const double polyak_rate)
+                                     const double polyak_rate,
+                                     const int burnin)
 {
-  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
+  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate,burnin);
 
-  	step_nu(stepsize, learning_rate);
+  	step_nu(stepsize, learning_rate,burnin);
   	clear_gradient();
 
 	if(store_param){

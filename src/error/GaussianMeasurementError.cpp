@@ -62,9 +62,10 @@ void GaussianMeasurementError::gradient(const int i,
     // res.size()/pow(sigma, 2) - 3 * E[res.array().square().sum()] /pow(sigma, 4);
     ddsigma +=  weight * (- 2 * res.size()/pow(sigma, 2));
 }
-void GaussianMeasurementError::step_theta(const double stepsize, 
+void GaussianMeasurementError::step_theta(const double stepsize,
 										  const double learning_rate,
-										  const double polyak_rate)
+										  const double polyak_rate,
+										  const int burnin)
 {
   double sigma_temp = -1;
   dsigma /= ddsigma;

@@ -1,5 +1,5 @@
 ##
-# simple test that verifies that the model can correctly idenitfy the parameters, 
+# simple test that verifies that the model can correctly idenitfy the parameters,
 # Normal noise,
 # NIG   mixed effect.
 # from simulated data
@@ -12,7 +12,7 @@ library(LDMod)
 library(MASS)
 seed     <- 2
 silent   <- 1
-plotflag <- 1
+plotflag <- 0
 
 nIter <- 1000
 pSubsample <- 0.1
@@ -49,11 +49,11 @@ for(i in 1:n.pers)
 
 
 meas_list <- list(sigma_eps = sd_Y, noise = "Normal")
-mixedEffect_list <- list(B_random = Br_list, 
+mixedEffect_list <- list(B_random = Br_list,
                          B_fixed  = Bf_list,
-                         Sigma = COV_beta, 
+                         Sigma = COV_beta,
                          beta_random = c(0.,0.),
-                         beta_fixed  = c(0.),  
+                         beta_fixed  = c(0.),
                          mu          = 0*as.matrix(mu),
                          nu          = as.matrix(1.) + nu,
                          noise = "NIG")
@@ -66,7 +66,7 @@ par(mfrow=c(2,1))
 hist(beta_mat[,1],100)
 hist(beta_mat[,2],100)
 }
-res <- estimateME(Y = Y_list, 
+res <- estimateME(Y = Y_list,
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = meas_list,
                   nSim = 2,
@@ -92,7 +92,7 @@ if(plotflag){
   lines(betar_vec[,2], col='red')
   lines(c(1, n_), c(betar[1], betar[1]))
   lines(c(1, n_), c(betar[2], betar[2]))
-  
+
   plot(res$mixedEffect_list$nu_vec, type='l', col='red' )
   lines(c(1, n_), c(nu, nu))
 }

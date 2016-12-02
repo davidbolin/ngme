@@ -59,7 +59,8 @@ class operatorMatrix {
 							   const double){};
     virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
-    						const double polyak_rate   = -1){};
+    						const double polyak_rate   = -1,
+    						const int burnin = 0){};
     virtual void print_parameters( ){};
     virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int ){return 1;};
 
@@ -87,7 +88,8 @@ class constMatrix : public operatorMatrix{
 							   const double);
 	void step_theta(const double stepsize,
 					const double learning_rate = 0,
-					const double polyak_rate   = -1);
+					const double polyak_rate   = -1,
+					const int burnin = 0);
   	double  dtau;
   	double ddtau;
 	double dtau_old;
@@ -143,7 +145,8 @@ class MaternOperator : public operatorMatrix{
 							   const double);
     void step_theta(const double stepsize,
     				const double learning_rate = 0,
-    				const double polyak_rate   = -1);
+    				const double polyak_rate   = -1,
+    				const int burnin = 0);
     Eigen::VectorXd kappaVec;
     void print_parameters();
     double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int );

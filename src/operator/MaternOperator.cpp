@@ -218,7 +218,8 @@ void MaternOperator::print_parameters(){
 
 void MaternOperator::step_theta(const double stepsize,
                                 const double learning_rate,
-                                const double polyak_rate)
+                                const double polyak_rate,
+                                const int burnin)
 {
 
   dtau  /= ddtau;

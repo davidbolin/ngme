@@ -98,7 +98,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_fixed.setZero(Bf[0].cols());
      npars += Bf[0].cols();
      H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
-	
+
 	dbeta_f_old.setZero(Bf[0].cols());
 
   }else{ Bf.resize(0);}
@@ -117,7 +117,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       beta_random.setZero(Br[0].cols());
 
-	
+
 	dbeta_r_old.setZero(Br[0].cols());
     npars += Br[0].cols();
   }else{ Br.resize(0);}
@@ -337,14 +337,15 @@ void NormalMixedEffect::gradient(const int i,
 }
 void NormalMixedEffect::step_theta(const double stepsize,
 								   const double learning_rate,
-								   const double polyak_rate)
+								   const double polyak_rate,
+								   const int burnin)
 {
   if(Br.size() > 0){
-    step_beta_random(stepsize, learning_rate);
-    step_Sigma(stepsize, learning_rate);
+    step_beta_random(stepsize, learning_rate,burnin);
+    step_Sigma(stepsize, learning_rate,burnin);
   }
   if(Bf.size() > 0)
-    step_beta_fixed(stepsize, learning_rate);
+    step_beta_fixed(stepsize, learning_rate,burnin);
 
 if(store_param){
     if(Bf.size() > 0){
@@ -358,25 +359,25 @@ if(store_param){
     if(Br.size() > 0)
     {
     	Eigen::Map<Eigen::VectorXd> temp(Sigma.data(),Sigma.size());
-    	if(vec_counter == 0 || polyak_rate == -1){	
+    	if(vec_counter == 0 || polyak_rate == -1){
       		betar_vec.row(vec_counter)  = beta_random;
       		Sigma_vec.row(vec_counter)  = temp;
-      	
+
       	}else{
       		betar_vec.row(vec_counter).array()   = polyak_rate * beta_random.array();
       		betar_vec.row(vec_counter).array()  += (1 - polyak_rate) * betar_vec.row(vec_counter - 1).array();
-      	
+
       		Sigma_vec.row(vec_counter).array()   = polyak_rate * temp.array();
       		Sigma_vec.row(vec_counter).array()  +=  + (1 - polyak_rate) * Sigma_vec.row(vec_counter - 1).array();
-      	}	
-    }	
+      	}
+    }
     vec_counter++;
   }
 
   clear_gradient();
   counter = 0;
 }
-void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learning_rate)
+void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_f_old.array() *= learning_rate;
 	dbeta_f_old += H_beta_fixed.ldlt().solve(grad_beta_f);
@@ -384,9 +385,9 @@ void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learn
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 
 }
-void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate)
+void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate,const int burnin)
 {
-	
+
 	dbeta_r_old.array() *= learning_rate;
 	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
 	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ weight_total;
@@ -395,7 +396,7 @@ void NormalMixedEffect::step_beta_random(const double stepsize,const double lear
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
 }
 
-void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_rate)
+void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_rate,const int burnin)
 {
     double pos_def = 0;
   iSkroniS = kroneckerProduct(invSigma, invSigma);
@@ -405,7 +406,7 @@ void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_r
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old *= learning_rate;
   dSigma_vech_old += dSigma_vech;
-  
+
   double stepsize_temp  = stepsize;
   while(pos_def <= 0){
     Eigen::VectorXd Sigma_vech_temp = Sigma_vech;

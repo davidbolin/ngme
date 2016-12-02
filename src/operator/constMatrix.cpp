@@ -109,7 +109,8 @@ void constMatrix::print_parameters(){
 
 void constMatrix::step_theta(const double stepsize,
 							 const double learning_rate,
-							 const double polyak_rate)
+							 const double polyak_rate,
+							 const int burnin)
 {
 	dtau  /= ddtau;
   	dtau_old = learning_rate * dtau_old + dtau;
@@ -121,7 +122,7 @@ void constMatrix::step_theta(const double stepsize,
         tau_temp = tau - step;
     }
 
-    if(1){
+    if(burnin == 1){
       tau_temp = -term2 + pow(term2*term2 - 4*term1*term3,0.5);
       tau_temp /= 2*term1;
       if(tau < 0)

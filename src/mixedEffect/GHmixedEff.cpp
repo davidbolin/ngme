@@ -439,20 +439,21 @@ void NIGMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ ,const doub
 }
 void NIGMixedEffect::step_theta(const double stepsize,
 								const double learning_rate,
-								const double polyak_rate)
+								const double polyak_rate,
+								const int burnin)
 {
   if(Br.size() > 0){
-    step_beta_random(stepsize, 0);
-    step_mu(stepsize, 0);
-    step_nu(stepsize, learning_rate);
-    step_Sigma(stepsize, 0);
+    step_beta_random(stepsize, 0,burnin);
+    step_mu(stepsize, 0,burnin);
+    step_nu(stepsize, learning_rate,burnin);
+    step_Sigma(stepsize, 0,burnin);
     a_GIG = mu.transpose() * (invSigma * mu);
     a_GIG += nu;
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
   }
 
   if(Bf.size() > 0)
-    step_beta_fixed(stepsize, learning_rate);
+    step_beta_fixed(stepsize, learning_rate,burnin);
 
   counter = 0;
   weight_total = 0;
@@ -508,7 +509,7 @@ void NIGMixedEffect::step_theta(const double stepsize,
 
 
 }
-void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rate)
+void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rate,const int burnin)
 {
   double pos_def = 0;
   iSkroniS = kroneckerProduct(invSigma, invSigma);
@@ -557,7 +558,7 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
     Sigma_vech = vech(Sigma);
 }
 
-void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
+void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate,const int burnin)
 {
 	gradMu_old.array() *= learning_rate;
     gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
@@ -567,7 +568,7 @@ void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate)
     gradMu_2.setZero(Br[0].cols(), 1);
 }
 
-void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
+void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,const int burnin)
 {
    grad_nu  *=  (nu * nu) / (2. * weight_total); //hessian
 
@@ -584,15 +585,14 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
         throw("in NIGmidexeffect nu is zero \n");
     }
   }
-  /*
-  if(learning_rate == 0){
+
+  if(burnin == 1){
     nu_temp = term1/term2;
     if(nu_temp < 0){
       nu_temp = 0.1;
     }
   }
-  */
-  
+
   if(nu_temp  > 100){
   		nu_temp =100;
       dnu_old = 0;
@@ -606,7 +606,7 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate)
   EiV = 1. + 1./nu;
   VV = 1./nu;
 }
-void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learning_rate)
+void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learning_rate,const int burnin)
 {
 
 	dbeta_f_old.array() *= learning_rate;
@@ -614,7 +614,7 @@ void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learnin
     beta_fixed += stepsize *  dbeta_f_old;
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 }
-void NIGMixedEffect::step_beta_random(const double stepsize, const double learning_rate)
+void NIGMixedEffect::step_beta_random(const double stepsize, const double learning_rate,const int burnin)
 {
 	dbeta_r_old.array() *= learning_rate;
 	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);

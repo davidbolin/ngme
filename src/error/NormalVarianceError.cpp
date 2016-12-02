@@ -181,9 +181,10 @@ void NormalVarianceMixtureBaseError::gradient(const int i,
 
 void NormalVarianceMixtureBaseError::step_theta(const double stepsize,
 												const double learning_rate,
-												const double polyak_rate)
+												const double polyak_rate,
+												const int burnin)
 {
-  step_sigma(stepsize, learning_rate);
+  step_sigma(stepsize, learning_rate,burnin);
   NormalVarianceMixtureBaseError::clear_gradient();
 
   counter = 0;
@@ -197,9 +198,9 @@ void NormalVarianceMixtureBaseError::step_theta(const double stepsize,
 
 }
 
-void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, const double learning_rate)
+void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, const double learning_rate,const int burnin)
 {
-	
+
   double sigma_temp = -1;
   dsigma /= ddsigma;
   dsigma_old = learning_rate * dsigma_old + dsigma;

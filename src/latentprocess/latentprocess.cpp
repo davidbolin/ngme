@@ -384,7 +384,7 @@ void GHProcess:: gradient_v2( const int i ,
 
 
 
-void GHProcess::gradient_mu_centered(const int i, 
+void GHProcess::gradient_mu_centered(const int i,
 									 const Eigen::SparseMatrix<double,0,int> & K,
 									 const double weight)
 {
@@ -426,12 +426,13 @@ void GHProcess::grad_nu(const int i, const double weight)
 
 void GHProcess::step_theta(const double stepsize,
 						   const double learning_rate,
-						   const double polyak_rate)
+						   const double polyak_rate,
+						   const int burnin)
 {
 
 	if( type_process == "CH")
   		return;
-	step_mu(stepsize, learning_rate);
+	step_mu(stepsize, learning_rate,burnin);
 	counter = 0;
 	if(store_param){
 		if(vec_counter == 0 || polyak_rate == -1)
@@ -442,7 +443,7 @@ void GHProcess::step_theta(const double stepsize,
 	}
 
 
-	step_nu(stepsize, learning_rate);
+	step_nu(stepsize, learning_rate,burnin);
 
 	counter = 0;
 
@@ -459,7 +460,7 @@ void GHProcess::step_theta(const double stepsize,
 	}
 }
 
-void GHProcess::step_mu(const double stepsize, const double learning_rate)
+void GHProcess::step_mu(const double stepsize, const double learning_rate,const int burnin)
 {
 	dmu /= -  ddmu_1;
 
@@ -475,11 +476,10 @@ void GHProcess::step_mu(const double stepsize, const double learning_rate)
 
 }
 
-void GHProcess::step_nu(const double stepsize, const double learning_rate)
+void GHProcess::step_nu(const double stepsize, const double learning_rate, const int burnin)
 {
   double nu_temp = -1;
   dnu /=  ddnu;
-
 
   dnu_prev = learning_rate * dnu_prev +    dnu;
   double step  = dnu_prev;
@@ -500,7 +500,7 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate)
   		dnu_prev = 0;
 
   }else if(type_process == "NIG"){
-    if(learning_rate == 0){
+    if(burnin == 1){
       nu_temp = term1/term2;
       if(nu_temp * pow(h_MIN,2) < 5e-06){
         nu_temp =5e-06/pow(h_MIN,2);

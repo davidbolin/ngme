@@ -17,7 +17,7 @@ for(k in 1:length(noises)){
   pSubsample <- 0.5
   nBurnin <- 200
 nobs  <- 50
-nIter <- 2000 #100 is good enough
+nIter <- 1000 #100 is good enough
 n     <- 100 #n grid points
 nu_true <- 10
 mu_true <- 10
@@ -27,7 +27,7 @@ if(noises[k]=="CH")
 {
   mu_true  <- 0
   mu_guess <- 0
-  
+
 }
 tau_geuss <- 0.5
 theta <- list()
@@ -37,11 +37,11 @@ theta$nu    <- nu_true
 theta$mu    <- mu_true
 locs   <- list()
 for(i in 1:nobs)
-{ 
+{
   locs[[i]]   <- seq(0, 1, length = nobs)
 }
 
-output_sim <- simulateLong.R(locs, 
+output_sim <- simulateLong.R(locs,
                theta,
                noise = noises[k],
                operatorType = "fd2",
@@ -51,10 +51,10 @@ obs_list <- list()
 X        <- list()
 V        <- list()
 for(i in 1:length(locs)){
-  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]), 
-                        Y=output_sim$Y[[i]], 
+  obs_list[[i]] <- list(A =  spde.A(x = operator_list$loc[[1]], loc = locs[[i]]),
+                        Y=output_sim$Y[[i]],
                         locs = locs[[i]])
-  X[[i]] <- rep(0, n) 
+  X[[i]] <- rep(0, n)
   V[[i]] <- operator_list$h
 }
 
@@ -64,10 +64,10 @@ mError_list <- list(noise = "Normal",
 
 mixedEffect_list  <- list(noise="Normal")
 operator_list$tau <- tau_geuss
-processes_list <- list(nu = nu_guess, 
-                       mu = mu_guess, 
-                       X = output_sim$X, 
-                       V = output_sim$V, 
+processes_list <- list(nu = nu_guess,
+                       mu = mu_guess,
+                       X = output_sim$X,
+                       V = output_sim$V,
                        noise = noises[k])
 input <- list( obs_list         = obs_list,
                operator_list    = operator_list,
@@ -93,8 +93,8 @@ input <- list( obs_list         = obs_list,
 output <- estimateLong_cpp(input)
 
 if(plot_flag){
-x11()
-par(mfrow=c(3,2))
+#x11()
+par(mfrow=c(2,2))
 plot(locs[[1]],output_sim$Y[[5]])
 lines(output$operator_list$loc[[1]], output_sim$X[[5]])
 lines(output$operator_list$loc[[1]], output$Xs[[5]],col='red',lty='dashed')
@@ -104,14 +104,14 @@ if(noises[k] != "CH"){
   lines(c(1, n_), c( mu_true, mu_true), col='red' )
   plot(output$processes_list$nu_vec)
   lines(c(1, n_), c( nu_true, nu_true), col='red' )
-  
+
 }
 plot(output$operator_list$tauVec)
 lines(c(1, n_), c( theta$tau, theta$tau), col='red' )
 
 }
 if(noises[k] != "CH"){
-  
+
   test_that(paste("nu with known X,V, noise = ",noises[k],sep=""),{
     expect_equal( theta$nu, output$processes_list$nu, tolerance  = 0.2)
   })

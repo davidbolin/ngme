@@ -75,8 +75,8 @@ class MixedEffect {
 	};
 
     // gradient for fixed variance noise
-    virtual void gradient(const int , 
-    					  const Eigen::VectorXd&, 
+    virtual void gradient(const int ,
+    					  const Eigen::VectorXd&,
     					  const double,
     					  const double ) = 0;
     // gradient for variable variance noise
@@ -91,7 +91,8 @@ class MixedEffect {
     virtual Eigen::VectorXd get_gradient() = 0;
     virtual void step_theta(const double stepsize,
     						const double  learning_rate = 0,
-    						const double polyak_rate = -1) = 0;
+    						const double polyak_rate = -1,
+    						const int burnin = 0) = 0;
     /*
     	simulates from the prior distribution
 		putting into Y
@@ -131,7 +132,7 @@ class NormalMixedEffect  : public MixedEffect{
     Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
     Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
     Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
-    
+
     double weight_total;
   public:
 
@@ -149,7 +150,7 @@ class NormalMixedEffect  : public MixedEffect{
     	@param residuals
     	@param log_sigma2_noise (logarithm of the measurement error)
 	*/
-    void gradient(const int  , 
+    void gradient(const int  ,
      			  const Eigen::VectorXd&,
      			  const double,
      			  const double);
@@ -175,10 +176,11 @@ class NormalMixedEffect  : public MixedEffect{
 
     void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
-    				const double polyak_rate   = -1);
-    void step_Sigma(const double, const double );
-    void step_beta_fixed(const double, const double );
-    void step_beta_random(const double, const double );
+    				const double polyak_rate   = -1,
+    				const int burnin = 0);
+    void step_Sigma(const double, const double,const int);
+    void step_beta_fixed(const double, const double,const int );
+    void step_beta_random(const double, const double,const int );
     void simulate();
     void simulate(std::vector< Eigen::VectorXd >  &);
     void simulate(Eigen::VectorXd  & ,const int );
@@ -235,9 +237,9 @@ class NIGMixedEffect  : public MixedEffect{
     double a_GIG;
     gig rgig;
 
-    void step_Sigma(const double, const double);
-    void step_mu(const double , const double);
-    void step_nu(const double, const double);
+    void step_Sigma(const double, const double,const int);
+    void step_mu(const double , const double,const int);
+    void step_nu(const double, const double,const int);
     double term1,term2;
   public:
     Eigen::MatrixXi D;
@@ -266,18 +268,19 @@ class NIGMixedEffect  : public MixedEffect{
     			   const double log_sigma2_noise = 0,
     			   const double EiV = 1.,
     			   const double weight = 1.);
-    void gradient(const int , 
+    void gradient(const int ,
     			  const Eigen::VectorXd& ,
     			  const double ,
     			  const double);
-    void gradient_sigma(const int , 
+    void gradient_sigma(const int ,
     					Eigen::VectorXd& ,
     					const double);
     void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
-    				const double polyak_rate   = -1);
-    void step_beta_fixed(const double stepsize, const double);
-    void step_beta_random(const double stepsize, const double);
+    				const double polyak_rate   = -1,
+    				const int burnin = 0);
+    void step_beta_fixed(const double stepsize, const double,const int);
+    void step_beta_random(const double stepsize, const double,const int);
     Rcpp::List toList();
     void simulate();
     void simulate(std::vector< Eigen::VectorXd > & );

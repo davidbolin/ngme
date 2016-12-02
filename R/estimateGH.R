@@ -20,7 +20,8 @@ estimate.wrapper <- function(Y,
                              nSim = 2,
                              nIter.gauss = 1000,
                              nIter = 10000,
-                             pSubsample = 0.1)
+                             pSubsample = 0.1,
+                             nPar_burnin = 0)
   if(!missing(estimation.options) && !is.null(estimation.options)){
     for(i in 1:length(estimation.options)){
       estimation.controls[names(estimation.options)[i]] = estimation.options[i]
@@ -83,6 +84,7 @@ estimate.wrapper <- function(Y,
                             nSim = 2,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
+                            nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
 
@@ -112,6 +114,7 @@ estimate.wrapper <- function(Y,
                             polyak_rate = 0,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
+                          nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
 
@@ -130,6 +133,7 @@ estimate.wrapper <- function(Y,
                           nSim = 2,
                           nBurnin = estimation.controls$nBurnin,
                           nIter = estimation.controls$nIter,
+                          nPar_burnin = estimation.controls$nPar_burnin,
                           pSubsample = estimation.controls$pSubsample,
                           ...)
 
@@ -148,6 +152,7 @@ estimate.wrapper <- function(Y,
                             nSim = 2,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter.gauss,
+                            nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
           if(!silent)
@@ -172,6 +177,7 @@ estimate.wrapper <- function(Y,
                             polyak_rate = 0,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
+                            nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
 
@@ -185,6 +191,7 @@ estimate.wrapper <- function(Y,
                             nSim = 2,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
+                            nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             ...)
       }
@@ -219,6 +226,7 @@ estimate.wrapper <- function(Y,
 #'
 #' @param learning_rate   - parameter for sthocastic gradient
 #' @param nBurnin_learningrate - don't start learning before
+#' @param nPar_burnin - use "M-step" updates until this iteration.
 #' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
 #' @param step0           - stepsize for optimizer is step0 / i^alpha
 #' @param alpha           - stepsize for optimizer is step0 / i^alpha
@@ -245,6 +253,7 @@ estimateLong <- function(Y,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
+                         nPar_burnin = 0,
                          pSubsample2 = 0.3,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
@@ -311,6 +320,7 @@ estimateLong <- function(Y,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  nBurnin_base     = nBurnin_base,
+                 nPar_burnin      = nPar_burnin,
                  alpha            = alpha,
                  learning_rate    = learning_rate,
                  polyak_rate      = polyak_rate)
@@ -402,6 +412,7 @@ estimateME <- function(Y,
                          pSubsample2 = 0.3,
                          polyak_rate = -1.,
                          subsample.type = 1,
+                         nPar_burnin = 0,
                          nBurnin_base = 0,
                          nIter = 10,     # iterations to run the stochastic gradient
                          nSim  = 1,
@@ -429,6 +440,7 @@ estimateME <- function(Y,
                  silent           = silent, # print iteration info)
                  step0            = step0,
                  alpha            = alpha,
+                 nPar_burnin      = nPar_burnin,
                  nBurnin_base = nBurnin_base,
                  learning_rate    = learning_rate,
                  polyak_rate      = polyak_rate

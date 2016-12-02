@@ -47,7 +47,8 @@ class Process {
 			   			  const double weight){};
     virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
-    						const double polyak_rate   =  -1){};
+    						const double polyak_rate   =  -1,
+    						const int burnin = 0){};
     virtual void sample_V(const int,
     					            gig &,
                           const Eigen::SparseMatrix<double,0,int> &){};
@@ -211,9 +212,9 @@ class GHProcess : public Process{
 			   			  const double EiV_noise,
 			   			  const double trace_var,
 			   			  const double weight);
-    void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1);
-    void step_mu(const double, const double );
-    void step_nu(const double, const double);
+    void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1, const int burnin = 0);
+    void step_mu(const double, const double, const int);
+    void step_nu(const double, const double, const int);
     void printIter();
     Rcpp::List toList();
     void setupStoreTracj(const int);

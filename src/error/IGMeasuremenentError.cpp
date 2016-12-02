@@ -10,12 +10,12 @@ IGMeasurementError::IGMeasurementError() : NormalVarianceMixtureBaseError(){
   ddnu      = 0;
   dnu_old = 0;
   noise = "IG";
-  
+
 }
 
 
 
-void IGMeasurementError::printIter() 
+void IGMeasurementError::printIter()
 {
 	NormalVarianceMixtureBaseError::printIter();
 	Rcpp::Rcout << "\n nu = " << nu;
@@ -23,7 +23,7 @@ void IGMeasurementError::printIter()
 }
 void IGMeasurementError::setupStoreTracj(const int Niter) // setups to store the tracjetory
 {
-	
+
 	NormalVarianceMixtureBaseError::setupStoreTracj(Niter);
 	nu_vec.resize(Niter);
 }
@@ -36,7 +36,7 @@ Rcpp::List IGMeasurementError::toList()
 {
   Rcpp::List out = NormalVarianceMixtureBaseError::toList();
   out["nu"]          = nu;
-  
+
   if(store_param){
   	out["nu_vec"]    = nu_vec;
   	out["nu"]          = nu_vec[nu_vec.size() - 1];
@@ -45,9 +45,9 @@ Rcpp::List IGMeasurementError::toList()
 }
 void IGMeasurementError::initFromList(Rcpp::List const &init_list)
 {
-  
+
   NormalVarianceMixtureBaseError::initFromList(init_list);
-  
+
   if(init_list.containsElementNamed("nu"))
     nu = Rcpp::as < double >( init_list["nu"]);
   else
@@ -59,7 +59,7 @@ void IGMeasurementError::initFromList(Rcpp::List const &init_list)
    npars += 1;
   digamma_nu  =  R::digamma(nu);
   trigamma_nu =  R::trigamma(nu);
-  
+
  int i = 0;
 
  if( init_list.containsElementNamed("Vs" )){
@@ -83,7 +83,7 @@ double IGMeasurementError::sample_V(const double res2_j, const int n_s)
 {
 	if(common_V == 0)
 		return rgig.sample(-(nu + .5), 0 , res2_j + 2 * nu);
-	
+
 	return rgig.sample(-  (nu + .5 * n_s), 0, res2_j + 2 * nu );
 }
 
@@ -102,14 +102,14 @@ void IGMeasurementError::gradient(const int i,
     	dnu  += weight * ( res.size() *  (1. + log(nu)  - digamma_nu) - logV - iV.array().sum());
     	ddnu += weight * (res.size() * (1/ nu - trigamma_nu) );
     }else{
-    
+
     	double logV = log(Vs[i][0]);
     	dnu  +=  weight * ( (1. + log(nu)  - digamma_nu) - logV - iV[0] );
     	ddnu +=  weight * (1/ nu - trigamma_nu);
     }
 }
 
-void IGMeasurementError::step_nu(const double stepsize, const double learning_rate)
+void IGMeasurementError::step_nu(const double stepsize, const double learning_rate,const int burnin)
 {
 	double nu_temp = -1;
   dnu /= ddnu;
@@ -133,13 +133,14 @@ void IGMeasurementError::step_nu(const double stepsize, const double learning_ra
 
 void IGMeasurementError::step_theta(const double stepsize,
 									const double learning_rate,
-									const double polyak_rate)
+									const double polyak_rate,
+									const int burnin)
 {
-  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate);
-  
-  	step_nu(stepsize, learning_rate);
+  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate,burnin);
+
+  	step_nu(stepsize, learning_rate,burnin);
   	clear_gradient();
-  
+
 	if(store_param){
 
 		if(vec_counter ==1 || polyak_rate == -1)
@@ -150,7 +151,7 @@ void IGMeasurementError::step_theta(const double stepsize,
 }
 
 void IGMeasurementError::clear_gradient()
-{	
+{
 	NormalVarianceMixtureBaseError::clear_gradient();
 	dnu    = 0;
 }

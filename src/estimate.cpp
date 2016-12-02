@@ -28,11 +28,11 @@ double estDigamma(double x)
 	Y - observation for indivual i
 
 */
-Eigen::VectorXd GibbsSampling(int i, 
+Eigen::VectorXd GibbsSampling(int i,
 				   Eigen::VectorXd&  Y,
 				   Eigen::SparseMatrix<double,0,int>& A,
 				   int               sampleX,
-				   int               sampleV,    
+				   int               sampleV,
 				   int               process_active,
 				   int common_grid,
 				   MixedEffect       & mixobj,
@@ -42,89 +42,87 @@ Eigen::VectorXd GibbsSampling(int i,
 				   int debug,
 				   Eigen::VectorXd & z,
 				   gig & rgig,
-				   std::vector<  cholesky_solver > & Solver){
+				   std::vector<  cholesky_solver > & Solver)
+{
+  Eigen::VectorXd b;
+  if(process_active){
+	  b.setZero(Kobj.d[0]);
+	 }
 
-	
-  	Eigen::VectorXd b;
-  	if(process_active){
-		b.setZero(Kobj.d[0]);
-	}
+  Eigen::VectorXd  res = Y;
+  //***************************************
+  //***************************************
+  //   building the residuals and sampling
+  //***************************************
+  //***************************************
 
+  // removing fixed effect from Y
+  mixobj.remove_cov(i, res);
+  if(process_active)
+    res -= A * process.Xs[i];
 
-	Eigen::VectorXd  res = Y;
-      	//***************************************
-      	//***************************************
-      	//   building the residuals and sampling
-      	//***************************************
-      	//***************************************
+  //***********************************
+  // mixobj sampling
+  //***********************************
 
-      	// removing fixed effect from Y
-      	mixobj.remove_cov(i, res);
-      	if(process_active)
-    	  res -= A * process.Xs[i];
-  		//***********************************
-      	// mixobj sampling
-    	//***********************************
-
-       if(debug)
-       		Rcpp::Rcout << "estimate::sample mix \n";
-      	if(errObj.noise == "Normal")
-    			mixobj.sampleU( i, res, 2 * log(errObj.sigma));
-  			else
-  			  mixobj.sampleU2( i, res, errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma));
-		//Rcpp::Rcout << "V[" << i << "," << ii <<  "] = " << ((NIGMixedEffect*) mixobj)->V[i] << "\n";
-        mixobj.remove_inter(i, res);
-      	//***********************************
-    	// sampling processes
-  		//***********************************
-  		Eigen::SparseMatrix<double, 0, int> Q, K;
-  			if(process_active){
-  			Eigen::VectorXd iV(process.Vs[i].size());
-  			iV.array() = process.Vs[i].array().inverse();
-  			if(common_grid){
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
-  			} else {
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
-  			}
-    		Q = K.transpose();
-      		Q =  Q * iV.asDiagonal();
-    		Q =  Q * K;
-       
-		
-      	res += A * process.Xs[i];
-		if(debug)
-       	  Rcpp::Rcout << "estimate::sample X\n";
-      	//Sample X|Y, V, sigma
-		    if(sampleX){
-          		if(errObj.noise == "Normal")
-      				process.sample_X(i, z, res, Q, K, A, errObj.sigma, Solver[i]);
-        		else
-          		process.sample_Xv2( i, z, res, Q, K, A, errObj.sigma, Solver[i], errObj.Vs[i].cwiseInverse());
-		    	}
-        	res -= A * process.Xs[i];
-			if(res.cwiseAbs().sum() > 1e16){
-        		Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process.Vs[i].cwiseInverse().maxCoeff() << "\n";
-        		Rcpp::Rcout << "Max process->Xs[i]= " << process.Xs[i].maxCoeff() << "\n";
-        		Rcpp::Rcout << "Min process->Xs[i]= " << process.Xs[i].minCoeff() << "\n";
-
-        		Rcpp::Rcout << "res out of bound\n";
-        		throw("res outof bound\n");
-        	}
-
-        	if(debug)
-       	  	Rcpp::Rcout << "estimate::sample V\n";
-        	// sample V| X
-        	if(sampleV)
-         	 process.sample_V(i, rgig, K);
+  if(debug)
+    Rcpp::Rcout << "estimate::sample mix \n";
+  if(errObj.noise == "Normal")
+  	mixobj.sampleU( i, res, 2 * log(errObj.sigma));
+  else
+	  mixobj.sampleU2( i, res, errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma));
+	//Rcpp::Rcout << "V[" << i << "," << ii <<  "] = " << ((NIGMixedEffect*) mixobj)->V[i] << "\n";
+  mixobj.remove_inter(i, res);
+  //***********************************
+  // sampling processes
+  //***********************************
+	Eigen::SparseMatrix<double, 0, int> Q, K;
+  if(process_active){
+  	Eigen::VectorXd iV(process.Vs[i].size());
+  	iV.array() = process.Vs[i].array().inverse();
+  	if(common_grid){
+			K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
+  	} else {
+  		K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
 		}
-        if(debug)
-         	Rcpp::Rcout << "estimate::sample err V\n";
-        // random variance noise sampling
-     	  if(errObj.noise != "Normal"){
-      	  errObj.sampleV(i, res);
-     		}
-     		
-     		return(res);
+    Q = K.transpose();
+    Q =  Q * iV.asDiagonal();
+  	Q =  Q * K;
+
+    res += A * process.Xs[i];
+	  if(debug)
+     	Rcpp::Rcout << "estimate::sample X\n";
+
+    //Sample X|Y, V, sigma
+	  if(sampleX){
+      if(errObj.noise == "Normal")
+      	process.sample_X(i, z, res, Q, K, A, errObj.sigma, Solver[i]);
+      else
+        process.sample_Xv2( i, z, res, Q, K, A, errObj.sigma, Solver[i], errObj.Vs[i].cwiseInverse());
+		}
+    res -= A * process.Xs[i];
+		if(res.cwiseAbs().sum() > 1e16){
+      Rcpp::Rcout << "MAX(process->Vs[i]^-1) = " << process.Vs[i].cwiseInverse().maxCoeff() << "\n";
+      Rcpp::Rcout << "Max process->Xs[i]= " << process.Xs[i].maxCoeff() << "\n";
+    	Rcpp::Rcout << "Min process->Xs[i]= " << process.Xs[i].minCoeff() << "\n";
+
+    	Rcpp::Rcout << "res out of bound\n";
+    	throw("res outof bound\n");
+    }
+
+    if(debug)
+      Rcpp::Rcout << "estimate::sample V\n";
+    // sample V| X
+    if(sampleV)
+      process.sample_V(i, rgig, K);
+	}
+  if(debug)
+    Rcpp::Rcout << "estimate::sample err V\n";
+  // random variance noise sampling
+  if(errObj.noise != "Normal"){
+    errObj.sampleV(i, res);
+  }
+  return(res);
 }
 
 /*
@@ -133,80 +131,55 @@ Eigen::VectorXd GibbsSampling(int i,
 */
 
 void grad_caculations(int i,
-					  Eigen::VectorXd&  res,
-				   	  Eigen::SparseMatrix<double,0,int>& A,
-				      double w,    
-				      int common_grid,
-				      int process_active,
-				   MixedEffect       & mixobj,
-				   operatorMatrix    & Kobj,
-				   MeasurementError  & errObj,
-				   Process           & process){
-      	 
-      		// mixobj gradient
-      		mixobj.add_inter(i, res);
-      	  if(errObj.noise != "Normal")
-      		  mixobj.gradient2(i,
-      		  					res, 
-      		  					errObj.Vs[i].cwiseInverse(), 
-      		  					2 * log(errObj.sigma), 
-      		  					errObj.EiV,
-      		  					w);
-          else
-            mixobj.gradient(i, 
-            				 res,
-            				 2 * log(errObj.sigma),
-            				 w);
-			
-      		mixobj.remove_inter(i, res);
+					            Eigen::VectorXd&  res,
+				   	          Eigen::SparseMatrix<double,0,int>& A,
+				              double w,
+				              int common_grid,
+				              int process_active,
+				              MixedEffect       & mixobj,
+				              operatorMatrix    & Kobj,
+				              MeasurementError  & errObj,
+				              Process           & process)
+  {
 
-		  // measurent error  gradient
-      	  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
-  			  errObj.gradient(i, res, w);
+  // mixobj gradient
+  mixobj.add_inter(i, res);
+  if(errObj.noise != "Normal")
+    mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
+  else
+    mixobj.gradient(i,res,2 * log(errObj.sigma),w);
 
-		  if(process_active){
+  mixobj.remove_inter(i, res);
 
-		  	// operator gradient
-      		Kobj.gradient_add( process.Xs[i],
-      							process.Vs[i].cwiseInverse(),
-      							process.mean_X(i),
-      							i,
-      							w);
+	// measurent error  gradient
+  //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
+  errObj.gradient(i, res, w);
 
-      		// process gradient
-      		res += A * process.Xs[i];
+	if(process_active){
+	  // operator gradient
+    Kobj.gradient_add( process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
+    // process gradient
+    res += A * process.Xs[i];
 
-			Eigen::SparseMatrix<double, 0, int> K;
-  			Eigen::VectorXd iV(process.Vs[i].size());
-  			iV.array() = process.Vs[i].array().inverse();
-  			if(common_grid){
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
-  			} else {
-  			  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
-  			}
-          if(errObj.noise != "Normal"){
-                //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
-              process.gradient_v2(i,
-                                K,
-                                A,
-                                res,
-                                errObj.sigma,
-                                errObj.Vs[i].cwiseInverse(),
-                                errObj.EiV,
-                                Kobj.trace_variance(A, i),
-                                w);
-            }else{
-              process.gradient(i,
-                                K,
-                                A,
-                                res,
-                                errObj.sigma,
-                                Kobj.trace_variance(A, i),
-                                w);
-            }
-        }
-        
-
+		Eigen::SparseMatrix<double, 0, int> K;
+  	Eigen::VectorXd iV(process.Vs[i].size());
+  	iV.array() = process.Vs[i].array().inverse();
+  	if(common_grid){
+  		K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
+  	} else {
+  	  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+  	}
+    if(errObj.noise != "Normal"){
+      //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
+      process.gradient_v2(i,K,A,res,errObj.sigma,
+                          errObj.Vs[i].cwiseInverse(),
+                          errObj.EiV,
+                          Kobj.trace_variance(A, i),
+                          w);
+    }else{
+      process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
+    }
+  }
 }
 // [[Rcpp::export]]
 List estimateLong_cpp(Rcpp::List in_list)
@@ -223,15 +196,19 @@ List estimateLong_cpp(Rcpp::List in_list)
   	int nBurnin_learningrate = nBurnin;
   	if(in_list.containsElementNamed("nBurnin_learningrate"))
   		nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
+
+  	int nPar_burnin = 0;
+  	if(in_list.containsElementNamed("nPar_burnin"))
+  	  nPar_burnin    = Rcpp::as< int > (in_list["nPar_burnin"] );
   	int silent     = Rcpp::as< int    > (in_list["silent"]);
   	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   	double step0     = Rcpp::as< double    > (in_list["step0"]);
   	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
-  	
+
   	double pSubsample2 = 0;
-  	if(subsample_type == 3) 
+  	if(subsample_type == 3)
   		pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
-  	
+
   	unsigned long seed = 0;
   	if(in_list.containsElementNamed("seed"))
   		seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -437,8 +414,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   			  (note this not 1/p)
   	p[i]     -> the probability of selecting indvual [i]
   	m        -> expected number of samples we want for weighted sampling
-  	selected -> 1, 0 variable keeping track of which individuals being selected   
-  */	
+  	selected -> 1, 0 variable keeping track of which individuals being selected
+  */
   Eigen::VectorXd weight(nindv), p_inv(nindv);
   p_inv.setZero(nindv);
   weight.setZero(nindv);
@@ -447,14 +424,15 @@ List estimateLong_cpp(Rcpp::List in_list)
   p.setZero(nindv);
   Eigen::VectorXd p_N(nindv);
   p_N.setZero(nindv);
-  p_N.array() += 1. / nindv; 
+  p_N.array() += 1. / nindv;
   std::vector<int> selected(nindv, 0);
 
+  int par_burnin = 0;
 
  for (int i=0; i< nindv; i++) longInd.push_back(i);
 
-	
-   		
+
+
   int npars =   mixobj->npars + errObj->npars;
   if(process_active)
     npars += process->npars; //+ Kobj->npars;
@@ -478,6 +456,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       errObj->printIter();
       Rcpp::Rcout << "\n";
     }
+    if(iter < nPar_burnin)
+      par_burnin = 1;
+
 
 	int nSubsample_i = nSubsample;
     // subsampling
@@ -508,12 +489,12 @@ List estimateLong_cpp(Rcpp::List in_list)
     		weight.array() += nindv / ((double) nSubsample);
     		nSubsample_i = nSubsample;
     	}
-    	
-    	
+
+
     	p = p_N;
     		if(iter > 10){
     			nSubsample_i += poissonSampling_internal( m,
-					  								  p_inv, 
+					  								  p_inv,
 					  								  weight,
 					  								  longInd,
 					  								  selected
@@ -535,7 +516,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 				w_sum += weight[longInd[ilong]];
 			Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
 			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
-			
+
     	}
 
     double burnin_rate = 0;
@@ -547,7 +528,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     Eigen::MatrixXd grad_outer(nSubsample_i, npars); // outside person variation (subsampling)
     Eigen::MatrixXd grad_outer_unweighted(nSubsample_i, npars); // outside person variation (subsampling)
-    
+
     Eigen::MatrixXd Vgrad_inner(npars, npars); // outside person variation (subsampling)
     Eigen::VectorXd Ebias_inner(npars);
     Ebias_inner.array() *= 0;
@@ -560,8 +541,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       	A = As[i];
       Eigen::VectorXd  Y = Ys[i];
       if(estimate_fisher){
-      
-      
+
+
       	if(process_active){
       		if(common_grid == 1){
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
@@ -582,9 +563,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	 	  process->simulate(i, z, A, K, Y, Solver[i]);
 	 }
     }
-      
-      
-      
+
+
+
 
       int n_simulations = nSim;
       int burnin_done_i = nBurnin_base;
@@ -594,7 +575,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         burnin_done_i = nBurnin;
         burnin_done[i] = 1;
       }else {n_simulations += nBurnin_base;}
-		
+
 	  if(estimate_fisher)
 	  		burnin_done[i] = 0;
       int count_inner = 0;
@@ -603,7 +584,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       {
       	 for(int j =0; j < K.rows(); j++)
     			z[j] =  normal(random_engine);
-     	Eigen::VectorXd res =  GibbsSampling(i, 
+     	Eigen::VectorXd res =  GibbsSampling(i,
 				   					  Y,
 				   					  A,
 				  					  sampleX,
@@ -617,7 +598,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 				   					  debug,
 				   					  z,
 				   					  *rgig_pointer,
-				   					  Solver);		
+				   					  Solver);
       	//***************************************
       	//  computing gradients
       	//***************************************
@@ -627,15 +608,15 @@ List estimateLong_cpp(Rcpp::List in_list)
 			grad_caculations(i,
 							 res,
 				   	  		 A,
-				     		 weight[i],    
+				     		 weight[i],
 				      		 common_grid,
 				      		 process_active,
 				   			 *mixobj,
 				   			 *Kobj,
 				  			 *errObj,
 				   			 *process);
-        
-        
+
+
 
 		    // collects the gradient for computing estimate of variances
 		    grad_inner.block(0, count_inner,
@@ -652,7 +633,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			  grad_inner.col(count_inner).array() -= grad_last.array();
 			  Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
-			  
+
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }
@@ -661,12 +642,12 @@ List estimateLong_cpp(Rcpp::List in_list)
        // TODO::redo and move the above note i is the same always, and
 	   // we need both weighted unweighted
 	   // grad_inner.array() /= weight[i]; // dont use weight here(?)
-	   // do grad_outer_unweighted 
-			 
+	   // do grad_outer_unweighted
+
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean();
       grad_outer.row(ilong) = Mgrad_inner;
 	  grad_outer_unweighted.row(ilong) = Mgrad_inner;
-	  grad_outer_unweighted.row(ilong) /= weight[i]; 	
+	  grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
@@ -674,23 +655,23 @@ List estimateLong_cpp(Rcpp::List in_list)
       Vgrad_inner.array() += cov.array();
       if(process_active)
         Vmean[i] += process->Vs[i];
-        
+
   		count_vec[i] += 1;
 
     }
-    
+
     // update weights given the gradient
     // change here to unweighted gradient!
     if(subsample_type == 3){
     	Eigen::VectorXd W = gradientWeight(grad_outer_unweighted);
-    	
+
 		for( int id = 0; id < nSubsample_i; id++)
 			p_inv[longInd[id]] = W[id];
 	}
-		
+
  	  if(silent == 0){
-		subSampleDiag(Vgrad_inner, 
-					  grad_outer, 
+		subSampleDiag(Vgrad_inner,
+					  grad_outer,
 					  Ebias_inner,
 				      nSim * nSubsample_i,
 					  nSubsample_i / nindv);
@@ -717,11 +698,11 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(debug)
     	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
 
-    mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-    errObj->step_theta(stepsize,                   0, polyak_rate_temp);
+    mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp,par_burnin);
+    errObj->step_theta(stepsize,                   0, polyak_rate_temp,par_burnin);
     if(process_active){
-    	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-    	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
+    	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp,par_burnin);
+    	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp,par_burnin);
     }
 
 
@@ -737,7 +718,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   	Rcpp::Rcout << "Done, storing results\n";
   // storing the results
   	Fisher_information.array()  /= nIter;
-  	
+
   if(estimate_fisher){
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
     mixobj->set_covariance(cov_est.block(0, 0, mixobj->npars, mixobj->npars));
@@ -750,8 +731,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   		//								  Kobj->npars,
   		//								  Kobj->npars));
   	}
-  
-  }  
+
+  }
   Rcpp::List out_list;
   out_list["FisherMatrix"]     = Fisher_information;
 
@@ -774,8 +755,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   }
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
-  
-  
+
+
 
 
 
@@ -788,7 +769,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 // [[Rcpp::export]]
 List estimateFisher(Rcpp::List in_list)
-{      
+{
 	Rcpp::Rcout << "estimateFisher is depricated \n";
 	throw("function is depericated");
   Rcpp::List out_list;
