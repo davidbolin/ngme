@@ -3,7 +3,7 @@ library(LDMod)
 
 test.pred = TRUE
 n.threads <- 1
-nIter <- 10
+nIter <- 1000
 n.pers <- 1000
 nSim  <- 2
 nSim.pred <- 200
@@ -46,16 +46,31 @@ sim_res <- simulateLongPrior( Y                 = Y,
                               mixedEffect_list  = mixedEffect_list,
                               measurment_list   = mError_list)
 
-res.est <- estimate.wrapper(Y = sim_res$Y,
-                            locs = locs,
-                            B_random= B_random,
-                            B_fixed = B_fixed,
-                            use.process = FALSE,
-                            measurement.distribution = "NIG",
-                            random.effect.distribution = "NIG",
-                            estimation.options = list(nIter.gauss = 10,nIter = nIter,
-                                                      pSubsample = 0.1))
+if(1){
+  res.est <- estimate.wrapper(Y = sim_res$Y,
+                              locs = locs,
+                              B_random= B_random,
+                              B_fixed = B_fixed,
+                              use.process = FALSE,
+                              measurement.distribution = "NIG",
+                              random.effect.distribution = "NIG",
+                              estimation.options = list(nIter.gauss = 10,nIter = nIter,
+                                                        pSubsample = pSubsample,
+                                                        nPar_burnin = 100))
 
+
+} else {
+  if(1){
+    mError_list$noise = "Normal"
+    mixedEffect_list$noise = "Normal"
+  }
+
+
+  res.est <- estimateME(Y = sim_res$Y,
+                         mixedEffect_list = mixedEffect_list,
+                         measurment_list = mError_list,
+                        nIter = nIter)
+}
 
 
 

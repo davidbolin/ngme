@@ -181,6 +181,7 @@ void grad_caculations(int i,
     }
   }
 }
+
 // [[Rcpp::export]]
 List estimateLong_cpp(Rcpp::List in_list)
 {
@@ -193,41 +194,43 @@ List estimateLong_cpp(Rcpp::List in_list)
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int nBurnin_base    = Rcpp::as< int > (in_list["nBurnin_base"] );
-  	int nBurnin_learningrate = nBurnin;
-  	if(in_list.containsElementNamed("nBurnin_learningrate"))
-  		nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
+  int nBurnin_learningrate = nBurnin;
+  if(in_list.containsElementNamed("nBurnin_learningrate"))
+  	nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
 
-  	int nPar_burnin = 0;
-  	if(in_list.containsElementNamed("nPar_burnin"))
-  	  nPar_burnin    = Rcpp::as< int > (in_list["nPar_burnin"] );
-  	int silent     = Rcpp::as< int    > (in_list["silent"]);
-  	double alpha     = Rcpp::as< double    > (in_list["alpha"]);
-  	double step0     = Rcpp::as< double    > (in_list["step0"]);
-  	int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  int nPar_burnin = 0;
+  if(in_list.containsElementNamed("nPar_burnin"))
+    nPar_burnin    = Rcpp::as< int > (in_list["nPar_burnin"] );
 
-  	double pSubsample2 = 0;
-  	if(subsample_type == 3)
-  		pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+  int silent     = Rcpp::as< int    > (in_list["silent"]);
+  double alpha     = Rcpp::as< double    > (in_list["alpha"]);
+  double step0     = Rcpp::as< double    > (in_list["step0"]);
+  int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
 
-  	unsigned long seed = 0;
-  	if(in_list.containsElementNamed("seed"))
-  		seed = Rcpp::as< unsigned long    > (in_list["seed"]);
-  	double learning_rate = 0;
-  	int process_active = 0;
-  	if(in_list.containsElementNamed("processes_list"))
-  		process_active = 1;
-  	if(in_list.containsElementNamed("learning_rate"))
-  		learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  double pSubsample2 = 0;
+  if(subsample_type == 3)
+  	pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
 
-  	double polyak_rate = -1;
-  	if(in_list.containsElementNamed("polyak_rate"))
-  		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
+  unsigned long seed = 0;
+  if(in_list.containsElementNamed("seed"))
+  	seed = Rcpp::as< unsigned long    > (in_list["seed"]);
+
+  double learning_rate = 0;
+  int process_active = 0;
+  if(in_list.containsElementNamed("processes_list"))
+  	process_active = 1;
+  if(in_list.containsElementNamed("learning_rate"))
+  	learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+
+  double polyak_rate = -1;
+  if(in_list.containsElementNamed("polyak_rate"))
+  	polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
 	int estimate_fisher = 0;
 	if(in_list.containsElementNamed("estimate_fisher"))
-  		estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
+  	estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
 
-  	int debug = 0;
+  int debug = 0;
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -295,27 +298,26 @@ List estimateLong_cpp(Rcpp::List in_list)
 		Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
 		if(Kobj->nop>1)
-	  		common_grid = 0;
+	  	common_grid = 0;
 
 		z.setZero(Kobj->d[0]);
 		count = 0;
 		for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    		List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-
-    		if(common_grid == 1){
-      			Solver[count].init(Kobj->d[0], 0, 0, 0);
-      			K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-    		} else {
-      			Solver[count].init(Kobj->d[count], 0, 0, 0);
-      			K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-    		}
-    		Q = K.transpose();
-    		Q = Q * K;
-  			Q = Q + As[count].transpose()*As[count];
-    		Solver[count].analyze(Q);
-  			Solver[count].compute(Q);
-    		count++;
-  		}
+    	List obs_tmp = Rcpp::as<Rcpp::List>( *it);
+    	if(common_grid == 1){
+    		Solver[count].init(Kobj->d[0], 0, 0, 0);
+      	K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+    	} else {
+    		Solver[count].init(Kobj->d[count], 0, 0, 0);
+    		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+    	}
+    	Q = K.transpose();
+  		Q = Q * K;
+			Q = Q + As[count].transpose()*As[count];
+    	Solver[count].analyze(Q);
+  		Solver[count].compute(Q);
+  		count++;
+  	}
   }
 	//**********************************
 	// mixed effect setup
@@ -332,7 +334,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 		mixobj   = new NIGMixedEffect;
 	mixobj->initFromList(mixedEffect_list);
 	mixobj->setupStoreTracj(nIter);
-
 
   //**********************************
 	// measurement setup
@@ -362,21 +363,21 @@ List estimateLong_cpp(Rcpp::List in_list)
 		Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
 		std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
+  	if (type_processes != "Normal"){
+  		process  = new GHProcess;
+  	}else{
+  	  process  = new GaussianProcess;
+  	 }
 
-
-  		if (type_processes != "Normal"){
-  			process  = new GHProcess;
-  		}else{ process  = new GaussianProcess;}
-
-  		process->initFromList(processes_list, Kobj->h);
-  		process->setupStoreTracj(nIter);
+  	process->initFromList(processes_list, Kobj->h);
+  	process->setupStoreTracj(nIter);
   	/*
   		Simulation objects
   	*/
-  	}
-  	std::mt19937 random_engine;
+  }
+  std::mt19937 random_engine;
 	std::normal_distribution<double> normal;
-    std::default_random_engine subsample_generator;
+  std::default_random_engine subsample_generator;
   std::default_random_engine gammagenerator;
   gig rgig;
   gig *rgig_pointer = &rgig;
@@ -392,20 +393,19 @@ List estimateLong_cpp(Rcpp::List in_list)
   gammagenerator.seed(random_engine());
   subsample_generator.seed(random_engine());
 
-
   std::vector<int> longInd;
   std::vector<Eigen::VectorXd> Vmean;
   Eigen::VectorXd count_vec(nindv);
   Vmean.resize(nindv);
   count_vec.setZero(nindv);
   if(process_active){
-  for(int i = 0; i < nindv; i++ ){
-    	if(common_grid){
-      	Vmean[i].setZero(Kobj->h[0].size());
-    	} else {
-      	Vmean[i].setZero(Kobj->h[i].size());
-    	}
-  	}
+    for(int i = 0; i < nindv; i++ ){
+      if(common_grid){
+        Vmean[i].setZero(Kobj->h[0].size());
+      } else {
+        Vmean[i].setZero(Kobj->h[i].size());
+      }
+    }
   }
 
   // For sampling we have the following:

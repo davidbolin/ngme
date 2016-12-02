@@ -96,11 +96,9 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_fixed = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed"]);
     else
       beta_fixed.setZero(Bf[0].cols());
-     npars += Bf[0].cols();
-     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
-
-	dbeta_f_old.setZero(Bf[0].cols());
-
+    npars += Bf[0].cols();
+    H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
+	  dbeta_f_old.setZero(Bf[0].cols());
   }else{ Bf.resize(0);}
   count = 0;
   if(init_list.containsElementNamed("B_random"))
@@ -300,16 +298,16 @@ void NormalMixedEffect::gradient2(const int i,
     if(Br.size() > 0){
       res_ -= Br[i] * U.col(i);
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      UUt += weight_total * vec( UUT);
-      grad_beta_r  += weight_total * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res_));
-      grad_beta_r2 += weight_total * (invSigma * U.col(i));
+      UUt += weight * vec( UUT);
+      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res_));
+      grad_beta_r2 += weight * (invSigma * U.col(i));
       //H_beta_random +=   exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal()* Br[i]);
-      H_beta_random +=  weight_total * EiV *exp( - log_sigma2_noise) * (Br[i].transpose()* Br[i]);
+      H_beta_random +=  weight * EiV *exp( - log_sigma2_noise) * (Br[i].transpose()* Br[i]);
     }
     if(Bf.size() > 0){
-      grad_beta_f   +=  weight_total * exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
+      grad_beta_f   +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
       //H_beta_fixed  +=  exp( - log_sigma2_noise) * (Bf[i].transpose() *iV.asDiagonal()* Bf[i]);
-      H_beta_fixed  +=  weight_total * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+      H_beta_fixed  +=  weight * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
     }
     weight_total += weight;
 }
@@ -323,15 +321,15 @@ void NormalMixedEffect::gradient(const int i,
     if(Br.size() > 0){
       res_ -= Br[i] * U.col(i);
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      UUt += weight_total * vec( UUT);
-      grad_beta_r   += weight_total * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      grad_beta_r2  += weight_total * (invSigma * U.col(i));
-      H_beta_random += weight_total * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+      UUt += weight * vec( UUT);
+      grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      grad_beta_r2  += weight * (invSigma * U.col(i));
+      H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
     }
     if(Bf.size() > 0){
-      grad_beta_f   += weight_total * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-      H_beta_fixed  += weight_total * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
     }
     weight_total += weight;
 }
@@ -347,7 +345,10 @@ void NormalMixedEffect::step_theta(const double stepsize,
   if(Bf.size() > 0)
     step_beta_fixed(stepsize, learning_rate,burnin);
 
-if(store_param){
+  weight_total = 0;
+  clear_gradient();
+
+  if(store_param){
     if(Bf.size() > 0){
       if(vec_counter == 0 || polyak_rate == -1)
       	betaf_vec.row(vec_counter)  = beta_fixed;
@@ -374,26 +375,24 @@ if(store_param){
     vec_counter++;
   }
 
-  clear_gradient();
   counter = 0;
 }
 void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_f_old.array() *= learning_rate;
 	dbeta_f_old += H_beta_fixed.ldlt().solve(grad_beta_f);
-    beta_fixed += stepsize *  dbeta_f_old;
-    H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
+  beta_fixed += stepsize *  dbeta_f_old;
+  H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 
 }
 void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate,const int burnin)
 {
-
 	dbeta_r_old.array() *= learning_rate;
 	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
 	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ weight_total;
-    beta_random += stepsize * dbeta_r_old;
-    grad_beta_r2.setZero(Br[0].cols());
-    H_beta_random.setZero(Br[0].cols(), Br[0].cols());
+  beta_random += stepsize * dbeta_r_old;
+  grad_beta_r2.setZero(Br[0].cols());
+  H_beta_random.setZero(Br[0].cols(), Br[0].cols());
 }
 
 void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_rate,const int burnin)

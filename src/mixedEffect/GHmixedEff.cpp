@@ -458,7 +458,7 @@ void NIGMixedEffect::step_theta(const double stepsize,
   counter = 0;
   weight_total = 0;
 
-    clear_gradient();
+  clear_gradient();
 
   if(store_param){
     if(Bf.size() > 0){
