@@ -6,6 +6,8 @@ NIGMeasurementError::NIGMeasurementError() : NormalVarianceMixtureBaseError(){
   dnu       = 0;
   ddnu      = 0;
 	dnu_old = 0;
+	term1 = 0;
+	term2 = 0;
   noise = "NIG";
 
 }

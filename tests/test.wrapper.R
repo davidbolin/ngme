@@ -9,6 +9,7 @@ n.obs  <- 30 + 0*(1:n.pers)
 n <- 100
 nBurnin = 50
 pSubsample = 0.1
+nPar_burnin = 100
 operator.type = "fd2"
 Y <- list()
 locs <- list()
@@ -74,7 +75,8 @@ res.est <- estimate.wrapper(Y = sim_res$Y,
                             random.effect.distribution = "NIG",
                             process.distribution = "NIG",
                             estimation.options = list(nIter.gauss = 10,nIter = nIter,
-                                                      pSubsample = 0.1))
+                                                      pSubsample = 0.1,
+                                                      nPar_burnin = nPar_burnin))
 
 
 

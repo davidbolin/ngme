@@ -240,7 +240,8 @@ class NIGMixedEffect  : public MixedEffect{
     void step_Sigma(const double, const double,const int);
     void step_mu(const double , const double,const int);
     void step_nu(const double, const double,const int);
-    double term1,term2;
+    double term1,term2,term1_mu;
+    Eigen::VectorXd term2_mu;
   public:
     Eigen::MatrixXi D;
     Eigen::MatrixXd Dd;

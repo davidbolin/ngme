@@ -427,7 +427,6 @@ void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_r
     UUt.setZero(Sigma.cols() * Sigma.rows());
     invSigma  = Sigma.inverse();
     Sigma_vech = vech(Sigma);
-    weight_total = 0;
 }
 
 

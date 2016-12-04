@@ -8,10 +8,13 @@ n.pers <- 1000
 nSim  <- 2
 nSim.pred <- 200
 nBurnin.pred <- 100
-n.obs  <- 30 + 0*(1:n.pers)
+n.obs  <- 40 + 0*(1:n.pers)
 n <- 100
+error.dist = "NIG"
+mixed.dist = "NIG"
 nBurnin = 50
 pSubsample = 0.1
+nPar_burnin = 100
 Y <- list()
 locs <- list()
 B_random <- list()
@@ -29,16 +32,16 @@ for(i in 1:n.pers)
 
   B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
 }
-mError_list <- list(Vs = Vin, noise = "NIG", sigma = 0.1, nu = 1)
+mError_list <- list(Vs = Vin, noise = error.dist, sigma = 0.1, nu = 1)
 mixedEffect_list  <- list(B_random = B_random,
                           B_fixed  = B_fixed,
                           beta_random = as.matrix(c(0.1,0.2)),
                           beta_fixed  = as.matrix(c(0.1)),
                           Sigma = diag(c(0.1, 0.2)),
-                          noise = "NIG",
+                          noise = mixed.dist,
                           Sigma_epsilon=1,
                           nu = 1,
-                          mu = matrix(c(1,1),2,1))
+                          mu = matrix(c(2,2),2,1))
 
 
 sim_res <- simulateLongPrior( Y                 = Y,
@@ -46,31 +49,17 @@ sim_res <- simulateLongPrior( Y                 = Y,
                               mixedEffect_list  = mixedEffect_list,
                               measurment_list   = mError_list)
 
-if(1){
-  res.est <- estimate.wrapper(Y = sim_res$Y,
+
+res.est <- estimate.wrapper(Y = sim_res$Y,
                               locs = locs,
                               B_random= B_random,
                               B_fixed = B_fixed,
                               use.process = FALSE,
-                              measurement.distribution = "NIG",
-                              random.effect.distribution = "NIG",
+                              measurement.distribution = error.dist,
+                              random.effect.distribution = mixed.dist,
                               estimation.options = list(nIter.gauss = 10,nIter = nIter,
                                                         pSubsample = pSubsample,
-                                                        nPar_burnin = 100))
-
-
-} else {
-  if(1){
-    mError_list$noise = "Normal"
-    mixedEffect_list$noise = "Normal"
-  }
-
-
-  res.est <- estimateME(Y = sim_res$Y,
-                         mixedEffect_list = mixedEffect_list,
-                         measurment_list = mError_list,
-                        nIter = nIter)
-}
+                                                        nPar_burnin = nPar_burnin))
 
 
 
@@ -78,45 +67,50 @@ par(mfrow = c(2,3))
 matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1)
 matplot(res.est$mixedEffect_list$betar_vec,type="l",main="random effects",col=1)
 matplot(res.est$mixedEffect_list$Sigma_vec,type="l",main="RE Sigma",col=1)
-plot(res.est$measurementError_list$nu_vec,type="l",main="error nu")
-plot(res.est$mixedEffect_list$nu_vec,type="l",main="mixed nu")
-matplot(res.est$mixedEffect_list$mu_vec,type="l",main="RE mu",col=1)
+if(error.dist == "NIG"){
+  plot(res.est$measurementError_list$nu_vec,type="l",main="error nu")
+}
+if(mixed.dist == "NIG"){
+  plot(res.est$mixedEffect_list$nu_vec,type="l",main="mixed nu")
+  matplot(res.est$mixedEffect_list$mu_vec,type="l",main="RE mu",col=1)
+}
 
 truth =  c(mixedEffect_list$beta_fixed,
            mixedEffect_list$beta_random,
            mixedEffect_list$Sigma[c(1,2,4)],
-           mError_list$sigma,
-           mError_list$nu,
-           mixedEffect_list$nu,
-           mixedEffect_list$mu)
+           mError_list$sigma)
 
 start.values  = c(res.est$mixedEffect_list$betaf_vec[1],
                   res.est$mixedEffect_list$betar_vec[1,],
                   res.est$mixedEffect_list$Sigma_vec[1,c(1,2,4)],
-                  res.est$measurementError_list$sigma_vec[1],
-                  res.est$measurementError_list$nu_vec[1],
-                  res.est$mixedEffect_list$nu_vec[1],
-                  res.est$mixedEffect_list$mu_vec[1,])
+                  res.est$measurementError_list$sigma_vec[1])
 
 estimates =  c(res.est$mixedEffect_list$betaf_vec[nIter],
                res.est$mixedEffect_list$betar_vec[nIter,],
                res.est$mixedEffect_list$Sigma_vec[nIter,c(1,2,4)],
-               res.est$measurementError_list$sigma_vec[nIter],
-               res.est$measurementError_list$nu_vec[nIter],
-               res.est$mixedEffect_list$nu_vec[nIter],
-               res.est$mixedEffect_list$mu_vec[nIter,])
+               res.est$measurementError_list$sigma_vec[nIter])
 
+row.names = c("beta.fixed",
+              "beta.random1","beta.random2",
+              "Sigma1", "Sigma2","Sigma3",
+              "sigma")
+
+if(error.dist == "NIG"){
+  truth = c(truth,mError_list$nu)
+  start.values = c(start.values,res.est$measurementError_list$nu_vec[1])
+  estimates = c(estimates, res.est$measurementError_list$nu_vec[nIter])
+  row.names = c(row.names,"nu.error")
+}
+if(mixed.dist == "NIG"){
+  truth = c(truth,mixedEffect_list$nu, mixedEffect_list$mu)
+  start.values= c(start.values, res.est$mixedEffect_list$nu_vec[1], res.est$mixedEffect_list$mu_vec[1,])
+  estimates = c(estimates, res.est$mixedEffect_list$nu_vec[nIter], res.est$mixedEffect_list$mu_vec[nIter,])
+  row.names = c(row.names,"nu.mixed", "mu.mixed1","mu.mixed2")
+}
 result = data.frame(start = start.values,
                     estimate = estimates,
                     true = truth,
-                    row.names = c("beta.fixed",
-                                  "beta.random1","beta.random2",
-                                  "Sigma1", "Sigma2","Sigma3",
-                                  "sigma",
-                                  "nu.error",
-                                  "nu.mixed",
-                                  "mu.mixed1",
-                                  "mu.mixed2"))
+                    row.names = row.names)
 print(result)
 
 if(test.pred){

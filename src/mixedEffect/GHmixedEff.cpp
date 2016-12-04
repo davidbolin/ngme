@@ -147,7 +147,8 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       mu.setZero(Br[0].cols(), 1);
 
-
+    term1 = 0.;
+    term2 = 0.;
     gradMu.setZero(Br[0].cols(), 1);
     gradMu_old.setZero(Br[0].cols(), 1);
     npars += Br[0].cols();
@@ -417,6 +418,8 @@ void NIGMixedEffect::gradient2(const int i,
 
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
+      //term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
+      //term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
 
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
@@ -561,11 +564,17 @@ void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rat
 void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate,const int burnin)
 {
 	gradMu_old.array() *= learning_rate;
-    gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
-    // H_beta_random = H_mu_random
-    gradMu_old += 0.5 * (Sigma * gradMu_2)/ (weight_total * (2*EiV - EV));
+  gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
+  // H_beta_random = H_mu_random
+  gradMu_old += 0.5 * (Sigma * gradMu_2)/ (weight_total * (2*EiV - EV));
+
+  //if(burnin == 1){
+  //  mu = (1/term1_mu) * (Sigma*term2_mu);
+  //} else {
     mu += stepsize * gradMu_old;
-    gradMu_2.setZero(Br[0].cols(), 1);
+  //}
+
+  gradMu_2.setZero(Br[0].cols(), 1);
 }
 
 void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,const int burnin)
@@ -618,7 +627,7 @@ void NIGMixedEffect::step_beta_random(const double stepsize, const double learni
 {
 	dbeta_r_old.array() *= learning_rate;
 	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
-	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (counter * EiV);
+	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (weight_total * counter * EiV);
 	beta_random += stepsize * dbeta_r_old;
 	grad_beta_r2.setZero(Br[0].cols());
   H_beta_random.setZero(Br[0].cols(), Br[0].cols());
@@ -630,7 +639,8 @@ void NIGMixedEffect::step_beta_random(const double stepsize, const double learni
 
 void NIGMixedEffect::clear_gradient()
 {
-
+  term1 = 0.;
+  term2 = 0.;
 	if(Bf.size() > 0)
 		grad_beta_f.setZero(Bf[0].cols());
 
