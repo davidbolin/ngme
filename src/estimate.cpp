@@ -246,6 +246,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   	if(in_list.containsElementNamed("polyak_rate"))
   		polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
+	
 	int estimate_fisher = 0;
 	if(in_list.containsElementNamed("estimate_fisher"))
   		estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
@@ -349,7 +350,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
 	std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
 	MixedEffect *mixobj = NULL;
-	if(type_mixedEffect == "Normal")
+	if(type_mixedEffect == "normal")
     mixobj = new NormalMixedEffect;
 	else if(type_mixedEffect == "NIG")
 		mixobj   = new NIGMixedEffect;
@@ -460,7 +461,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     npars += process->npars; //+ Kobj->npars;
 
   Eigen::MatrixXd Fisher_information(npars, npars); // If computing the fisher information
-
+	Fisher_information.setZero(npars, npars);
   for(int iter=0; iter < nIter; iter++){
     /*
       printing output
@@ -569,15 +570,15 @@ List estimateLong_cpp(Rcpp::List in_list)
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       		}
       	}
-
-      Eigen::VectorXd  Y = errObj->simulate( Ys[i]);
+      Y = errObj->simulate( Ys[i]);
 	  mixobj->simulate(Y, i);
 
-   	 z.setZero(Kobj->d[i]);
-	 for(int j =0; j < K.rows(); j++)
-    			z[j] =  normal(random_engine);
+   	
 
 	if(process_active){
+	 z.setZero(Kobj->d[i]);
+	 for(int j =0; j < K.rows(); j++)
+    			z[j] =  normal(random_engine);
      	process->simulate_V(i, rgig);
 	 	  process->simulate(i, z, A, K, Y, Solver[i]);
 	 }
@@ -590,15 +591,16 @@ List estimateLong_cpp(Rcpp::List in_list)
       int burnin_done_i = nBurnin_base;
       if(burnin_done[i] == 0){
         burnin_rate +=1;
-        n_simulations += nBurnin;
         burnin_done_i = nBurnin;
+        n_simulations += burnin_done_i;
         burnin_done[i] = 1;
-      }else {n_simulations += nBurnin_base;}
+      }else {burnin_done_i = 0;}
 		
 	  if(estimate_fisher)
 	  		burnin_done[i] = 0;
       int count_inner = 0;
       Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
+      
       for(int ii = 0; ii < n_simulations; ii ++)
       {
       	 for(int j =0; j < K.rows(); j++)
@@ -651,8 +653,20 @@ List estimateLong_cpp(Rcpp::List in_list)
 			  // adjusting so we get last gradient not cumsum
 			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			  grad_inner.col(count_inner).array() -= grad_last.array();
+			  if(iter == 0)
+			  {
+			 	Rcpp::Rcout << "Fisher_information= " << Fisher_information << "\n";
+			  	Rcpp::Rcout << "+ = \n" << grad_inner.col(count_inner)* grad_inner.col(count_inner).transpose()
+			  	/(nSim * weight[i]) <<"\n"; 
+			  }
 			  Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
+			 // Fisher_information.block(0, 0,
+              //            2, 2) +=  mixobj->Bf[i].transpose()  * mixobj->Bf[i]  /(nSim * weight[i]);
+			   if(iter == 0)
+			  {
+			  Rcpp::Rcout << "Fisher_information= " << Fisher_information << "\n";
 			  
+			  }
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }
@@ -703,31 +717,37 @@ List estimateLong_cpp(Rcpp::List in_list)
     //**********************************
   	//  gradient step
 	//***********************************
+	if(estimate_fisher == 0){
+    	if(debug)
+      		Rcpp::Rcout << "estimate::theta  step\n";
+    	
+    	double stepsize = step0 / pow(iter + 1, alpha);
+    	double polyak_rate_temp = polyak_rate;
+    	double learning_rate_temp  =learning_rate;
+    	if(polyak_rate == 0)
+    		polyak_rate_temp = 1./ (iter + 1);
+    	if(iter < nBurnin_learningrate)
+    		learning_rate_temp = 0;
+    	if(debug)
+    		Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
 
-    if(debug)
-      Rcpp::Rcout << "estimate::theta  step\n";
-    double stepsize = step0 / pow(iter + 1, alpha);
-
-    double polyak_rate_temp = polyak_rate;
-    double learning_rate_temp  =learning_rate;
-    if(polyak_rate == 0)
-    	polyak_rate_temp = 1./ (iter + 1);
-    if(iter < nBurnin_learningrate)
-    	learning_rate_temp = 0;
-    if(debug)
-    	Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-
-    mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-    errObj->step_theta(stepsize,                   0, polyak_rate_temp);
-    if(process_active){
-    	Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-    	process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
-    }
-
-
-    if(debug)
+    	mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    	errObj->step_theta(stepsize,                   0, polyak_rate_temp);
+    	if(process_active){
+    		Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
+    		process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
+    	}
+    	if(debug)
       Rcpp::Rcout << "estimate::theta step done\n";
-
+	}else{
+	 	mixobj->clear_gradient();
+		errObj->clear_gradient();
+		if(process_active){
+			process -> clear_gradient();
+    		Kobj ->  clear_gradient();
+    	}
+	
+	}
   }
 
   for(int i = 0; i < nindv; i++ )
@@ -736,7 +756,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   if(silent == 0)
   	Rcpp::Rcout << "Done, storing results\n";
   // storing the results
-  	Fisher_information.array()  /= nIter;
+  Fisher_information.array()  /= nIter;
   	
   if(estimate_fisher){
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();

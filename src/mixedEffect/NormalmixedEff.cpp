@@ -82,6 +82,7 @@ Rcpp::List NormalMixedEffect::toList()
 
 void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
 {
+
   int count =0;
   if(init_list.containsElementNamed("B_fixed"))
   {
@@ -129,7 +130,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     D = duplicatematrix(Br[0].cols());
     Dd = D.cast <double> ();
   }
-
+	
   if(Br.size() > 0){
     if(init_list.containsElementNamed("Sigma"))
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
@@ -151,7 +152,6 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
   Sigma_epsilon = 0;
   if(init_list.containsElementNamed("Sigma_epsilon"))
   	Sigma_epsilon  =1;
-
 }
 
 
