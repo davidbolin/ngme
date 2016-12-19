@@ -418,7 +418,8 @@ estimateME <- function(Y,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting gradient estimation
                          silent  = FALSE, # print iteration info
-                         seed = NULL
+                         seed = NULL,
+                         estimate_fisher =FALSE
 )
 {
   obs_list <- list()
@@ -443,7 +444,8 @@ estimateME <- function(Y,
                  nPar_burnin      = nPar_burnin,
                  nBurnin_base = nBurnin_base,
                  learning_rate    = learning_rate,
-                 polyak_rate      = polyak_rate
+                 polyak_rate      = polyak_rate,
+                 estimate_fisher  = estimate_fisher
   )
 
   if(is.null(nBurnin_learningrate) == FALSE)
