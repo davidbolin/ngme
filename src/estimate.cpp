@@ -195,6 +195,29 @@ List estimateLong_cpp(Rcpp::List in_list)
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int nBurnin_base    = Rcpp::as< int > (in_list["nBurnin_base"] );
   int nBurnin_learningrate = nBurnin;
+
+  if(in_list.containsElementNamed("nBurnin_learningrate"))
+    nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
+  int silent     = Rcpp::as< int    > (in_list["silent"]);
+  double alpha     = Rcpp::as< double    > (in_list["alpha"]);
+  double step0     = Rcpp::as< double    > (in_list["step0"]);
+  int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  
+  double pSubsample2 = 0;
+  if(subsample_type == 3) 
+    pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+  
+  unsigned long seed = 0;
+  if(in_list.containsElementNamed("seed"))
+    seed = Rcpp::as< unsigned long    > (in_list["seed"]);
+  double learning_rate = 0;
+  int process_active = 0;
+  if(in_list.containsElementNamed("processes_list"))
+    process_active = 1;
+  if(in_list.containsElementNamed("learning_rate"))
+    learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
+  
+  
   if(in_list.containsElementNamed("nBurnin_learningrate"))
   	nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
 
@@ -206,7 +229,11 @@ List estimateLong_cpp(Rcpp::List in_list)
 	int estimate_fisher = 0;
 	if(in_list.containsElementNamed("estimate_fisher"))
   	estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
-
+	
+	double polyak_rate = -1;
+	if(in_list.containsElementNamed("polyak_rate"))
+	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
+	
   int debug = 0;
 	//**********************************
 	//     setting up the main data
@@ -412,7 +439,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   int npars =   mixobj->npars + errObj->npars;
   if(process_active)
-    npars += process->npars; //+ Kobj->npars;
+    npars += process->npars + Kobj->npars;
 
   Eigen::MatrixXd Fisher_information(npars, npars); // If computing the fisher information
 	Fisher_information.setZero(npars, npars);
@@ -491,8 +518,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 			double w_sum = 0;
 			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
 				w_sum += weight[longInd[ilong]];
-			Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
-			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
 
     	}
 
@@ -604,26 +629,15 @@ List estimateLong_cpp(Rcpp::List in_list)
 		    if(process_active){
 		      grad_inner.block(mixobj->npars + errObj->npars,count_inner,
                          process->npars, 1).array() = process->get_gradient().array();
-		      //grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
-              //              Kobj->npars, 1) = Kobj -> get_gradient();
+		      grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
+                            Kobj->npars, 1) = Kobj -> get_gradient();
 			  }
 			  // adjusting so we get last gradient not cumsum
 			  Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			  grad_inner.col(count_inner).array() -= grad_last.array();
-			  if(iter == 0)
-			  {
-			 	Rcpp::Rcout << "Fisher_information= " << Fisher_information << "\n";
-			  	Rcpp::Rcout << "+ = \n" << grad_inner.col(count_inner)* grad_inner.col(count_inner).transpose()
-			  	/(nSim * weight[i]) <<"\n"; 
-			  }
+
 			  Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
-			 // Fisher_information.block(0, 0,
-              //            2, 2) +=  mixobj->Bf[i].transpose()  * mixobj->Bf[i]  /(nSim * weight[i]);
-			   if(iter == 0)
-			  {
-			  Rcpp::Rcout << "Fisher_information= " << Fisher_information << "\n";
-			  
-			  }
+			 
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }

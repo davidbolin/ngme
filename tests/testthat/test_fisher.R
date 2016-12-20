@@ -14,7 +14,7 @@ seed     <- 5
 silent   <- 1
 plotflag <- 1
 
-nIter <- 10
+nIter <- 100
 pSubsample <- 1
 nSim <- 2
 n.pers <- 5 #number of patients

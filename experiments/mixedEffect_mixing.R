@@ -14,7 +14,7 @@ library(mvtnorm)
 nu.mixed <- 0.0910863
 mu.mixed <- c(-0.1 , 0.1 )
 beta_random <- c(4.739068 , -0.03971646 )
-Sigma <-  10^-3*matrix(c(0.2,0.15,0.15,0.2), ncol = 2, nrow = 2)
+Sigma <-  10^-4*matrix(c(0.2,0.15,0.15,0.2), ncol = 2, nrow = 2)
 sigma_eps =  0.01442434
 source("Brandom.data")
 source("mixedEffect_MALA.R")

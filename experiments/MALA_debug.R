@@ -8,8 +8,8 @@ library(RColorBrewer)
 graphics.off()
 seed <- 2
 set.seed(seed)
-sim <- 20000
-burnin = 2000
+sim <- 2000
+burnin = 200
 library(rGIG)
 library(mvtnorm)
 nu.mixed <- 100.9910863
