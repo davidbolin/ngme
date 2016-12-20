@@ -49,12 +49,12 @@ acf(V1[burnin:sim],200)
 plot(V1)
 plot(U1[,1])
 plot(loglik)
-U1[1,] <- U1[sim,] 
+U1[1,] <- U1[sim,]
 U2 <- U1
 loglik[1] <-  loglik[sim]
 for(i in 2:sim)
 {
-  
+
   U2[i,] =  MALA(U2[i-1, ], Y - B_random%*%beta_random, B_random, sigma_eps, Sigma, mu.mixed, nu.mixed,
                  scale = 1)
  loglik[i] <-lNIG(U2[i, ], Y - B_random%*%beta_random, B_random, sigma_eps, Sigma_inv, mu.mixed, nu.mixed)
