@@ -28,7 +28,7 @@ double estDigamma(double x)
 	Y - observation for indivual i
 
 */
-Eigen::VectorXd GibbsSampling(int i, 
+Eigen::VectorXd GibbsSampling(int i,
 				   Eigen::VectorXd&  Y,
 				   Eigen::SparseMatrix<double,0,int>& A,
 				   int               sampleX,
@@ -202,11 +202,11 @@ List estimateLong_cpp(Rcpp::List in_list)
   double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   double step0     = Rcpp::as< double    > (in_list["step0"]);
   int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
-  
+
   double pSubsample2 = 0;
-  if(subsample_type == 3) 
+  if(subsample_type == 3)
     pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
-  
+
   unsigned long seed = 0;
   if(in_list.containsElementNamed("seed"))
     seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -216,8 +216,8 @@ List estimateLong_cpp(Rcpp::List in_list)
     process_active = 1;
   if(in_list.containsElementNamed("learning_rate"))
     learning_rate = Rcpp::as< double    > (in_list["learning_rate"]);
-  
-  
+
+
   if(in_list.containsElementNamed("nBurnin_learningrate"))
   	nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
 
@@ -225,15 +225,15 @@ List estimateLong_cpp(Rcpp::List in_list)
   if(in_list.containsElementNamed("nPar_burnin"))
     nPar_burnin    = Rcpp::as< int > (in_list["nPar_burnin"] );
 
-	
+
 	int estimate_fisher = 0;
 	if(in_list.containsElementNamed("estimate_fisher"))
   	estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
-	
+
 	double polyak_rate = -1;
 	if(in_list.containsElementNamed("polyak_rate"))
 	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
-	
+
   int debug = 0;
 	//**********************************
 	//     setting up the main data
@@ -327,17 +327,29 @@ List estimateLong_cpp(Rcpp::List in_list)
 	// mixed effect setup
 	//***********************************
 	if(silent == 0){
-	  Rcpp::Rcout << " Setup mixed effect\n";
+	  Rcpp::Rcout << " Setup mixed effect: ";
 	}
 	Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
 	std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
 	MixedEffect *mixobj = NULL;
-	if(type_mixedEffect == "normal")
-    mixobj = new NormalMixedEffect;
-	else if(type_mixedEffect == "NIG")
-		mixobj   = new NIGMixedEffect;
+	if(type_mixedEffect == "Normal"){
+	  mixobj = new NormalMixedEffect;
+	} else if(type_mixedEffect == "NIG") {
+	  mixobj   = new NIGMixedEffect;
+	} else {
+	  Rcpp::Rcout << "Wrong mixed effect distribution";
+	}
+
+
+
+	if(silent == 0){
+	  Rcpp::Rcout << " init";
+	}
 	mixobj->initFromList(mixedEffect_list);
 	mixobj->setupStoreTracj(nIter);
+	if(silent == 0){
+	  Rcpp::Rcout << ", done\n";
+	}
 
   //**********************************
 	// measurement setup
@@ -555,7 +567,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       Y = errObj->simulate( Ys[i]);
 	  mixobj->simulate(Y, i);
 
-   	
+
 
 	if(process_active){
 	 z.setZero(Kobj->d[i]);
@@ -577,12 +589,12 @@ List estimateLong_cpp(Rcpp::List in_list)
         n_simulations += burnin_done_i;
         burnin_done[i] = 1;
       }else {burnin_done_i = 0;}
-		
+
 	  if(estimate_fisher)
 	  		burnin_done[i] = 0;
       int count_inner = 0;
       Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
-      
+
       for(int ii = 0; ii < n_simulations; ii ++)
       {
       	 for(int j =0; j < K.rows(); j++)
@@ -637,7 +649,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			  grad_inner.col(count_inner).array() -= grad_last.array();
 
 			  Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
-			 
+
 			  grad_last = grad_last_temp;
 		    count_inner++;
       }
@@ -691,7 +703,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(estimate_fisher == 0){
     	if(debug)
       		Rcpp::Rcout << "estimate::theta  step\n";
-    	
+
     	double stepsize = step0 / pow(iter + 1, alpha);
     	double polyak_rate_temp = polyak_rate;
     	double learning_rate_temp  =learning_rate;
@@ -717,7 +729,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			process -> clear_gradient();
     		Kobj ->  clear_gradient();
     	}
-	
+
 	}
   }
 
