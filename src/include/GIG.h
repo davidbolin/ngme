@@ -34,4 +34,16 @@ Eigen::VectorXd sampleV_pre(gig &,
                             const std::string);
 
 
+/*
+EiV_GIG(p, a, b)
+	computes E[V^-1] where V ~ GIG(p, a, b)
+
+*/
+double EiV_GIG(double , double , double );
+/*
+db_EiV_GIG(p, a, b)
+    computes (d/db) E[V^-1] where V ~ GIG(p, a, b);
+
+*/
+double db_EiV_GIG(double , double , double ); 
 #endif 

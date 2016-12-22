@@ -2,8 +2,37 @@
 #include <random>
 #include <chrono>
 #include "GIG.h"
+#include "Rmath.h"
 using namespace Rcpp;
 
+
+double db_EiV_GIG(double p, double a, double b) {
+    double sqrt_ab = sqrt(a * b);
+    double K1 = R::bessel_k(sqrt_ab, p, 2);
+    double K0 = R::bessel_k(sqrt_ab, p+1, 2);
+    double sqrt_a_div_b = sqrt(a/b);
+    double K0dK1 = K0 / K1;
+
+    double db_EiV = 0;
+    db_EiV += - 1. - (p + 1.) * K0dK1 / sqrt_ab;
+    db_EiV -=  ( - K0dK1 + (p / sqrt_ab) ) * K0dK1;
+    db_EiV *= 0.5 * sqrt_a_div_b *sqrt_a_div_b;
+    db_EiV -= 0.5 * K0dK1 * sqrt_a_div_b / b;
+    db_EiV += (2 * p) / (b*b);  
+    return db_EiV;
+}
+
+
+double EiV_GIG(double p, double a, double b) {
+    double sqrt_ab = sqrt(a * b);
+    double K1 = R::bessel_k(sqrt_ab, p, 2);
+    double K0 = R::bessel_k(sqrt_ab, p+1, 2);
+    double sqrt_a_div_b = sqrt(a/b);
+    double EiV = K0 / K1;
+    EiV    *=  sqrt_a_div_b;
+    EiV    -= (2 * p) * 1./b;
+  return EiV;
+}
 
 double dlambda_V(const double loglambda,
                  const Eigen::VectorXd &V, 

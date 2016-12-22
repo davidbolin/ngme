@@ -307,4 +307,13 @@ class NIGMixedEffect  : public MixedEffect{
 // sampling NormalCanoncial N_c(b, Q^) \propto e^{-x'Qx + bx}
 Eigen::VectorXd sample_Nc(const Eigen::VectorXd & ,const  Eigen::MatrixXd & );
 Eigen::VectorXd sample_Nc_par(const Eigen::VectorXd & ,const  Eigen::MatrixXd &,std::mt19937 &);
+// computing expectation 1/ of the variance component for Normal Generalised inverse Gaussian mixture (E[V^-1]).
+// for the posterior distribution
+double EiV_NGIG(const Eigen::VectorXd & ,
+                const Eigen::MatrixXd & ,
+                const Eigen::VectorXd & ,
+                const Eigen::VectorXd & ,
+                const double ,
+                const double ,
+                const double );
 #endif

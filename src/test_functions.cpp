@@ -2,7 +2,32 @@
 #include <RcppEigen.h>
 #include "sample.h"
 #include "solver.h"
+#include "GIG.h"
+#include "MixedEffect.h"
 
+
+
+
+// [[Rcpp::export]]
+double test_db_EiV_GIG(double p, double a, double b){
+  return( db_EiV_GIG(p,a,b));
+}
+
+// [[Rcpp::export]]
+double test_EiV_NGIG( Eigen::VectorXd & U,
+                      Eigen::MatrixXd & Sigma,
+                      Eigen::VectorXd & delta,
+                      Eigen::VectorXd & mu,
+                      double p,
+                      double a,
+                      double b){
+  return EiV_NGIG(U, Sigma, delta, mu, p, a, b);
+}
+
+// [[Rcpp::export]]
+double test_EiV_GIG(double p, double a, double b) {
+	return EiV_GIG(p, a, b);
+}
 // [[Rcpp::export]]
 double test_PreDiagsolver(Rcpp::List in_list)
 {
