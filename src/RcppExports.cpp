@@ -75,6 +75,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_dU_EiV
+Rcpp::List test_dU_EiV(const Eigen::VectorXd& U, const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& delta, const Eigen::VectorXd& mu, const double p_GIG, const double a_GIG, const double b_GIG, const Eigen::VectorXd& res, const Eigen::MatrixXd& Q_noise, const Eigen::MatrixXd& B);
+RcppExport SEXP LDMod_test_dU_EiV(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP p_GIGSEXP, SEXP a_GIGSEXP, SEXP b_GIGSEXP, SEXP resSEXP, SEXP Q_noiseSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type U(USEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const double >::type p_GIG(p_GIGSEXP);
+    Rcpp::traits::input_parameter< const double >::type a_GIG(a_GIGSEXP);
+    Rcpp::traits::input_parameter< const double >::type b_GIG(b_GIGSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type res(resSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Q_noise(Q_noiseSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_dU_EiV(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_db_EiV_GIG
 double test_db_EiV_GIG(double p, double a, double b);
 RcppExport SEXP LDMod_test_db_EiV_GIG(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {

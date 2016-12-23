@@ -17,6 +17,7 @@ test_that("EiV_GIG", {
   EiVR <- integrate(function(x){ x^-1 * dGIG(x, p, a, b)}, 0, Inf)
   expect_equal(EiV, EiVR$value, tolerance  = 10^-6)
 })
+
 test_that("db_EiV_GIG", {
   p <- runif(1) + 1
   a <- runif(1) + 1

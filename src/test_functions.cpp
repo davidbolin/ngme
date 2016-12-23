@@ -7,6 +7,40 @@
 
 
 
+// [[Rcpp::export]]
+Rcpp::List test_dU_EiV(
+                 const Eigen::VectorXd & U,
+                 const Eigen::MatrixXd & Sigma,
+                 const Eigen::VectorXd & delta,
+                 const Eigen::VectorXd & mu,
+                 const double p_GIG,
+                 const double a_GIG,
+                 const double b_GIG,
+                 const Eigen::VectorXd & res,
+                 const Eigen::MatrixXd & Q_noise,
+                 const Eigen::MatrixXd & B){
+  
+  Eigen::VectorXd dU;
+  Eigen::MatrixXd ddU;
+  dU_ddU_NIG(dU,
+             ddU,
+             U,
+             Sigma,
+             delta,
+              mu,
+            -0.5,
+             a_GIG,
+             b_GIG,
+             res,
+             Q_noise,
+             B);
+  
+  Rcpp::List out;
+  out["dU"] = dU;
+  out["ddU"] = ddU;
+  return(out);
+  
+}
 
 // [[Rcpp::export]]
 double test_db_EiV_GIG(double p, double a, double b){

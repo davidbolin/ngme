@@ -25,6 +25,10 @@ simulateLongME_cpp <- function(in_list) {
     .Call('LDMod_simulateLongME_cpp', PACKAGE = 'LDMod', in_list)
 }
 
+test_dU_EiV <- function(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B) {
+    .Call('LDMod_test_dU_EiV', PACKAGE = 'LDMod', U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
+}
+
 test_db_EiV_GIG <- function(p, a, b) {
     .Call('LDMod_test_db_EiV_GIG', PACKAGE = 'LDMod', p, a, b)
 }

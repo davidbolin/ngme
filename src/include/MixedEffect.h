@@ -316,4 +316,25 @@ double EiV_NGIG(const Eigen::VectorXd & ,
                 const double ,
                 const double ,
                 const double );
+// d/dU E[V^-1|U]
+Eigen::VectorXd dU_EiV_NGIG(const Eigen::VectorXd & ,
+                const Eigen::MatrixXd & ,
+                const Eigen::VectorXd & ,
+                const Eigen::VectorXd & ,
+                const double ,
+                const double ,
+                const double );
+void dU_ddU_NIG(
+              Eigen::VectorXd &,
+              Eigen::MatrixXd &,
+        const Eigen::VectorXd &,
+        const Eigen::MatrixXd &,
+        const Eigen::VectorXd &,
+        const Eigen::VectorXd &,
+        const double ,
+        const double ,
+        const double ,
+        const Eigen::VectorXd & ,
+        const Eigen::MatrixXd & ,
+        const Eigen::MatrixXd & );
 #endif
