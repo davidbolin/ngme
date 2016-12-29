@@ -25,6 +25,14 @@ simulateLongME_cpp <- function(in_list) {
     .Call('LDMod_simulateLongME_cpp', PACKAGE = 'LDMod', in_list)
 }
 
+test_sampling_NIG <- function(mixedEffect_list, meas_list, nsamples) {
+    .Call('LDMod_test_sampling_NIG', PACKAGE = 'LDMod', mixedEffect_list, meas_list, nsamples)
+}
+
+test_logf_NIG <- function(U, mu, delta, iSigma, nu) {
+    .Call('LDMod_test_logf_NIG', PACKAGE = 'LDMod', U, mu, delta, iSigma, nu)
+}
+
 test_dU_EiV <- function(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B) {
     .Call('LDMod_test_dU_EiV', PACKAGE = 'LDMod', U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
 }

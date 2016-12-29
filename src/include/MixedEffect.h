@@ -243,6 +243,10 @@ class NIGMixedEffect  : public MixedEffect{
     double term1,term2,term1_mu;
     Eigen::VectorXd term2_mu;
   public:
+
+    int count_MALA;
+    int accept_MALA;
+    int sample_MALA;
     Eigen::MatrixXi D;
     Eigen::MatrixXd Dd;
     Eigen::VectorXd mu;
@@ -253,11 +257,25 @@ class NIGMixedEffect  : public MixedEffect{
     void sampleV(const int);
     void initFromList(Rcpp::List const &);
     void sampleU(const int, const Eigen::VectorXd &, const double) ;
+    void sampleU_MALA(const int, const Eigen::VectorXd &, const double) ;
+    void sampleU_Gibbs(const int, const Eigen::VectorXd &, const double) ;
     void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
+    void sampleU_MALA_(const int ,
+                                const Eigen::VectorXd & ,
+                                const Eigen::VectorXd & ,
+                                const Eigen::MatrixXd   & );
     void sampleU2(const int i,
-      					  const Eigen::VectorXd & res,
-      					  const Eigen::VectorXd & iV,
-      					  const double log_sigma2_noise = 0);
+      					const Eigen::VectorXd & res,
+      					const Eigen::VectorXd & iV,
+      					const double log_sigma2_noise = 0);
+    void sampleU2_Gibbs( const int i,
+                        const Eigen::VectorXd & res,
+                        const Eigen::VectorXd & iV,
+                        const double log_sigma2_noise = 0);
+    void sampleU2_MALA( const int i,
+                        const Eigen::VectorXd & res,
+                        const Eigen::VectorXd & iV,
+                        const double log_sigma2_noise = 0);
     void sampleU2_par(const int i,
                   const Eigen::VectorXd & res,
                   const Eigen::VectorXd & iV,

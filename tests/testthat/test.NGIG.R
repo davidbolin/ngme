@@ -1,6 +1,22 @@
 library(testthat)
 library(LDMod)
 context("N_GIG")
+lNIG <- function(U, res, B, sigma, iSigma, mu, nu)
+{
+  p <- -0.5*(1+length(U))
+  U_ <- U + mu
+  b <- t(U_)%*%iSigma%*%U_ + nu
+  a <- mu%*%iSigma%*%mu + nu
+  logf = t(U_)%*%iSigma%*%mu
+  logf = logf - 0.75 * log(b)
+  sqrt_ab = sqrt(a * b)
+  K1 <- besselK(sqrt_ab, p, expon.scaled=T)
+
+  logf = logf + log(K1) - sqrt_ab
+  logf = logf - sum((res - B%*%U)^2)/(2*sigma^2)
+  return(logf)
+}
+
 
 EiV_NIG <- function(U, Sigma, mu, nu)
 {
@@ -96,4 +112,21 @@ test_that("dU_NIG_post", {
                       B)
   expect_equal(res$dU, c(dU_NIG$dU), tolerance = 10^-6)
   expect_equal(res$ddU, dU_NIG$ddU, tolerance = 10^-6)
+})
+
+
+test_that("log(f_NIG)", {
+  res <- c(1, 2, 3.)
+  sigma <- .2
+  B <- matrix(runif(3*2), ncol = 2)
+  nu <- runif(1)+0.1
+  p <- -0.5
+  a <- nu
+  b <- nu
+  Sigma <- matrix(c(2,1,1,2), nrow=2)*(1 + runif(1))
+  U     <- c(1.,2.)*runif(1)
+  mu    <- c(2,5)*runif(1)
+  expect_equal(c(lNIG(U, res, B, sigma, solve(Sigma), mu, nu)),
+               test_logf_NIG(U, mu, -mu, solve(Sigma), nu) - sum((res - B%*%U)^2)/(2*sigma^2),
+               tolerance = 10^-6)
 })

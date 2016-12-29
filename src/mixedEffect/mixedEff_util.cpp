@@ -8,7 +8,7 @@ void dU_ddU_NIG(
               Eigen::VectorXd & dU,
               Eigen::MatrixXd & ddU,
         const Eigen::VectorXd & U,
-        const Eigen::MatrixXd & Sigma,
+        const Eigen::MatrixXd & iSigma,
         const Eigen::VectorXd & delta,
         const Eigen::VectorXd & mu,
         const double p_GIG,
@@ -21,7 +21,6 @@ void dU_ddU_NIG(
   //computing EiV 
   double p = p_GIG - 0.5 * U.size();
   Eigen::VectorXd X_delta = U - delta;
-  Eigen::MatrixXd iSigma = Sigma.inverse();
   Eigen::VectorXd temp = iSigma * X_delta;
   double b = X_delta.dot( temp) + b_GIG;
   temp =  iSigma  * mu;
@@ -35,7 +34,7 @@ void dU_ddU_NIG(
   ddU.setZero(U.size(), U.size());
   ddU += B.transpose() * Q_noise * B; 
   ddU += EiV * iSigma;
-
+  
   double db_EiV = db_EiV_GIG(p, a, b);
   Eigen::MatrixXd D =   2 * (iSigma * (U - delta)) * (iSigma * (U - delta)).transpose();
   D *= db_EiV;

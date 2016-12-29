@@ -20,13 +20,13 @@ learning_rate <- 0.
 n.pers <- 5000 #number of patients
 n.obs  <- 50 #number of obs per patient
 
-COV_beta <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
+COV_beta <- 10^-4*matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
 sd_Y    <- 0.1 # error of the noise
 
 Br_list <- list()
 betar <- c(0.9,0.4)
 betaf <- c(1.)
-mu   <- c(0.2, -0.2)
+mu   <- c(1, -1)
 nu <- 1
 betar_list <- list()
 Bf_list    <- list()
@@ -52,10 +52,10 @@ meas_list <- list(sigma_eps = sd_Y, noise = "Normal")
 mixedEffect_list <- list(B_random = Br_list, 
                          B_fixed  = Bf_list,
                          Sigma = COV_beta, 
-                         beta_random = c(0.,0.),
-                         beta_fixed  = c(0.),  
-                         mu          = 0*as.matrix(mu),
-                         nu          = as.matrix(1.) + nu,
+                         beta_random = betar,
+                         beta_fixed  = betaf,  
+                         mu          = as.matrix(mu),
+                         nu          =  nu,
                          noise = "NIG")
 
 

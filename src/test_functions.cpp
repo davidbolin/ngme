@@ -3,9 +3,57 @@
 #include "sample.h"
 #include "solver.h"
 #include "GIG.h"
+#include "NGIG.h"
 #include "MixedEffect.h"
 
+// [[Rcpp::export]]
+Rcpp::List  test_sampling_NIG(Rcpp::List mixedEffect_list,
+                       Rcpp::List meas_list,
+                       int nsamples)
+{
+  NIGMixedEffect *mixobj = NULL;
+  mixobj   = new NIGMixedEffect;
+  mixobj->initFromList(mixedEffect_list);
+  Rcpp::List Y =  Rcpp::as<  Rcpp::List    >(meas_list["Y"]);
+  double sigma = Rcpp::as< double >(meas_list["sigma_eps"]);
+  
+  Eigen::MatrixXd U_MALA, U_Gibbs;
+  U_MALA.setZero(nsamples, mixobj->U.rows());
+  for(int i =0; i < nsamples; i++){
+    //mixobj->sampleU_MALA(0, Rcpp::as< Eigen::VectorXd>(Y[0]), 2*log(sigma));
+    U_MALA.row(i) = mixobj->U.col(0);  
+  }
+  
+  U_Gibbs.setZero(nsamples, mixobj->U.rows());
+  for(int i =0; i < nsamples; i++){
+    mixobj->sampleU( 0, Rcpp::as< Eigen::VectorXd>(Y[0]),  2*log(sigma));
+    U_Gibbs.row(i) = mixobj->U.col(0);  
+  }
+  
+  Rcpp::List out;
+  //out["acc_MALA"] = ((double)mixobj->accept_MALA ) /((double) mixobj->count_MALA );
+  out["U_MALA"]   = U_MALA;
+  out["U_Gibbs"]  = U_Gibbs;
+  free(mixobj);
+  
+  return(out);
+}
 
+// [[Rcpp::export]]
+double test_logf_NIG(const Eigen::VectorXd & U,
+                     const Eigen::VectorXd & mu,
+                     const Eigen::VectorXd & delta,
+                     const Eigen::MatrixXd & iSigma,
+                     const double nu )
+{
+  return(logNIG(U,
+                mu,
+                delta,
+                iSigma,
+                nu ));
+  
+  
+}
 
 // [[Rcpp::export]]
 Rcpp::List test_dU_EiV(
@@ -25,7 +73,7 @@ Rcpp::List test_dU_EiV(
   dU_ddU_NIG(dU,
              ddU,
              U,
-             Sigma,
+             Sigma.inverse(),
              delta,
               mu,
             -0.5,

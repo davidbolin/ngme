@@ -75,6 +75,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_sampling_NIG
+Rcpp::List test_sampling_NIG(Rcpp::List mixedEffect_list, Rcpp::List meas_list, int nsamples);
+RcppExport SEXP LDMod_test_sampling_NIG(SEXP mixedEffect_listSEXP, SEXP meas_listSEXP, SEXP nsamplesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type mixedEffect_list(mixedEffect_listSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type meas_list(meas_listSEXP);
+    Rcpp::traits::input_parameter< int >::type nsamples(nsamplesSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_sampling_NIG(mixedEffect_list, meas_list, nsamples));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_logf_NIG
+double test_logf_NIG(const Eigen::VectorXd& U, const Eigen::VectorXd& mu, const Eigen::VectorXd& delta, const Eigen::MatrixXd& iSigma, const double nu);
+RcppExport SEXP LDMod_test_logf_NIG(SEXP USEXP, SEXP muSEXP, SEXP deltaSEXP, SEXP iSigmaSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type U(USEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type iSigma(iSigmaSEXP);
+    Rcpp::traits::input_parameter< const double >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_logf_NIG(U, mu, delta, iSigma, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_dU_EiV
 Rcpp::List test_dU_EiV(const Eigen::VectorXd& U, const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& delta, const Eigen::VectorXd& mu, const double p_GIG, const double a_GIG, const double b_GIG, const Eigen::VectorXd& res, const Eigen::MatrixXd& Q_noise, const Eigen::MatrixXd& B);
 RcppExport SEXP LDMod_test_dU_EiV(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP p_GIGSEXP, SEXP a_GIGSEXP, SEXP b_GIGSEXP, SEXP resSEXP, SEXP Q_noiseSEXP, SEXP BSEXP) {
