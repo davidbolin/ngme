@@ -14,10 +14,10 @@ seed     <- 2
 silent   <- 1
 plotflag <- 1
 
-nIter <- 1000
+nIter <- 2000
 pSubsample <- 0.5
-learning_rate <- 0.9
-n.pers <- 500 #number of patients
+learning_rate <- 0.5
+n.pers <- 1000 #number of patients
 n.obs  <- 50 #number of obs per patient
 
 COV_beta <- matrix(c(0.2,0.1,0.1,0.2), ncol = 2, nrow = 2)
