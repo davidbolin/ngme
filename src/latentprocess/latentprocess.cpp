@@ -20,7 +20,6 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
 {
   npars = 0;
 
-  //iV = h.cwiseInverse();
   std::vector<std::string> check_names =  {"X"};
   check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
@@ -54,14 +53,14 @@ void GaussianProcess::simulate(const int i,
         cholesky_solver       & solver)
 {
 	Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
-    Q =  Q * iV.asDiagonal();
-    Q =  Q * K;
-
-    Eigen::VectorXd b;
-    b.setZero(K.rows());
-  	Xs[i] = solver.rMVN(b, Z);
+	iV.setZero(K.rows());
+	iV.array() = h[i].array().inverse();
+  Q =  Q * iV.asDiagonal();
+  Q =  Q * K;
+  Eigen::VectorXd b;
+  b.setZero(K.rows());
+  Xs[i] = solver.rMVN(b, Z);
 	Y += A * Xs[i];
-
 }
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)

@@ -11,6 +11,7 @@ estimate.wrapper <- function(Y,
                              individual.sigma = FALSE,
                              silent = FALSE,
                              estimation.options = NULL,
+                             estimate_fisher = FALSE,
                              ...)
 {
 
@@ -86,6 +87,8 @@ estimate.wrapper <- function(Y,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
+                            silent = silent,
+                            estimate_fisher = FALSE,
                             ...)
 
       if(!silent)
@@ -105,18 +108,20 @@ estimate.wrapper <- function(Y,
       res$measurementError_list$Vs = Vin
 
       res <- estimateLong(Y, locs,
-                            res$mixedEffect_list,
-                            res$measurementError_list,
-                            res$processes_list,
-                            res$operator_list,
-                            learning_rate = estimation.controls$learning.rate,
-                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = 0,
-                            nBurnin = estimation.controls$nBurnin,
-                            nIter = estimation.controls$nIter,
+                          res$mixedEffect_list,
+                          res$measurementError_list,
+                          res$processes_list,
+                          res$operator_list,
+                          learning_rate = estimation.controls$learning.rate,
+                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                          polyak_rate = 0,
+                          nBurnin = estimation.controls$nBurnin,
+                          nIter = estimation.controls$nIter,
                           nPar_burnin = estimation.controls$nPar_burnin,
-                            pSubsample = estimation.controls$pSubsample,
-                            ...)
+                          pSubsample = estimation.controls$pSubsample,
+                          silent = silent,
+                          estimate_fisher = estimate_fisher,
+                          ...)
 
     } else {
       if(!silent)
@@ -135,6 +140,8 @@ estimate.wrapper <- function(Y,
                           nIter = estimation.controls$nIter,
                           nPar_burnin = estimation.controls$nPar_burnin,
                           pSubsample = estimation.controls$pSubsample,
+                          silent = silent,
+                          estimate_fisher = estimate_fisher,
                           ...)
 
       }
@@ -154,6 +161,8 @@ estimate.wrapper <- function(Y,
                             nIter = estimation.controls$nIter.gauss,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
+                            silent = silent,
+                            estimate_fisher = FALSE,
                             ...)
           if(!silent)
           cat("Estimate non-Gaussian")
@@ -179,6 +188,8 @@ estimate.wrapper <- function(Y,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
+                            silent = silent,
+                            estimate_fisher = estimate_fisher,
                             ...)
 
       } else {
@@ -193,6 +204,8 @@ estimate.wrapper <- function(Y,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
+                            silent = silent,
+                            estimate_fisher = estimate_fisher,
                             ...)
       }
   }
@@ -260,7 +273,8 @@ estimateLong <- function(Y,
                          nBurnin = 10,   # steps before starting gradient estimation
                          silent  = FALSE, # print iteration info
                          seed    = NULL,
-                         standardize.mixedEffects = FALSE
+                         standardize.mixedEffects = FALSE,
+                         estimate_fisher  = FALSE
                          )
 {
   obs_list <- list()
@@ -323,7 +337,8 @@ estimateLong <- function(Y,
                  nPar_burnin      = nPar_burnin,
                  alpha            = alpha,
                  learning_rate    = learning_rate,
-                 polyak_rate      = polyak_rate)
+                 polyak_rate      = polyak_rate,
+                 estimate_fisher  = estimate_fisher)
   if(use.process){
     input$processes_list   = processes_list
     input$operator_list    = operator_list
