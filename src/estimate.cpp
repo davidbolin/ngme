@@ -757,7 +757,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   }
   Rcpp::List out_list;
-  out_list["FisherMatrix"]     = Fisher_information;
+  if(estimate_fisher == 0)
+    out_list["FisherMatrix"]     = Fisher_information;
 
   out_list["pSubsample"]       = pSubsample;
   out_list["nIter"]            = nIter;

@@ -41,7 +41,7 @@ Rcpp::List NormalVarianceMixtureBaseError::toList()
 
   if(store_param){
   	out["sigma_vec"] = sigma_vec;
-	out["sigma"]       = sigma_vec[sigma_vec.size() - 1];
+	  out["sigma"]       = sigma_vec[sigma_vec.size() - 1];
    }
   return(out);
 }

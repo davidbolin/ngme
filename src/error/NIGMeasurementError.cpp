@@ -140,7 +140,7 @@ void NIGMeasurementError::step_theta(const double stepsize,
                                      const double polyak_rate,
                                      const int burnin)
 {
-  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate,burnin);
+  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate, polyak_rate, burnin);
 
   	step_nu(stepsize, learning_rate,burnin);
   	clear_gradient();
