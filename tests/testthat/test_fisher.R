@@ -5,12 +5,12 @@ seed     <- 5
 silent   <- 1
 plotflag <- 1
 
-nIter <- 1000
-n.pers <- 2
-nSim  <- 2
+nIter <- 100
+n.pers <- 10
+nSim  <- 2000
 n.obs  <- 200 + 0*(1:n.pers)
 
-nBurnin = 100
+nBurnin = 40
 pSubsample = 1
 nPar_burnin = 100
 Y <- list()
@@ -34,9 +34,9 @@ for(i in 1:n.pers)
 
   Y[[i]] <- rnorm(n = n.obs[i], B_fixed[[i]]%*%betaf, sd = sd_Y) + B_random[[i]]%*%mvrnorm(n = 1,mu = betar, Sigma = Sigma)
 
-  Q =  1/sd_Y^2*diag(n.obs[i])
-  F_fixed <-  F_fixed  + t(B_fixed[[i]] )%*%Q%*%B_fixed[[i]]
-  F_random <- F_random + t(B_random[[i]])%*%Q%*%B_random[[i]]
+  Q =  B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i])
+  F_fixed <-  F_fixed  + t(B_fixed[[i]] )%*%solve(Q,B_fixed[[i]])
+  F_random <- F_random + t(B_random[[i]])%*%solve(Q,B_random[[i]])
 }
 
 
@@ -59,10 +59,11 @@ res <- estimateME(Y = Y,
                   silent = silent,
                   polyak_rate = -1,
                   seed = seed,
+                  nBurnin = nBurnin,
                   estimate_fisher = TRUE)
 
 cat("Fixed: True = ",F_fixed, ", Estimated  =", res$FisherMatrix[1,1],", ratio = ", F_fixed/res$FisherMatrix[1,1],"\n")
-cat("Random: True = ",diag(F_random), ", Estimated  =", diag(res$FisherMatrix[2:3,2:3]),", ratio = ", diag(F_random)/diag(res$FisherMatrix[2:3,2:3]),"\n")
+cat("Fixed: True = ",diag(F_random), ", Estimated  =", diag(res$FisherMatrix[2:3,2:3]),", ratio = ", diag(F_random)/diag(res$FisherMatrix[2:3,2:3]),"\n")
 cat("Random:")
 print(F_random)
 print(res$FisherMatrix[2:3,2:3])

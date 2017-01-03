@@ -570,6 +570,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       		}
       	}
         Y = errObj->simulate( Ys[i]);
+         
 	      mixobj->simulate(Y, i);
 
 	      if(process_active){
@@ -658,7 +659,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			    Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			    grad_inner.col(count_inner).array() -= grad_last.array();
 
-			    Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
+			    //Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
 
 			    grad_last = grad_last_temp;
 		      count_inner++;
@@ -673,6 +674,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       grad_outer.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) /= weight[i];
+
+      Fisher_information += (Mgrad_inner/weight[i]) * Mgrad_inner.transpose() ;
+      
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
