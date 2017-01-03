@@ -480,8 +480,8 @@ List predictLong_cpp(Rcpp::List in_list)
       std::stringstream stream;
       stream << ", time = " << time_Ma;
       Rcpp::Rcout << stream.str();
+      Rcpp::Rcout << "\n";
     }
-    Rcpp::Rcout << "\n";
   }
 
   //Rcpp::Rcout << "store results\n";
