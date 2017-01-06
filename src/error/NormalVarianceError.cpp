@@ -154,7 +154,8 @@ void NormalVarianceMixtureBaseError::sampleV(const int i, const Eigen::VectorXd&
 	if(common_V == 0){
     	for(int j = 0; j < n_s; j++){
     		double res2 = pow(res[j]/sigma, 2);
-	    	Vs[i][j] = sample_V(res2, -1);
+
+      	Vs[i][j] = sample_V(res2, -1);
 		}
 
 	} else {
