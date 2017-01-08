@@ -139,15 +139,20 @@ void grad_caculations(int i,
 				              MixedEffect       & mixobj,
 				              operatorMatrix    & Kobj,
 				              MeasurementError  & errObj,
-				              Process           & process)
+				              Process           & process,
+                      const int           estimate_fisher,
+                      Eigen::MatrixXd   & Fisher_information)
   {
 
   // mixobj gradient
   mixobj.add_inter(i, res);
-  if(errObj.noise != "Normal")
+  if(errObj.noise != "Normal"){
     mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
-  else
+  }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w);
+    if(estimate_fisher == 1)
+      Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
+  }
 
   mixobj.remove_inter(i, res);
 
@@ -180,6 +185,8 @@ void grad_caculations(int i,
       process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
     }
   }
+
+  
 }
 
 // [[Rcpp::export]]
@@ -642,7 +649,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 				   			            *mixobj,
 				   			            *Kobj,
 				  			            *errObj,
-				   			            *process);
+				   			            *process,
+                            estimate_fisher,
+                            Fisher_information);
 
 		      // collects the gradient for computing estimate of variances
 		      grad_inner.block(0, count_inner,
@@ -658,8 +667,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 			    // adjusting so we get last gradient not cumsum
 			    Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			    grad_inner.col(count_inner).array() -= grad_last.array();
-
-			    //Fisher_information += grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose()/(nSim * weight[i]);
+          Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
+			    Fisher_information +=  Fisher_temp + Fisher_temp.transpose();
 
 			    grad_last = grad_last_temp;
 		      count_inner++;
@@ -674,8 +683,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       grad_outer.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) /= weight[i];
-
-      Fisher_information += (Mgrad_inner/weight[i]) * Mgrad_inner.transpose() ;
+      Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
+      Fisher_information -=  Fisher_add + Fisher_add.transpose() ;
       
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
@@ -748,7 +757,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   if(silent == 0)
   	Rcpp::Rcout << "Done, storing results\n";
   // storing the results
-  	Fisher_information.array()  /= nIter;
+  	Fisher_information.array()  /= (nIter * nSim);
 
   if(estimate_fisher){
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
