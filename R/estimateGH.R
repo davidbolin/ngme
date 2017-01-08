@@ -22,7 +22,9 @@ estimate.wrapper <- function(Y,
                              nIter.gauss = 1000,
                              nIter = 10000,
                              pSubsample = 0.1,
-                             nPar_burnin = 0)
+                             nPar_burnin = 0,
+                             nIter.fisher = 1000,
+                             nSim.fisher = 1000)
   if(!missing(estimation.options) && !is.null(estimation.options)){
     for(i in 1:length(estimation.options)){
       estimation.controls[names(estimation.options)[i]] = estimation.options[i]
@@ -74,7 +76,7 @@ estimate.wrapper <- function(Y,
       if(!silent)
         cat("Estimate Gaussian")
 
-        res <- estimateLong(Y, locs,
+      res <- estimateLong(Y, locs,
                             mixedEffect_list,
                             measurement_list,
                             process_list,
@@ -120,9 +122,27 @@ estimate.wrapper <- function(Y,
                           nPar_burnin = estimation.controls$nPar_burnin,
                           pSubsample = estimation.controls$pSubsample,
                           silent = silent,
+                          estimate_fisher = FALSE,
+                          ...)
+      if(estimate_fisher){
+        res.f <- estimateLong(Y, locs,
+                          res$mixedEffect_list,
+                          res$measurementError_list,
+                          res$processes_list,
+                          res$operator_list,
+                          learning_rate = estimation.controls$learning.rate,
+                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                          polyak_rate = -1,
+                          nBurnin = estimation.controls$nBurnin,
+                          nIter = estimation.controls$nIter.fisher,
+                          nSim = estimation.controls$nSim.fisher,
+                          nPar_burnin = estimation.controls$nPar_burnin,
+                          pSubsample = estimation.controls$pSubsample,
+                          silent = silent,
                           estimate_fisher = estimate_fisher,
                           ...)
-
+       res$FisherMatrix <- res.f$FisherMatrix
+      }
     } else {
       if(!silent)
         cat("Estimate Model")
@@ -141,11 +161,29 @@ estimate.wrapper <- function(Y,
                           nPar_burnin = estimation.controls$nPar_burnin,
                           pSubsample = estimation.controls$pSubsample,
                           silent = silent,
-                          estimate_fisher = estimate_fisher,
+                          estimate_fisher = FALSE,
                           ...)
-
+      if(estimate_fisher){
+        res.f <- estimateLong(Y, locs,
+                              res$mixedEffect_list,
+                              res$measurementError_list,
+                              res$processes_list,
+                              res$operator_list,
+                              learning_rate = estimation.controls$learning.rate,
+                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                              polyak_rate = -1,
+                              nIter = estimation.controls$nIter.fisher,
+                              nSim = estimation.controls$nSim.fisher,
+                              nBurnin = estimation.controls$nBurnin,
+                              nPar_burnin = estimation.controls$nPar_burnin,
+                              pSubsample = estimation.controls$pSubsample,
+                              silent = silent,
+                              estimate_fisher = estimate_fisher,
+                              ...)
+        res$FisherMatrix <- res.f$FisherMatrix
       }
-    } else {
+    }
+  } else {
 
       if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
         if(!silent)
@@ -189,9 +227,28 @@ estimate.wrapper <- function(Y,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             silent = silent,
-                            estimate_fisher = estimate_fisher,
+                            estimate_fisher = FALSE,
                             ...)
-
+        if(estimate_fisher){
+          res.f <- estimateLong(Y, locs,
+                                res$mixedEffect_list,
+                                res$measurementError_list,
+                                res$processes_list,
+                                res$operator_list,
+                                learning_rate = estimation.controls$learning.rate,
+                                nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                                polyak_rate = -1,
+                                nIter = estimation.controls$nIter.fisher,
+                                nSim = estimation.controls$nSim.fisher,
+                                nBurnin = estimation.controls$nBurnin,
+                                nIter = estimation.controls$nIter.fisher,
+                                nPar_burnin = estimation.controls$nPar_burnin,
+                                pSubsample = estimation.controls$pSubsample,
+                                silent = silent,
+                                estimate_fisher = estimate_fisher,
+                                ...)
+          res$FisherMatrix <- res.f$FisherMatrix
+        }
       } else {
         res <- estimateLong(Y, locs,
                             mixedEffect_list,
@@ -205,8 +262,26 @@ estimate.wrapper <- function(Y,
                             nPar_burnin = estimation.controls$nPar_burnin,
                             pSubsample = estimation.controls$pSubsample,
                             silent = silent,
-                            estimate_fisher = estimate_fisher,
+                            estimate_fisher = FALSE,
                             ...)
+        if(estimate_fisher){
+          res.f <- estimateLong(Y, locs,
+                                res$mixedEffect_list,
+                                res$measurementError_list,
+                                learning_rate = estimation.controls$learning.rate,
+                                nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
+                                polyak_rate = -1,
+                                nIter = estimation.controls$nIter.fisher,
+                                nSim = estimation.controls$nSim.fisher,
+                                nBurnin = estimation.controls$nBurnin,
+                                nIter = estimation.controls$nIter.fisher,
+                                nPar_burnin = estimation.controls$nPar_burnin,
+                                pSubsample = estimation.controls$pSubsample,
+                                silent = silent,
+                                estimate_fisher = estimate_fisher,
+                                ...)
+          res$FisherMatrix <- res.f$FisherMatrix
+        }
       }
   }
 

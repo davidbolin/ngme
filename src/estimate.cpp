@@ -339,7 +339,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
 	std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
 	MixedEffect *mixobj = NULL;
-  Rcpp::Rcout << "type_mixedEffect = " << type_mixedEffect << "\n";
+  //Rcpp::Rcout << "type_mixedEffect = " << type_mixedEffect << "\n";
 	if(type_mixedEffect == "Normal"){
 	  mixobj = new NormalMixedEffect;
 	} else if(type_mixedEffect == "NIG") {
@@ -577,7 +577,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       		}
       	}
         Y = errObj->simulate( Ys[i]);
-         
+
 	      mixobj->simulate(Y, i);
 
 	      if(process_active){

@@ -26,13 +26,21 @@ test_that("Fisher, Gaussian fixed effects", {
   Y_list     <- list()
   set.seed(seed)
   B_sum <- 0
+  d2s = 0
+  dsb = 0
   for(i in 1:n.pers)
   {
     Bf_list[[i]]    <- cbind(1:n.obs,rep(1, n.obs))
     Y_list[[i]]        <- rnorm(n = n.obs, Bf_list[[i]]%*%betaf, sd = sd_Y)
     B_sum <- B_sum + t(Bf_list[[i]])%*%Bf_list[[i]]/sd_Y^2
+    #Sigma.hat = sd_Y^2*diag(n.obs)
+    #Q.hat = solve(Sigma.hat)
+    v = Y_list[[i]] - Bf_list[[i]]%*%betaf
+    d2s = d2s - (n.obs/sd_Y^2 - (3/sd_Y^4)*t(v)%*%v)
+    dsb = dsb + (2/sd_Y^3)*t(v)%*%Bf_list[[i]]
   }
 
+  F = rBind(cBind(B_sum,t(dsb)),c(dsb,d2s))
 
   meas_list <- list(sigma = sd_Y, noise = "Normal")
   mixedEffect_list <- list(B_fixed  = Bf_list,
@@ -54,76 +62,88 @@ test_that("Fisher, Gaussian fixed effects", {
                     seed = seed,
                     estimate_fisher = TRUE)
 
-  #  print(B_sum)
-  # print(res$FisherMatrix[1:2,1:2])
+  #print(F)
+  #print(res$FisherMatrix)
 
-  expect_equal(max(abs(B_sum/res$FisherMatrix[1:2,1:2]-1)),0,tolerance=0.01)
+  expect_equal(max(abs(F/res$FisherMatrix-1)),0,tolerance=0.01)
 })
 
 
 test_that("Fisher, Gaussian random effects", {
-library(LDMod)
-library(MASS)
-seed     <- 5
-silent   <- 1
-plotflag <- 1
+  library(LDMod)
+  library(MASS)
+  seed     <- 5
+  silent   <- 1
+  plotflag <- 1
 
-nIter <- 10
-n.pers <- 2
-nSim  <- 5
-n.obs  <- 10 + 0*(1:n.pers)
+  nIter <- 10
+  n.pers <- 2
+  nSim  <- 5
+  n.obs  <- 10 + 0*(1:n.pers)
 
-nBurnin = 40
-pSubsample = 1
-nPar_burnin = 100
-Y <- list()
-locs <- list()
-B_random <- list()
-B_fixed  <- list()
-Vin <- list()
+  nBurnin = 40
+  pSubsample = 1
+  nPar_burnin = 100
+  Y <- list()
+  locs <- list()
+  B_random <- list()
+  B_fixed  <- list()
+  Vin <- list()
 
-betaf <- as.matrix(c(2.1))
-betar = as.matrix(c(0.8,0.5))
+  betaf <- as.matrix(c(2.1))
+  betar = as.matrix(c(0.8,0.5))
 
-Sigma <- matrix(c(0.02,0,0,0.01),2,2)
-sd_Y = 2
-F_fixed <- 0
-F_random <- 0
-set.seed(seed)
-for(i in 1:n.pers)
-{
-  B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
-  B_random[[i]] <- cbind((1:n.obs[i])/n.obs[i],((1:n.obs[i])/n.obs[i])^(2))
+  Sigma <- matrix(c(0.02,0,0,0.01),2,2)
+  sd_Y = 2
+  Ff <-Fr <- Frf <- 0
+  set.seed(seed)
+  d2s <- dsbf <- dsbr <- 0
+  for(i in 1:n.pers)
+  {
+    B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
+    B_random[[i]] <- cbind((1:n.obs[i])/n.obs[i],((1:n.obs[i])/n.obs[i])^(2))
 
-  Y[[i]] <- rnorm(n = n.obs[i], B_fixed[[i]]%*%betaf, sd = sd_Y) + B_random[[i]]%*%mvrnorm(n = 1,mu = betar, Sigma = Sigma)
-  Q =  B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i])
-  F_fixed <-  F_fixed  + t(B_fixed[[i]] )%*%solve(Q,B_fixed[[i]])
-  F_random <- F_random + t(B_random[[i]])%*%solve(Q,B_random[[i]])
-}
+    Y[[i]] <- rnorm(n = n.obs[i], B_fixed[[i]]%*%betaf, sd = sd_Y) + B_random[[i]]%*%mvrnorm(n = 1,mu = betar, Sigma = Sigma)
+    Q =  B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i])
+    Ff <-  Ff  + t(B_fixed[[i]] )%*%solve(Q,B_fixed[[i]])
+    Fr <- Fr + t(B_random[[i]])%*%solve(Q,B_random[[i]])
+    Frf <- Frf + t(B_random[[i]])%*%solve(Q,B_fixed[[i]])
+
+    v = Y[[i]] - B_fixed[[i]]%*%betaf - B_random[[i]]%*%betar
+    dl = (-sd_Y*sum(diag(Q)) + sd_Y*t(v)%*%Q%*%Q%*%v)
+    d2s = d2s - (dl/sd_Y + 2*sd_Y^2*sum(diag(Q%*%Q)) - 4*sd_Y^2**t(v)%*%Q%*%Q%*%Q%*%v)
+    dsbf = dsbf + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_fixed[[i]]
+    dsbr = dsbr + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_random[[i]]
+  }
+
+  Fe <- rBind(cBind(Ff,t(Frf)),cBind(Frf,Fr))
+  F = rBind(cBind(Fe,c(dsbf,dsbr)),c(dsbf,dsbr,d2s))
+
+  mixedEffect_list  <- list(B_random = B_random,
+                            B_fixed  = B_fixed,
+                            beta_random = betar,
+                            beta_fixed  = betaf,
+                            Sigma = Sigma,
+                            noise = "Normal")
 
 
-mixedEffect_list  <- list(B_random = B_random,
-                          B_fixed  = B_fixed,
-                          beta_random = betar,
-                          beta_fixed  = betaf,
-                          Sigma = Sigma,
-                          noise = "Normal")
+  res <- estimateME(Y = Y,
+                    mixedEffect_list = mixedEffect_list,
+                    measurment_list = list(sigma = sd_Y, noise = "Normal"),
+                    nSim = nSim,
+                    alpha = 0.3,
+                    pSubsample = pSubsample,
+                    step0 = 0.3,
+                    nIter = nIter,
+                    silent = silent,
+                    polyak_rate = -1,
+                    seed = seed,
+                    nBurnin = nBurnin,
+                    estimate_fisher = TRUE)
+  #print(F)
+  #print(res$FisherMatrix[c(1:3,7),c(1:3,7)])
 
-
-res <- estimateME(Y = Y,
-                  mixedEffect_list = mixedEffect_list,
-                  measurment_list = list(sigma = sd_Y, noise = "Normal"),
-                  nSim = nSim,
-                  alpha = 0.3,
-                  pSubsample = pSubsample,
-                  step0 = 0.3,
-                  nIter = nIter,
-                  silent = silent,
-                  polyak_rate = -1,
-                  seed = seed,
-                  nBurnin = nBurnin,
-                  estimate_fisher = TRUE)
-expect_equal(max(abs(c(diag(F_random),F_fixed)/diag(res$FisherMatrix[1:3,1:3])-1)),0,tolerance=0.1)
+  expect_equal(max(abs(F/res$FisherMatrix-1)),0,tolerance=0.01)
 
 })
 

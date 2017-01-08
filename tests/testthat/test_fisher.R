@@ -68,9 +68,9 @@ seed     <- 5
 silent   <- 1
 plotflag <- 1
 
-nIter <- 1000
+nIter <- 20000
 n.pers <- 2
-nSim  <- 50
+nSim  <- 100
 n.obs  <- 10 + 0*(1:n.pers)
 
 nBurnin = 40
@@ -85,8 +85,8 @@ Vin <- list()
 betaf <- as.matrix(c(2.1))
 betar = as.matrix(c(0.8,0.5))
 
-Sigma <- matrix(c(0.02,0,0,0.01),2,2)
-sd_Y = 2
+Sigma <- matrix(c(0.2,0,0,0.1),2,2)
+sd_Y = 1
 F_fixed <- 0
 F_random <- 0
 set.seed(seed)
@@ -124,7 +124,7 @@ res <- estimateME(Y = Y,
                   nBurnin = nBurnin,
                   estimate_fisher = TRUE)
 
-expect_equal(max(abs(c(F_fixed,diag(F_random))/diag(res$FisherMatrix[1:3,1:3])-1)),0,tolerance=0.02)
+expect_equal(max(abs(c(F_fixed,diag(F_random))/diag(res$FisherMatrix[1:3,1:3])-1)),0,tolerance=0.01)
 
 })
 
@@ -170,7 +170,7 @@ for(i in 1:n.pers)
 }
 
 operator_list <- create_operator(locs, n, name = "fd2")
-operator_list$tau   <- 75
+operator_list$tau   <- 15
 K = operator_list$tau*operator_list$Q[[1]]
 Sigma.Z = solve(t(K)%*%diag(1/operator_list$h[[1]])%*%K)
 
