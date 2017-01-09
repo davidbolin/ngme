@@ -150,7 +150,7 @@ void grad_caculations(int i,
     mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
   }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w);
-    if(estimate_fisher == 1)
+    if(estimate_fisher)
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
   }
 
@@ -568,7 +568,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(process_active)
       	A = As[i];
       Eigen::VectorXd  Y = Ys[i];
-      if(estimate_fisher){
+      if(estimate_fisher == 1){
       	if(process_active){
       		if(common_grid == 1){
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
@@ -668,7 +668,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			    Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
 			    grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
-			    Fisher_information +=  Fisher_temp + Fisher_temp.transpose();
+			    Fisher_information -=  Fisher_temp + Fisher_temp.transpose();
 
 			    grad_last = grad_last_temp;
 		      count_inner++;
@@ -684,7 +684,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	    grad_outer_unweighted.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
-      Fisher_information -=  Fisher_add + Fisher_add.transpose() ;
+      Fisher_information +=  Fisher_add + Fisher_add.transpose() ;
       
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
@@ -774,7 +774,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   }
   Rcpp::List out_list;
-  if(estimate_fisher == 1)
+  if(estimate_fisher)
     out_list["FisherMatrix"]     = Fisher_information;
 
   out_list["pSubsample"]       = pSubsample;
