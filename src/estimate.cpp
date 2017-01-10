@@ -464,10 +464,16 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   Eigen::MatrixXd Fisher_information(npars, npars); // If computing the fisher information
 	Fisher_information.setZero(npars, npars);
+
   for(int iter=0; iter < nIter; iter++){
     /*
       printing output
     */
+
+
+    Eigen::MatrixXd F2(npars, npars); // If computing the fisher information
+    F2.setZero(npars, npars);
+
     if(silent == 0){
       Rcpp::Rcout << "i = " << iter << ": \n";
       if(process_active){
@@ -669,7 +675,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			    grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
 			    Fisher_information -=  Fisher_temp + Fisher_temp.transpose();
-
+          F2 += Fisher_temp + Fisher_temp.transpose();
 			    grad_last = grad_last_temp;
 		      count_inner++;
         }
@@ -685,7 +691,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 	    grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
       Fisher_information +=  Fisher_add + Fisher_add.transpose() ;
-      
+      //Rcpp::Rcout << "F2 = \n" << F2/nSim << "\n";
+      //Rcpp::Rcout << "Fisher_add = \n" << Fisher_add/nSim << "\n";
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
@@ -759,7 +766,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   // storing the results
   	Fisher_information.array()  /= (nIter * nSim);
 
-  if(estimate_fisher){
+  if(estimate_fisher > 0 ){
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
     mixobj->set_covariance(cov_est.block(0, 0, mixobj->npars, mixobj->npars));
   	errObj->set_covariance(cov_est.block(mixobj->npars, mixobj->npars, errObj->npars, errObj->npars));

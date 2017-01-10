@@ -80,14 +80,16 @@ class MixedEffect {
     virtual void gradient(const int ,
     					  const Eigen::VectorXd&,
     					  const double,
-    					  const double ) = 0;
+    					  const double,
+                          const int = 1) = 0;
     // gradient for variable variance noise
     virtual void gradient2(const int ,
     					   const Eigen::VectorXd&,
     					   const Eigen::VectorXd& ,
     					   const double,
     					   const double,
-    					   const double) = 0;
+    					   const double,
+                           const int = 1) = 0;
     virtual Eigen::MatrixXd d2Given(const int ,
                           const Eigen::VectorXd&,
                           const double,
@@ -170,13 +172,15 @@ class NormalMixedEffect  : public MixedEffect{
     void gradient(const int  ,
      			  const Eigen::VectorXd&,
      			  const double,
-     			  const double);
+     			  const double,
+                  const int use_EU = 1);
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
     			   const double log_sigma2_noise = 0,
     			   const double EiV = 1.,
-    			   const double weight = 1.);
+    			   const double weight = 1.,
+             const int use_EU = 1);
     Eigen::MatrixXd d2Given(const int ,
                           const Eigen::VectorXd&,
                           const double,
@@ -310,11 +314,13 @@ class NIGMixedEffect  : public MixedEffect{
     			   const Eigen::VectorXd& iV,
     			   const double log_sigma2_noise = 0,
     			   const double EiV = 1.,
-    			   const double weight = 1.);
+    			   const double weight = 1.,
+                   const int use_EU = 1);
     void gradient(const int ,
     			  const Eigen::VectorXd& ,
     			  const double ,
-    			  const double);
+    			  const double,
+                  const int use_EU = 1);
     void gradient_sigma(const int ,
     					Eigen::VectorXd& ,
     					const double);

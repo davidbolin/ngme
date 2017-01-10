@@ -121,7 +121,7 @@ test_that("Fisher, Gaussian random effects", {
 
     vvv = matrix(c(1,0,0,0,1,0,0,0,0,0,0,1),3,4)
     for(k in 1:3){
-      dSigma = Sigma <- matrix(vvv[k,],2,2)
+      dSigma  <- matrix(vvv[k,],2,2)
       dQS = B_random[[i]]%*%dSigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i])
       dQs = B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + 2*sd_Y*diag(n.obs[i])
       FS[k,k] = FS[k,k] - (0.5*sum(diag(-Q%*%dQS%*%Q%*%dQS)) - t(v)%*%Q%*%dQS%*%Q%*%dQS%*%Q%*%v)

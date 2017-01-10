@@ -1,8 +1,8 @@
 graphics.off()
 library(LDMod)
 
-n.iterations <- 100
-nIter <- 4000
+n.iterations <- 10
+nIter <- 40
 n.pers <- 100
 nSim  <- 2
 n.obs  <- 30 + 0*(1:n.pers)
@@ -143,9 +143,9 @@ if(use.proc){
                               silent = TRUE,
                               estimate_fisher = TRUE,
                               estimation.options = list(nIter.gauss = 10,
-                                                        nIter = 2000,
+                                                        nIter = 20,
                                                         nSim = 2,
-                                                        nSim.fisher = 1000,
+                                                        nSim.fisher = 20,
                                                         pSubsample = 0.1,
                                                         nPar_burnin = nPar_burnin))
 

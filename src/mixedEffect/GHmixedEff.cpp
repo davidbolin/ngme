@@ -287,6 +287,14 @@ void NIGMixedEffect::sampleU(const int i,
   	}
     sampleV(i);
 
+    Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * res);
+    Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * Br[i];
+    Eigen::MatrixXd Qp  = invSigma;
+    Qp.array() /= V(i);
+    b += Qp * (- mu + V(i) * mu);
+    Q += Qp;
+    EU =  Q.ldlt().solve(b);
+
 }
 
 void NIGMixedEffect::sampleU2(const int i,
@@ -311,6 +319,15 @@ void NIGMixedEffect::sampleU2(const int i,
                     log_sigma2_noise);
     }
     sampleV(i);
+
+    Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res) );
+    Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * iV.asDiagonal() * Br[i];
+    Eigen::MatrixXd Qp  = invSigma / V(i);
+    b += Qp * (- mu + V(i) * mu);
+    Q += Qp;
+    EU =  Q.ldlt().solve(b);
+
+
   
 }
 
@@ -518,17 +535,26 @@ void NIGMixedEffect::sampleU2_par(const int i,
 void NIGMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
-                              const double weight)
+                              const double weight,
+                              const int use_EU // =1
+                              ) 
 {
     Eigen::VectorXd res_  = res;
     if(Br.size() > 0){
 
+      
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
 
+      if(use_EU)
+      {
+        res_ -= Br[i] * EU;
+        U_ = EU - (-1 + V(i)) * mu;
+      }else{
+        res_ -= Br[i] * U.col(i);
+      }
 
-
-      res_ -= Br[i] * U.col(i);
+      
       grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
@@ -557,7 +583,8 @@ void NIGMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& iV,
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
-                                 const double weight //  = 1
+                                 const double weight, //  = 1
+                                 const int use_EU // =1
                                  )
 {
    Eigen::VectorXd res_  = res;
@@ -566,9 +593,14 @@ void NIGMixedEffect::gradient2(const int i,
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
 
+      if(use_EU)
+      {
+        res_ -= Br[i] * EU;
+        U_ = EU - (-1 + V(i)) * mu;
+      }else{
+        res_ -= Br[i] * U.col(i);
+      }
 
-
-      res_ -= Br[i] * U.col(i);
       grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
       grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
