@@ -1,12 +1,12 @@
 library(LDMod)
 library(MASS)
-seed     <- 2
+seed     <- 4
 silent   <- 1
 plotflag <- 1
 
-nIter <- 1
+nIter <- 10
 n.pers <- 2
-nSim  <- 1000
+nSim  <- 20
 n.obs  <- 10 + 0*(1:n.pers)
 
 nBurnin = 40
@@ -33,20 +33,27 @@ FSbr <- matrix(0,nrow = 3, ncol = 2)
 Fs <- 0
 Fsbf <- 0
 Fsbr <- 0
+vvT <- 0
+FSigma <- 0
 for(i in 1:n.pers)
 {
   B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
-  B_random[[i]] <- cbind((1:n.obs[i])/n.obs[i],((1:n.obs[i])/n.obs[i])^(2))
+  B_random[[i]] <- cbind((1:n.obs[i])/n.obs[i],rnorm(n.obs[i]))
   
   Y[[i]] <- rnorm(n = n.obs[i], B_fixed[[i]]%*%betaf, sd = sd_Y) + B_random[[i]]%*%mvrnorm(n = 1,mu = betar, Sigma = Sigma)
   Q =  solve(B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i]))
   Ff  <- Ff  + t(B_fixed[[i]] )%*%Q%*%B_fixed[[i]]
   Fr  <- Fr  + t(B_random[[i]])%*%Q%*%B_random[[i]]
   Frf <- Frf + t(B_random[[i]])%*%Q%*%B_fixed[[i]]
-  
   v = Y[[i]] - B_fixed[[i]]%*%betaf - B_random[[i]]%*%betar
+  vvT <- v%*%t(v)
+  
+  D<-getDuplicateM(2)
+  ddSigma <- 0.5*kronecker(t(B_random[[i]]),t(B_random[[i]]))%*%kronecker(Q,Q - 2*Q%*%vvT%*%Q)%*%kronecker(B_random[[i]],B_random[[i]])
+  FSigma <- -t(D)%*%ddSigma%*%D + FSigma
+  
   dl = (-sd_Y*sum(diag(Q)) + sd_Y*t(v)%*%Q%*%Q%*%v)
-  Fs = Fs - (dl/sd_Y + 2*sd_Y^2*sum(diag(Q%*%Q)) - 4*sd_Y^2**t(v)%*%Q%*%Q%*%Q%*%v)
+  Fs = Fs - (dl/sd_Y + 2*sd_Y^2*sum(diag(Q%*%Q)) - 4*(sd_Y^2)*t(v)%*%Q%*%Q%*%Q%*%v)
   Fsbf = Fsbf + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_fixed[[i]]
   Fsbr = Fsbr + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_random[[i]]
   
@@ -90,5 +97,5 @@ res <- estimateME(Y = Y,
                   seed = seed,
                   nBurnin = nBurnin,
                   estimate_fisher = 2)
-print(F)
-print(res$FisherMatrix)
+print(FSigma)
+print(res$FisherMatrix[4:6,4:6])

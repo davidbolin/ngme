@@ -146,10 +146,14 @@ void grad_caculations(int i,
 
   // mixobj gradient
   mixobj.add_inter(i, res);
+  int use_EU = 1;
+  if(estimate_fisher)
+    use_EU = 0;
   if(errObj.noise != "Normal"){
-    mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
+    
+    mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w, use_EU);
   }else{
-    mixobj.gradient(i,res,2 * log(errObj.sigma),w);
+    mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
     if(estimate_fisher)
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
   }
@@ -471,9 +475,6 @@ List estimateLong_cpp(Rcpp::List in_list)
     */
 
 
-    Eigen::MatrixXd F2(npars, npars); // If computing the fisher information
-    F2.setZero(npars, npars);
-
     if(silent == 0){
       Rcpp::Rcout << "i = " << iter << ": \n";
       if(process_active){
@@ -675,8 +676,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 			    grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
 			    Fisher_information -=  Fisher_temp + Fisher_temp.transpose();
-          F2 += Fisher_temp + Fisher_temp.transpose();
-			    grad_last = grad_last_temp;
+          grad_last = grad_last_temp;
 		      count_inner++;
         }
       }
@@ -691,9 +691,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	    grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
       Fisher_information +=  Fisher_add + Fisher_add.transpose() ;
-      //Rcpp::Rcout << "F2 = \n" << F2/nSim << "\n";
-      //Rcpp::Rcout << "Fisher_add = \n" << Fisher_add/nSim << "\n";
-      Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
+     Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
       Eigen::MatrixXd cov = (centered * centered.transpose()) /  (weight[i]* double(grad_inner.cols() - 1));

@@ -75,6 +75,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getDuplicateM
+Eigen::MatrixXi getDuplicateM(const int n);
+RcppExport SEXP LDMod_getDuplicateM(SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(getDuplicateM(n));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_sampling_NIG
 Rcpp::List test_sampling_NIG(Rcpp::List mixedEffect_list, Rcpp::List meas_list, int nsamples);
 RcppExport SEXP LDMod_test_sampling_NIG(SEXP mixedEffect_listSEXP, SEXP meas_listSEXP, SEXP nsamplesSEXP) {

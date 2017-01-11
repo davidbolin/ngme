@@ -364,13 +364,16 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
   Eigen::VectorXd res_  = res;
   
   int n_s  =0;
+
   if(Br.size()>0)
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
     d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]); 
     res_ -= Br[i] * U.col(i);
-    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  =  weight * Dd.transpose() * iSkroniS * Dd;
+    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
+    Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
+    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
   }
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
@@ -584,6 +587,9 @@ void NormalMixedEffect::clear_gradient()
 		grad_beta_r.setZero(Br[0].cols());
 	}
   grad_beta.setZero(n_f+n_r);
+  UUt.setZero(Sigma.cols() * Sigma.rows());
+  weight_total = 0.;
+
 }
 
 Eigen::VectorXd NormalMixedEffect::get_gradient()

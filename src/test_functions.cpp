@@ -5,6 +5,15 @@
 #include "GIG.h"
 #include "NGIG.h"
 #include "MixedEffect.h"
+#include "MatrixAlgebra.h"
+
+//[[Rcpp::export]]
+Eigen::MatrixXi getDuplicateM(const int n)
+{
+
+  return(duplicatematrix(n));
+}
+
 
 // [[Rcpp::export]]
 Rcpp::List  test_sampling_NIG(Rcpp::List mixedEffect_list,

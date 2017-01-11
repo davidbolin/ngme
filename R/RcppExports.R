@@ -25,6 +25,10 @@ simulateLongME_cpp <- function(in_list) {
     .Call('LDMod_simulateLongME_cpp', PACKAGE = 'LDMod', in_list)
 }
 
+getDuplicateM <- function(n) {
+    .Call('LDMod_getDuplicateM', PACKAGE = 'LDMod', n)
+}
+
 test_sampling_NIG <- function(mixedEffect_list, meas_list, nsamples) {
     .Call('LDMod_test_sampling_NIG', PACKAGE = 'LDMod', mixedEffect_list, meas_list, nsamples)
 }
