@@ -147,11 +147,12 @@ void grad_caculations(int i,
   // mixobj gradient
   mixobj.add_inter(i, res);
   int use_EU = 1;
-  if(estimate_fisher)
+  if(estimate_fisher>0)
     use_EU = 0;
   if(errObj.noise != "Normal"){
-    
     mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w, use_EU);
+      if(estimate_fisher)
+        Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
   }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
     if(estimate_fisher)
@@ -163,6 +164,9 @@ void grad_caculations(int i,
 	// measurent error  gradient
   //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
   errObj.gradient(i, res, w);
+  if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
+    Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
+  
 
 	if(process_active){
 	  // operator gradient

@@ -67,8 +67,10 @@ void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)
     for( Rcpp::List::iterator it = Vs_list.begin(); it != Vs_list.end(); ++it ) {
       Vs[i++] = Rcpp::as < Eigen::VectorXd >( it[0]);
     }
- }else
+ }else{
+    Rcpp::Rcout << "in NormalVarianceMixtureBaseError:: missing Vs\n";
  	  throw("in NormalVarianceMixtureBaseError::initFromList Vs must be set! \n");
+  }
 
 
 }

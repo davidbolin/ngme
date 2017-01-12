@@ -86,7 +86,17 @@ double NIGMeasurementError::sample_V(const double res2_j, const int n_s)
 }
 
 
-
+Eigen::MatrixXd NIGMeasurementError::d2Given(const int i,
+                    const Eigen::VectorXd& res,
+                    const double weight)
+{
+  Eigen::MatrixXd d2 =  Eigen::MatrixXd::Zero(1, 1);
+  if(common_V == 0)
+    d2(0, 0) = weight *  (0.5 *  res.size() / ( nu * nu));
+  else
+    d2(0, 0) = weight *  (0.5 *   1. / ( nu * nu));
+  return(d2);
+}
 
 
 void NIGMeasurementError::gradient(const int i,

@@ -186,7 +186,13 @@ class NormalMixedEffect  : public MixedEffect{
                           const double,
                           const double ); //computes second derivates given, latent data
                                                                               // fixed variance 
-
+    virtual Eigen::MatrixXd d2Given2(const int ,
+                           const Eigen::VectorXd&,
+                           const Eigen::VectorXd& ,
+                           const double,
+                           const double,
+                           const double);  //computes second derivates given, latent data 
+    
 
     void sampleU(const int, const Eigen::VectorXd &, const double ) ;
     void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);

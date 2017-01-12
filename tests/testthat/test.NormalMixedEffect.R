@@ -4,8 +4,8 @@ library(MASS)
 graphics.off()
 context("Normal Mixed effect")
 seed     <- 3
-silent   <- 0
-plotflag <- 1
+silent   <- 1
+plotflag <- 0
 
 nIter <- 150
 pSubsample <- 0.5

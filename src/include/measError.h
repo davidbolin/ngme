@@ -47,6 +47,12 @@ class MeasurementError {
     /*
     	stores the covariance of the parameters
     */
+
+    virtual Eigen::MatrixXd d2Given(const int ,
+    					  const Eigen::VectorXd& ,
+    					  const double){return(Eigen::MatrixXd::Zero(0,0));}; //computes second derivates given, latent data
+                                                                              // fixed variance 
+
 	void set_covariance(const Eigen::MatrixXd & Cov_in) {Cov_theta = Cov_in;};
 
     /*
@@ -158,6 +164,10 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 						const int burnin = 0);
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
+
+		Eigen::MatrixXd d2Given(const int ,
+    					  		const Eigen::VectorXd& ,
+    					  		const double);
 
 };
 

@@ -14,9 +14,9 @@ seed     <- 2
 silent   <- 1
 plotflag <- 1
 
-nIter <- 2000
-pSubsample <- 0.5
-learning_rate <- 0.5
+nIter <- 1000
+pSubsample <- 0.3
+learning_rate <- 0.99
 n.pers <- 1000 #number of patients
 n.obs  <- 50 #number of obs per patient
 
