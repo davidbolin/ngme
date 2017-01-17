@@ -39,6 +39,8 @@ class operatorMatrix {
     //std::vector< Eigen::SparseMatrix<double,0,int> > Q;
     std::vector<Eigen::MatrixXd> K;                   // the generic matrix object if Q is full!
 
+
+
     double tau;
     Eigen::VectorXd  tauVec;
     int counter;
@@ -57,6 +59,11 @@ class operatorMatrix {
 							   const Eigen::VectorXd & ,
 							   int,
 							   const double){};
+    virtual Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               int,
+                               const double){return(Eigen::MatrixXd::Zero(0,0));};
     virtual void step_theta(const double stepsize,
     						const double learning_rate = 0,
     						const double polyak_rate   = -1,
@@ -79,6 +86,11 @@ class constMatrix : public operatorMatrix{
   public:
   double term1, term2, term3;
 	~constMatrix();
+    Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               int,
+                               const double);
 	void gradient(const Eigen::VectorXd &, const Eigen::VectorXd & );
   void gradient_init(const int, const int);
   void gradient_add( const Eigen::VectorXd & ,
@@ -100,6 +112,7 @@ class constMatrix : public operatorMatrix{
 
     Eigen::VectorXd  get_gradient() { Eigen::VectorXd g(1); g[0] = dtau; return(g);};
     void  clear_gradient() {dtau = 0;};
+
 
 };
 

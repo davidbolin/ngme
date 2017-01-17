@@ -78,7 +78,7 @@ test_that("Fisher, Gaussian random effects", {
   
   nIter <- 1
   n.pers <- 2
-  nSim  <- 200
+  nSim  <- 20
   n.obs  <- 10 + 0*(1:n.pers)
   
   nBurnin = 40
@@ -95,20 +95,14 @@ test_that("Fisher, Gaussian random effects", {
   
   Sigma <- matrix(c(0.02,0,0,0.01),2,2)
   sd_Y = 0.1
-  Ff <- 0
-  Fr <- matrix(0,2,2)
-  Frf <- matrix(0,2,1)
   set.seed(seed)
-  FS <- diag(c(0,0,0))
-  FSs <- FSbf <- c(0,0,0)
-  FSbr <- matrix(0,nrow = 3, ncol = 2)
-  Fs <- 0
-  Fsbf <- 0
-  Fsbr <- 0
   vvT <- 0
   FSigma <- 0
   dSigma_dsd <- 0
   dSigma_dbeta <- 0
+  Fsbf = 0
+  Fsbr = 0 
+  Fs   = 0
   for(i in 1:n.pers)
   {
     B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
@@ -124,13 +118,11 @@ test_that("Fisher, Gaussian random effects", {
     FSigma <- -t(D)%*%ddSigma%*%D + FSigma
     dSigma_dsd <- dSigma_dsd + sd_Y *  as.vector(Q%*%Q%*%vvT%*%Q + Q%*%vvT%*%Q%*%Q)%*%kronecker(B_random[[i]],B_random[[i]])%*%D
     dSigma_dsd <- dSigma_dsd - sd_Y * as.vector(Q%*%Q)%*%kronecker(B_random[[i]],B_random[[i]])%*%D
-    dl = (-sd_Y*sum(diag(Q)) + sd_Y*t(v)%*%Q%*%Q%*%v)
-    Fs = Fs - (dl/sd_Y + 2*sd_Y^2*sum(diag(Q%*%Q)) - 4*(sd_Y^2)*t(v)%*%Q%*%Q%*%Q%*%v)
-    Fsbf = Fsbf + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_fixed[[i]]
-    Fsbr = Fsbr + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_random[[i]]
+     dl = (-sd_Y*sum(diag(Q)) + sd_Y*t(v)%*%Q%*%Q%*%v)
+     Fs = Fs - (dl/sd_Y + 2*sd_Y^2*sum(diag(Q%*%Q)) - 4*(sd_Y^2)*t(v)%*%Q%*%Q%*%Q%*%v)
+     Fsbf = Fsbf + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_fixed[[i]]
+     Fsbr = Fsbr + (2*sd_Y)*t(v)%*%Q%*%Q%*%B_random[[i]]
     dSigma_dbeta <- dSigma_dbeta + kronecker(t(cbind(B_fixed[[i]],B_random[[i]]))%*%Q,t(v)%*%Q)%*%kronecker(B_random[[i]],B_random[[i]])%*%D
-    
-    
   }
   
   
@@ -436,5 +428,5 @@ Fish[3  , 3   ] <-ddsigma
 Fish[4  , 4   ] <-ddnu
 Fish[3  , 4   ] <-dnuds
 Fish[4  , 3   ] <-dnuds
-expect_equal((max(abs(solve(Fish)-solve(res$FisherMatrix)))),0,tol=0.01)
+expect_equal((max(abs(solve(Fish)-solve(res$FisherMatrix)))),0,tol=0.05)
 })

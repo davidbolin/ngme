@@ -78,7 +78,24 @@ void constMatrix::gradient_init(int nsim, int nrep)
   term2 = 0;
   term3 = 0;
 }
+Eigen::MatrixXd constMatrix::d2Given( const Eigen::VectorXd & X,
+                   const Eigen::VectorXd & iV,
+                   const Eigen::VectorXd & mean_KX,
+                  int ii,
+                  const double weight)
+{
+  if(nop == 1)
+    ii = 0;
+  Eigen::VectorXd vtmp = Q[ii] * X;
 
+  double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
+  double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
+  Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(1,1);
+  d2(0, 0) = weight * (d[ii] + xtQx ) / pow(tau, 2);
+
+  return(d2);
+
+}
 void constMatrix::gradient_add( const Eigen::VectorXd & X,
 								   const Eigen::VectorXd & iV,
 								   const Eigen::VectorXd & mean_KX,
@@ -91,8 +108,8 @@ void constMatrix::gradient_add( const Eigen::VectorXd & X,
 
   double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
   double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
-  dtau +=  weight *  (d[ii] - xtQx - xtQmean)/ tau;
-  ddtau -= weight * (d[ii] + xtQx) / pow(tau, 2);
+  dtau  -=  weight *  (d[ii] - xtQx - xtQmean)/ tau;
+  ddtau += weight * (d[ii] + xtQx) / pow(tau, 2);
   term1 += weight * xtQx/pow(tau,2);
   term2 += weight * xtQmean/tau;
   term3 -= weight * d[ii];

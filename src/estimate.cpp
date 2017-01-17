@@ -171,6 +171,11 @@ void grad_caculations(int i,
 	if(process_active){
 	  // operator gradient
     Kobj.gradient_add( process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
+
+    if(estimate_fisher > 0 ){
+      Fisher_information.block(mixobj.npars + errObj.npars, mixobj.npars + errObj.npars, Kobj.npars, Kobj.npars ) += 
+      Kobj.d2Given(process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
+    }
     // process gradient
     res += A * process.Xs[i];
 
@@ -674,6 +679,7 @@ List estimateLong_cpp(Rcpp::List in_list)
                              process->npars, 1).array() = process->get_gradient().array();
 		        grad_inner.block(mixobj->npars + errObj->npars + process->npars,count_inner,
                             Kobj->npars, 1) = Kobj -> get_gradient();
+
 			    }
 			    // adjusting so we get last gradient not cumsum
 			    Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
@@ -688,14 +694,14 @@ List estimateLong_cpp(Rcpp::List in_list)
 	    // we need both weighted unweighted
 	    // grad_inner.array() /= weight[i]; // dont use weight here(?)
 	    // do grad_outer_unweighted
-
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean();
       grad_outer.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) = Mgrad_inner;
 	    grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
       Fisher_information +=  Fisher_add + Fisher_add.transpose() ;
-     Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
+
+      Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
       Eigen::MatrixXd cov = (centered * centered.transpose()) /  (weight[i]* double(grad_inner.cols() - 1));
