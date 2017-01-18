@@ -8,7 +8,7 @@ silent   <- 1
 plotflag <- 1
 
 nIter <- 1
-n.pers <- 40
+n.pers <- 20
 nSim  <- 100
 n.obs  <- 10 + 0*(1:n.pers)
 
@@ -23,7 +23,8 @@ B_fixed  <- list()
 
 betaf <- as.matrix(c(2.1))
 betar = as.matrix(c(0.8,0.5))
-tau <- 75
+tau <- 1.1
+kappa <- 2
 Sigma <- matrix(c(0.02,0,0,0.01),2,2)
 
 sd_Y = 0.2
@@ -39,14 +40,37 @@ for(i in 1:n.pers)
 }
 
 
-operator_list <- create_operator(locs, n, name = "fd2")
+operator_list <- create_operator(locs, n, name = "Matern")
 operator_list$tau   <- tau
-K = operator_list$tau*operator_list$Q[[1]]
+operator_list$kappa   <- kappa
+K = 0.5  * operator_list$tau*(kappa^(-1.5) * operator_list$G[[1]] + kappa^(0.5) * operator_list$C[[1]])
 Q_op = t(K)%*%diag(1/operator_list$h[[1]])%*%K
+#operator_list <- create_operator(locs, n, name = "fd2")
+#operator_list$tau   <- tau
+#operator_list$Q[[1]] <- K/operator_list$tau 
 Sigma.Z = solve(Q_op)
+# debugging differntial matrices
+A = spde.A(locs[[1]],operator_list$loc[[1]])
+eps <- 10^-6
+K_eps        = 0.5  * operator_list$tau*((kappa + eps)^(-1.5) * operator_list$G[[1]] + (kappa + eps)^(0.5) * operator_list$C[[1]])
+K_meps       = 0.5  * operator_list$tau*((kappa - eps)^(-1.5) * operator_list$G[[1]] + (kappa - eps)^(0.5) * operator_list$C[[1]])
+K_kappa_tau  = 0.5  * (operator_list$tau+eps)*((kappa + eps)^(-1.5) * operator_list$G[[1]] + (kappa + eps)^(0.5) * operator_list$C[[1]])
+K_mkappa_tau = 0.5  * (operator_list$tau+eps)*((kappa - eps)^(-1.5) * operator_list$G[[1]] + (kappa - eps)^(0.5) * operator_list$C[[1]])
+K_mkappa_mtau        = 0.5  * (operator_list$tau-eps)*((kappa - eps)^(-1.5) * operator_list$G[[1]] + (kappa - eps)^(0.5) * operator_list$C[[1]])
+K_kappa_mtau        = 0.5  * (operator_list$tau-eps)*((kappa + eps)^(-1.5) * operator_list$G[[1]] + (kappa + eps)^(0.5) * operator_list$C[[1]])
+
+Sigma.Z_eps = solve(t(K_eps)%*%diag(1/operator_list$h[[1]])%*%K_eps)
+Sigma.Z_kappa_tau = solve(t(K_kappa_tau)%*%diag(1/operator_list$h[[1]])%*%K_kappa_tau)
+Sigma.Z_meps = solve(t(K_meps)%*%diag(1/operator_list$h[[1]])%*%K_meps)
+Sigma.Z_mkappa_tau = solve(t(K_mkappa_tau)%*%diag(1/operator_list$h[[1]])%*%K_mkappa_tau)
+Sigma.Z_mkappa_mtau = solve(t(K_mkappa_mtau)%*%diag(1/operator_list$h[[1]])%*%K_mkappa_mtau)
+Sigma.Z_kappa_mtau = solve(t(K_kappa_mtau)%*%diag(1/operator_list$h[[1]])%*%K_kappa_mtau)
+
 #Sigma.Z =  Sigma.Z
 processes_list = list(noise = "Normal")
 processes_list$V <- list()
+
+
 
 vvT <- 0
 FSigma <- 0
@@ -57,6 +81,8 @@ Fsbr = 0
 Fs   = 0
 Fbeta =  0
 Ftau  = 0
+Fkappa <- 0
+Fkappa_tau <-  0
 for(i in 1:n.pers)
 {
   B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
@@ -66,6 +92,13 @@ for(i in 1:n.pers)
   processes_list$V[[i]] <- operator_list$h
   A = spde.A(locs[[i]],operator_list$loc[[1]])
   Sigma_Y =  B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i])
+  Sigma_Y_eps_kappa = Sigma_Y +  A%*%Sigma.Z_eps%*%t(A) 
+  Sigma_Y_meps_kappa = Sigma_Y +  A%*%Sigma.Z_meps%*%t(A) 
+  Sigma_Y_kappa_tau = Sigma_Y +  A%*%Sigma.Z_kappa_tau%*%t(A) 
+  Sigma_Y_mkappa_tau       = Sigma_Y +  A%*%Sigma.Z_mkappa_tau%*%t(A) 
+  Sigma_Y_mkappa_mtau       = Sigma_Y +  A%*%Sigma.Z_mkappa_mtau%*%t(A) 
+  Sigma_Y_kappa_mtau       = Sigma_Y +  A%*%Sigma.Z_kappa_mtau%*%t(A) 
+  
   Sigma_Y = Sigma_Y +  A%*%Sigma.Z%*%t(A) 
   Y[[i]] <- mvrnorm(n = 1, mu =  B_fixed[[i]]%*%betaf + B_random[[i]]%*%betar  , Sigma = Sigma_Y)
   v = Y[[i]] - B_fixed[[i]]%*%betaf - B_random[[i]]%*%betar  
@@ -96,6 +129,22 @@ for(i in 1:n.pers)
       B = cbind(B_fixed[[i]], B_random[[i]])
       Fbeta <- Fbeta + as.matrix(t(B)%*%Q%*%B)
   dSigma_dbeta <- dSigma_dbeta + kronecker(t(cbind(B_fixed[[i]],B_random[[i]]))%*%Q,t(v)%*%Q)%*%kronecker(B_random[[i]],B_random[[i]])%*%D
+
+  #ddkappa 
+  #
+  
+  lik = - 0.5 * log(det(Sigma_Y)) - sum(diag(solve(Sigma_Y,Z)))/2
+  lik_eps = - 0.5 * log(det(Sigma_Y_eps_kappa)) - sum(diag(solve(Sigma_Y_eps_kappa,Z)))/2
+  lik_meps = - 0.5 * log(det(Sigma_Y_meps_kappa)) - sum(diag(solve(Sigma_Y_meps_kappa,Z)))/2
+  ddkappa =  (-2*lik + lik_eps + lik_meps)/eps^2
+  Fkappa = Fkappa - ddkappa
+  #dkappa dtau
+  lik_tau_kappa = - 0.5 * log(det(Sigma_Y_kappa_tau)) - sum(diag(solve(Sigma_Y_kappa_tau,Z)))/2
+  lik_mkappa_tau       = - 0.5 * log(det(Sigma_Y_mkappa_tau)) - sum(diag(solve(Sigma_Y_mkappa_tau,Z)))/2
+  lik_mkappa_mtau       = - 0.5 * log(det(Sigma_Y_mkappa_mtau)) - sum(diag(solve(Sigma_Y_mkappa_mtau,Z)))/2
+  lik_kappa_mtau       = - 0.5 * log(det(Sigma_Y_kappa_mtau)) - sum(diag(solve(Sigma_Y_kappa_mtau,Z)))/2
+  dkappadtau = (lik_tau_kappa - lik_kappa_mtau - lik_mkappa_tau + lik_mkappa_mtau)/(4*eps^2)
+  Fkappa_tau = Fkappa_tau - dkappadtau 
 }
 
 
@@ -112,7 +161,6 @@ sim_res <- simulateLongPrior( Y                 = Y,
                               measurment_list   = list(sigma = sd_Y, noise = "Normal"),
                               processes_list    = processes_list,
                               operator_list     = operator_list)
-
 processes_list$X <- sim_res$X
 
 
@@ -146,7 +194,10 @@ Fish[1:3  , 7  ]    <- as.matrix(cbind(Fsbf,Fsbr))
 Fish[7  ,   1:3 ]    <-t(as.matrix(cbind(Fsbf,Fsbr)))
 Fish[7  , 4:6   ] <-dSigma_dsd
 Fish[4:6  , 7   ] <-dSigma_dsd
+Fish[8,8 ]        <- Ftau
+Fish[8,9]         <- Fkappa_tau
+Fish[9,8]         <- Fkappa_tau
+Fish[9,9]         <- Fkappa
 #print(res$FisherMatrix[1:7,1:7])
 #print(Fish)
-print(res$FisherMatrix[8,8])
-print(Ftau)
+print(res$FisherMatrix[8:9,8:9]/Fish[8:9,8:9])

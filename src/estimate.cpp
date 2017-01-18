@@ -198,7 +198,6 @@ void grad_caculations(int i,
       process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
     }
   }
-
   
 }
 

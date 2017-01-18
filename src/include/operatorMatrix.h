@@ -156,6 +156,12 @@ class MaternOperator : public operatorMatrix{
 							   const Eigen::VectorXd & ,
 							   int,
 							   const double);
+
+    Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               const Eigen::VectorXd & ,
+                               int,
+                               const double);
     void step_theta(const double stepsize,
     				const double learning_rate = 0,
     				const double polyak_rate   = -1,

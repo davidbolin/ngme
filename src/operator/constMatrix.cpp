@@ -89,7 +89,6 @@ Eigen::MatrixXd constMatrix::d2Given( const Eigen::VectorXd & X,
   Eigen::VectorXd vtmp = Q[ii] * X;
 
   double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
-  double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
   Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(1,1);
   d2(0, 0) = weight * (d[ii] + xtQx ) / pow(tau, 2);
 
