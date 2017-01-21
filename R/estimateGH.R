@@ -33,7 +33,8 @@ estimate.wrapper <- function(Y,
   if(!silent)
     cat("Setup lists\n")
   Vin <- list()
-  for(i in 1:arguments$n.pers)
+  n.pers = length(Y)
+  for(i in 1:n.pers)
   {
     Vin[[i]] <- rep(1, length(Y[[i]]))
   }
