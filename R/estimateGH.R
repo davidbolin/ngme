@@ -14,7 +14,7 @@ estimate.wrapper <- function(Y,
                              estimate_fisher = FALSE,
                              ...)
 {
-
+  arguments <- list(...) 
   estimation.controls = list(learning.rate = 0,
                              polyak_rate = 0.1,
                              nBurnin = 100,
@@ -33,7 +33,7 @@ estimate.wrapper <- function(Y,
   if(!silent)
     cat("Setup lists\n")
   Vin <- list()
-  for(i in 1:n.pers)
+  for(i in 1:arguments$n.pers)
   {
     Vin[[i]] <- rep(1, length(Y[[i]]))
   }
