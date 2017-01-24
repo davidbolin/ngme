@@ -14,6 +14,9 @@ estimate.wrapper <- function(Y,
                              estimate_fisher = FALSE,
                              ...)
 {
+  
+  library(MASS) ## required for ginv function
+  
   estimation.controls = list(learning.rate = 0,
                              polyak_rate = 0.1,
                              nBurnin = 100,
@@ -589,7 +592,7 @@ ME.startvalues <- function(Y,mixedEffect_list)
     Sigma = matrix(0,nc.r,nc.r)
     br = matrix(0,n,nc.r)
     for(i in 1:n){
-      BB = solve(t(mixedEffect_list$B_random[[i]])%*%mixedEffect_list$B_random[[i]])
+      BB = ginv(t(mixedEffect_list$B_random[[i]])%*%mixedEffect_list$B_random[[i]])
       br[i,] = BB%*%t(mixedEffect_list$B_random[[i]])%*%(Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed)
       res <- c(res,Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed - mixedEffect_list$B_random[[i]]%*%br[i,])
     }
