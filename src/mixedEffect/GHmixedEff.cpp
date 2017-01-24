@@ -218,7 +218,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
         sample_MALA = 1;
       else
         sample_MALA = 0;
-      
+
   }else{ Br.resize(0);}
 
 
@@ -327,7 +327,7 @@ void NIGMixedEffect::sampleU2(const int i,
 {
     if(Br.size() == 0)
       return;
-    
+
     if(sample_MALA)
     {
       sampleU2_MALA(i,
@@ -350,7 +350,7 @@ void NIGMixedEffect::sampleU2(const int i,
     EU =  Q.ldlt().solve(b);
 
 
-  
+
 }
 
 
@@ -361,7 +361,7 @@ void NIGMixedEffect::sampleU_MALA_(const int i,
 {
     Eigen::MatrixXd Q_prior   =   Br[i].transpose() * (Q_noise * Br[i]);
     double scale = 2.48/pow(U.col(i).size(),0.33);
-    
+
     Eigen::VectorXd dU;
     Eigen::MatrixXd ddU;
     dU_ddU_NIG(dU,
@@ -377,13 +377,13 @@ void NIGMixedEffect::sampleU_MALA_(const int i,
                 Q_noise,
                 Br[i]);
     ddU.array() /= scale;
-    
+
     Eigen::LLT<Eigen::MatrixXd> chol_ddU(ddU);
     Eigen::VectorXd U_mean = U.col(i) - 0.5*chol_ddU.solve(dU);
 
     Eigen::VectorXd Z = Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( U.col(i).size()) );
     Eigen::VectorXd Ustar = U_mean + chol_ddU.matrixU().solve(Z);
-    
+
     Eigen::VectorXd dUstar;
     Eigen::MatrixXd ddUstar;
     dU_ddU_NIG(dUstar,
@@ -404,12 +404,12 @@ void NIGMixedEffect::sampleU_MALA_(const int i,
     Eigen::VectorXd Ustar_mean = Ustar - 0.5*chol_ddUstar.solve(dUstar);
 
     double qstar = -0.5 * (Ustar - U_mean).transpose()* ( ddU * (Ustar - U_mean));
-    Eigen::MatrixXd L_Q = chol_ddUstar.matrixL();    
+    Eigen::MatrixXd L_Q = chol_ddUstar.matrixL();
     qstar += L_Q.diagonal().array().log().sum();
     double q0 = -0.5 * (U.col(i) - Ustar_mean).transpose()* ( ddU * (U.col(i) - Ustar_mean));
-    L_Q = chol_ddU.matrixL();    
+    L_Q = chol_ddU.matrixL();
     q0 += L_Q.diagonal().array().log().sum();
-    
+
     double loglik = logNIG( U.col(i),
                             mu,
                             -mu,
@@ -432,7 +432,7 @@ void NIGMixedEffect::sampleU_MALA_(const int i,
       accept_MALA++;
     }
       count_MALA++;
-    
+
 
 }
 void NIGMixedEffect::sampleU_Gibbs(const int i,
@@ -480,7 +480,7 @@ void NIGMixedEffect::sampleU_MALA(const int i,
     Eigen::MatrixXd Q_noise = MatrixXd::Identity(res.size(),res.size());
     Q_noise *= exp( - log_sigma2_noise);
     Eigen::VectorXd b_prior   =  (Br[i].transpose() * (Q_noise * res));
-    
+
     sampleU_MALA_(i, res, b_prior, Q_noise);
 }
 
@@ -559,12 +559,12 @@ void NIGMixedEffect::gradient(const int i,
                               const double log_sigma2_noise,
                               const double weight,
                               const int use_EU // =1
-                              ) 
+                              )
 {
     Eigen::VectorXd res_  = res;
     if(Br.size() > 0){
 
-      
+
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
 
@@ -576,7 +576,7 @@ void NIGMixedEffect::gradient(const int i,
         res_ -= Br[i] * U.col(i);
       }
 
-      
+
       grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
@@ -608,7 +608,7 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
 {
 
   Eigen::VectorXd res_  = res;
-  
+
   int n_s = 0;
   int n_f = 0;
   int n_r = 0;
@@ -624,20 +624,23 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
     double B_mu =  (-1 + V(i));
     Eigen::VectorXd U_ = U.col(i) - B_mu * mu;
     //beta_r
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]); 
-    
+    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+
     //mu
-    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma; 
-    
+    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma;
+
     res_ -= Br[i] * U.col(i);
     //Sigma
     d2.block(2 * n_r +n_f , 2 * n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U_ * U_.transpose();
     UUT.array() /= V(i);
     d2.block(2 * n_r +n_f , 2 * n_r + n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
-    
+
     // dmu dSigma
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    Rcpp::Rcout << "HERE\n";
+
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  *= 0.5* weight * (1 / V(i));
     d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
   if(Br.size() * Bf.size()>0){
@@ -646,7 +649,7 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-  
+
   if(Br.size()>0){
     d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 )     =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f , n_s + 2 * n_r +n_f + 1, n_r , 1 ) .transpose();
@@ -672,7 +675,7 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
 {
 
   Eigen::VectorXd res_  = res;
-  
+
   int n_s = 0;
   int n_f = 0;
   int n_r = 0;
@@ -688,10 +691,10 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
     double B_mu =  (-1 + V(i));
     Eigen::VectorXd U_ = U.col(i) - B_mu * mu;
     //beta_r
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]); 
-    
+    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+
     //mu
-    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma; 
+    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma;
       res_ -= Br[i] * U.col(i);
     //Sigma
 
@@ -701,7 +704,8 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
     d2.block(2 * n_r +n_f , 2 * n_r + n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
     // dmu dSigma
 
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)   =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)   =  kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)   *=  0.5* weight * (1 / V(i));
     d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
   if(Br.size() * Bf.size()>0){
@@ -710,13 +714,13 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
-  
+
   if(Br.size()>0){
     // dbeta_r dsigma
     d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * iV.asDiagonal() * res_);
     d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + 2 * n_r +n_f , n_r , 1 ).transpose();
   }
-  
+
  if(Bf.size() > 0){
   // dbeta_r dsigma
     d2.block(0            , n_s + 2 * n_r + n_f + 1 , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * iV.asDiagonal()* res_);
@@ -858,7 +862,7 @@ void NIGMixedEffect::step_theta(const double stepsize,
 void NIGMixedEffect::step_Sigma(const double stepsize, const double learning_rate,const int burnin)
 {
   double pos_def = 0;
-  
+
   UUt -= weight_total * vec(Sigma);
   dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
@@ -1023,7 +1027,7 @@ Eigen::VectorXd NIGMixedEffect::get_gradient()
 		g.segment(start, Br[0].cols()) = gradMu;
 		start += Br[0].cols();
 
-		
+
 		Eigen::MatrixXd UUt_temp = UUt;
 		UUt_temp -= weight_total * vec(Sigma);
   	dSigma_vech = 0.5 * Dd.transpose() * iSkroniS  * UUt_temp;

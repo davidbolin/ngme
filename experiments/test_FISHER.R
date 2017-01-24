@@ -32,11 +32,11 @@ for(i in 1:n.pers)
 {
   B_fixed[[i]]  <- as.matrix(rep(1, n.obs[i]))
   B_random[[i]] <- cbind((1:n.obs[i])/n.obs[i],rnorm(n.obs[i]))
-  
+
   Y[[i]] <- rnorm(n = n.obs[i], B_fixed[[i]]%*%betaf, sd = sd_Y) + B_random[[i]]%*%mvrnorm(n = 1,mu = betar, Sigma = Sigma)
   Q =  solve(B_random[[i]]%*%Sigma%*%t(B_random[[i]]) + sd_Y^2*diag(n.obs[i]))
   v = Y[[i]] - B_fixed[[i]]%*%betaf - B_random[[i]]%*%betar
-  Ve[[i]] <- runif(n.obs[i]) + 1 
+  Ve[[i]] <- runif(n.obs[i]) + 1
   }
 
 
@@ -64,7 +64,7 @@ res <- estimateME(Y = Y,
                   estimate_fisher = 2)
 
 print(t(res$FisherMatrix) - res$FisherMatrix)
-if(0){
+if(1){
 res <- estimateME(Y = Y,
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = list(sigma = sd_Y, noise = "NIG", nu = 1.1, Vs = Ve),
