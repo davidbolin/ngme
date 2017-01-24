@@ -46,6 +46,7 @@ class operatorMatrix {
     int counter;
 
     operatorMatrix() {Qsolver = NULL;};
+    virtual void get_param_names(Rcpp::StringVector & names){};
     virtual ~operatorMatrix(){delete Qsolver;};
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
@@ -85,6 +86,10 @@ class constMatrix : public operatorMatrix{
     std::vector<double>  h_average;
   public:
   double term1, term2, term3;
+
+  void get_param_names(Rcpp::StringVector & names){
+    names.push_back("tau_operator");
+  };
 	~constMatrix();
     Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
                                const Eigen::VectorXd & ,
@@ -142,6 +147,10 @@ class MaternOperator : public operatorMatrix{
     void set_matrix(const int);
   public:
 
+    void get_param_names(Rcpp::StringVector & names){
+      names.push_back("tau_operator");
+      names.push_back("kappa_operator");
+    };
   	double tau;
     MaternOperator(){ counter = 0;};
     ~MaternOperator();

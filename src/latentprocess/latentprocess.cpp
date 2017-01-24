@@ -625,10 +625,10 @@ Eigen::VectorXd GHProcess::get_gradient()
 {
 
 	Eigen::VectorXd  g(npars);
+  if( type_process == "CH")
+      return(g);
 	g[0] = dmu;
 
-  	if( type_process == "CH")
-  		return(g);
 
 
 	g[1] = dnu;

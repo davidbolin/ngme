@@ -24,6 +24,18 @@ NormalMixedEffect::NormalMixedEffect(){
 }
 
 
+void NormalMixedEffect::get_param_names(Rcpp::StringVector & names){
+
+  MixedEffect::get_param_names(names);
+  if(Br.size() > 0 )
+  {
+
+    int n_s = Br[0].cols() * (Br[0].cols() +1) /2;
+    for (int i = 0; i < n_s; ++i)
+      names.push_back("Sigma_random_" + std::to_string(i+1));
+
+  }
+}
 void NormalMixedEffect::printIter()
 {
 	if(Bf.size() > 0)
