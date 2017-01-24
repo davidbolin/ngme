@@ -62,7 +62,9 @@ res <- estimateME(Y = Y,
                   seed = seed,
                   nBurnin = nBurnin,
                   estimate_fisher = 2)
-print(diag(res$FisherMatrix))
+
+print(t(res$FisherMatrix) - res$FisherMatrix)
+if(0){
 res <- estimateME(Y = Y,
                   mixedEffect_list = mixedEffect_list,
                   measurment_list = list(sigma = sd_Y, noise = "NIG", nu = 1.1, Vs = Ve),
@@ -76,4 +78,5 @@ res <- estimateME(Y = Y,
                   seed = seed,
                   nBurnin = nBurnin,
                   estimate_fisher = 2)
-print(diag(res$FisherMatrix))
+print(t(res$FisherMatrix) - res$FisherMatrix)
+}

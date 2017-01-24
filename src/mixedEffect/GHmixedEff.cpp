@@ -628,15 +628,17 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
     
     //mu
     d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma; 
-
+    
     res_ -= Br[i] * U.col(i);
     //Sigma
     d2.block(2 * n_r +n_f , 2 * n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U_ * U_.transpose();
     UUT.array() /= V(i);
     d2.block(2 * n_r +n_f , 2 * n_r + n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
+    
     // dmu dSigma
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_f, n_s)  =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, invSigma * U_) * Dd;
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
@@ -646,19 +648,18 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
   
   if(Br.size()>0){
-    // dbeta_r dsigma
-    d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
-    d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + 2 * n_r +n_f , n_r , 1 ).transpose();
+    d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 )     =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
+    d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f , n_s + 2 * n_r +n_f + 1, n_r , 1 ) .transpose();
   }
-  
  if(Bf.size() > 0){
   // dbeta_r dsigma
     d2.block(0            , n_s + 2 * n_r + n_f + 1 , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
-    d2.block(n_s + 2 * n_r + n_f + 1, 0             , 1   , n_f ) = d2.block(0            , n_s + 2 * n_r + n_f , n_f , 1 ).transpose();
+    d2.block(n_s + 2 * n_r + n_f + 1, 0             , 1   , n_f ) = d2.block(0            , n_s + 2 * n_r + n_f + 1, n_f , 1 ).transpose();
   }
   d2(n_s +  2 * n_r +n_f , n_s +  2 * n_r +n_f ) =  weight * 0.5 / pow(nu,2);
   d2(n_s +  2 * n_r +n_f + 1, n_s +  2 * n_r +n_f + 1) =  3  * weight * exp( - 2   * log_sigma2_noise)  * res_.array().square().sum();
   d2(n_s +  2 * n_r +n_f + 1, n_s +  2 * n_r +n_f + 1) +=  -1 * weight * res_.size()  * exp( - log_sigma2_noise);
+
   return(d2);
 }
 Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
@@ -691,15 +692,17 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
     
     //mu
     d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma; 
-
-    res_ -= Br[i] * U.col(i);
+      res_ -= Br[i] * U.col(i);
     //Sigma
+
     d2.block(2 * n_r +n_f , 2 * n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U_ * U_.transpose();
     UUT.array() /= V(i);
     d2.block(2 * n_r +n_f , 2 * n_r + n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
     // dmu dSigma
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_f, n_s)  =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, invSigma * U_) * Dd;
+
+    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)   =  0.5* weight * (1 / V(i)) * kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
@@ -717,7 +720,7 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
  if(Bf.size() > 0){
   // dbeta_r dsigma
     d2.block(0            , n_s + 2 * n_r + n_f + 1 , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * iV.asDiagonal()* res_);
-    d2.block(n_s + 2 * n_r + n_f + 1, 0             , 1   , n_f ) = d2.block(0            , n_s + 2 * n_r + n_f , n_f , 1 ).transpose();
+    d2.block(n_s + 2 * n_r + n_f + 1, 0             , 1   , n_f ) = d2.block(0            , n_s + 2 * n_r + n_f  + 1, n_f , 1 ).transpose();
   }
   d2(n_s +  2 * n_r +n_f , n_s +  2 * n_r +n_f ) =  weight * 0.5 / pow(nu,2);
   d2(n_s +  2 * n_r +n_f + 1, n_s +  2 * n_r +n_f + 1) =  3  * weight * exp( - 2   * log_sigma2_noise)  * res_.dot(iV.cwiseProduct(res_));
