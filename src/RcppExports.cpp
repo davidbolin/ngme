@@ -86,6 +86,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_d2_process
+Rcpp::List test_d2_process(Rcpp::List Y, Rcpp::List process_list, Rcpp::List operator_list);
+RcppExport SEXP LDMod_test_d2_process(SEXP YSEXP, SEXP process_listSEXP, SEXP operator_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type process_list(process_listSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type operator_list(operator_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_d2_process(Y, process_list, operator_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_sampling_NIG
 Rcpp::List test_sampling_NIG(Rcpp::List mixedEffect_list, Rcpp::List meas_list, int nsamples);
 RcppExport SEXP LDMod_test_sampling_NIG(SEXP mixedEffect_listSEXP, SEXP meas_listSEXP, SEXP nsamplesSEXP) {

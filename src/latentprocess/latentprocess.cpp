@@ -19,7 +19,7 @@ double Trigamma(double x)
 void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
   npars = 0;
-
+  type_process = "Normal";
   std::vector<std::string> check_names =  {"X"};
   check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
@@ -297,6 +297,34 @@ void GHProcess::simulate_V(const int i ,
 
 }
 
+
+Eigen::MatrixXd  GHProcess::d2Given( const int i ,
+                                     const Eigen::SparseMatrix<double,0,int> & K,
+                                     const Eigen::SparseMatrix<double,0,int> & A,
+                                     const Eigen::VectorXd& res,
+                                     const double sigma,
+                                     const double trace_var,
+                                     const double weight)
+{
+
+  Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(npars, npars);
+  iV = Vs[i].cwiseInverse();
+  if(type_process == "NIG")
+  {
+    Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+    d2(0, 0) = weight * B_mu.dot(B_mu.cwiseProduct(iV));
+    d2(1, 1) = weight  *  0.5 * h[i].size()/ pow(nu,2);
+  }else if(type_process == "GAL")
+  {
+    Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
+    Eigen::VectorXd KB_mu = LU.solve(B_mu);         // use the factorization to solve for the given right hand side
+    d2(0, 0) = weight * KB_mu.dot(KB_mu) / pow(sigma, 2);
+    d2(1, 1) = - weight * ( h_sum[i]/ nu - h_trigamma[i] );
+  }
+  return(d2);
+}
+
 void GHProcess::gradient( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -330,8 +358,6 @@ void GHProcess::gradient( const int i ,
       		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= weight  *Vv_mean[i] * (trace_var / pow(sigma, 2));
 
-	}else if( type_process=="CH"){
-
 	}
 
   if( type_process == "CH")
@@ -340,6 +366,90 @@ void GHProcess::gradient( const int i ,
 
   grad_nu(i, weight);
 }
+
+
+    Eigen::VectorXd GHProcess::d2Given_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                              const Eigen::MatrixXd Bf,
+                              const Eigen::MatrixXd Br,
+                              const double weight)
+    {
+      Eigen::VectorXd d2 = Eigen::VectorXd::Zero(Bf.cols() + Br.cols() + 1);
+      if(type_process == "GAL"){
+
+        Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
+        Eigen::VectorXd KB_mu = LU.solve(B_mu);    
+        if(Bf.cols() > 0)
+          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu)/ pow(sigma,2); 
+
+        if(Br.cols() > 0)
+          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu)/ pow(sigma,2); 
+
+        d2(Bf.cols() +  Br.cols()) = 2 * weight * B_mu.dot( res) /  pow(sigma,3);
+      }
+      return(d2);
+    }
+    Eigen::VectorXd GHProcess::d2Given_v2_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                              const Eigen::MatrixXd Bf,
+                              const Eigen::MatrixXd Br,
+                              const Eigen::VectorXd& iV_noise,
+                              const double weight)
+    {
+      Eigen::VectorXd d2 = Eigen::VectorXd::Zero(Bf.cols() + Br.cols() + 1);
+      if(type_process == "GAL"){
+
+        Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
+        Eigen::VectorXd KB_mu = LU.solve(B_mu);    
+        if(Bf.cols() > 0)
+          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2); 
+
+        if(Br.cols() > 0)
+          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2); 
+
+        d2(Bf.cols() +  Br.cols()) = 2 * weight * B_mu.dot( res.cwiseProduct(iV_noise)) /  pow(sigma,3);
+      }
+      return(d2);
+
+    }
+
+Eigen::MatrixXd  GHProcess::d2Given_v2( const int i ,
+                                        const Eigen::SparseMatrix<double,0,int> & K,
+                                        const Eigen::SparseMatrix<double,0,int> & A,
+                                        const Eigen::VectorXd& res,
+                                        const double sigma,
+                                        const Eigen::VectorXd& iV_noise,
+                                        const double EiV_noise,
+                                        const double trace_var,
+                                        const double weight)
+{
+
+  Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(npars, npars);
+  iV = Vs[i].cwiseInverse();
+  if(type_process == "NIG")
+  {
+    Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+    d2(0, 0) = weight * B_mu.dot(B_mu.cwiseProduct(iV));
+    d2(1, 1) = weight  *  0.5 * h[i].size()/ pow(nu,2);
+  }else if(type_process == "GAL")
+  {
+    Eigen::VectorXd B_mu  =  Vs[i] - h[i];
+    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
+    Eigen::VectorXd KB_mu = LU.solve(B_mu);         // use the factorization to solve for the given right hand side
+    d2(0, 0) = weight * KB_mu.dot(KB_mu.cwiseProduct(iV_noise)) / pow(sigma, 2);
+    d2(1, 1) = -weight * ( h_sum[i]/ nu - h_trigamma[i] );
+  }
+  return(d2);
+}
+
 
 void GHProcess:: gradient_v2( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
@@ -371,8 +481,6 @@ void GHProcess:: gradient_v2( const int i ,
       		temp_3 += res;
       		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
       		ddmu_1 -= weight * EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
-
-	}else if( type_process=="CH"){
 
 	}
 

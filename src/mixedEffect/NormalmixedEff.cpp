@@ -63,19 +63,22 @@ Rcpp::List NormalMixedEffect::toList()
   out["Sigma_epsilon"]       = Sigma_epsilon;
   out["Cov_theta"]   = Cov_theta;
   if(store_param){
-  if(Bf.size() > 0)
-  	if(Bf.size() > 0){
-		 out["betaf_vec"] = betaf_vec;
-		 out["beta_fixed"] = betaf_vec.row(betaf_vec.rows() - 1);
+    if(Bf.size() > 0){
+		  out["betaf_vec"] = betaf_vec;
+      if(betaf_vec.rows() > 1)
+		    out["beta_fixed"] = betaf_vec.row(betaf_vec.rows() - 1);
 	}
 
    if(Br.size() > 0){
-		out["betar_vec"]   = betar_vec;
-		out["beta_random"] = betar_vec.row(betar_vec.rows() - 1);
-		out["Sigma_vec"]   = Sigma_vec;
-		Eigen::VectorXd temp = Sigma_vec.row(betar_vec.rows() - 1);
-		out["Sigma"]       = veci(temp, Sigma.rows(), Sigma.cols());
-	}
+
+		  out["betar_vec"]   = betar_vec;
+      if(betar_vec.rows() > 1)
+		    out["beta_random"] = betar_vec.row(betar_vec.rows() - 1);
+		  out["Sigma_vec"]   = Sigma_vec;
+		  Eigen::VectorXd temp = Sigma_vec.row(betar_vec.rows() - 1);
+      if(betar_vec.rows() > 1)
+        out["Sigma"]       = veci(temp, Sigma.rows(), Sigma.cols());
+	 }
   }
   return(out);
 }
@@ -392,12 +395,12 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
   if(Br.size()>0){
     
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
-    d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(0 , 2 * n_r +n_f , n_r , 1 ) .transpose();
+    d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
   
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
-    d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(n_r , 2 * n_r + n_f , n_f , 1 ).transpose();
+    d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
   }
   
   return(d2);
@@ -434,12 +437,12 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
   if(Br.size()>0){
     
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
-    d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(0 , 2 * n_r +n_f , n_r , 1 ) .transpose();
+    d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
   
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
-    d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(n_r , 2 * n_r + n_f , n_f , 1 ).transpose();
+    d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
   }
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) =  3  * weight * exp( - 2   * log_sigma2_noise)  * res_.array().square().sum();
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) +=  -1 * weight * res_.size()  * exp( - log_sigma2_noise);

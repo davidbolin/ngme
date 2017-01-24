@@ -11,10 +11,9 @@ using namespace std;
 
 constMatrix::~constMatrix()
 {
-  Rcpp::Rcout << "in constMatrix::~constMatrix()\n";
-	//for(int i = 0; i < nop; i++)
-	 // Q[i].~sparseMatrix<double,0,int>();
-	delete Q;
+	for(int i = 0; i < nop; i++)
+	  Q[i].resize(0,0);
+	delete[] Q;
 }
 
 void constMatrix::initFromList(Rcpp::List const & init_list)
@@ -31,6 +30,7 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (init_list["h"]);
   nop = Q_list.size();
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
+
   d.resize(nop);
   loc.resize(nop);
   h.resize(nop);
@@ -49,7 +49,9 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
       m_loc[i] = loc[i].minCoeff();
   }
 
-  int nIter = Rcpp::as<double>(init_list["nIter"]);
+  int nIter = 1;
+  if(init_list.containsElementNamed("nIter"))
+    nIter = Rcpp::as<int>(init_list["nIter"]);
   tauVec.resize(nIter+1);
   v.setZero(1);
   m.resize(1,1);

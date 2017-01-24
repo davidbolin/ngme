@@ -14,7 +14,6 @@ estimate.wrapper <- function(Y,
                              estimate_fisher = FALSE,
                              ...)
 {
-  arguments <- list(...) 
   estimation.controls = list(learning.rate = 0,
                              polyak_rate = 0.1,
                              nBurnin = 100,

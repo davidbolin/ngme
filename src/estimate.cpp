@@ -187,15 +187,130 @@ void grad_caculations(int i,
   	} else {
   	  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
   	}
-    if(errObj.noise != "Normal"){
-      //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
-      process.gradient_v2(i,K,A,res,errObj.sigma,
-                          errObj.Vs[i].cwiseInverse(),
-                          errObj.EiV,
-                          Kobj.trace_variance(A, i),
-                          w);
-    }else{
-      process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
+    if(process.type_process != "Normal"){
+      if(errObj.noise != "Normal"){
+
+        //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
+        process.gradient_v2(i,K,A,res,errObj.sigma,
+                            errObj.Vs[i].cwiseInverse(),
+                            errObj.EiV,
+                            Kobj.trace_variance(A, i),
+                            w);
+
+        if(estimate_fisher > 0 ){
+          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                 mixobj.npars + errObj.npars + Kobj.npars, 
+                                 process.npars, 
+                                 process.npars ) += process.d2Given_v2(i,
+                                                                       K,
+                                                                       A,
+                                                                       res,
+                                                                       errObj.sigma,
+                                                                       errObj.Vs[i].cwiseInverse(),
+                                                                       0,
+                                                                       0,
+                                                                       w);
+              
+             Eigen::MatrixXd Bf_t = Eigen::MatrixXd::Zero(0,0);
+             if(mixobj.Bf.size() > 0)
+                Bf_t = mixobj.Bf[i];
+             Eigen::MatrixXd Br_t = Eigen::MatrixXd::Zero(0,0);
+             if(mixobj.Br.size() > 0)
+                Br_t = mixobj.Br[i];
+             Eigen::VectorXd cross = process.d2Given_v2_cross(i,
+                                                   K,
+                                                   A,
+                                                   res,
+                                                   errObj.sigma,
+                                                   Bf_t,
+                                                   Br_t,
+                                                   errObj.Vs[i].cwiseInverse(),
+                                                   w);
+            if(mixobj.Bf.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       0,
+                                       Bf_t.cols(),
+                                       1) += cross.head(Bf_t.size());
+
+            if(mixobj.Br.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       Bf_t.cols(),
+                                       Br_t.cols(),
+                                       1) += cross.segment(Bf_t.size(), Br_t.size());
+
+
+              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
+
+              Fisher_information.block(0, 
+                                       mixobj.npars + errObj.npars + Kobj.npars,
+                                       1,
+                                       Bf_t.cols() + Br_t.cols() + 1
+                                       ) = 
+                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                        0,
+                                       Bf_t.cols() + Br_t.cols() + 1,
+                                       1).transpose();
+
+        }
+      }else{
+        process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
+        if(estimate_fisher > 0 ){
+
+          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                 mixobj.npars + errObj.npars + Kobj.npars, 
+                                 process.npars, 
+                                 process.npars ) += process.d2Given(i,
+                                                                    K,
+                                                                    A,
+                                                                    res,
+                                                                    errObj.sigma, 
+                                                                    0.,
+                                                                    w);
+
+             Eigen::MatrixXd Bf_t = Eigen::MatrixXd::Zero(0,0);
+             if(mixobj.Bf.size() > 0)
+                Bf_t = mixobj.Bf[i];
+             Eigen::MatrixXd Br_t = Eigen::MatrixXd::Zero(0,0);
+             if(mixobj.Br.size() > 0)
+                Br_t = mixobj.Br[i];
+             Eigen::VectorXd cross = process.d2Given_cross(i,
+                                                   K,
+                                                   A,
+                                                   res,
+                                                   errObj.sigma,
+                                                   Bf_t,
+                                                   Br_t,
+                                                   w);
+             if(mixobj.Bf.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       0,
+                                       Bf_t.cols(),
+                                       1) += cross.head(Bf_t.size());
+
+            if(mixobj.Br.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       Bf_t.cols(),
+                                       Br_t.cols(),
+                                       1) += cross.segment(Bf_t.size(), Br_t.size());
+
+              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
+
+              Fisher_information.block(0, 
+                                       mixobj.npars + errObj.npars + Kobj.npars,
+                                       1,
+                                       Bf_t.cols() + Br_t.cols() + 1
+                                       ) = 
+                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                        0,
+                                       Bf_t.cols() + Br_t.cols() + 1,
+                                       1).transpose();
+              
+                                     
+        
+          }
+      }
     }
   }
   
@@ -708,6 +823,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(process_active)
         Vmean[i] += process->Vs[i];
   		count_vec[i] += 1;
+
     }
 
     // update weights given the gradient
@@ -717,7 +833,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 		  for( int id = 0; id < nSubsample_i; id++)
 			  p_inv[longInd[id]] = W[id];
 	  }
-
  	  if(silent == 0){
 		  subSampleDiag(Vgrad_inner,
 			        		  grad_outer,
@@ -733,6 +848,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     //**********************************
   	//  gradient step
 	  //***********************************
+
 	  if(estimate_fisher == 0){
     	if(debug)
       		Rcpp::Rcout << "estimate::theta  step\n";
@@ -774,6 +890,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   	Fisher_information.array()  /= (nIter * nSim);
 
   if(estimate_fisher > 0 ){
+
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
     mixobj->set_covariance(cov_est.block(0, 0, mixobj->npars, mixobj->npars));
   	errObj->set_covariance(cov_est.block(mixobj->npars, mixobj->npars, errObj->npars, errObj->npars));
@@ -799,6 +916,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   out_list["step0"]            = step0;
   out_list["alpha"]            = alpha;
   out_list["obs_list"]         = obs_list;
+
   if(process_active){
   	out_list["Xs"]               = process->Xs;
   	out_list["Vs"]               = process->Vs;
@@ -808,6 +926,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   Rcpp::List olist          = Kobj->output_list();
   out_list["operator_list"] = olist;
   }
+
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
 

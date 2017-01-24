@@ -34,7 +34,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     	Ys[counter++] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
     }
 
-
 	//**********************************
 	//operator setup
 	//***********************************
@@ -103,8 +102,10 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	//***********************************
 	// stochastic processes setup
 	//***********************************
+
+
 	Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-	Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
+	
 	std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
   double nu = -1;
   double mu = 0;

@@ -26,7 +26,7 @@
 class operatorMatrix {
   protected:
     solver ** Qsolver;
-
+    int Q_act;
 
   public:
     int nop;

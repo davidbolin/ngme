@@ -6,6 +6,9 @@
 #include "NGIG.h"
 #include "MixedEffect.h"
 #include "MatrixAlgebra.h"
+#include "operatorMatrix.h"
+#include "operator_helper.h"
+#include "latentprocess.h"
 
 //[[Rcpp::export]]
 Eigen::MatrixXi getDuplicateM(const int n)
@@ -14,6 +17,31 @@ Eigen::MatrixXi getDuplicateM(const int n)
   return(duplicatematrix(n));
 }
 
+
+// [[Rcpp::export]]
+Rcpp::List test_d2_process(Rcpp::List Y,
+                           Rcpp::List process_list,
+                           Rcpp::List operator_list)
+{
+  operatorMatrix* Kobj;
+  std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
+  operator_select(type_operator, &Kobj);
+  Kobj->initFromList(operator_list, Rcpp::List::create(Rcpp::Named("use.chol") = 1));
+  Process *process = NULL;
+  process  = new GHProcess;
+  process->initFromList(process_list, Kobj->h);
+  Eigen::SparseMatrix<double,0,int> A = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(Y["A"]);
+  Eigen::VectorXd Y_ =Rcpp::as<Eigen::VectorXd  >(Y["Y"]);
+  Eigen::MatrixXd d2 = process->d2Given(0, Kobj->Q[0], A, Y_,
+                                         1.,
+                                         1.,
+                                         1.);
+
+  process_list["d2"] = d2;
+  delete process;
+  delete Kobj;
+  return(process_list);
+}
 
 // [[Rcpp::export]]
 Rcpp::List  test_sampling_NIG(Rcpp::List mixedEffect_list,

@@ -29,6 +29,10 @@ getDuplicateM <- function(n) {
     .Call('LDMod_getDuplicateM', PACKAGE = 'LDMod', n)
 }
 
+test_d2_process <- function(Y, process_list, operator_list) {
+    .Call('LDMod_test_d2_process', PACKAGE = 'LDMod', Y, process_list, operator_list)
+}
+
 test_sampling_NIG <- function(mixedEffect_list, meas_list, nsamples) {
     .Call('LDMod_test_sampling_NIG', PACKAGE = 'LDMod', mixedEffect_list, meas_list, nsamples)
 }

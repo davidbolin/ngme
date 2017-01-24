@@ -14,6 +14,8 @@
 class Process {
 
   public:
+
+
 	int npars;
   	int store_param;
   	int nindv; // number indiviuals
@@ -38,6 +40,31 @@ class Process {
     virtual ~Process(){};
     virtual Rcpp::List toList() {};
     virtual Eigen::VectorXd  mean_X(const int i) {Eigen::VectorXd temp(h[i].size()); return temp.setZero(h[i].size());};
+    virtual Eigen::VectorXd d2Given_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                              const Eigen::MatrixXd Bf,
+                              const Eigen::MatrixXd Br,
+                              const double weight){return(Eigen::VectorXd::Zero(0));};
+      virtual  Eigen::VectorXd d2Given_v2_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                              const Eigen::MatrixXd Bf,
+                              const Eigen::MatrixXd Br,
+                              const Eigen::VectorXd& iV_noise,
+                              const double weight){return(Eigen::VectorXd::Zero(0));};;
+    virtual Eigen::MatrixXd d2Given(  const int i ,
+                                      const Eigen::SparseMatrix<double,0,int> & K,
+                                      const Eigen::SparseMatrix<double,0,int> & A,
+                                      const Eigen::VectorXd& res,
+                                      const double sigma,
+                                      const double trace_var,
+                                      const double weight){return(Eigen::MatrixXd::Zero(0,0));};
+
     virtual void gradient( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -78,7 +105,15 @@ class Process {
               const Eigen::VectorXd & iV_noise ){};
 
 
-
+    virtual Eigen::MatrixXd d2Given_v2( const int i ,
+                                        const Eigen::SparseMatrix<double,0,int> & K,
+                                        const Eigen::SparseMatrix<double,0,int> & A,
+                                        const Eigen::VectorXd& res,
+                                        const double sigma,
+                                        const Eigen::VectorXd& iV_noise,
+                                        const double EiV_noise,
+                                        const double trace_var,
+                                        const double weight){return(Eigen::MatrixXd::Zero(0,0));};
     virtual void gradient_v2( const int i ,
 			   			  const Eigen::SparseMatrix<double,0,int> & K,
 			   			  const Eigen::SparseMatrix<double,0,int> & A,
@@ -203,15 +238,53 @@ class GHProcess : public Process{
 			   			  const double sigma,
 			   			  const double trace_var,
 			   			  const double weight);
+
+    Eigen::MatrixXd d2Given(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                              const double trace_var,
+                              const double weight);
+
+    Eigen::VectorXd d2Given_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                               Eigen::MatrixXd Bf,
+                               Eigen::MatrixXd Br,
+                              const double weight);
+        Eigen::VectorXd d2Given_v2_cross(  const int i ,
+                              const Eigen::SparseMatrix<double,0,int> & K,
+                              const Eigen::SparseMatrix<double,0,int> & A,
+                              const Eigen::VectorXd& res,
+                              const double sigma,
+                               Eigen::MatrixXd Bf,
+                               Eigen::MatrixXd Br,
+                              const Eigen::VectorXd& iV_noise,
+                              const double weight);
+
+Eigen::MatrixXd d2Given_v2( const int i ,
+                            const Eigen::SparseMatrix<double,0,int> & K,
+                            const Eigen::SparseMatrix<double,0,int> & A,
+                            const Eigen::VectorXd& res,
+                            const double sigma,
+                            const Eigen::VectorXd& iV_noise,
+                            const double EiV_noise,
+                            const double trace_var,
+                            const double weight);
+
 	void gradient_v2( const int i ,
-			   			  const Eigen::SparseMatrix<double,0,int> & K,
-			   			  const Eigen::SparseMatrix<double,0,int> & A,
-			   			  const Eigen::VectorXd& res,
-			   			  const double sigma,
-			   			  const Eigen::VectorXd& iV_noise,
-			   			  const double EiV_noise,
-			   			  const double trace_var,
-			   			  const double weight);
+      			   			const Eigen::SparseMatrix<double,0,int> & K,
+    			   			  const Eigen::SparseMatrix<double,0,int> & A,
+    			   			  const Eigen::VectorXd& res,
+    			   			  const double sigma,
+    			   			  const Eigen::VectorXd& iV_noise,
+    			   			  const double EiV_noise,
+    			   			  const double trace_var,
+    			   			  const double weight);
+
     void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1, const int burnin = 0);
     void step_mu(const double, const double, const int);
     void step_nu(const double, const double, const int);

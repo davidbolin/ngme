@@ -2,7 +2,7 @@ require(testthat)
 context("Fisher")
 library(LDMod)
 library(MASS)
-
+seed <- 3
 test_that("Fisher, Gaussian fixed effects", {
 
   graphics.off()
