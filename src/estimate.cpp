@@ -155,8 +155,9 @@ void grad_caculations(int i,
         Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
   }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
-    if(estimate_fisher)
+    if(estimate_fisher){
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
+      }
   }
 
   mixobj.remove_inter(i, res);
@@ -905,8 +906,21 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   }
   Rcpp::List out_list;
-  if(estimate_fisher)
-    out_list["FisherMatrix"]     = Fisher_information;
+  if(estimate_fisher){
+    Rcpp::NumericMatrix F(Rcpp::wrap(Fisher_information));
+    Rcpp::StringVector names;
+    mixobj->get_param_names(names);
+    errObj->get_param_names(names);
+    if(process_active)
+    {
+      Kobj->get_param_names(names);
+      process->get_param_names(names);
+    }
+    Rcpp::rownames(F) = names;
+    Rcpp::colnames(F) = names;
+    out_list["FisherMatrix"]     = F;
+ 
+  }
 
   out_list["pSubsample"]       = pSubsample;
   out_list["nIter"]            = nIter;

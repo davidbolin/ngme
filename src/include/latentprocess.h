@@ -31,7 +31,8 @@ class Process {
 
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
-
+    virtual void get_param_names(Rcpp::StringVector & names){
+    };
 
 	//print iteration data
     virtual void printIter(){};
@@ -220,6 +221,15 @@ class GHProcess : public Process{
               const double sigma,
               cholesky_solver       & solver);
 
+
+  void get_param_names(Rcpp::StringVector & names){
+
+    if( type_process != "CH"){
+
+      names.push_back("mu_process");
+      names.push_back("nu_process");
+    }
+    };
 
     void sample_Xv2(  const int i,
               Eigen::VectorXd & Z,

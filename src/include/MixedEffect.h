@@ -43,6 +43,21 @@ class MixedEffect {
 	Eigen::VectorXd dbeta_r_old;
 	Eigen::VectorXd dbeta_f_old;
     virtual void initFromList(Rcpp::List const &)=0;
+    virtual void get_param_names(Rcpp::StringVector & names){
+        if(Bf.size() > 0 )
+        {
+         for (int i = 0; i < Bf[0].cols(); ++i)
+          {
+            names.push_back("beta_fixed_" + std::to_string(i+1));
+          }
+        }
+        if(Br.size() > 0 )
+        {
+          for (int i = 0; i < Br[0].cols(); ++i)
+            names.push_back("beta_random_" + std::to_string(i+1));
+        }
+
+    };
     virtual Rcpp::List toList()=0;
     virtual void sampleU(const int, const Eigen::VectorXd &,  const double ) = 0;
     virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &) = 0;
@@ -163,6 +178,9 @@ class NormalMixedEffect  : public MixedEffect{
 
     NormalMixedEffect();
     void initFromList(Rcpp::List const &);
+
+
+    void get_param_names(Rcpp::StringVector & names);
 
     /* computes gradient for the parameters
     	@param index of individual
@@ -288,6 +306,9 @@ class NIGMixedEffect  : public MixedEffect{
     Eigen::VectorXd V;
 
     NIGMixedEffect();
+
+
+    void get_param_names(Rcpp::StringVector & );
     void sampleV(const int);
     void initFromList(Rcpp::List const &);
     void sampleU(const int, const Eigen::VectorXd &, const double) ;
@@ -322,6 +343,19 @@ class NIGMixedEffect  : public MixedEffect{
     			   const double EiV = 1.,
     			   const double weight = 1.,
                    const int use_EU = 1);
+
+
+    Eigen::MatrixXd d2Given(const int ,
+                  const Eigen::VectorXd& ,
+                  const double ,
+                  const double);
+
+Eigen::MatrixXd d2Given2(const int ,
+                           const Eigen::VectorXd&,
+                           const Eigen::VectorXd& ,
+                           const double,
+                           const double,
+                           const double);
     void gradient(const int ,
     			  const Eigen::VectorXd& ,
     			  const double ,
