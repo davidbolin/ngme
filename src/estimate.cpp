@@ -60,7 +60,6 @@ Eigen::VectorXd GibbsSampling(int i,
   mixobj.remove_cov(i, res);
   if(process_active)
     res -= A * process.Xs[i];
-
   //***********************************
   // mixobj sampling
   //***********************************
@@ -707,6 +706,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       		}
       	}
+
         Y = errObj->simulate( Ys[i]);
 
 	      mixobj->simulate(Y, i);
@@ -750,6 +750,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     {
       for(int j =0; j < K.rows(); j++)
     		z[j] =  normal(random_engine);
+
      	  Eigen::VectorXd res =  GibbsSampling(i,
 				   					  Y,
 				   					  A,
@@ -765,6 +766,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 				   					  z,
 				   					  *rgig_pointer,
 				   					  Solver);
+
       	//***************************************
       	//  computing gradients
       	//***************************************

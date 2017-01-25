@@ -122,6 +122,14 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       beta_fixed.setZero(Bf[0].cols());
 
+
+    if(beta_fixed.size() != Bf[0].cols())
+    {
+      Rcpp::Rcout << "\nERROR:\n "; 
+      Rcpp::Rcout << "beta_fixed.size = " << beta_fixed.size() << "\n";
+      Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
+      throw("input error\n");
+    }
 	dbeta_f_old.setZero(Bf[0].cols());
      H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
   	npars += Bf[0].cols();
@@ -141,6 +149,14 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       	beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
     else
     	beta_random.setZero(Br[0].cols());
+
+    if(beta_random.size() != Br[0].cols())
+    {
+      Rcpp::Rcout << "ERROR:\n "; 
+      Rcpp::Rcout << "beta_random.size = " << beta_random.size() << "\n";
+      Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
+      throw("input error\n");
+    }
 
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
@@ -637,7 +653,6 @@ Eigen::MatrixXd NIGMixedEffect::d2Given(const int i,
     d2.block(2 * n_r +n_f , 2 * n_r + n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
 
     // dmu dSigma
-    Rcpp::Rcout << "HERE\n";
 
     d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
     d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  *= 0.5* weight * (1 / V(i));

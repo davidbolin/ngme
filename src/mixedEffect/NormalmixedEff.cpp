@@ -113,6 +113,14 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_fixed = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed"]);
     else
       beta_fixed.setZero(Bf[0].cols());
+
+    if(beta_fixed.size() != Bf[0].cols())
+    {
+      Rcpp::Rcout << "\nERROR: \n"; 
+      Rcpp::Rcout << "beta_fixed.size = " << beta_fixed.size() << "\n";
+      Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
+      throw("input error\n");
+    }
     npars += Bf[0].cols();
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 	  dbeta_f_old.setZero(Bf[0].cols());
@@ -134,7 +142,13 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
     else
       beta_random.setZero(Br[0].cols());
-
+    if(beta_random.size() != Br[0].cols())
+    {
+      Rcpp::Rcout << "\nERROR:\n "; 
+      Rcpp::Rcout << "beta_random.size = " << beta_random.size() << "\n";
+      Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
+      throw("input error\n");
+    }
 
 	dbeta_r_old.setZero(Br[0].cols());
     npars += Br[0].cols();

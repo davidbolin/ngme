@@ -276,9 +276,9 @@ List predictLong_cpp(Rcpp::List in_list)
         stream << " Prediction " << 100*percent_done/nindv << " % done";
       }
 
+      Rcpp::Rcout << "here\n";
       Rcpp::Rcout << stream.str();
     }
-
     XVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     WVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     if(predict_derivative == 1){
@@ -291,7 +291,6 @@ List predictLong_cpp(Rcpp::List in_list)
     if(use_random_effect == 1){
       random_effect = mixobj->Br[i];
     }
-
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
 
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){

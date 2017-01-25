@@ -1,8 +1,8 @@
 CC=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang
 CXX=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang++
 
-PKG_CPPFLAGS = -DNDEBUG -Iinclude #-fopenmp
-PKG_CXXFLAGS = -DNDEBUG  -std=c++11 #-fopenmp
+PKG_CPPFLAGS = -DDEBUG -Iinclude #-fopenmp
+PKG_CXXFLAGS = -DDEBUG  -std=c++11 #-fopenmp
 #PKG_LIBS= -DNDEBUG #-fopenmp
 R_XTRA_CPPFLAGS =  -I$(R_INCLUDE_DIR)
 
