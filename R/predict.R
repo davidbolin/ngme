@@ -124,18 +124,17 @@ predictLong <- function( Y,
     }
 
     if(type == "Filter"){
-        pred.ind <- matrix(nrow = n.pred.i,ncol = 2)
-        obs.ind  <- matrix(nrow = n.pred.i,ncol = 2)
-
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= locs[[i]][1]]
-        pred.ind[1,] <- c(0,length(ind))
-        obs.ind[1,] <- c(0,0)
+        pred.ind <- matrix(nrow = n.pred.i-1,ncol = 2)
+        obs.ind  <- matrix(nrow = n.pred.i-1,ncol = 2)
+        #ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= locs[[i]][1]]
+        #pred.ind[1,] <- c(0,length(ind))
+        #obs.ind[1,] <- c(0,0)
         for(j in 2:n.pred.i){
           # pred.ind shows which values to save for the j:th prediction
           ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > locs[[i]][j-1]) & (locs.pred[[i]] <= locs[[i]][j])]
-          pred.ind[j,] <- c(ind[1]-1,length(ind)) #first index and number of indices.
+          pred.ind[j-1,] <- c(ind[1]-1,length(ind)) #first index and number of indices.
           # obs.ind shows which data to use for the j:th prediction
-          obs.ind[j,] <- c(0,j-1)
+          obs.ind[j-1,] <- c(0,j-1)
         }
 
         obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
