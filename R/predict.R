@@ -137,7 +137,7 @@ predictLong <- function( Y,
           obs.ind[j-1,] <- c(0,j-1)
         }
 
-        obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
+        #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
       } else {
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
