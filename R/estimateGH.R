@@ -14,9 +14,9 @@ estimate.wrapper <- function(Y,
                              estimate_fisher = FALSE,
                              ...)
 {
-  
+
   library(MASS) ## required for ginv function
-  
+
   estimation.controls = list(learning.rate = 0,
                              polyak_rate = 0.1,
                              nBurnin = 100,
@@ -446,11 +446,11 @@ estimateLong <- function(Y,
     output$operator_list$left.boundary <- operator_list$left.boundary
     output$operator_list$right.boundary <- operator_list$right.boundary
     output$operator_list$type <- operator_list$type
-    if(operator_list$type == "Matern"){
+    output$operator_list$loc = operator_list$loc
+    output$operator_list$h = operator_list$h
+    if(tolower(operator_list$type) == "matern"){
       output$operator_list$G <- operator_list$G
       output$operator_list$C <- operator_list$C
-      output$operator_list$loc = operator_list$loc
-      output$operator_list$h = operator_list$h
     } else if(operator_list$type == "fd2"){
       output$operator_list$Q <- operator_list$Q
     }

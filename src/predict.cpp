@@ -25,7 +25,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 0;
+  int debug = 1;
   //**********************************
   //      basic parameter
   //**********************************
@@ -178,13 +178,14 @@ List predictLong_cpp(Rcpp::List in_list)
   // stochastic processes setup
   //***********************************
   Process *process;
+  std::string type_processes;
   if(use_process == 1){
 
     if(silent == 0){
       Rcpp::Rcout << " Setup process\n";
     }
     Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-    std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
+    type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
 
 
     if (type_processes != "Normal"){
@@ -271,12 +272,10 @@ List predictLong_cpp(Rcpp::List in_list)
     if(silent == 0){
       std::stringstream stream;
       if(nP>1){
-        stream << " Prediction " << 100*percent_done/nindv << " % done (" << rank<< ")";
+        stream << " Prediction " << 100*percent_done/nindv << " % done (" << rank<< ")\n";
       } else {
-        stream << " Prediction " << 100*percent_done/nindv << " % done";
+        stream << " Prediction " << 100*percent_done/nindv << " % done\n";
       }
-
-      Rcpp::Rcout << "here\n";
       Rcpp::Rcout << stream.str();
     }
     XVec[i].setZero(Bfixed_pred[i].rows(), nSim);
@@ -294,44 +293,52 @@ List predictLong_cpp(Rcpp::List in_list)
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
 
     for(int ipred = 0; ipred < pred_ind[i].rows(); ipred++){
-      Eigen::SparseMatrix<double,0,int> A;
-      if(use_process == 1){
-        A = As[i].middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      }
-      Eigen::VectorXd Y = Ys[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      if(use_random_effect == 1){
-        mixobj->Br[i] = random_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-      }
-
-      mixobj->Bf[i] = fixed_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
-
-      for(int ii = 0; ii < nSim + nBurnin; ii ++){
-        //Rcpp::Rcout << "iter = " << ii << "\n";
-        Eigen::VectorXd res = Y;
-
-        mixobj->remove_cov(i, res);
+      int n_obs = obs_ind[i](ipred,1) - obs_ind[i](ipred,0);
+      Eigen::VectorXd Y = Ys[i];
+      Eigen::SparseMatrix<double,0,int> A = As[i];
+      if(n_obs > 0){
         if(use_process == 1){
-          res -= A * process->Xs[i];
+          A = As[i].middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
         }
-        //***********************************
-        // mixobj sampling
-        //***********************************
-        if(debug){
-          Rcpp::Rcout << "Sample mixed effect (" << rank  << ")\n";
+        Y = Ys[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
+        if(use_random_effect == 1){
+          mixobj->Br[i] = random_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
         }
+        mixobj->Bf[i] = fixed_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
+      }
+      for(int ii = 0; ii < nSim + nBurnin; ii ++){
+        Eigen::VectorXd res = Y;
+        if(n_obs>0){
+          mixobj->remove_cov(i, res);
+          if(use_process == 1){
+            if(n_obs>0)
+              res -= A * process->Xs[i];
+          }
+          //***********************************
+          // mixobj sampling
+          //***********************************
+          if(debug){
+            Rcpp::Rcout << "Sample mixed effect (" << rank  << ")\n";
+          }
 
-        for(int kkk=0;kkk<mix_samp;kkk++){
-          if(type_MeasurementError == "Normal"){
-            mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
-          } else {
-            //mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
-            mixobj->sampleU2_par( i, res, errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
-                                  random_engine[rank], 2 * log(errObj->sigma));
+          for(int kkk=0;kkk<mix_samp;kkk++){
+            if(type_MeasurementError == "Normal"){
+              mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
+            } else {
+              //mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
+              mixobj->sampleU2_par( i, res, errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
+                                    random_engine[rank], 2 * log(errObj->sigma));
+            }
+          }
+
+
+          mixobj->remove_inter(i, res);
+
+        } else {
+          for(int kkk=0;kkk<mix_samp;kkk++){
+            mixobj->simulate(Y, i);
           }
         }
-
-
-        mixobj->remove_inter(i, res);
 
         //***********************************
         // sampling processes
@@ -371,48 +378,57 @@ List predictLong_cpp(Rcpp::List in_list)
           zi.setZero(d);
           for(int j =0; j < d; j++)
             zi[j] =  normal(random_engine[rank]);
-
-          res += A * process->Xs[i];
+          if(n_obs>0)
+            res += A * process->Xs[i];
 
           if(debug){
             Rcpp::Rcout << "Sample process (" << rank  << ")\n";
           }
-          if(type_MeasurementError == "Normal"){
-            process->sample_X(i,
-                              zi,
-                              res,
-                              Qi,
-                              Ki,
-                              A,
-                              errObj->sigma,
-                              Solver[i]);
+          if(n_obs>0){
+            if(type_MeasurementError == "Normal"){
+              process->sample_X(i,
+                                zi,
+                                res,
+                                Qi,
+                                Ki,
+                                A,
+                                errObj->sigma,
+                                Solver[i]);
+            } else {
+              process->sample_Xv2( i,
+                                   zi,
+                                   res,
+                                   Qi,
+                                   Ki,
+                                   A,
+                                   errObj->sigma,
+                                   Solver[i],
+                                   errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse());
+            }
+            res -= A * process->Xs[i];
           } else {
-            process->sample_Xv2( i,
-                                 zi,
-                                 res,
-                                 Qi,
-                                 Ki,
-                                 A,
-                                 errObj->sigma,
-                                 Solver[i],
-                                 errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse());
+            process->simulate(i,zi,A,Ki,Y,Solver[i]);
           }
-          res -= A * process->Xs[i];
         }
 
         if(debug){
           Rcpp::Rcout << "Sample variances (" << rank  << ")\n";
         }
         if(use_process == 1){
-          process->sample_V(i, rgig[rank], Ki);
+          if(n_obs>0){
+              process->sample_V(i, rgig[rank], Ki);
+            } else {
+              process->simulate_V(i, rgig[rank]);
+          }
         }
-
         //***********************************
         // random variance noise sampling
         //***********************************
 
         if(type_MeasurementError != "Normal"){
-          errObj->sampleV(i, res,obs_ind[i](ipred,0)+obs_ind[i](ipred,1));
+          if(n_obs>0){
+            errObj->sampleV(i, res,obs_ind[i](ipred,0)+obs_ind[i](ipred,1));
+          }
         }
 
           // save samples
@@ -420,6 +436,7 @@ List predictLong_cpp(Rcpp::List in_list)
             if(debug){
               Rcpp::Rcout << "Save samples\n";
             }
+            int n_pred = pred_ind[i](ipred,1) - pred_ind[i](ipred,0);
           if(use_process == 1){
             Ai = As_pred[i];
             Ai = Ai.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
@@ -431,9 +448,11 @@ List predictLong_cpp(Rcpp::List in_list)
           } else {
             random_effect = Bfixed_pred[i]*mixobj->beta_fixed;
           }
+
           Eigen::VectorXd random_effect_c = random_effect.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
           Eigen::VectorXd mNoise = errObj->simulate_par(random_effect_c,random_engine[rank]);
           Eigen::VectorXd AX;
+
           if(use_process == 1){
             AX = Ai * process->Xs[i];
             WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
@@ -452,6 +471,7 @@ List predictLong_cpp(Rcpp::List in_list)
             } else {
               random_effect_1 = Bfixed_pred_1[i]*mixobj->beta_fixed;
             }
+
             Eigen::VectorXd random_effect_c_1 = random_effect_1.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
             if(use_process == 1){
               Eigen::SparseMatrix<double,0,int> Ai_1 = As_pred_1[i];
@@ -462,13 +482,11 @@ List predictLong_cpp(Rcpp::List in_list)
             } else {
               XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 - random_effect_c;
             }
-
           }
         }
       }
 
     }
-
     if(predict_derivative == 1){
       WVec_deriv[i] /= deriv_scale;
       XVec_deriv[i] /= deriv_scale;
