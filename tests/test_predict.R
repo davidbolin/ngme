@@ -7,6 +7,7 @@ n.pers <- 2
 nSim  <- 3
 use.random.effect = FALSE
 n.obs  <- 3 + 0*(1:n.pers)
+n.proc = n.obs + 2
 grid.extend = c(0,0.1)
 n <- 10
 n.pred <- 3
@@ -17,7 +18,7 @@ pSubsample = 0.99
 test.pred = TRUE
 Y <- list()
 locs <- list()
-B_random <- B_fixed  <- locs.pred <- list()
+B_random <- B_fixed  <- locs.pred <- locs.proc <- list()
 
 list()
 B_random.pred <- list()
@@ -34,6 +35,7 @@ for(i in 1:n.pers)
   B_random.pred1[[i]] <- cbind(rep(1, n.pred), delta + (1:n.pred) / n.pred )
   Y[[i]] <- rep(1,n.obs[i])
   locs[[i]] <- 1:n.obs[i]
+  locs.proc[[i]] <- 0:n.obs[i]
   locs.pred[[i]] <- seq(from = 1, to = n.obs[i], length.out = n.pred)
   Vin[[i]] <- rep(1, n.obs[i])
 
@@ -68,7 +70,7 @@ if(use.random.effect){
 
 }
 
-operator_list <- create_operator(locs, n, name = "fd2",extend = grid.extend)
+operator_list <- create_operator(locs.proc, n, name = "fd2",extend = grid.extend)
 operator_list$type  <- "fd2"
 operator_list$tau   <- 5
 
@@ -132,7 +134,7 @@ if(use.random.effect){
 }
 
 k = 1
-locs.pred <- list(seq(from = 1, to = n.obs[k], length.out = n.pred))
+locs.pred <-  list(seq(from = 1, to = n.obs[k], length.out = n.pred))
 B_random.pred  <- list(cbind(rep(1, n.pred), (1:n.pred) / n.pred ))
 B_fixed.pred  <- list(as.matrix(locs.pred[[1]]))
 B_random.pred1  <- list(cbind(rep(1, n.pred), delta + (1:n.pred) / n.pred ))

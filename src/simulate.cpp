@@ -19,10 +19,13 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
-
+  int debug = 0;
  	//**********************************
 	//setting up the main data
 	//**********************************
+	if(debug == 1){
+	  Rcpp::Rcout << " Setup data\n";
+	}
 	Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
 	int nindv = obs_list.length(); //count number of patients
 	std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
@@ -37,6 +40,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	//**********************************
 	//operator setup
 	//***********************************
+	if(debug == 1){
+	  Rcpp::Rcout << " Setup oeprator\n";
+	}
 	Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
 	operator_list["nIter"] = 1;
 	std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
@@ -49,6 +55,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	  common_grid = 0;
 	}
 
+	if(debug == 1){
+	  Rcpp::Rcout << " Create solvers\n";
+	}
 	//Create solvers for each patient
 	std::vector<  cholesky_solver >  Solver( nindv);
 	Eigen::SparseMatrix<double, 0, int> Q,K;
@@ -74,6 +83,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	//**********************************
 	// mixed effect setup
 	//***********************************
+	if(debug == 1){
+	  Rcpp::Rcout << " Setup mixed effect\n";
+	}
 	Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
 	std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
 	MixedEffect *mixobj;
@@ -88,6 +100,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   //***********************************
 	// measurement error setup
 	//***********************************
+	if(debug == 1){
+	  Rcpp::Rcout << " Setup measurement error\n";
+	}
   Rcpp::List MeasureError_list  = Rcpp::as<Rcpp::List> (in_list["measurment_list"]);
   MeasurementError *errObj;
   std::string MeasureNoise = Rcpp::as <std::string> (MeasureError_list["noise"]);
@@ -102,10 +117,12 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	//***********************************
 	// stochastic processes setup
 	//***********************************
-
+	if(debug == 1){
+	  Rcpp::Rcout << " Setup process\n";
+	}
 
 	Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-	
+
 	std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
   double nu = -1;
   double mu = 0;
@@ -135,6 +152,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   	/*
   	Simulation objects
   	*/
+  	if(debug == 1){
+  	  Rcpp::Rcout << " Setup random number generators\n";
+  	}
   	std::mt19937 random_engine;
   	std::normal_distribution<double> normal;
   	std::default_random_engine gammagenerator;
@@ -150,11 +170,17 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     //*********************************************
     //        simulating the measurement error
     //*********************************************
+    if(debug == 1){
+      Rcpp::Rcout << " Simulate error\n";
+    }
     std::vector< Eigen::VectorXd > Ysim = errObj->simulate( Ys);
 
     //*********************************************
     //        simulating the mixed effect
     //*********************************************
+    if(debug == 1){
+      Rcpp::Rcout << " Simulate mixed effect\n";
+    }
     mixobj->simulate();
     for(int i = 0; i < Ysim.size(); i++)
     {
@@ -164,6 +190,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     //*********************************************
     //        simulating the processes
     //*********************************************
+    if(debug == 1){
+      Rcpp::Rcout << " Simulate process\n";
+    }
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
       if(type_processes != "Normal"){
@@ -173,8 +202,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
           Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );
         }
       }
-
-
       iV.resize(Vs[i].size());
       iV.array() = Vs[i].array().inverse();
       int d;
@@ -198,19 +225,24 @@ List simulateLongGH_cpp(Rcpp::List in_list)
       }
 
       if(common_grid){
-
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
       } else {
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       }
-
+      if(debug == 1){
+        Rcpp::Rcout << " Chol" << K.rows() << " "<< K.cols() << "\n";
+      }
       Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  // performs a Cholesky factorization of A
-
+      if(debug == 1){
+        Rcpp::Rcout << " Solve\n";
+      }
       Xs[i] = chol.solve(z);         // use the factorization to solve for the given right hand side
       Zs[i] = z;
       Ysim[i] += As[i] * Xs[i];
   }
-
+    if(debug == 1){
+      Rcpp::Rcout << " Save results\n";
+    }
   Rcpp::List out_list;
   out_list["Y"]    = Ysim;
   out_list["U"]    = mixobj->U;

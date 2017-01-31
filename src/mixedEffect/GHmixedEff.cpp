@@ -125,7 +125,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 
     if(beta_fixed.size() != Bf[0].cols())
     {
-      Rcpp::Rcout << "\nERROR:\n "; 
+      Rcpp::Rcout << "\nERROR:\n ";
       Rcpp::Rcout << "beta_fixed.size = " << beta_fixed.size() << "\n";
       Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
       throw("input error\n");
@@ -152,7 +152,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 
     if(beta_random.size() != Br[0].cols())
     {
-      Rcpp::Rcout << "ERROR:\n "; 
+      Rcpp::Rcout << "ERROR:\n ";
       Rcpp::Rcout << "beta_random.size = " << beta_random.size() << "\n";
       Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
       throw("input error\n");
@@ -602,6 +602,8 @@ void NIGMixedEffect::gradient(const int i,
 
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
+      term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
+      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
 
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
@@ -780,8 +782,8 @@ void NIGMixedEffect::gradient2(const int i,
 
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
-      //term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
-      //term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
+      term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
+      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
 
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
@@ -937,11 +939,11 @@ void NIGMixedEffect::step_mu(const double stepsize, const double learning_rate,c
   // H_beta_random = H_mu_random
   gradMu_old += 0.5 * (Sigma * gradMu_2)/ (weight_total * (2*EiV - EV));
 
-  //if(burnin == 1){
-  //  mu = (1/term1_mu) * (Sigma*term2_mu);
-  //} else {
+  if(burnin == 1){
+    mu = (1/term1_mu) * (Sigma*term2_mu);
+  } else {
     mu += stepsize * gradMu_old;
-  //}
+  }
 
   gradMu_2.setZero(Br[0].cols(), 1);
 }

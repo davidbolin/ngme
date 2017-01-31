@@ -35,6 +35,7 @@ predictLong <- function( Y,
                          repeat.mix = 10
 )
 {
+
   if(type=='Filter'){
     pred_type = 1
   } else if(type == 'Smoothing'){
@@ -116,28 +117,42 @@ predictLong <- function( Y,
   ind3 <- seq(1,nSim,by=2)
   ind4 <- seq(2,nSim,by=2)
 
+  if(sum(abs(unlist(lapply(locs.pred,length))-unlist(lapply(lapply(locs.pred,unique),length))))>0){
+    stop("Prediction locations should be unique")
+  }
+
   for(i in 1:n.patient){
     if(is.list(locs)){
-      n.pred.i = length(locs[[i]])
+      li = locs[[i]]
     } else {
-      n.pred.i = length(locs)
+      li = locs
     }
-
+    n.pred.i = length(li)
     if(type == "Filter"){
-        pred.ind <- matrix(nrow = n.pred.i,ncol = 2)
-        obs.ind  <- matrix(nrow = n.pred.i,ncol = 2)
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= locs[[i]][1]]
-        pred.ind[1,] <- c(0,length(ind))
-        obs.ind[1,] <- c(0,0)
-        for(j in 2:n.pred.i){
-          # pred.ind shows which values to save for the j:th prediction
-          ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > locs[[i]][j-1]) & (locs.pred[[i]] <= locs[[i]][j])]
-          pred.ind[j,] <- c(ind[1]-1,length(ind)) #first index and number of indices.
-          # obs.ind shows which data to use for the j:th prediction
-          obs.ind[j,] <- c(0,j-1)
+        pred.ind <- obs.ind <- NULL
+        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations before first obs
+        if(length(ind)>0){
+          pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
+          obs.ind <- Matrix::rBind(obs.ind,c(0,0))
         }
-
-        obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
+        # pred.ind shows which values to save for the j:th prediction
+        # obs.ind shows which data to use for the j:th prediction
+        if(n.pred.i>1){
+          for(j in 2:n.pred.i){
+            ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > li[j-1]) & (locs.pred[[i]] <= li[j])]
+            if(length(ind)>0){
+              pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
+              obs.ind <- Matrix::rBind(obs.ind,c(0,j-1))
+            }
+          }
+        }
+        #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
+        if(max(locs.pred[[i]])>max(li)){
+          ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= max(li)]
+          pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
+          obs.ind <- Matrix::rBind(obs.ind,c(0,length(locs)-1))
+        }
+        n.pred.i = dim(pred.ind)[1]
       } else {
         pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
