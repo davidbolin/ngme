@@ -140,9 +140,11 @@ void grad_caculations(int i,
 				              MeasurementError  & errObj,
 				              Process           & process,
                       const int           estimate_fisher,
-                      Eigen::MatrixXd   & Fisher_information)
+                      Eigen::MatrixXd   & Fisher_information,
+                      int debug)
   {
-
+    if(debug)
+      Rcpp::Rcout << "estimate::gradcalc::mix \n";
   // mixobj gradient
   mixobj.add_inter(i, res);
   int use_EU = 1;
@@ -161,6 +163,8 @@ void grad_caculations(int i,
 
   mixobj.remove_inter(i, res);
 
+    if(debug)
+      Rcpp::Rcout << "estimate::gradcalc::errObj \n";
 	// measurent error  gradient
   //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
   errObj.gradient(i, res, w);
@@ -169,6 +173,9 @@ void grad_caculations(int i,
   
 
 	if(process_active){
+
+    if(debug)
+      Rcpp::Rcout << "estimate::gradcalc::operator \n";
 	  // operator gradient
     Kobj.gradient_add( process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
 
@@ -179,6 +186,8 @@ void grad_caculations(int i,
     // process gradient
     res += A * process.Xs[i];
 
+    if(debug)
+      Rcpp::Rcout << "estimate::gradcalc::process \n";
 		Eigen::SparseMatrix<double, 0, int> K;
   	Eigen::VectorXd iV(process.Vs[i].size());
   	iV.array() = process.Vs[i].array().inverse();
@@ -368,7 +377,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(in_list.containsElementNamed("polyak_rate"))
 	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
-  int debug = 0;
+  int debug = 1;
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -522,6 +531,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   	 }
 
   	process->initFromList(processes_list, Kobj->h);
+    if(estimate_fisher > 0)
+      process->useEV = 0;
   	process->setupStoreTracj(nIter);
   	/*
   		Simulation objects
@@ -784,7 +795,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 				  			            *errObj,
 				   			            *process,
                             estimate_fisher,
-                            Fisher_information);
+                            Fisher_information,
+                            debug);
 
 		      // collects the gradient for computing estimate of variances
 		      grad_inner.block(0, count_inner,

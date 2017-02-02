@@ -161,6 +161,8 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
+    term2_mu.setZero(Br[0].cols());
+    term1_mu = 0;
 
 	dbeta_r_old.setZero(Br[0].cols());
     if(Br.size() > 0){
@@ -451,6 +453,35 @@ void NIGMixedEffect::sampleU_MALA_(const int i,
 
 
 }
+
+void NIGMixedEffect::sampleU_par(const int i,
+                             const Eigen::VectorXd& res,
+                             const double log_sigma2_noise,
+                             std::mt19937 & random_engine)
+{
+
+  if(Br.size() == 0)
+    return;
+
+  Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * res);
+  Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * Br[i];
+  Eigen::MatrixXd Qp  = invSigma / V(i);
+  b += Qp * (- mu + V(i) * mu);
+  Q += Qp;
+  U.col(i) = sample_Nc_par(b, Q,random_engine);
+  sampleV(i);
+  if(Sigma_epsilon){
+    std::normal_distribution<double> normal;
+    Eigen::VectorXd Z;
+    Z.setZero(U.col(i).size());
+    for(int j =0; j < U.col(i).size(); j++)
+      Z[j] =  normal(random_engine);
+
+    Z.array() *= beta_random.array().abs() * 1e-4 + 1e-14;
+    U.col(i) += Z;
+  }
+}
+
 void NIGMixedEffect::sampleU_Gibbs(const int i,
                                 const Eigen::VectorXd& res,
                                 const double log_sigma2_noise)
@@ -489,57 +520,6 @@ void NIGMixedEffect::sampleU2_Gibbs(const int i,
     }
 }
 
-void NIGMixedEffect::sampleU_MALA(const int i,
-                                const Eigen::VectorXd& res,
-                                const double log_sigma2_noise)
-{
-    Eigen::MatrixXd Q_noise = MatrixXd::Identity(res.size(),res.size());
-    Q_noise *= exp( - log_sigma2_noise);
-    Eigen::VectorXd b_prior   =  (Br[i].transpose() * (Q_noise * res));
-
-    sampleU_MALA_(i, res, b_prior, Q_noise);
-}
-
-void NIGMixedEffect::sampleU2_MALA(const int i,
-                                const Eigen::VectorXd& res,
-                                const Eigen::VectorXd& iV,
-                                const double log_sigma2_noise //= 0
-                                )
-{
-
-    Eigen::VectorXd b_prior   = exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res) );
-    Eigen::MatrixXd Q_noise   = exp( - log_sigma2_noise)  * iV.asDiagonal();
-    sampleU_MALA_(i, res, b_prior, Q_noise);
-}
-
-void NIGMixedEffect::sampleU_par(const int i,
-                             const Eigen::VectorXd& res,
-                             const double log_sigma2_noise,
-                             std::mt19937 & random_engine)
-{
-
-  if(Br.size() == 0)
-    return;
-
-  Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * res);
-  Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * Br[i];
-  Eigen::MatrixXd Qp  = invSigma / V(i);
-  b += Qp * (- mu + V(i) * mu);
-  Q += Qp;
-  U.col(i) = sample_Nc_par(b, Q,random_engine);
-  sampleV(i);
-  if(Sigma_epsilon){
-    std::normal_distribution<double> normal;
-    Eigen::VectorXd Z;
-    Z.setZero(U.col(i).size());
-    for(int j =0; j < U.col(i).size(); j++)
-      Z[j] =  normal(random_engine);
-
-    Z.array() *= beta_random.array().abs() * 1e-4 + 1e-14;
-    U.col(i) += Z;
-  }
-}
-
 void NIGMixedEffect::sampleU2_par(const int i,
                               const Eigen::VectorXd& res,
                               const Eigen::VectorXd& iV,
@@ -568,6 +548,33 @@ void NIGMixedEffect::sampleU2_par(const int i,
     U.col(i) += Z;
   }
 }
+
+void NIGMixedEffect::sampleU_MALA(const int i,
+                                const Eigen::VectorXd& res,
+                                const double log_sigma2_noise)
+{
+    Eigen::MatrixXd Q_noise = MatrixXd::Identity(res.size(),res.size());
+    Q_noise *= exp( - log_sigma2_noise);
+    Eigen::VectorXd b_prior   =  (Br[i].transpose() * (Q_noise * res));
+
+    sampleU_MALA_(i, res, b_prior, Q_noise);
+}
+
+void NIGMixedEffect::sampleU2_MALA(const int i,
+                                const Eigen::VectorXd& res,
+                                const Eigen::VectorXd& iV,
+                                const double log_sigma2_noise //= 0
+                                )
+{
+
+    Eigen::VectorXd b_prior   = exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res) );
+    Eigen::MatrixXd Q_noise   = exp( - log_sigma2_noise)  * iV.asDiagonal();
+    sampleU_MALA_(i, res, b_prior, Q_noise);
+}
+
+
+
+
 
 
 void NIGMixedEffect::gradient(const int i,
@@ -603,7 +610,7 @@ void NIGMixedEffect::gradient(const int i,
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
-      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
+      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
 
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
@@ -764,7 +771,6 @@ void NIGMixedEffect::gradient2(const int i,
 
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
-
       if(use_EU)
       {
         res_ -= Br[i] * EU;
@@ -773,18 +779,17 @@ void NIGMixedEffect::gradient2(const int i,
         res_ -= Br[i] * U.col(i);
       }
 
+      
       grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
       grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
 
 
+      
       gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
-
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
-      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
-
+      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
       term1   += weight * (V(i) + 1. / V(i) - 2.);

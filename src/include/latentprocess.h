@@ -15,10 +15,12 @@ class Process {
 
   public:
 
-
-	int npars;
+    int useEV; // for GAL use EV rather EV when computing gradient
+	  int npars;
   	int store_param;
   	int nindv; // number indiviuals
+    std::vector< Eigen::VectorXd > ElogV_post;
+    std::vector< Eigen::VectorXd > EV_post;
   	std::vector< Eigen::VectorXd > EV;
   	std::vector< Eigen::VectorXd > Xs;
   	std::vector< Eigen::VectorXd >  Vs;

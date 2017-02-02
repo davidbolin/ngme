@@ -35,11 +35,18 @@ Eigen::VectorXd sampleV_pre(gig &,
 
 
 /*
+ElogV_GIG(p, a, b)
+    computes E[log(V)] where V ~ GIG(p, a, b)
+
+*/
+double ElogV_GIG(double , double , double );
+/*
 EiV_GIG(p, a, b)
 	computes E[V^-1] where V ~ GIG(p, a, b)
 
 */
 double EiV_GIG(double , double , double );
+double EV_GIG(double , double , double );
 /*
 db_EiV_GIG(p, a, b)
     computes (d/db) E[V^-1] where V ~ GIG(p, a, b);

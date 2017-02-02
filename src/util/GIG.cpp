@@ -21,7 +21,14 @@ double db_EiV_GIG(double p, double a, double b) {
     db_EiV += (2 * p) / (b*b);  
     return db_EiV;
 }
-
+double ElogV_GIG(double p, double a, double b) {
+    double sqrt_ab = sqrt(a * b);
+    double eps = 1e-6;
+    double Kp_eps = log(R::bessel_k(sqrt_ab, p + eps, 2));
+    double Kp     = log(R::bessel_k(sqrt_ab, p, 2));
+    double EiV = log(sqrt_ab) + (Kp_eps - Kp)/eps;
+  return EiV;
+}
 
 double EiV_GIG(double p, double a, double b) {
     double sqrt_ab = sqrt(a * b);
@@ -32,6 +39,16 @@ double EiV_GIG(double p, double a, double b) {
     EiV    *=  sqrt_a_div_b;
     EiV    -= (2 * p) * 1./b;
   return EiV;
+}
+
+double EV_GIG(double p, double a, double b) {
+    double sqrt_ab = sqrt(a * b);
+    double K1 = R::bessel_k(sqrt_ab, p, 2);
+    double K0 = R::bessel_k(sqrt_ab, p+1, 2);
+    double sqrt_b_div_a = sqrt(b/a);
+    double EV = K0 / K1;
+    EV    *=  sqrt_b_div_a;
+  return EV;
 }
 
 double dlambda_V(const double loglambda,
@@ -133,7 +150,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   for(int i = 0; i < KX.size(); i++)
   	V[i] = sampler.sample( p[i], a, b[i] ) ; 
   
-   double Vadj  = 1e-13;  
+   double Vadj  = 1e-11;  
     if(type == "GAL")
     	V.array() += Vadj;
   

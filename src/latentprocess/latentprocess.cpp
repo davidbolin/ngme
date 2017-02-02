@@ -155,6 +155,17 @@ if(type_process == "CH"){
   		}
   	counter = 0;
   	store_param = 0;
+    useEV = 0;
+    if(type_process == "GAL")
+      useEV = 0;
+    if(init_list.containsElementNamed("useEV"))
+      useEV = Rcpp::as < double >( init_list["int"]);
+
+    if(useEV)
+    {
+      ElogV_post.resize(nindv);
+      EV_post.resize(nindv);
+    }
 
 }
 
@@ -272,16 +283,44 @@ void GHProcess::sample_V(const int i ,
     					              gig & rgig,
                             const Eigen::SparseMatrix<double,0,int> & K)
 {
+  Eigen::VectorXd KX = K * Xs[i];
 	double nu_in = nu;
 	if( type_process == "NIG")
 		nu_in = sqrt(nu_in);
  	Vs[i] = sampleV_post(rgig,
                  h[i],
-                 K * Xs[i],
+                 KX,
                  1.,
                  mu,
                  nu_in,
                  type_process);
+
+  if(useEV)
+  {
+    if(type_process != "GAL"){
+      Rcpp::Rcout << "useEV only implimented for GAL\n";
+      exit(-1);
+    }
+    Eigen::VectorXd  p, b;
+    double sigma = 1.;
+    b = (KX +  mu * h[i]) / sigma;
+    b = b.array().square();
+    double b_adj = 1e-14;
+    double a  =  pow(mu / sigma, 2);
+    p = h[i];
+    p.array() *= nu;
+    p.array() -= 0.5;
+    a += 2 * nu;
+    b.array() += b_adj;
+    EV_post[i].resize(Vs[i].size());
+    ElogV_post[i].resize(Vs[i].size());
+    for(int j = 0; j < KX.size(); j++ )
+    {
+      EV_post[i][j]    = ElogV_GIG(p[j], a, b[j]);
+      ElogV_post[i][j] = ElogV_GIG(p[j], a, b[j]); 
+    }
+
+  }
 
 }
 void GHProcess::simulate_V(const int i ,
@@ -356,7 +395,7 @@ void GHProcess::gradient( const int i ,
 
       		temp_3 += res;
       		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
-      		ddmu_1 -= weight  *Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		ddmu_1 -= weight  * temp_2.dot(temp_2) / pow(sigma,2);
 
 	}
 
@@ -476,11 +515,12 @@ void GHProcess:: gradient_v2( const int i ,
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
       		Eigen::VectorXd temp_2 = A * temp_1;
-      		temp_2.cwiseProduct(iV_noise );
+          Eigen::VectorXd temp_2iV = temp_2; 
+      		temp_2iV.cwiseProduct(iV_noise );
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
       		temp_3 += res;
-      		dmu    += weight * temp_2.dot(temp_3) / pow(sigma,2);
-      		ddmu_1 -= weight * EiV_noise * Vv_mean[i] * (trace_var / pow(sigma, 2));
+      		dmu    += weight * temp_2iV.dot(temp_3) / pow(sigma,2);
+      		ddmu_1 -= weight * temp_2iV.dot(temp_2) / pow(sigma, 2);
 
 	}
 
@@ -522,8 +562,16 @@ void GHProcess::grad_nu(const int i, const double weight)
     term1 += 	h2[i].dot(iV) + Vs[i].sum() - 2 * h_sum[i];
 	}else if(type_process == "GAL"){
     	Eigen::VectorXd temp(Vs[i].size());
-    	temp.array() = Vs[i].array().log();
-		dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i]);
+      if(useEV){
+          temp.array() = ElogV_post[i].array();
+          dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - EV_post[i].sum() - h_digamma[i]);
+      }else{
+
+      temp.array() = Vs[i].array().log();
+      dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i]);
+
+      }
+
     	ddnu += weight * ( h_sum[i]/ nu - h_trigamma[i] );
 	}
 
@@ -726,7 +774,7 @@ void GHProcess::update_nu()
   			  h_digamma[i]  += h[i][ii]  * Digamma( h_nu);
   			  h_trigamma[i] += h2[i][ii] * Trigamma(h_nu);
         };
-        Vv_mean[i]  = h_sum[i] / (h[i].size() * nu);
+        Vv_mean[i]  = h_sum[i] * nu / (h[i].size() * nu);
         if(h_min[i] * nu > 1.2){
     		  EiV[i] = h[i];
           EiV[i].array() -= nu;
