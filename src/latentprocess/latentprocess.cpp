@@ -222,15 +222,11 @@ void GHProcess::simulate(const int i,
 			  Eigen::VectorXd& Y,
 			  cholesky_solver  &  solver)
 {
-
-  Z *= Vs[i].cwiseSqrt();
+  Z = Z.cwiseProduct(Vs[i].cwiseSqrt());
   for(int ii = 0; ii < Z.size(); ii++)
-  	Z[ii] += - mu * h[i][ii] + Vs[i][ii] * mu;
-      Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
-
- Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
-
-
+  Z[ii] += - mu * h[i][ii] + Vs[i][ii] * mu;
+  Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
+  Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
   Y += A * Xs[i];
 
 }
@@ -317,7 +313,7 @@ void GHProcess::sample_V(const int i ,
     for(int j = 0; j < KX.size(); j++ )
     {
       EV_post[i][j]    = ElogV_GIG(p[j], a, b[j]);
-      ElogV_post[i][j] = ElogV_GIG(p[j], a, b[j]); 
+      ElogV_post[i][j] = ElogV_GIG(p[j], a, b[j]);
     }
 
   }
@@ -402,7 +398,6 @@ void GHProcess::gradient( const int i ,
   if( type_process == "CH")
   		return;
 
-
   grad_nu(i, weight);
 }
 
@@ -421,12 +416,12 @@ void GHProcess::gradient( const int i ,
 
         Eigen::VectorXd B_mu  =  Vs[i] - h[i];
         Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
-        Eigen::VectorXd KB_mu = LU.solve(B_mu);    
+        Eigen::VectorXd KB_mu = LU.solve(B_mu);
         if(Bf.cols() > 0)
-          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu)/ pow(sigma,2); 
+          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu)/ pow(sigma,2);
 
         if(Br.cols() > 0)
-          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu)/ pow(sigma,2); 
+          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu)/ pow(sigma,2);
 
         d2(Bf.cols() +  Br.cols()) = 2 * weight * B_mu.dot( res) /  pow(sigma,3);
       }
@@ -447,12 +442,12 @@ void GHProcess::gradient( const int i ,
 
         Eigen::VectorXd B_mu  =  Vs[i] - h[i];
         Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
-        Eigen::VectorXd KB_mu = LU.solve(B_mu);    
+        Eigen::VectorXd KB_mu = LU.solve(B_mu);
         if(Bf.cols() > 0)
-          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2); 
+          d2.head(Bf.cols()) = weight *  (Bf.transpose() * KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2);
 
         if(Br.cols() > 0)
-          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2); 
+          d2.segment(Bf.cols(), Br.cols()) = weight *  (Br.transpose() *  KB_mu.cwiseProduct(iV_noise))/ pow(sigma,2);
 
         d2(Bf.cols() +  Br.cols()) = 2 * weight * B_mu.dot( res.cwiseProduct(iV_noise)) /  pow(sigma,3);
       }
@@ -515,7 +510,7 @@ void GHProcess:: gradient_v2( const int i ,
 		    Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a LU factorization of K
       		temp_1 = LU.solve(temp_1);         // use the factorization to solve for the given right hand side
       		Eigen::VectorXd temp_2 = A * temp_1;
-          Eigen::VectorXd temp_2iV = temp_2; 
+          Eigen::VectorXd temp_2iV = temp_2;
       		temp_2iV.cwiseProduct(iV_noise );
       		 Eigen::VectorXd temp_3 = - A * Xs[i];
       		temp_3 += res;

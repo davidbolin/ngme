@@ -170,7 +170,7 @@ void grad_caculations(int i,
   errObj.gradient(i, res, w);
   if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
     Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
-  
+
 
 	if(process_active){
 
@@ -180,7 +180,7 @@ void grad_caculations(int i,
     Kobj.gradient_add( process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
 
     if(estimate_fisher > 0 ){
-      Fisher_information.block(mixobj.npars + errObj.npars, mixobj.npars + errObj.npars, Kobj.npars, Kobj.npars ) += 
+      Fisher_information.block(mixobj.npars + errObj.npars, mixobj.npars + errObj.npars, Kobj.npars, Kobj.npars ) +=
       Kobj.d2Given(process.Xs[i], process.Vs[i].cwiseInverse(), process.mean_X(i), i, w);
     }
     // process gradient
@@ -207,9 +207,9 @@ void grad_caculations(int i,
                             w);
 
         if(estimate_fisher > 0 ){
-          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
-                                 mixobj.npars + errObj.npars + Kobj.npars, 
-                                 process.npars, 
+          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                 mixobj.npars + errObj.npars + Kobj.npars,
+                                 process.npars,
                                  process.npars ) += process.d2Given_v2(i,
                                                                        K,
                                                                        A,
@@ -219,7 +219,7 @@ void grad_caculations(int i,
                                                                        0,
                                                                        0,
                                                                        w);
-              
+
              Eigen::MatrixXd Bf_t = Eigen::MatrixXd::Zero(0,0);
              if(mixobj.Bf.size() > 0)
                 Bf_t = mixobj.Bf[i];
@@ -236,27 +236,27 @@ void grad_caculations(int i,
                                                    errObj.Vs[i].cwiseInverse(),
                                                    w);
             if(mixobj.Bf.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        0,
                                        Bf_t.cols(),
                                        1) += cross.head(Bf_t.size());
 
             if(mixobj.Br.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        Bf_t.cols(),
                                        Br_t.cols(),
                                        1) += cross.segment(Bf_t.size(), Br_t.size());
 
 
-              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
                                        mixobj.npars) += cross(Bf_t.size() + Br_t.size());
 
-              Fisher_information.block(0, 
+              Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
                                        1,
                                        Bf_t.cols() + Br_t.cols() + 1
-                                       ) = 
-                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       ) =
+                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                         0,
                                        Bf_t.cols() + Br_t.cols() + 1,
                                        1).transpose();
@@ -266,14 +266,14 @@ void grad_caculations(int i,
         process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
         if(estimate_fisher > 0 ){
 
-          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
-                                 mixobj.npars + errObj.npars + Kobj.npars, 
-                                 process.npars, 
+          Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                 mixobj.npars + errObj.npars + Kobj.npars,
+                                 process.npars,
                                  process.npars ) += process.d2Given(i,
                                                                     K,
                                                                     A,
                                                                     res,
-                                                                    errObj.sigma, 
+                                                                    errObj.sigma,
                                                                     0.,
                                                                     w);
 
@@ -292,37 +292,37 @@ void grad_caculations(int i,
                                                    Br_t,
                                                    w);
              if(mixobj.Bf.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        0,
                                        Bf_t.cols(),
                                        1) += cross.head(Bf_t.size());
 
             if(mixobj.Br.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        Bf_t.cols(),
                                        Br_t.cols(),
                                        1) += cross.segment(Bf_t.size(), Br_t.size());
 
-              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars, 
+              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
                                        mixobj.npars) += cross(Bf_t.size() + Br_t.size());
 
-              Fisher_information.block(0, 
+              Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
                                        1,
                                        Bf_t.cols() + Br_t.cols() + 1
-                                       ) = 
-                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars, 
+                                       ) =
+                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                         0,
                                        Bf_t.cols() + Br_t.cols() + 1,
                                        1).transpose();
-              
-                                     
-        
+
+
+
           }
       }
     }
   }
-  
+
 }
 
 // [[Rcpp::export]]
@@ -717,9 +717,12 @@ List estimateLong_cpp(Rcpp::List in_list)
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       		}
       	}
+      	if(debug)
+      	  Rcpp::Rcout << "estimate::simulate error\n";
 
         Y = errObj->simulate( Ys[i]);
-
+        if(debug)
+          Rcpp::Rcout << "estimate::simulate mixed\n";
 	      mixobj->simulate(Y, i);
 
 	      if(process_active){
@@ -737,7 +740,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	        if(debug)
 	          Rcpp::Rcout << ", X ";
 
-	 	      process->simulate(i, z, A, K, Y, Solver[i]);
+          process->simulate(i, z, A, K, Y, Solver[i]);
 	      }
 	      if(debug)
 	        Rcpp::Rcout << ", done \n ";
@@ -933,7 +936,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::rownames(F) = names;
     Rcpp::colnames(F) = names;
     out_list["FisherMatrix"]     = F;
- 
+
   }
 
   out_list["pSubsample"]       = pSubsample;
