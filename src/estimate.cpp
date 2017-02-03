@@ -154,6 +154,7 @@ void grad_caculations(int i,
     mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w, use_EU);
       if(estimate_fisher)
         Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
+
   }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
     if(estimate_fisher){
@@ -170,7 +171,6 @@ void grad_caculations(int i,
   errObj.gradient(i, res, w);
   if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
     Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
-
 
 	if(process_active){
 
@@ -198,7 +198,8 @@ void grad_caculations(int i,
   	}
     if(process.type_process != "Normal"){
       if(errObj.noise != "Normal"){
-
+          
+          
         //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
         process.gradient_v2(i,K,A,res,errObj.sigma,
                             errObj.Vs[i].cwiseInverse(),
@@ -206,6 +207,7 @@ void grad_caculations(int i,
                             Kobj.trace_variance(A, i),
                             w);
 
+          
         if(estimate_fisher > 0 ){
           Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                  mixobj.npars + errObj.npars + Kobj.npars,
@@ -236,30 +238,33 @@ void grad_caculations(int i,
                                                    errObj.Vs[i].cwiseInverse(),
                                                    w);
             if(mixobj.Bf.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
-                                       0,
-                                       Bf_t.cols(),
-                                       1) += cross.head(Bf_t.size());
-
-            if(mixobj.Br.size() > 0)
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
-                                       Bf_t.cols(),
-                                       Br_t.cols(),
-                                       1) += cross.segment(Bf_t.size(), Br_t.size());
-
-
-              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
-                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
-
               Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
-                                       1,
-                                       Bf_t.cols() + Br_t.cols() + 1
-                                       ) =
-                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                       Bf_t.cols(),
+                                       1) += cross.head(Bf_t.cols());
+
+
+          
+            if(mixobj.Br.size() > 0)
+              Fisher_information.block(Bf_t.cols(),
+                                       mixobj.npars + errObj.npars + Kobj.npars,
+                                       Br_t.cols(),
+                                       1) += cross.segment(Bf_t.cols(), Br_t.cols());
+
+              Fisher_information(mixobj.npars,
+                                 mixobj.npars + errObj.npars + Kobj.npars) += cross(Bf_t.cols() + Br_t.cols());
+
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                         0,
+                                       1,
+                                       Bf_t.cols() + Br_t.cols() + 1) =
+                                      Fisher_information.block(0,
+                                        mixobj.npars + errObj.npars + Kobj.npars,
                                        Bf_t.cols() + Br_t.cols() + 1,
                                        1).transpose();
+
+
+
 
         }
       }else{
@@ -291,30 +296,33 @@ void grad_caculations(int i,
                                                    Bf_t,
                                                    Br_t,
                                                    w);
+
              if(mixobj.Bf.size() > 0)
               Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        0,
-                                       Bf_t.cols(),
-                                       1) += cross.head(Bf_t.size());
+                                       1,
+                                       Bf_t.cols()) += cross.head(Bf_t.cols()).transpose();
+
 
             if(mixobj.Br.size() > 0)
               Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        Bf_t.cols(),
-                                       Br_t.cols(),
-                                       1) += cross.segment(Bf_t.size(), Br_t.size());
+                                       1,
+                                       Br_t.cols()) 
+                                      += cross.segment(Bf_t.cols(), Br_t.cols()).transpose();
 
               Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
-                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
+                                       mixobj.npars) += cross(Bf_t.cols() + Br_t.cols());
 
               Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
-                                       1,
-                                       Bf_t.cols() + Br_t.cols() + 1
-                                       ) =
+                                       Bf_t.cols() + Br_t.cols() + 1,
+                                       1) =
                                       Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                         0,
-                                       Bf_t.cols() + Br_t.cols() + 1,
-                                       1).transpose();
+                                       1,
+                                       Bf_t.cols() + Br_t.cols() + 1).transpose();
+              
 
 
 
@@ -377,7 +385,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(in_list.containsElementNamed("polyak_rate"))
 	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
-  int debug = 1;
+  int debug = 0;
 	//**********************************
 	//     setting up the main data
 	//**********************************

@@ -742,7 +742,7 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
   if(Br.size()>0){
     // dbeta_r dsigma
     d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * iV.asDiagonal() * res_);
-    d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + 2 * n_r +n_f , n_r , 1 ).transpose();
+    d2.block(n_s + 2 * n_r + n_f  + 1, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + 2 * n_r +n_f + 1, n_r , 1 ).transpose();
   }
 
  if(Bf.size() > 0){

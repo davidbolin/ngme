@@ -560,14 +560,24 @@ void GHProcess::grad_nu(const int i, const double weight)
       if(useEV){
           temp.array() = ElogV_post[i].array();
           dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - EV_post[i].sum() - h_digamma[i]);
+
       }else{
 
-      temp.array() = Vs[i].array().log();
-      dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i]);
+        temp.array() = Vs[i].array().log();
+        dnu  += weight * ( h_sum[i] * (1. + log(nu)) + h[i].dot(temp) - Vs[i].sum() - h_digamma[i]);
+        //Rcpp::Rcout << "dnu , Vs.sum() , h.dit(temp) = " << dnu << "," << Vs[i].sum() << "," << h[i].dot(temp) << "\n";
+        //Rcpp::Rcout << "nu  = " << nu << "\n";
 
+ 
       }
 
     	ddnu += weight * ( h_sum[i]/ nu - h_trigamma[i] );
+              if(Vs[i].sum() > 1e4){
+          Rcpp::Rcout << "ddnu = " << ddnu << "\n";
+          Rcpp::Rcout << "Vs[i] = \n" << Vs[i] << "\n";
+          Rcpp::Rcout << "X[i] = \n" << Xs[i].transpose() << "\n";
+          Rcpp::Rcout << "i   = " << i << "\n";
+          }
 	}
 
 

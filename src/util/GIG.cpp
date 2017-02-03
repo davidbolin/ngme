@@ -121,7 +121,13 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   b = (KX +  mu * h) / sigma;
   b = b.array().square();
-  double b_adj = 1e-14;
+  double b_adj  = 0;
+  if(type == "GAL"){
+     b_adj = 1e-10;
+  }else{
+     b_adj = 1e-14;
+  }
+  
   double a  =  pow(mu / sigma, 2);
   if(type == "GAL"){
     p = h * nu;
