@@ -154,7 +154,6 @@ void grad_caculations(int i,
     mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w, use_EU);
       if(estimate_fisher)
         Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
-
   }else{
     mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
     if(estimate_fisher){
@@ -171,6 +170,7 @@ void grad_caculations(int i,
   errObj.gradient(i, res, w);
   if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
     Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
+
 
 	if(process_active){
 
@@ -198,8 +198,7 @@ void grad_caculations(int i,
   	}
     if(process.type_process != "Normal"){
       if(errObj.noise != "Normal"){
-          
-          
+
         //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
         process.gradient_v2(i,K,A,res,errObj.sigma,
                             errObj.Vs[i].cwiseInverse(),
@@ -207,7 +206,6 @@ void grad_caculations(int i,
                             Kobj.trace_variance(A, i),
                             w);
 
-          
         if(estimate_fisher > 0 ){
           Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                  mixobj.npars + errObj.npars + Kobj.npars,
@@ -238,33 +236,30 @@ void grad_caculations(int i,
                                                    errObj.Vs[i].cwiseInverse(),
                                                    w);
             if(mixobj.Bf.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                       0,
+                                       Bf_t.cols(),
+                                       1) += cross.head(Bf_t.size());
+
+            if(mixobj.Br.size() > 0)
+              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                       Bf_t.cols(),
+                                       Br_t.cols(),
+                                       1) += cross.segment(Bf_t.size(), Br_t.size());
+
+
+              Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
+                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
+
               Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
-                                       Bf_t.cols(),
-                                       1) += cross.head(Bf_t.cols());
-
-
-          
-            if(mixobj.Br.size() > 0)
-              Fisher_information.block(Bf_t.cols(),
-                                       mixobj.npars + errObj.npars + Kobj.npars,
-                                       Br_t.cols(),
-                                       1) += cross.segment(Bf_t.cols(), Br_t.cols());
-
-              Fisher_information(mixobj.npars,
-                                 mixobj.npars + errObj.npars + Kobj.npars) += cross(Bf_t.cols() + Br_t.cols());
-
-              Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
-                                        0,
                                        1,
-                                       Bf_t.cols() + Br_t.cols() + 1) =
-                                      Fisher_information.block(0,
-                                        mixobj.npars + errObj.npars + Kobj.npars,
+                                       Bf_t.cols() + Br_t.cols() + 1
+                                       ) =
+                                      Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
+                                        0,
                                        Bf_t.cols() + Br_t.cols() + 1,
                                        1).transpose();
-
-
-
 
         }
       }else{
@@ -296,33 +291,30 @@ void grad_caculations(int i,
                                                    Bf_t,
                                                    Br_t,
                                                    w);
-
              if(mixobj.Bf.size() > 0)
               Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        0,
-                                       1,
-                                       Bf_t.cols()) += cross.head(Bf_t.cols()).transpose();
-
+                                       Bf_t.cols(),
+                                       1) += cross.head(Bf_t.size());
 
             if(mixobj.Br.size() > 0)
               Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                        Bf_t.cols(),
-                                       1,
-                                       Br_t.cols()) 
-                                      += cross.segment(Bf_t.cols(), Br_t.cols()).transpose();
+                                       Br_t.cols(),
+                                       1) += cross.segment(Bf_t.size(), Br_t.size());
 
               Fisher_information(mixobj.npars + errObj.npars + Kobj.npars,
-                                       mixobj.npars) += cross(Bf_t.cols() + Br_t.cols());
+                                       mixobj.npars) += cross(Bf_t.size() + Br_t.size());
 
               Fisher_information.block(0,
                                        mixobj.npars + errObj.npars + Kobj.npars,
-                                       Bf_t.cols() + Br_t.cols() + 1,
-                                       1) =
+                                       1,
+                                       Bf_t.cols() + Br_t.cols() + 1
+                                       ) =
                                       Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
                                         0,
-                                       1,
-                                       Bf_t.cols() + Br_t.cols() + 1).transpose();
-              
+                                       Bf_t.cols() + Br_t.cols() + 1,
+                                       1).transpose();
 
 
 
@@ -340,6 +332,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//      basic parameter
 	//**********************************
 
+	int debug = 0;
+
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< int > (in_list["nIter"]);
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
@@ -354,9 +348,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   double step0     = Rcpp::as< double    > (in_list["step0"]);
   int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
 
-  double pSubsample2 = 0;
-  if(subsample_type == 3)
-    pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+
 
   unsigned long seed = 0;
   if(in_list.containsElementNamed("seed"))
@@ -385,7 +377,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(in_list.containsElementNamed("polyak_rate"))
 	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
-  int debug = 0;
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -400,8 +391,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	std::vector< double > Ysize(nindv);
 	std::vector< int > burnin_done(nindv);
 	Eigen::VectorXd sampling_weights(nindv);
-	int count;
-	count = 0;
+	int count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     	List obs_tmp = Rcpp::as<Rcpp::List>(*it);
     	if(process_active)
@@ -420,6 +410,45 @@ List estimateLong_cpp(Rcpp::List in_list)
   }
 	sampling_weights /= sampling_weights.sum();
 
+	Eigen::VectorXd weight4;
+	weight4.setZero(nindv);
+	double pSubsample2 = 0;
+	Eigen::VectorXd free;
+	Rcpp::List group_list  = Rcpp::as<Rcpp::List> (in_list["group_list"]);
+	count = 0;
+	int ngroup = group_list.length();
+	std::vector<Eigen::VectorXd> groups(ngroup);
+	if(subsample_type == 3){
+	  pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+	} else if(subsample_type == 4){
+	  free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
+
+	  for( List::iterator it = group_list.begin(); it != group_list.end(); ++it ) {
+	    groups[count] = Rcpp::as<Eigen::VectorXd>(*it);
+	    Rcpp::Rcout << "group: "<< groups[count] << "\n";
+	    count++;
+	  }
+	  int gsum = 0;
+	  for(int i=0;i<groups.size();i++){
+	    int ngroup = groups[i].size();
+	    gsum += ngroup;
+	    for(int j=0;j<ngroup;j++){
+	      weight4[groups[i][j]] = 1.0*groups.size()*ngroup;
+	      }
+	  }
+	  double gmean = 0;
+	  if(groups.size()>0){
+	    gmean = gsum/groups.size();
+	  }
+
+	  int nfree = free.size();
+	  for(int i=0;i<nfree;i++){
+	    Rcpp::Rcout << "free[i]: "<< free[i] << "\n";
+	    weight4[free[i]] = (1.0*nfree)/(nSubsample - gmean);
+	  }
+	  //weight4 *= nindv / ((double) nSubsample);
+	}
+  //Rcpp::Rcout << weight4 << "\n";
 	//***********************************
 	//Debug setup
 	//***********************************
@@ -665,15 +694,13 @@ List estimateLong_cpp(Rcpp::List in_list)
     		nSubsample_i = nSubsample;
     	}
 
-
     	p = p_N;
-    		if(iter > 10){
-    			nSubsample_i += poissonSampling_internal( m,
+    	if(iter > 10){
+    		nSubsample_i += poissonSampling_internal( m,
 					  								  p_inv,
 					  								  weight,
 					  								  longInd,
-					  								  selected
-					  								 );
+					  								  selected);
 			}
 			/*
 			double w_sum = 0, selected_sum = 0;
@@ -690,7 +717,22 @@ List estimateLong_cpp(Rcpp::List in_list)
 			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
 				w_sum += weight[longInd[ilong]];
 
-    	}
+    } else if(subsample_type ==4){
+      nSubsample_i = nSubsample;
+
+      longInd.resize(nSubsample, 0);
+      std::fill(longInd.begin(), longInd.end(), 0);
+
+      groupSampling_internal(groups, free,longInd,gammagenerator);
+      weight = weight4;
+    }
+    //Rcpp::Rcout << nSubsample_i << "\n ";
+    //Rcpp::Rcout << weight << "\n ";
+    //Rcpp::Rcout << "longInd = ";
+    //for(int iii =0;iii< longInd.size();iii++){
+    //  Rcpp::Rcout << longInd[iii] << " ";
+    //}
+    //Rcpp::Rcout << "\n ";
 
     double burnin_rate = 0;
     if(process_active)
@@ -710,9 +752,11 @@ List estimateLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << "estimate::start patient loop \n";
     for(int ilong = 0; ilong < nSubsample_i; ilong++ )
     {
-      if(debug)
-        Rcpp::Rcout << "ilong = " << ilong << "\n";
       int i = longInd[ilong];
+      if(debug)
+        Rcpp::Rcout << "i = " << i << " "<< weight[i] << "\n";
+
+
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
       	A = As[i];

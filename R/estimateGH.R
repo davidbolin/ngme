@@ -398,13 +398,23 @@ estimateLong <- function(Y,
       mixedEffect_list$Sigma <- scale.sigma(mixedEffect_list$Sigma,Br.list)
     }
   }
-
+  free.samples = 0
+  groups <- list()
+  if(subsample.type == 4){
+    group <- group.fixed(mixedEffect_list$B_fixed)
+    groups <- group$groups
+    free.samples = group$free
+  }
+  str(groups)
+  str(free.samples)
 
   input <- list( obs_list         = obs_list,
                  measurementError_list  = measurment_list,
                  mixedEffect_list = mixedEffect_list,
                  pSubsample       = pSubsample,
                  pSubsample2      = pSubsample2,
+                 free_samples     = free.samples,
+                 group_list       = groups,
                  subsample_type   = subsample.type,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,

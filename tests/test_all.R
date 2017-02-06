@@ -3,7 +3,7 @@ library(LDMod)
 
 n.threads <- 1
 nIter <- 500
-n.pers <- 100
+n.pers <- 500
 nSim  <- 2
 n.obs  <- 10 + 2*(1:n.pers)
 n <- 100
@@ -12,7 +12,7 @@ nBurnin = 10
 pred.type <- "Filter"
 pSubsample = 0.1
 operator.type = "matern"
-#subsample.type = 2
+subsample.type = 1
 test.pred = FALSE
 Y <- list()
 locs <- list()
@@ -96,6 +96,7 @@ res.est <- estimateLong(Y                = sim_res$Y,
                     processes_list   = processes_list,
                     operator_list    = operator_list,
                     pSubsample = pSubsample,
+                    subsample.type = subsample.type,
                     silent = FALSE)
 
 

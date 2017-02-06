@@ -4,24 +4,24 @@
 /* Unequal probability sampling; without-replacement case */
 
 Eigen::VectorXi ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in)
-{         
+{
   Eigen::VectorXd p = p_in;
   int n = p.size();
-  Eigen::VectorXi ans(nans);  
+  Eigen::VectorXi ans(nans);
   double rT, mass, totalmass;
   int i, j, k, n1;
-  
+
   /* Record element identities */
   int *perm;
   perm  = Calloc(n, int);
   for (i = 0; i < n; i++)
     perm[i] = i ;
-  
+
   /* Sort probabilities into descending order */
   /* Order element identities in parallel */
-  double *pdat = &p(0); 
+  double *pdat = &p(0);
   revsort(pdat, perm, n);
-  
+
   /* Compute the sample */
   totalmass = 1;
   for (i = 0, n1 = n-1; i < nans; i++, n1--) {
@@ -45,23 +45,23 @@ Eigen::VectorXi ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in)
 
 
 void ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in, std::vector<int> & ans)
-{         
+{
   Eigen::VectorXd p = p_in;
   int n = p.size();
   double rT, mass, totalmass;
   int i, j, k, n1;
-  
+
   /* Record element identities */
   int *perm;
   perm  = Calloc(n, int);
   for (i = 0; i < n; i++)
     perm[i] = i;
-  
+
   /* Sort probabilities into descending order */
   /* Order element identities in parallel */
-  double *pdat = &p(0); 
+  double *pdat = &p(0);
   revsort(pdat, perm, n);
-  
+
   /* Compute the sample */
   totalmass = 1;
   for (i = 0, n1 = n-1; i < nans; i++, n1--) {
@@ -82,27 +82,27 @@ void ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in, std::vector<int> & a
   free(perm);
 }
 
-void ProbSampleNoReplace( int nans, 
-						  Eigen::VectorXd & p_in, 
+void ProbSampleNoReplace( int nans,
+						  Eigen::VectorXd & p_in,
 						  std::vector<int> & ans,
 						  std::vector<int> & selected)
-{         
+{
   Eigen::VectorXd p = p_in;
   int n = p.size();
   double rT, mass, totalmass;
   int i, j, k, n1;
-  
+
   /* Record element identities */
   int *perm;
   perm  = Calloc(n, int);
   for (i = 0; i < n; i++)
     perm[i] = i ;
-  
+
   /* Sort probabilities into descending order */
   /* Order element identities in parallel */
-  double *pdat = &p(0); 
+  double *pdat = &p(0);
   revsort(pdat, perm, n);
-  
+
   /* Compute the sample */
   totalmass = 1;
   for (i = 0, n1 = n-1; i < nans; i++, n1--) {
@@ -125,10 +125,10 @@ void ProbSampleNoReplace( int nans,
 }
 
 int poissonSampling_internal( int nans,
-					  Eigen::VectorXd & p_in, 
+					  Eigen::VectorXd & p_in,
 					  Eigen::VectorXd & weight,
 					  std::vector<int> & ans,
-					  std::vector<int > & selected 
+					  std::vector<int > & selected
 					  )
 {
   Eigen::VectorXd p = p_in;
@@ -141,14 +141,14 @@ int poissonSampling_internal( int nans,
   perm  = Calloc(n, int);
   for (i = 0; i < n; i++)
     perm[i] = i ;
-  
+
   /* Sort probabilities into descending order */
   /* Order element identities in parallel */
-  double *pdat = &p(0); 
+  double *pdat = &p(0);
   revsort(pdat, perm, n);
   int counter = 0;
   double rem = 0; // reminder
-  
+
   for (i = 0; i < n; i++) {
     U = unif_rand();
     int j = perm[i];
@@ -156,10 +156,10 @@ int poissonSampling_internal( int nans,
     if( U < p_temp)
     {
     	if( selected[j ] == 0){
-    		ans.push_back(j ); 
-    		counter++;	
+    		ans.push_back(j );
+    		counter++;
     	}
-    }	
+    }
     if( p_temp >= 1){ // ensure that the expected number actually is m
     		weight[j ]  = 1.;
     		rem += p_temp - 1.;
@@ -169,7 +169,7 @@ int poissonSampling_internal( int nans,
     	else
     		weight[j] =  1./p_temp;
     }
-    
+
   }
   /*
   if(counter < 0.5* nans)
@@ -179,8 +179,8 @@ int poissonSampling_internal( int nans,
   	double p_min = 1;
   	for(int i = 0; i < n; i++){
   		p_sum += p[i];
-  		if(p[i]> p_max){p_max = p[i];} 
-  		if(p[i]< p_min){p_min = p[i];} 
+  		if(p[i]> p_max){p_max = p[i];}
+  		if(p[i]< p_min){p_min = p[i];}
   	}
   		for(int i = 0; i < n; i++)
   			Rcpp::Rcout << "p[" << i << "] = " << p[i] << "\n";
@@ -193,3 +193,34 @@ int poissonSampling_internal( int nans,
   return(counter);
 }
 
+
+void groupSampling_internal(std::vector<Eigen::VectorXd> & groups,
+                            Eigen::VectorXd & free,
+                            std::vector<int> & ans,
+                            std::default_random_engine & sampler)
+{
+  int ngroup = groups.size();
+  int nfree = free.size();
+  int k = 0;
+  //Sample group
+  if(ngroup>0){
+    double U = unif_rand();
+    int groupnumber = floor(ngroup*U);
+    k = groups[groupnumber].size();
+    for (int i=0; i< k; i++){
+      ans[i] = groups[groupnumber][i];
+    }
+  }
+
+  //Sample remaining free elements
+  int nrem = ans.size() - k;
+  if(nrem>0){
+    std::vector<int> freeInd;
+    for (int i=0; i< nfree; i++) freeInd.push_back(i);
+    std::shuffle(freeInd.begin(), freeInd.end(), sampler);
+    for (int i=0; i< nrem; i++){
+      ans[k+i] = free[freeInd[i]];
+    }
+  }
+
+}

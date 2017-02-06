@@ -1,3 +1,7 @@
+library("LDMod")
+setwd('~/Dropbox/research/nongaussian_fields/NonGaussianLDA/Thorax data set/Thorax_data_analysis/')
+source("estimate.parameters.R")
+source("run2case.R")
 thorax_data <- read.table("Thorax_data.txt", header = T)
 thorax_data$cohort_relev <- relevel(thorax_data$cohort, ref = "1968-01-01")
 thorax_data$pib_01       <- ifelse(thorax_data$PIb == 2, 0, 1)
@@ -31,9 +35,24 @@ for(i in 1:n.pers){
   }
 }
 
-
-nsamp = 100;
 groups <- group.fixed(B_fixed)
+
+dvars = rep(FALSE,dim(B_fixed[[1]])[2])
+for(i in 1:length(B_fixed))
+  dvars = dvars + apply(B_fixed[[i]], 2, var)
+dvars = dvars==0
+
+ncov = dim(B_fixed[[1]])[2]
+covi = matrix(0,length(B_fixed),sum(dvars))
+for(i in 1:length(B_fixed)){
+  covi[i,] = B_fixed[[i]][1,dvars]
+}
+
+clist = list()
+for(i in 1:length(groups$groups)){
+  clist[[i]] = covi[groups$groups[[i]],]
+}
+nsamp = 10;
 ng = length(groups$groups)
 nfree = length(groups$free)
 ranks = rep(0,1000)
@@ -49,3 +68,7 @@ for(i in 1:1000){
   }
   ranks[i] = rankMatrix(B)[1]
 }
+
+
+res <- estimate.parameters("Normal","Normal","Normal",operator.type = "matern", nIter = 100,
+                                pSubsample = 0.1, subsample.type = 4, save.results = FALSE,standMix=FALSE)
