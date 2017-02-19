@@ -39,5 +39,41 @@ void groupSampling_internal(std::vector<Eigen::VectorXd> &,
                             Eigen::VectorXd &,
                             std::vector<int> &,
                             std::default_random_engine &);
+//
+/*
+	computing the weights from the group sampling scheme
+	
+	nSubsample - (int ) how many we will sample
+	groups     - (n_group) [i] - index of the indivuals in the group i
+	free       - (n_free)  index of the free indivuals
+	weight     - (n)       the weights put for all indiv
+	int        - (2)       [0] - how many groups to sample
+						   [1] - how many to sample from the rest	
+
+
+*/
+void groupSampling_weights(  int ,
+							std::vector<Eigen::VectorXd> & ,
+                            Eigen::VectorXd & ,
+                            Eigen::VectorXd & ,
+                            int * );
+//
+/*
+	Sampling from groups and rest
+	
+	nSubsample_group        - (2)  [0] - how many groups to sample
+								   [1] - how many to sample from the rest	
+
+    groups     			    - (n_group) [i] - index of the indivuals in the group i
+	free       				- (n_free)  index of the free indivuals
+    ans                     - (Vec)  the ouput sample
+    sampler                 - (rand enigne) for sampling
+
+*/
+void groupSampling_sampling(int * ,
+                            std::vector<Eigen::VectorXd> & ,
+                            Eigen::VectorXd & ,
+                            std::vector<int> & ,
+                            std::default_random_engine & );
 
 #endif

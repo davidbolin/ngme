@@ -333,7 +333,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//**********************************
 
 	int debug = 0;
-
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< int > (in_list["nIter"]);
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
@@ -377,6 +376,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(in_list.containsElementNamed("polyak_rate"))
 	  polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
 
+
 	//**********************************
 	//     setting up the main data
 	//**********************************
@@ -391,6 +391,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	std::vector< double > Ysize(nindv);
 	std::vector< int > burnin_done(nindv);
 	Eigen::VectorXd sampling_weights(nindv);
+
 	int count = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     	List obs_tmp = Rcpp::as<Rcpp::List>(*it);
@@ -408,19 +409,24 @@ List estimateLong_cpp(Rcpp::List in_list)
     	}
     	count++;
   }
+
 	sampling_weights /= sampling_weights.sum();
 
-	Eigen::VectorXd weight4;
-	weight4.setZero(nindv);
+  int nSubsample_group[2];
 	double pSubsample2 = 0;
 	Eigen::VectorXd free;
-	Rcpp::List group_list  = Rcpp::as<Rcpp::List> (in_list["group_list"]);
+
+	Rcpp::List group_list;
 	count = 0;
-	int ngroup = group_list.length();
-	std::vector<Eigen::VectorXd> groups(ngroup);
+	int ngroup;
+	std::vector<Eigen::VectorXd> groups;
 	if(subsample_type == 3){
-	  pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]);
+	  pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]); // BUG? should it be pSubsample???
 	} else if(subsample_type == 4){
+
+    ngroup = group_list.length();
+    groups.resize(ngroup);
+    group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
 	  free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
 
 	  for( List::iterator it = group_list.begin(); it != group_list.end(); ++it ) {
@@ -432,9 +438,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  for(int i=0;i<groups.size();i++){
 	    int ngroup = groups[i].size();
 	    gsum += ngroup;
-	    for(int j=0;j<ngroup;j++){
-	      weight4[groups[i][j]] = 1.0*groups.size()*ngroup;
-	      }
 	  }
 	  double gmean = 0;
 	  if(groups.size()>0){
@@ -444,11 +447,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  int nfree = free.size();
 	  for(int i=0;i<nfree;i++){
 	    Rcpp::Rcout << "free[i]: "<< free[i] << "\n";
-	    weight4[free[i]] = (1.0*nfree)/(nSubsample - gmean);
 	  }
-	  //weight4 *= nindv / ((double) nSubsample);
 	}
-  //Rcpp::Rcout << weight4 << "\n";
 	//***********************************
 	//Debug setup
 	//***********************************
@@ -543,6 +543,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   std::string type_MeasurementError= Rcpp::as <std::string> (measurementError_list["noise"]);
   if(type_MeasurementError == "Normal")
     errObj = new GaussianMeasurementError;
+  else if(type_MeasurementError == "tdist")
+    errObj = new IGMeasurementError;
   else
     errObj = new NIGMeasurementError;
 
@@ -631,6 +633,13 @@ List estimateLong_cpp(Rcpp::List in_list)
 
  for (int i=0; i< nindv; i++) longInd.push_back(i);
 
+  if(subsample_type == 4){
+    groupSampling_weights (nSubsample,
+                           groups,
+                           free,
+                           weight,
+                           nSubsample_group);
+  }
 
 
   int npars =   mixobj->npars + errObj->npars;
@@ -702,17 +711,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 					  								  longInd,
 					  								  selected);
 			}
-			/*
-			double w_sum = 0, selected_sum = 0;
-			for(int k = 0; k < nindv; k++)
-				selected_sum += selected[k];
-			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
-				w_sum += weight[longInd[ilong]];
-			Rcpp::Rcout << "nSubsample_i = " << nSubsample_i <<"\n";
-			Rcpp::Rcout << "w_sum = " << w_sum <<"\n";
-			Rcpp::Rcout << "selected_sum = " << selected_sum <<"\n";
-			Rcpp::Rcout << "selected = " << selected.size() <<"\n";
-			*/
 			double w_sum = 0;
 			for(int ilong = 0; ilong < nSubsample_i; ilong++ )
 				w_sum += weight[longInd[ilong]];
@@ -720,19 +718,17 @@ List estimateLong_cpp(Rcpp::List in_list)
     } else if(subsample_type ==4){
       nSubsample_i = nSubsample;
 
-      longInd.resize(nSubsample, 0);
+      longInd.clear();
       std::fill(longInd.begin(), longInd.end(), 0);
 
-      groupSampling_internal(groups, free,longInd,gammagenerator);
-      weight = weight4;
+      //groupSampling_internal(groups, free, longInd,gammagenerator);
+      groupSampling_sampling(nSubsample_group,
+                             groups,
+                             free,
+                             longInd,
+                             gammagenerator);
+      nSubsample_i = longInd.size();
     }
-    //Rcpp::Rcout << nSubsample_i << "\n ";
-    //Rcpp::Rcout << weight << "\n ";
-    //Rcpp::Rcout << "longInd = ";
-    //for(int iii =0;iii< longInd.size();iii++){
-    //  Rcpp::Rcout << longInd[iii] << " ";
-    //}
-    //Rcpp::Rcout << "\n ";
 
     double burnin_rate = 0;
     if(process_active)

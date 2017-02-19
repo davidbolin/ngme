@@ -6,6 +6,7 @@
 
 IGMeasurementError::IGMeasurementError() : NormalVarianceMixtureBaseError(){
   nu        = 1;
+  beta  = nu + 1.;
   dnu       = 0;
   ddnu      = 0;
   dnu_old = 0;
@@ -53,8 +54,9 @@ void IGMeasurementError::initFromList(Rcpp::List const &init_list)
   else
     nu = 1.;
 
-    EV  = 1.; // not true it is the mode is alpha/(alpha - 1)
-    EiV = 1.;
+    beta = nu + 1.;
+    EV  = 1.; // not true but the mode is one
+    EiV = nu / beta;
 
    npars += 1;
   digamma_nu  =  R::digamma(nu);
@@ -76,15 +78,15 @@ void IGMeasurementError::initFromList(Rcpp::List const &init_list)
 
 double IGMeasurementError::simulate_V()
 {
-	return rgig.sample(-nu, 0, 2 * nu );
+	return rgig.sample(-nu, 0, 2 * beta );
 }
 
 double IGMeasurementError::sample_V(const double res2_j, const int n_s)
 {
 	if(common_V == 0)
-		return rgig.sample(-(nu + .5), 0 , res2_j + 2 * nu);
+		return rgig.sample(-(nu + .5), 0 , res2_j + 2 * beta);
 
-	return rgig.sample(-  (nu + .5 * n_s), 0, res2_j + 2 * nu );
+	return rgig.sample(-  (nu + .5 * n_s), 0, res2_j + 2 * beta );
 }
 
 
@@ -99,13 +101,14 @@ void IGMeasurementError::gradient(const int i,
     Eigen::VectorXd iV = Vs[i].cwiseInverse();
     if(common_V == 0){
     	double logV = Vs[i].array().log().sum();
-    	dnu  += weight * ( res.size() *  (1. + log(nu)  - digamma_nu) - logV - iV.array().sum());
-    	ddnu += weight * (res.size() * (1/ nu - trigamma_nu) );
+      // beta = nu + 1
+    	dnu  += weight * ( res.size() *  (nu / beta + log(beta)  - digamma_nu) - logV -  iV.array().sum());
+    	ddnu += weight * (res.size() * ( 2/ beta - nu/(beta * beta) - trigamma_nu) );
     }else{
 
     	double logV = log(Vs[i][0]);
-    	dnu  +=  weight * ( (1. + log(nu)  - digamma_nu) - logV - iV[0] );
-    	ddnu +=  weight * (1/ nu - trigamma_nu);
+    	dnu  +=  weight * ( (nu / beta + log(beta)  - digamma_nu) - logV - iV[0] );
+    	ddnu +=  weight * (2/ beta - nu/(beta * beta) - trigamma_nu);
     }
 }
 
@@ -123,8 +126,10 @@ void IGMeasurementError::step_nu(const double stepsize, const double learning_ra
         throw("in IGMeasurementError:: can't make nu it positive \n");
   }
   nu = nu_temp;
+  beta = nu + 1.;
   EV  = 1.;  // not true it is the mode that is 1.
-  EiV = 1. ;
+  EiV = nu / beta ;
+
   ddnu = 0;
   digamma_nu  =  R::digamma(nu);
   trigamma_nu =  R::trigamma(nu);
@@ -136,7 +141,7 @@ void IGMeasurementError::step_theta(const double stepsize,
 									const double polyak_rate,
 									const int burnin)
 {
-  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate,burnin);
+  	NormalVarianceMixtureBaseError::step_theta(stepsize, learning_rate, polyak_rate, burnin);
 
   	step_nu(stepsize, learning_rate,burnin);
   	clear_gradient();

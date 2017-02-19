@@ -1,5 +1,9 @@
 library("LDMod")
-setwd('~/Dropbox/research/nongaussian_fields/NonGaussianLDA/Thorax data set/Thorax_data_analysis/')
+if(Sys.info()[7] == "jonaswallin"){
+  setwd("~/Dropbox/articles/NonGaussianLDA/Thorax data set/Thorax_data_analysis/")
+}else{
+  setwd('~/Dropbox/research/nongaussian_fields/NonGaussianLDA/Thorax data set/Thorax_data_analysis/')
+}
 source("estimate.parameters.R")
 source("run2case.R")
 thorax_data <- read.table("Thorax_data.txt", header = T)

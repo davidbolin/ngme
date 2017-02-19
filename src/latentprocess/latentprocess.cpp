@@ -196,13 +196,15 @@ void GHProcess::sample_X(const int i,
               const double sigma,
               cholesky_solver       & solver)
 {
+  Eigen::VectorXd X_prev = Xs[i];
   iV = Vs[i].cwiseInverse();
   double sigma2  =pow(sigma, 2);
   Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
   Eigen::VectorXd DQ_12 = Qi.diagonal().cwiseInverse().cwiseSqrt();
   Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
-  for (int i = 0; i < Qi.rows(); i++)
-    DQD.coeffRef(i,i) += 1e-16;
+  for (int j = 0; j < Qi.rows(); j++)
+    DQD.coeffRef(j, j) += 1e-12;
+    
   solver.compute(DQD);
   Eigen::VectorXd b = A.transpose()*Y / sigma2;
   Eigen::VectorXd temp  =  - h[i];
@@ -290,6 +292,7 @@ void GHProcess::sample_V(const int i ,
                  mu,
                  nu_in,
                  type_process);
+
 
   if(useEV)
   {
@@ -655,7 +658,7 @@ void GHProcess::step_nu(const double stepsize, const double learning_rate, const
   // checking min value
   if(type_process=="GAL")
   {
-  	if(nu_temp * h_MIN < 0.1)
+  	if(nu_temp * h_MIN < 0.01)
   		nu_temp = 0.1/h_MIN;
   		dnu_prev = 0;
 

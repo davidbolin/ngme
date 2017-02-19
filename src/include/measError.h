@@ -179,6 +179,7 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
  	public:
  		double digamma_nu;
  		double trigamma_nu;
+		double beta;
 		double dnu;
 		double dnu_old;
 		double ddnu;

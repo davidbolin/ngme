@@ -1,5 +1,5 @@
 #include "sample.h"
-
+#include <algorithm>    // std::max
 
 /* Unequal probability sampling; without-replacement case */
 
@@ -191,6 +191,77 @@ int poissonSampling_internal( int nans,
   }*/
   free(perm);
   return(counter);
+}
+
+
+void groupSampling_weights (int nSubsample,
+                            std::vector<Eigen::VectorXd> & groups,
+                            Eigen::VectorXd & free,
+                            Eigen::VectorXd & weight,
+                            int * nSubsample_group)
+{
+  int n_in_group   = 0;
+  int ngroup       = groups.size();
+  int nfree        = free.size();
+  double n_average;
+  for (int i=0; i< ngroup; i++) 
+    n_in_group += groups[i].size();
+
+  n_average = n_in_group / ((double) ngroup);
+  
+  double prop_group = ((double) n_in_group) / ((double) nfree);
+
+  int n_sample_group = ceil(2 * (prop_group * nSubsample)/ ((double) n_average));
+  n_sample_group = std::min(n_sample_group, n_in_group);
+  if(n_in_group < 0.5 * nSubsample)
+    n_sample_group = ngroup;
+  nSubsample_group[0] = n_sample_group;
+  int temp = nSubsample - floor(n_sample_group * n_average);
+  nSubsample_group[1] = std::max(temp, 1);
+
+  for (int   i  = 0; i < ngroup; i++) {
+    for (int ii = 0; ii < groups[i].size(); ii++) 
+      weight[groups[i][ii]] = ngroup / ((double) n_sample_group);
+  }
+  for(int i = 0; i < free.size(); i++)
+    weight[free[i]] = 1. / ( (double) nSubsample_group[1]);
+}
+
+void groupSampling_sampling(int * nSubsample_group,
+                            std::vector<Eigen::VectorXd> & groups,
+                            Eigen::VectorXd & free,
+                            std::vector<int> & ans,
+                            std::default_random_engine & sampler)
+{
+  int ngroup = groups.size();
+  int nfree = free.size();
+  int k = 0;
+  //Sample group
+  std::vector<int> groupInd;
+    for (int i=0; i< ngroup; i++) groupInd.push_back(i);
+  if(ngroup>0){
+    double U = unif_rand();
+    std::shuffle(groupInd.begin(), groupInd.end(), sampler);
+    for(int i = 0; i < nSubsample_group[0]; i++){
+      k = groups[i].size();
+      for (int ii = 0; ii < k; ii++)
+        ans.push_back(groups[i][ii]);
+      
+    }
+  }
+
+  //Sample remaining free elements
+  
+  if(nSubsample_group[1]>0){
+    std::vector<int> freeInd;
+    for (int i=0; i< nfree; i++) 
+      freeInd.push_back(i);
+
+    std::shuffle(freeInd.begin(), freeInd.end(), sampler);
+    for (int i=0; i< nSubsample_group[1]; i++)
+      ans.push_back(free[freeInd[i]]);
+  }
+
 }
 
 
