@@ -423,10 +423,11 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(subsample_type == 3){
 	  pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]); // BUG? should it be pSubsample???
 	} else if(subsample_type == 4){
-
+    
+    
+    group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
     ngroup = group_list.length();
     groups.resize(ngroup);
-    group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
 	  free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
 
 	  for( List::iterator it = group_list.begin(); it != group_list.end(); ++it ) {
