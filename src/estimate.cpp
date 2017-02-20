@@ -723,6 +723,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       std::fill(longInd.begin(), longInd.end(), 0);
 
       //groupSampling_internal(groups, free, longInd,gammagenerator);
+      Rcpp::Rcout << "nSubsample_group = (" << nSubsample_group[0] << "," << nSubsample_group[1]<< ")\n";
       groupSampling_sampling(nSubsample_group,
                              groups,
                              free,
@@ -747,6 +748,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     Vgrad_inner.setZero(npars, npars);
     if(debug)
       Rcpp::Rcout << "estimate::start patient loop \n";
+
     for(int ilong = 0; ilong < nSubsample_i; ilong++ )
     {
       int i = longInd[ilong];

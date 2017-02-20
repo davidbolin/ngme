@@ -217,7 +217,7 @@ void groupSampling_weights (int nSubsample,
     n_sample_group = ngroup;
   nSubsample_group[0] = n_sample_group;
   int temp = nSubsample - ceil(n_sample_group * n_average);
-  nSubsample_group[1] = std::max(temp, 1);
+  nSubsample_group[1] = std::max(temp, 0);
 
   for (int   i  = 0; i < ngroup; i++) {
     for (int ii = 0; ii < groups[i].size(); ii++) 
@@ -240,12 +240,11 @@ void groupSampling_sampling(int * nSubsample_group,
   std::vector<int> groupInd;
     for (int i=0; i< ngroup; i++) groupInd.push_back(i);
   if(ngroup>0){
-    double U = unif_rand();
     std::shuffle(groupInd.begin(), groupInd.end(), sampler);
     for(int i = 0; i < nSubsample_group[0]; i++){
-      k = groups[i].size();
+      k = groups[groupInd[i]].size();
       for (int ii = 0; ii < k; ii++)
-        ans.push_back(groups[i][ii]);
+        ans.push_back(groups[groupInd[i]][ii]);
       
     }
   }
