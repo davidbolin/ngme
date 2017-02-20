@@ -200,23 +200,23 @@ void groupSampling_weights (int nSubsample,
                             Eigen::VectorXd & weight,
                             int * nSubsample_group)
 {
-  int n_in_group   = 0;
+  int n_indv_in_group   = 0;
   int ngroup       = groups.size();
   int nfree        = free.size();
   double n_average;
   for (int i=0; i< ngroup; i++) 
-    n_in_group += groups[i].size();
+    n_indv_in_group += groups[i].size();
 
-  n_average = n_in_group / ((double) ngroup);
+  n_average = n_indv_in_group / ((double) ngroup);
   
-  double prop_group = ((double) n_in_group) / ((double) nfree);
+  double prop_group = ((double) n_indv_in_group) / ((double) nfree);
 
   int n_sample_group = ceil(2 * (prop_group * nSubsample)/ ((double) n_average));
-  n_sample_group = std::min(n_sample_group, n_in_group);
-  if(n_in_group < 0.5 * nSubsample)
+  n_sample_group = std::min(n_sample_group, ngroup);
+  if(n_indv_in_group < 0.5 * nSubsample)
     n_sample_group = ngroup;
   nSubsample_group[0] = n_sample_group;
-  int temp = nSubsample - floor(n_sample_group * n_average);
+  int temp = nSubsample - ceil(n_sample_group * n_average);
   nSubsample_group[1] = std::max(temp, 1);
 
   for (int   i  = 0; i < ngroup; i++) {
