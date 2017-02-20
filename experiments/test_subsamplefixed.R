@@ -75,4 +75,4 @@ for(i in 1:1000){
 
 
 res <- estimate.parameters("Normal","Normal","Normal",operator.type = "matern", nIter = 100,
-                                pSubsample = 0.1, subsample.type = 4, save.results = FALSE,standMix=FALSE)
+                                pSubsample = 1, subsample.type = 4, save.results = FALSE,standMix=FALSE)

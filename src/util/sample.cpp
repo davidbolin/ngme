@@ -224,7 +224,7 @@ void groupSampling_weights (int nSubsample,
       weight[groups[i][ii]] = ngroup / ((double) n_sample_group);
   }
   for(int i = 0; i < free.size(); i++)
-    weight[free[i]] = 1. / ( (double) nSubsample_group[1]);
+    weight[free[i]] = free.size() / ( (double) nSubsample_group[1]);
 }
 
 void groupSampling_sampling(int * nSubsample_group,

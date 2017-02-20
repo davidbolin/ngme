@@ -753,7 +753,6 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(debug)
         Rcpp::Rcout << "i = " << i << " "<< weight[i] << "\n";
 
-
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
       	A = As[i];
