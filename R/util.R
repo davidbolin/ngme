@@ -118,7 +118,7 @@ group.fixed <- function(B)
         grouped[grouped==groupnumber] = 0
       break
     }
-    groups[[groupnumber]] = gi
+    groups[[groupnumber]] = gi-1
     Bgroup[[groupnumber]] = Bi
     groupnumber = groupnumber +1
   }
