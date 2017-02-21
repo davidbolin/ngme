@@ -17,7 +17,6 @@ class MeasurementError {
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter) = 0; // setups to store the tracjetory
 
-
 	int npars; // number of parameters
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
    	double EV;  // if there the random variance in the Noise E[V]

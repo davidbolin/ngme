@@ -35,9 +35,8 @@ Rcpp::List NormalVarianceMixtureBaseError::toList()
   out["noise"]       = noise;
   out["sigma"]       = sigma;
   out["Vs"]          = Vs;
-  out["common_V"]          = common_V;
+  out["common_V"]    = common_V;
   out["Cov_theta"]   = Cov_theta;
-  out["noise"]       = noise;
 
   if(store_param){
   	out["sigma_vec"] = sigma_vec;

@@ -35,6 +35,7 @@ Rcpp::List NIGMeasurementError::toList()
 {
   Rcpp::List out = NormalVarianceMixtureBaseError::toList();
   out["nu"]          = nu;
+  out["sd"]          = sigma;
 
   if(store_param){
   	out["nu_vec"]    = nu_vec;

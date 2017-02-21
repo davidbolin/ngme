@@ -37,6 +37,10 @@ Rcpp::List IGMeasurementError::toList()
 {
   Rcpp::List out = NormalVarianceMixtureBaseError::toList();
   out["nu"]          = nu;
+  if(nu > 1)
+    out["sd"]  = sigma * sqrt((nu + 1.)/(nu - 1.));
+  else
+    out["sd"]  = -1.;
 
   if(store_param){
   	out["nu_vec"]    = nu_vec;

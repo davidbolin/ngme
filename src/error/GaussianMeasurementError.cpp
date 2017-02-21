@@ -33,7 +33,7 @@ Rcpp::List GaussianMeasurementError::toList()
 {
   Rcpp::List out;
   out["sigma"]  = sigma;
-
+  out["sd"]     = sigma;
   out["noise"]       = noise;
   out["Cov_theta"]   = Cov_theta;
   if(store_param){
