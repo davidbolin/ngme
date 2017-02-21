@@ -46,6 +46,23 @@ void NIGMixedEffect::setupStoreTracj(const int Niter)
 	store_param = 1;
 }
 
+void NIGMixedEffect::get_param(std::vector<double> & param_in ){
+
+  MixedEffect::get_param(param_in);
+  if(Br.size() > 0 )
+  {
+    for (int i = 0; i < Br[0].cols(); ++i)
+      param_in.push_back(mu[i]);
+
+    int n_s = Br[0].cols() * (Br[0].cols() +1) /2;
+    for (int i = 0; i < n_s; ++i)
+      param_in.push_back(Sigma_vech[i]);
+
+    param_in.push_back(nu);
+  }
+
+
+}
 
 void NIGMixedEffect::get_param_names(Rcpp::StringVector & names){
 

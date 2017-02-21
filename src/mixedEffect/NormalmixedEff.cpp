@@ -23,6 +23,18 @@ NormalMixedEffect::NormalMixedEffect(){
   //ddlog_sigma2 = 0;
 }
 
+void NormalMixedEffect::get_param(std::vector<double> & param_in){
+
+  MixedEffect::get_param(param_in);
+  if(Br.size() > 0 )
+  {
+    int n_s = Br[0].cols() * (Br[0].cols() +1) /2;
+    for (int i = 0; i < n_s; ++i)
+      param_in.push_back(Sigma_vech[i]);
+  }
+
+
+}
 
 void NormalMixedEffect::get_param_names(Rcpp::StringVector & names){
 

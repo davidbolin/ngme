@@ -46,7 +46,7 @@ class operatorMatrix {
     int counter;
 
     operatorMatrix() {Qsolver = NULL;};
-    virtual void get_param_names(Rcpp::StringVector & names){};
+    
     virtual ~operatorMatrix(){delete Qsolver;};
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
@@ -69,7 +69,9 @@ class operatorMatrix {
     						const double learning_rate = 0,
     						const double polyak_rate   = -1,
     						const int burnin = 0){};
-    virtual void print_parameters( ){};
+    virtual void print_parameters(){};
+    virtual void get_param_names(Rcpp::StringVector & names){};
+    virtual void get_param(std::vector<double> & ){};
     virtual double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int ){return 1;};
 
 	/*
@@ -89,6 +91,9 @@ class constMatrix : public operatorMatrix{
 
   void get_param_names(Rcpp::StringVector & names){
     names.push_back("tau_operator");
+  };
+  void get_param(std::vector<double> & param_in){
+    param_in.push_back(tau);
   };
 	~constMatrix();
     Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
@@ -147,6 +152,11 @@ class MaternOperator : public operatorMatrix{
     void set_matrix(const int);
   public:
 
+
+    void get_param(std::vector<double> & param_in){
+      param_in.push_back(tau);
+      param_in.push_back(kappa);
+    };
     void get_param_names(Rcpp::StringVector & names){
       names.push_back("tau_operator");
       names.push_back("kappa_operator");

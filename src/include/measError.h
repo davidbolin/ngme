@@ -24,6 +24,7 @@ class MeasurementError {
   	double sigma;
   	std::vector< Eigen::VectorXd > Vs;
     std::string noise;
+    virtual void get_param(std::vector<double> & param_in){param_in.push_back(sigma); };
     virtual void get_param_names(Rcpp::StringVector & names){names.push_back("sigma_error"); };
     virtual void gradient(const int ,
     					  const Eigen::VectorXd& ,
@@ -136,6 +137,7 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
         void setupStoreTracj(const int ); // setups to store the tracjetory
         virtual double simulate_V();
         virtual double sample_V(const double, const int) {return -1;};
+    	virtual void get_param(std::vector<double> & param_in){ MeasurementError::get_param(param_in); param_in.push_back(nu); };
         virtual void get_param_names(Rcpp::StringVector & names){MeasurementError::get_param_names(names); names.push_back("nu_error"); };
 
 };

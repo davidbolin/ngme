@@ -43,6 +43,21 @@ class MixedEffect {
 	Eigen::VectorXd dbeta_r_old;
 	Eigen::VectorXd dbeta_f_old;
     virtual void initFromList(Rcpp::List const &)=0;
+    virtual void get_param( std::vector<double> & param_in)
+    {
+      if(Bf.size() > 0 )
+        {
+         for (int i = 0; i < Bf[0].cols(); i++)
+            param_in.push_back(beta_fixed[i]);
+        }
+        if(Br.size() > 0 )
+        {
+         for (int i = 0; i < Br[0].cols(); i++)
+            param_in.push_back(beta_random[i]);
+        }
+
+
+    }
     virtual void get_param_names(Rcpp::StringVector & names){
         if(Bf.size() > 0 )
         {
@@ -179,7 +194,7 @@ class NormalMixedEffect  : public MixedEffect{
     NormalMixedEffect();
     void initFromList(Rcpp::List const &);
 
-
+    void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & names);
 
     /* computes gradient for the parameters
@@ -307,7 +322,7 @@ class NIGMixedEffect  : public MixedEffect{
 
     NIGMixedEffect();
 
-
+    void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & );
     void sampleV(const int);
     void initFromList(Rcpp::List const &);
@@ -350,7 +365,7 @@ class NIGMixedEffect  : public MixedEffect{
                   const double ,
                   const double);
 
-Eigen::MatrixXd d2Given2(const int ,
+    Eigen::MatrixXd d2Given2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
                            const double,
