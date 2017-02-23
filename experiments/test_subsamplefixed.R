@@ -41,6 +41,15 @@ for(i in 1:n.pers){
 
 groups <- group.fixed(B_fixed)
 
+v = NULL
+for(i in 1:length(Y)){
+  v = rBind(v,colMeans(B_fixed[[i]][1,]) )
+}
+which(v==1)
+
+
+
+
 dvars = rep(FALSE,dim(B_fixed[[1]])[2])
 for(i in 1:length(B_fixed))
   dvars = dvars + apply(B_fixed[[i]], 2, var)

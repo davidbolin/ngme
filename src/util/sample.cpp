@@ -204,23 +204,23 @@ void groupSampling_weights (int nSubsample,
   int ngroup       = groups.size();
   int nfree        = free.size();
   double n_average;
-  for (int i=0; i< ngroup; i++) 
+  for (int i=0; i< ngroup; i++)
     n_indv_in_group += groups[i].size();
 
   n_average = n_indv_in_group / ((double) ngroup);
-  
+
   double prop_group = ((double) n_indv_in_group) / ((double) nfree);
 
-  int n_sample_group = ceil(2 * (prop_group * nSubsample)/ ((double) n_average));
+  int n_sample_group = ceil(4 * (prop_group * nSubsample)/ ((double) n_average));
   n_sample_group = std::min(n_sample_group, ngroup);
-  if(n_indv_in_group < 0.5 * nSubsample)
+  if(n_indv_in_group < nSubsample)
     n_sample_group = ngroup;
   nSubsample_group[0] = n_sample_group;
   int temp = nSubsample - ceil(n_sample_group * n_average);
   nSubsample_group[1] = std::max(temp, 0);
 
   for (int   i  = 0; i < ngroup; i++) {
-    for (int ii = 0; ii < groups[i].size(); ii++) 
+    for (int ii = 0; ii < groups[i].size(); ii++)
       weight[groups[i][ii]] = ngroup / ((double) n_sample_group);
   }
   for(int i = 0; i < free.size(); i++)
@@ -245,15 +245,15 @@ void groupSampling_sampling(int * nSubsample_group,
       k = groups[groupInd[i]].size();
       for (int ii = 0; ii < k; ii++)
         ans.push_back(groups[groupInd[i]][ii]);
-      
+
     }
   }
 
   //Sample remaining free elements
-  
+
   if(nSubsample_group[1]>0){
     std::vector<int> freeInd;
-    for (int i=0; i< nfree; i++) 
+    for (int i=0; i< nfree; i++)
       freeInd.push_back(i);
 
     std::shuffle(freeInd.begin(), freeInd.end(), sampler);
