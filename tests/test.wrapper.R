@@ -3,9 +3,9 @@ library(LDMod)
 
 n.threads <- 1
 nIter <- 1000
-n.pers <- 1000
+n.pers <- 100
 nSim  <- 2
-n.obs  <- 30 + 0*(1:n.pers)
+n.obs  <- 50 + 0*(1:n.pers)
 n <- 100
 nBurnin = 50
 pSubsample = 0.1

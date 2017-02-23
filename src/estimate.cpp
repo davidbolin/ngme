@@ -423,8 +423,8 @@ List estimateLong_cpp(Rcpp::List in_list)
 	if(subsample_type == 3){
 	  pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]); // BUG? should it be pSubsample???
 	} else if(subsample_type == 4){
-    
-    
+
+
     group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
     ngroup = group_list.length();
     groups.resize(ngroup);
@@ -723,7 +723,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       std::fill(longInd.begin(), longInd.end(), 0);
 
       //groupSampling_internal(groups, free, longInd,gammagenerator);
-      Rcpp::Rcout << "nSubsample_group = (" << nSubsample_group[0] << "," << nSubsample_group[1]<< ")\n";
+      //Rcpp::Rcout << "nSubsample_group = (" << nSubsample_group[0] << "," << nSubsample_group[1]<< ")\n";
       groupSampling_sampling(nSubsample_group,
                              groups,
                              free,
@@ -931,7 +931,8 @@ List estimateLong_cpp(Rcpp::List in_list)
     	if(debug)
     		Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
 
-    	mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    	//mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+    	mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
     	errObj->step_theta(stepsize,                   0, polyak_rate_temp);
     	if(process_active){
     		Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);

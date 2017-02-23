@@ -15,8 +15,6 @@ estimate.wrapper <- function(Y,
                              ...)
 {
 
-  library(MASS) ## required for ginv function
-
   estimation.controls = list(learning.rate = 0,
                              polyak_rate = 0.1,
                              nBurnin = 100,
@@ -24,6 +22,7 @@ estimate.wrapper <- function(Y,
                              nIter.gauss = 1000,
                              nIter = 10000,
                              pSubsample = 0.1,
+                             subsample.type = 4,
                              nPar_burnin = 0,
                              nIter.fisher = 1000,
                              nSim.fisher = 1000)
@@ -71,8 +70,9 @@ estimate.wrapper <- function(Y,
 
   if(use.process){
     #starting values for process:
-    operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
     operator_list$type  <- operator.type
+    operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
+
 
     if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
       #estimate Gaussian process model
@@ -86,8 +86,8 @@ estimate.wrapper <- function(Y,
                             operator_list,
                             learning_rate = estimation.controls$learning.rate,
                             nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = 0,
-                            nSim = 2,
+                            polyak_rate = estimation.controls$polyak_rate,
+                            nSim = estimation.controls$nSim,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
@@ -119,7 +119,7 @@ estimate.wrapper <- function(Y,
                           res$operator_list,
                           learning_rate = estimation.controls$learning.rate,
                           nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = 0,
+                          polyak_rate = estimation.controls$polyak_rate,
                           nBurnin = estimation.controls$nBurnin,
                           nIter = estimation.controls$nIter,
                           nPar_burnin = estimation.controls$nPar_burnin,
@@ -157,12 +157,13 @@ estimate.wrapper <- function(Y,
                           operator_list,
                           learning_rate = estimation.controls$learning.rate,
                           nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = 0,
-                          nSim = 2,
+                          polyak_rate = estimation.controls$polyak_rate,
+                          nSim = estimation.controls$nSim,
                           nBurnin = estimation.controls$nBurnin,
                           nIter = estimation.controls$nIter,
                           nPar_burnin = estimation.controls$nPar_burnin,
                           pSubsample = estimation.controls$pSubsample,
+                          subsample.type = estimation.controls$subsample.type,
                           silent = silent,
                           estimate_fisher = FALSE,
                           ...)
@@ -196,8 +197,8 @@ estimate.wrapper <- function(Y,
                             measurement_list,
                             learning_rate = estimation.controls$learning.rate,
                             nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = 0,
-                            nSim = 2,
+                            polyak_rate = estimation.controls$polyak_rate,
+                            nSim = estimation.controls$nSim,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter.gauss,
                             nPar_burnin = estimation.controls$nPar_burnin,
@@ -224,7 +225,7 @@ estimate.wrapper <- function(Y,
                             res$operator_list,
                             learning_rate = estimation.controls$learning.rate,
                             nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = 0,
+                            polyak_rate = estimation.controls$polyak_rate,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
@@ -241,7 +242,6 @@ estimate.wrapper <- function(Y,
                                 learning_rate = estimation.controls$learning.rate,
                                 nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
                                 polyak_rate = -1,
-                                nIter = estimation.controls$nIter.fisher,
                                 nSim = estimation.controls$nSim.fisher,
                                 nBurnin = estimation.controls$nBurnin,
                                 nIter = estimation.controls$nIter.fisher,
@@ -258,8 +258,8 @@ estimate.wrapper <- function(Y,
                             measurement_list,
                             learning_rate = estimation.controls$learning.rate,
                             nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = 0,
-                            nSim = 2,
+                            polyak_rate = estimation.controls$polyak_rate,
+                            nSim = estimation.controls$nSim,
                             nBurnin = estimation.controls$nBurnin,
                             nIter = estimation.controls$nIter,
                             nPar_burnin = estimation.controls$nPar_burnin,
@@ -274,7 +274,6 @@ estimate.wrapper <- function(Y,
                                 learning_rate = estimation.controls$learning.rate,
                                 nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
                                 polyak_rate = -1,
-                                nIter = estimation.controls$nIter.fisher,
                                 nSim = estimation.controls$nSim.fisher,
                                 nBurnin = estimation.controls$nBurnin,
                                 nIter = estimation.controls$nIter.fisher,
@@ -405,8 +404,6 @@ estimateLong <- function(Y,
     groups <- group$groups
     free.samples = group$free
   }
-  str(groups)
-  str(free.samples)
 
   input <- list( obs_list         = obs_list,
                  measurementError_list  = measurment_list,
@@ -601,10 +598,12 @@ ME.startvalues <- function(Y,mixedEffect_list)
     res = NULL
     Sigma = matrix(0,nc.r,nc.r)
     br = matrix(0,n,nc.r)
+    res.list = list()
     for(i in 1:n){
       BB = ginv(t(mixedEffect_list$B_random[[i]])%*%mixedEffect_list$B_random[[i]])
       br[i,] = BB%*%t(mixedEffect_list$B_random[[i]])%*%(Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed)
-      res <- c(res,Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed - mixedEffect_list$B_random[[i]]%*%br[i,])
+      res.list[[i]] =  Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed - mixedEffect_list$B_random[[i]]%*%br[i,]
+      res <- c(res,res.list[[i]])
     }
     m = br - colMeans(br)
     mixedEffect_list$Sigma = t(m)%*%m/n
@@ -615,11 +614,14 @@ ME.startvalues <- function(Y,mixedEffect_list)
       BY = BY + t(mixedEffect_list$B_fixed[[i]])%*%Y[[i]]
     }
     beta_fixed = solve(BB,BY)
+    res.list = list()
     for(i in 1:n){
-      res <- c(res,Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%beta_fixed)
+      res.list[[i]] = Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%beta_fixed
+      res <- c(res,res.list[[i]])
     }
     mixedEffect_list$sigma = sqrt(var(res))
   }
+  #mixedEffect_list$res = res.list
   return(mixedEffect_list)
 }
 
@@ -631,7 +633,7 @@ operator.startvalues <- function(Y,locs,mixedEffect_list,operator_list,measureme
     operator_list$tau = 1/measurement_list$sigma
     m = min(unlist(lapply(lapply(locs,range),min)))
     M = max(unlist(lapply(lapply(locs,range),max)))
-    range = 0.5*(M-m)
+    range = min(4*operator_list$h[[1]][1],0.1*(M-m))
     operator_list$kappa = sqrt(8)/range
   }
   return(operator_list)
