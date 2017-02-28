@@ -369,18 +369,9 @@ estimateLong <- function(Y,
     if(length(Y[[i]]) != length(locs[[i]])){
       stop("Length of Y and locs differ.")
     }
-    obs_list[[i]] <- list(Y=Y[[i]],
-                          locs = locs[[i]])
+    obs_list[[i]] <- list(Y=Y[[i]], locs = locs[[i]])
     if(use.process){
-      if(common.grid){
-        obs_list[[i]]$A = spde.A(locs[[i]],operator_list$loc[[1]],
-                                 right.boundary = operator_list$right.boundary,
-                                 left.boundary = operator_list$left.boundary)
-      } else {
-        obs_list[[i]]$A = spde.A(locs[[i]],operator_list$loc[[i]],
-                                 right.boundary = operator_list$right.boundary,
-                                 left.boundary = operator_list$left.boundary)
-      }
+      obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)
     }
   }
 

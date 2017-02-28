@@ -1,3 +1,26 @@
+build.A.matrix <- function(operator_list,locs,i)
+{
+  if(operator_list$mesh[[1]]$manifold == "R2"){
+    if(operator_list$common.grid){
+      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[1]],loc=locs[[i]]))
+    } else {
+      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[i]],loc=locs[[i]]))
+    }
+  } else {
+    if(operator_list$common.grid){
+      return(spde.A(locs[[i]],
+                    operator_list$loc[[1]],
+                    right.boundary = operator_list$right.boundary,
+                    left.boundary = operator_list$left.boundary))
+    }  else {
+      return(spde.A(locs[[i]],
+                    operator_list$loc[[i]],
+                    right.boundary = operator_list$right.boundary,
+                    left.boundary = operator_list$left.boundary))
+    }
+  }
+}
+
 spde.A <- function(loc,x,right.boundary='neumann',left.boundary='neumann')
 {
   if(min(loc)< min(x) || max(loc) > max(x))
@@ -84,6 +107,25 @@ spde.basis <- function(x,right.boundary = 'neumann',left.boundary = 'neumann')
 }
 
 
+create_operator_matern2D <- function(mesh)
+{
+  INLA:::inla.require.inherits(mesh, c("inla.mesh", "inla.mesh.1d"), "'mesh'")
+  fem = INLA::inla.fmesher.smorg(mesh$loc, mesh$graph$tv, fem = 2,
+                           output = list("c0", "c1", "g1", "g2","dx","dy","dz"),
+                           gradients=TRUE)
+  n = mesh$n
+  h = (fem$c1%*%matrix(rep(1,n)))@x
+
+  out <- list(type = "matern",
+              mesh = list(mesh),
+              C = list(as(fem$c1,"CsparseMatrix")),
+              G = list(as(fem$g1,"CsparseMatrix")),
+              Ci = list(Matrix::Diagonal(n,1/h)),
+              h = list(h),
+              loc   = list(mesh$loc),
+              common.grid = TRUE)
+}
+
 
 create_operator <- function(locs,
                             n,
@@ -99,12 +141,14 @@ create_operator <- function(locs,
                                   right.boundary = right.boundary,
                                   left.boundary = left.boundary,
                                   common.grid = common.grid,
-                                  extend = extend))
+                                  extend = extend,
+                                  manifold = "R"))
   }else{
     return(create_matrices_FD2(locs = locs,
                                n = n,
                                common.grid = common.grid,
-                               extend = extend))
+                               extend = extend,
+                               manifold = "R"))
   }
 
 }

@@ -7,6 +7,17 @@ simulateLongPrior <- function( Y,
                                processes_list,
                                operator_list)
 {
+  if(missing(Y)){
+    Y <- list()
+    for(i in 1:length(locs)){
+      if(is.matrix(locs[[i]])){
+        Y[[i]] <- rep(1,dim(locs[[i]])[1])
+      } else {
+        Y[[i]] <- rep(1,length(locs[[i]])[1])
+      }
+    }
+  }
+
   if(!missing(processes_list) && !is.null(processes_list)){
     common.grid = FALSE
     if(length(operator_list$loc)==1){
@@ -14,25 +25,7 @@ simulateLongPrior <- function( Y,
     }
     obs_list <- list()
     for(i in 1:length(locs)){
-      if(length(Y[[i]]) != length(locs[[i]])){
-        stop("Length of Y and locs differ.")
-      }
-      if(common.grid){
-        obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                         operator_list$loc[[1]],
-                                         right.boundary = operator_list$right.boundary,
-                                         left.boundary = operator_list$left.boundary),
-                              Y=Y[[i]],
-                              locs = locs[[i]])
-      } else {
-        obs_list[[i]] <- list(A = spde.A(locs[[i]],
-                                         operator_list$loc[[i]],
-                                         right.boundary = operator_list$right.boundary,
-                                         left.boundary = operator_list$left.boundary),
-                              Y=Y[[i]],
-                              locs = locs[[i]])
-
-      }
+      obs_list[[i]] <- list(A = build.A.matrix(operator_list,locs,i), Y=Y[[i]], locs = locs[[i]])
     }
 
     input <- list( obs_list = obs_list,

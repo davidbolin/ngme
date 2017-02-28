@@ -19,7 +19,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
-  int debug = 0;
+  int debug = 1;
  	//**********************************
 	//setting up the main data
 	//**********************************
