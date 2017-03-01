@@ -478,7 +478,7 @@ List predictLong_cpp(Rcpp::List in_list)
               Ai_1 = Ai_1.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
               Eigen::VectorXd AX_1 = Ai_1 * process->Xs[i];
               WVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX_1 - AX;
-              XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 + AX_1 - random_effect_c + AX;
+              XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 + AX_1 - random_effect_c - AX;
             } else {
               XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 - random_effect_c;
             }

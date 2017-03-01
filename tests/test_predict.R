@@ -2,15 +2,15 @@ graphics.off()
 library(LDMod)
 
 n.threads <- 1
-nIter <- 1000
+nIter <- 100
 n.pers <- 2
-nSim  <- 3
+nSim  <- 100
 use.random.effect = FALSE
 n.obs  <- 3 + 0*(1:n.pers)
 n.proc = n.obs + 2
 grid.extend = c(0,0.1)
 n <- 10
-n.pred <- 3
+n.pred <- 15
 nBurnin = 10
 pred.type <- "Filter"
 pSubsample = 0.99
@@ -24,7 +24,7 @@ list()
 B_random.pred <- list()
 B_fixed.pred <- list()
 
-delta = 0.1
+delta = 0.25
 B_random.pred1 <- B_fixed.pred1 <- list()
 
 Vin <- list()
@@ -265,7 +265,7 @@ if(use.random.effect){
 }
 
 
-par(mfrow = c(1,2))
+par(mfrow = c(1,3))
 pr <- c(min(min(res.pre$X.summary[[k]]$quantiles[[1]]$field),min(Y[[prediction.indices[k]]])),
         max(max(res.pre$X.summary[[k]]$quantiles[[2]]$field),max(Y[[prediction.indices[k]]])))
 plot(res.pre$locs[[k]],res.pre$X.summary[[k]]$Mean,type="l",ylim=pr,
@@ -287,14 +287,34 @@ points(res.pre0$locs[[k]],res.pre0$X.summary[[k]]$Mean,pch = 6)
 #lines(res.pre0$locs[[k]],res.pre0$X.summary[[k]]$quantiles[[1]]$field,col=2,lty=3)
 #lines(res.pre0$locs[[k]],res.pre0$X.summary[[k]]$quantiles[[2]]$field,col=2,lty=3)
 
+pr <- c(min(res.pre$Xderivative.summary[[k]]$Mean),
+        max(res.pre$Xderivative.summary[[k]]$Mean))
+plot(res.pre$locs[[k]],res.pre$Xderivative.summary[[k]]$Mean,type="l",ylim=pr,
+     xlab = "Follow-up time (in years)",ylab="log(eGFR)")
+points(res.pre$locs[[k]],res.pre$Xderivative.summary[[k]]$Mean,pch = 4)
+#lines(res.pre$locs[[k]],res.pre$X.summary[[k]]$quantiles[[1]]$field,col=2)
+#lines(res.pre$locs[[k]],res.pre$X.summary[[k]]$quantiles[[2]]$field,col=2)
+
+lines(res.pre2$locs[[k]],res.pre2$Xderivative.summary[[k]]$Mean,col=1,lty=2)
+points(res.pre2$locs[[k]],res.pre2$Xderivative.summary[[k]]$Mean,pch = 5)
+#lines(res.pre2$locs[[k]],res.pre2$X.summary[[k]]$quantiles[[1]]$field,col=2,lty=2)
+#lines(res.pre2$locs[[k]],res.pre2$X.summary[[k]]$quantiles[[2]]$field,col=2,lty=2)
+
+
+lines(res.pre0$locs[[k]],res.pre0$Xderivative.summary[[k]]$Mean,col=1,lty=3)
+points(res.pre0$locs[[k]],res.pre0$Xderivative.summary[[k]]$Mean,pch = 6)
+
+
 cr = c(0,max(max(res.pre0$Xderivative.summary[[k]]$excursions$P),max(res.pre2$Xderivative.summary[[k]]$excursions$P)))
 plot(res.pre0$locs[[k]],res.pre0$Xderivative.summary[[k]]$excursions$P,type="l",
-     xlab = "Follow-up time (in years)",ylab="Probability",
+     xlab = "time",ylab="Probability",
      ylim = cr)
 
 lines(res.pre$locs[[k]],res.pre$Xderivative.summary[[k]]$excursions$P,type="l",
-      xlab = "Follow-up time (in years)",ylab="Probability",lty=2)
+      xlab = "time",ylab="Probability",lty=2)
 
 lines(res.pre2$locs[[k]],res.pre2$Xderivative.summary[[k]]$excursions$P,type="l",
-     xlab = "Follow-up time (in years)",ylab="Probability",lty=2)
+     xlab = "time",ylab="Probability",lty=2)
+
+
 
