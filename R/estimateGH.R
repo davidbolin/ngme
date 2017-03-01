@@ -366,9 +366,6 @@ estimateLong <- function(Y,
     }
   }
   for(i in 1:length(locs)){
-    if(length(Y[[i]]) != length(locs[[i]])){
-      stop("Length of Y and locs differ.")
-    }
     obs_list[[i]] <- list(Y=Y[[i]], locs = locs[[i]])
     if(use.process){
       obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)

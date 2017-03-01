@@ -123,7 +123,8 @@ create_operator_matern2D <- function(mesh)
               Ci = list(Matrix::Diagonal(n,1/h)),
               h = list(h),
               loc   = list(mesh$loc),
-              common.grid = TRUE)
+              common.grid = TRUE,
+              manifold ="R2")
 }
 
 

@@ -127,7 +127,12 @@ predictLong <- function( Y,
     } else {
       li = locs
     }
-    n.pred.i = length(li)
+    if(is.matrix(li)){
+      n.pred.i = dim(li)[1]
+    } else {
+      n.pred.i = length(li)
+    }
+
     if(type == "Filter"){
         pred.ind <- obs.ind <- NULL
         ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations before first obs
@@ -154,12 +159,12 @@ predictLong <- function( Y,
         }
         n.pred.i = dim(pred.ind)[1]
       } else {
-        pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
+        if(is.matrix(locs.pred[[i]])){
+          pred.ind <- matrix(c(0,dim(locs.pred[[i]])[1]),nrow = 1,ncol = 2)
+        } else {
+          pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
+        }
         obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
-      }
-
-      if(length(Y[[i]]) != length(locs[[i]])){
-        stop("Length of Y and locs differ.")
       }
 
       obs_list[[i]] <- list(Y=Y[[i]],
@@ -168,22 +173,8 @@ predictLong <- function( Y,
                             locs = locs[[i]],
                             Bfixed_pred = Bfixed.pred[[i]])
       if(use.process){
-        if(common.grid){
-          obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[1]],
-                                   right.boundary = operator_list$right.boundary,
-                                   left.boundary = operator_list$left.boundary)
-          obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[1]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary)
-
-        } else {
-          obs_list[[i]]$A = spde.A(locs[[i]], operator_list$loc[[i]],
-                                   right.boundary = operator_list$right.boundary,
-                                   left.boundary = operator_list$left.boundary)
-          obs_list[[i]]$Apred = spde.A(locs.pred[[i]],operator_list$loc[[i]],
-                                       right.boundary = operator_list$right.boundary,
-                                       left.boundary = operator_list$left.boundary)
-        }
+        obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)
+        obs_list[[i]]$Apred = build.A.matrix(operator_list,locs.pred,i)
       }
 
       if(use.random.effect){
@@ -192,15 +183,7 @@ predictLong <- function( Y,
 
       if(!is.null(predict.derivatives)){
         if(use.process){
-          if(common.grid){
-            obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[1]],
-                                          right.boundary = operator_list$right.boundary,
-                                          left.boundary = operator_list$left.boundary)
-          } else {
-            obs_list[[i]]$Apred1 = spde.A(locs.pred[[i]]+predict.derivatives$delta,operator_list$loc[[i]],
-                                          right.boundary = operator_list$right.boundary,
-                                          left.boundary = operator_list$left.boundary)
-          }
+          obs_list[[i]]$Apred = build.A.matrix(operator_list,locs.pred+predict.derivatives$delta,i)
         }
         obs_list[[i]]$Bfixed_pred1 = predict.derivatives$Bfixed[[i]]
         if(use.random.effect){
