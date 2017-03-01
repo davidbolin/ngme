@@ -1,6 +1,6 @@
 build.A.matrix <- function(operator_list,locs,i)
 {
-  if(operator_list$mesh[[1]]$manifold == "R2"){
+  if(operator_list$manifold == "R2"){
     if(operator_list$common.grid){
       return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[1]],loc=locs[[i]]))
     } else {
@@ -141,14 +141,12 @@ create_operator <- function(locs,
                                   right.boundary = right.boundary,
                                   left.boundary = left.boundary,
                                   common.grid = common.grid,
-                                  extend = extend,
-                                  manifold = "R"))
+                                  extend = extend))
   }else{
     return(create_matrices_FD2(locs = locs,
                                n = n,
                                common.grid = common.grid,
-                               extend = extend,
-                               manifold = "R"))
+                               extend = extend))
   }
 
 }
@@ -195,7 +193,8 @@ create_matrices_Matern <- function(locs,
                         loc   = meshes$loc,
                         right.boundary=right.boundary,
                         left.boundary=left.boundary,
-                        common.grid)
+                        manifold = "R",
+                        common.grid = common.grid)
   return(operator_List)
 }
 #' creates matrices for Finite difference operator, one sided
@@ -240,7 +239,8 @@ create_matrices_FD2 <- function(locs,
                           loc   = meshes$loc,
                           right.boundary = 'neumann',
                           left.boundary='neumann',
-                          common.grid)
+                          manifold = "R",
+                          common.grid = common.grid)
   return(operator_List)
 }
 
