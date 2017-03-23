@@ -234,7 +234,7 @@ void grad_caculations(int i,
                                                    Br_t,
                                                    errObj.Vs[i].cwiseInverse(),
                                                    w);
-             
+
 
             if(mixobj.Bf.size() > 0)
               Fisher_information.block(mixobj.npars + errObj.npars + Kobj.npars,
@@ -260,7 +260,7 @@ void grad_caculations(int i,
                                        Bf_t.cols() + Br_t.cols() + 1).transpose();
         }
       }else{
-        
+
         process.gradient(i,K,A,res,errObj.sigma, Kobj.trace_variance(A, i),w);
         if(estimate_fisher > 0 ){
 
@@ -523,6 +523,9 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  Rcpp::Rcout << " init";
 	}
 	mixobj->initFromList(mixedEffect_list);
+	if(silent == 0){
+	  Rcpp::Rcout << " store";
+	}
 	mixobj->setupStoreTracj(nIter);
 	if(silent == 0){
 	  Rcpp::Rcout << ", done\n";
@@ -975,7 +978,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   errObj->get_param(parameter);
 
-  
+
   Rcpp::StringVector param_names;
   mixobj->get_param_names(param_names);
   errObj->get_param_names(param_names);
@@ -991,7 +994,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   out_list["parameter"]     = parameter_out;
   if(estimate_fisher){
     Rcpp::NumericMatrix F(Rcpp::wrap(Fisher_information));
-    
+
     Rcpp::rownames(F) = param_names;
     Rcpp::colnames(F) = param_names;
     out_list["FisherMatrix"]     = F;

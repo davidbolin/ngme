@@ -14,17 +14,3 @@ double fd2Operator::trace_variance( const Eigen::SparseMatrix<double,0,int>& A, 
   return(obs_loc.array().pow(3).sum() / (3 * h_average[i] * tau));
 
 }
-
-Rcpp::List fd2Operator::output_list()
-{
-  Rcpp::List  List;
-  List["fd2"] = "fd2";
-  List["tau"] = tauVec(tauVec.size() -1 );
-  List["tauVec"] = tauVec;
-  //List["Q"] = Q;
-  List["loc"] = loc;
-  List["nIter"] = tauVec.size();
-  List["h"] = h;
-  List["Cov_theta"]   = Cov_theta;
-  return(List);
-}

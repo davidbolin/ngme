@@ -27,7 +27,7 @@ class operatorMatrix {
   protected:
     solver ** Qsolver;
     int Q_act;
-
+    Rcpp::List  out_list;
   public:
     int nop;
     std::vector<Eigen::VectorXd >  h;
@@ -46,7 +46,7 @@ class operatorMatrix {
     int counter;
 
     operatorMatrix() {Qsolver = NULL;};
-    
+
     virtual ~operatorMatrix(){delete Qsolver;};
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
@@ -129,7 +129,6 @@ class constMatrix : public operatorMatrix{
 class fd2Operator : public constMatrix {
 
 public:
-  Rcpp::List output_list();
   double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int  ) ;
 };
 

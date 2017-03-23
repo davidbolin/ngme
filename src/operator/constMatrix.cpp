@@ -23,6 +23,7 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
  check_Rcpplist(init_list, check_names, "constMatrix::initFromList");
 	dtau_old = 0;
  tau = 1.;
+ out_list = init_list;
  if(init_list.containsElementNamed("tau"))
    tau = Rcpp::as<double >( init_list["tau"]);
   Rcpp::List Q_list  = Rcpp::as<Rcpp::List> (init_list["Q"]);
@@ -168,15 +169,11 @@ void constMatrix::step_theta(const double stepsize,
 
 Rcpp::List constMatrix::output_list()
 {
-  Rcpp::List  List;
-  List["tau"] = tauVec(tauVec.size() -1 );
-  List["tauVec"] = tauVec;
-  //List["Q"] = Q;
-  List["loc"] = loc;
-  List["nIter"] = tauVec.size();
-  List["h"] = h;
-  List["Cov_theta"]   = Cov_theta;
-  return(List);
+  out_list["tau"] = tauVec(tauVec.size() -1 );
+  out_list["tauVec"] = tauVec;
+  out_list["nIter"] = tauVec.size();
+  out_list["Cov_theta"]   = Cov_theta;
+  return(out_list);
 }
 
 #endif

@@ -437,19 +437,6 @@ estimateLong <- function(Y,
     }
   }
 
-  if(use.process){
-    output$operator_list$left.boundary <- operator_list$left.boundary
-    output$operator_list$right.boundary <- operator_list$right.boundary
-    output$operator_list$type <- operator_list$type
-    output$operator_list$loc = operator_list$loc
-    output$operator_list$h = operator_list$h
-    if(tolower(operator_list$type) == "matern"){
-      output$operator_list$G <- operator_list$G
-      output$operator_list$C <- operator_list$C
-    } else if(operator_list$type == "fd2"){
-      output$operator_list$Q <- operator_list$Q
-    }
-  }
 
   return(output)
 }

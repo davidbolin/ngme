@@ -124,6 +124,7 @@ Rcpp::List NIGMixedEffect::toList()
 }
 void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 {
+
   int count =0;
   if(init_list.containsElementNamed("B_fixed"))
   {
@@ -174,7 +175,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
       throw("input error\n");
     }
-
+    Rcpp::Rcout << "here1\n";
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
@@ -187,10 +188,12 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       D = duplicatematrix(Br[0].cols());
       Dd = D.cast <double> ();
     }
+
     if(init_list.containsElementNamed("Sigma"))
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
     else
       Sigma.setIdentity(Br[0].cols(), Br[0].cols());
+
 
     Sigma_vech = vech(Sigma);
     npars += Sigma_vech.size();
@@ -199,14 +202,15 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     dSigma_vech_old.setZero(Sigma_vech.size());
     invSigma  = Sigma.inverse();
 
-      iSkroniS = kroneckerProduct(invSigma, invSigma);
+    iSkroniS = kroneckerProduct(invSigma, invSigma);
     if( init_list.containsElementNamed("U" ))
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
     else
       U.setZero(Br[0].cols(), Br.size());
 
+
     if( init_list.containsElementNamed("mu" ))
-      mu = Rcpp::as< Eigen::MatrixXd > (init_list["mu"]) ;
+      mu = Rcpp::as< Eigen::VectorXd > (init_list["mu"]) ;
     else
       mu.setZero(Br[0].cols(), 1);
 
@@ -796,13 +800,13 @@ void NIGMixedEffect::gradient2(const int i,
         res_ -= Br[i] * U.col(i);
       }
 
-      
+
       grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
       grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
 
 
-      
+
       gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );

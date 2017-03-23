@@ -21,7 +21,7 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   check_Rcpplist(init_list, check_names, "MaternOperator::initFromList");
   std::vector<std::string> check_names2 =  {"use.chol"};
   check_Rcpplist(solver_list, check_names2, "MaternOperator::initFromList");
-
+  out_list = init_list;
   kappa = Rcpp::as<double>(init_list["kappa"]);
   if(kappa < 0){
     Rcpp::Rcout << "warning kappa negative\n";
@@ -143,21 +143,14 @@ void MaternOperator::set_matrix(int i)
 
 Rcpp::List MaternOperator::output_list()
 {
-  Rcpp::List  List;
-
-  List["type"] = "Matern";
-  List["tau"] = tauVec[tauVec.size() - 1];
-  List["kappa"] = kappaVec[tauVec.size() - 1];
-  List["tauVec"] = tauVec;
-  List["kappaVec"] = kappaVec;
-  //List["G"] = G;
-  //List["C"] = C;
-  List["loc"] = loc;
-  List["h"] = h;
-  List["nIter"] = tauVec.size();
-  List["use.chol"] = use_chol;
-  List["Cov_theta"]   = Cov_theta;
-  return(List);
+  out_list["tau"] = tauVec[tauVec.size() - 1];
+  out_list["kappa"] = kappaVec[tauVec.size() - 1];
+  out_list["tauVec"] = tauVec;
+  out_list["kappaVec"] = kappaVec;
+  out_list["nIter"] = tauVec.size();
+  out_list["use.chol"] = use_chol;
+  out_list["Cov_theta"]   = Cov_theta;
+  return(out_list);
 }
 
 
@@ -185,7 +178,7 @@ Eigen::MatrixXd MaternOperator::d2Given( const Eigen::VectorXd & X,
   this->set_matrix(i);
   Eigen::VectorXd vtmp = Q[i] * X;
 
-  
+
   Eigen::VectorXd KX = Q[i]*X;
   //compute gradients wrt tau
   Eigen::VectorXd dKX = dtauQ[i] * X;
