@@ -23,7 +23,7 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
  check_Rcpplist(init_list, check_names, "constMatrix::initFromList");
 	dtau_old = 0;
  tau = 1.;
- out_list = init_list;
+ out_list = clone(init_list);
  if(init_list.containsElementNamed("tau"))
    tau = Rcpp::as<double >( init_list["tau"]);
   Rcpp::List Q_list  = Rcpp::as<Rcpp::List> (init_list["Q"]);
@@ -162,6 +162,7 @@ void constMatrix::step_theta(const double stepsize,
 	else
 		tauVec[counter] = polyak_rate * tau + (1 - polyak_rate) * tauVec[counter-1];
 
+  Rcpp::Rcout << "tauVec[" << counter << "] = " << tauVec[counter] << "\n";
 	counter++;
 	clear_gradient();
 	ddtau  = 0;

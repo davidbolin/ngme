@@ -21,7 +21,7 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   check_Rcpplist(init_list, check_names, "MaternOperator::initFromList");
   std::vector<std::string> check_names2 =  {"use.chol"};
   check_Rcpplist(solver_list, check_names2, "MaternOperator::initFromList");
-  out_list = init_list;
+  out_list = clone(init_list);
   kappa = Rcpp::as<double>(init_list["kappa"]);
   if(kappa < 0){
     Rcpp::Rcout << "warning kappa negative\n";
