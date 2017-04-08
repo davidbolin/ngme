@@ -228,13 +228,15 @@ class GHProcess : public Process{
     if( type_process != "CH"){
         param_in.push_back(mu);
        param_in.push_back(nu);
+    }else{
+      param_in.push_back(0);
     }
   };
   void get_param_names(Rcpp::StringVector & names){
-
+    
+      names.push_back("mu_process");
     if( type_process != "CH"){
 
-      names.push_back("mu_process");
       names.push_back("nu_process");
     }
     };

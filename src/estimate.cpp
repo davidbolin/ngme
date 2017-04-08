@@ -986,9 +986,12 @@ List estimateLong_cpp(Rcpp::List in_list)
   {
       Kobj->get_param_names(param_names);
       Kobj->get_param(parameter);
+      Rcpp::Rcout << "here\n";
       process->get_param_names(param_names);
       process->get_param(parameter);
+      Rcpp::Rcout << "here done\n";
   }
+  Rcpp::Rcout << "param_names = " << param_names << "\n";
   Rcpp::NumericVector parameter_out(Rcpp::wrap(parameter));
   parameter_out.names()  = param_names;
   out_list["parameter"]     = parameter_out;
