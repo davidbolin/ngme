@@ -3,6 +3,47 @@
 #include "GIG.h"
 
 
+//solve constrained 
+// solves x[constrained == 1] += A[constrained==1, H_constrained == 1]^{-1} b
+void solve_const_x_Ab(Eigen::VectorXd & x, 
+                                 const Eigen::VectorXd & constrained, 
+                                 const Eigen::VectorXd & b,
+                                 const Eigen::MatrixXd & A){
+
+      int n = x.size();
+      int n_unconstrained = constrained.sum();
+      Eigen::MatrixXd A_temp = Eigen::MatrixXd::Zero(n_unconstrained,
+                                                     n_unconstrained);
+
+      Eigen::VectorXd b_temp;
+      b_temp.setZero(n_unconstrained);
+      int count = 0;
+      for(int i = 0; i < n; i++)
+      {
+        int count_inner = 0;
+        if(constrained(i) == 1)
+        {
+          b_temp(count) = b(i);
+          for(int ii = 0; ii < n;ii++){
+            if(constrained(ii) == 1)
+            {
+              A_temp(count, count_inner) = A(i, ii);  
+                count_inner++;  
+            }  
+
+          }
+          count++;
+        }
+      }
+      Eigen::VectorXd x_temp  = A_temp.ldlt().solve(b_temp);
+      count = 0;
+      for(int i = 0; i < n; i++){
+        if(constrained(i) == 1)
+          x(i) += x_temp(count++);
+        
+      }
+}
+
 
 void dU_ddU_NIG(
               Eigen::VectorXd & dU,

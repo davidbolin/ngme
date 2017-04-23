@@ -148,8 +148,16 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
       throw("input error\n");
     }
-	dbeta_f_old.setZero(Bf[0].cols());
-     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
+
+    if(init_list.containsElementNamed("beta_fixed_constrained")){
+        beta_fixed_constrainted = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed_constrained"]);
+        beta_fixed_constrainted =  1 - beta_fixed_constrainted.array();
+    }else{
+        beta_fixed_constrainted.setOnes(Bf[0].cols());;
+    }
+
+	  dbeta_f_old.setZero(Bf[0].cols());
+    H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
   	npars += Bf[0].cols();
 
   }else{ Bf.resize(0);}
@@ -162,7 +170,6 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
     for( Rcpp::List::iterator it = Br_list.begin(); it != Br_list.end(); ++it ) {
       Br[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
     }
-
     if(init_list.containsElementNamed("beta_random"))
       	beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
     else
@@ -175,12 +182,17 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
       throw("input error\n");
     }
-    Rcpp::Rcout << "here1\n";
     npars += Br[0].cols();
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
     term2_mu.setZero(Br[0].cols());
     term1_mu = 0;
+    if(init_list.containsElementNamed("beta_random_constrained")){
+        beta_random_constrainted = Rcpp::as < Eigen::VectorXd >( init_list["beta_random_constrained"]);
+        beta_random_constrainted =  1 - beta_random_constrainted.array();
+    }else{
+        beta_random_constrainted.setOnes(Br[0].cols());;
+    }
 
 	dbeta_r_old.setZero(Br[0].cols());
     if(Br.size() > 0){
@@ -227,7 +239,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
       nu = 1.;
 
     npars += 1;
-	dnu_old = 0;
+	  dnu_old = 0;
     grad_nu = 0.;
     EV  = 1.;
     EiV = 1. + 1./nu;
@@ -1014,18 +1026,31 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,c
 }
 void NIGMixedEffect::step_beta_fixed(const double stepsize, const double learning_rate,const int burnin)
 {
+  if(beta_fixed_constrainted.sum() > 0){
+	 dbeta_f_old.array() *= learning_rate;
 
-	dbeta_f_old.array() *= learning_rate;
-	dbeta_f_old += H_beta_fixed.ldlt().solve(grad_beta_f);
+
+    solve_const_x_Ab(dbeta_f_old, 
+                   beta_fixed_constrainted,
+                   grad_beta_f,
+                   H_beta_fixed);
     beta_fixed += stepsize *  dbeta_f_old;
-    H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
+  }
+  H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 }
 void NIGMixedEffect::step_beta_random(const double stepsize, const double learning_rate,const int burnin)
 {
-	dbeta_r_old.array() *= learning_rate;
-	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
-	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (weight_total * EiV);
-	beta_random += stepsize * dbeta_r_old;
+
+  if(beta_random_constrainted.sum() > 0){
+    dbeta_r_old.array() *= learning_rate;
+
+    solve_const_x_Ab(dbeta_r_old, 
+                   beta_random_constrainted,
+                   0.5 * grad_beta_r,
+                   H_beta_random);
+	 dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ (weight_total * EiV);
+	 beta_random += stepsize * dbeta_r_old;
+  }
 	grad_beta_r2.setZero(Br[0].cols());
   H_beta_random.setZero(Br[0].cols(), Br[0].cols());
   grad_beta_r2.setZero(Br[0].cols());

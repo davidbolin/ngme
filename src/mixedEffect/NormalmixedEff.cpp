@@ -125,7 +125,6 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_fixed = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed"]);
     else
       beta_fixed.setZero(Bf[0].cols());
-
     if(beta_fixed.size() != Bf[0].cols())
     {
       Rcpp::Rcout << "\nERROR: \n"; 
@@ -133,6 +132,14 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
       throw("input error\n");
     }
+
+    if(init_list.containsElementNamed("beta_fixed_constrained")){
+        beta_fixed_constrainted = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed_constrained"]);
+        beta_fixed_constrainted =  1 - beta_fixed_constrainted.array();
+    }else{
+        beta_fixed_constrainted.setOnes(Bf[0].cols());;
+    }
+
     npars += Bf[0].cols();
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 	  dbeta_f_old.setZero(Bf[0].cols());
@@ -160,6 +167,12 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       Rcpp::Rcout << "beta_random.size = " << beta_random.size() << "\n";
       Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
       throw("input error\n");
+    }
+    if(init_list.containsElementNamed("beta_random_constrained")){
+        beta_random_constrainted = Rcpp::as < Eigen::VectorXd >( init_list["beta_random_constrained"]);
+        beta_random_constrainted =  1 - beta_random_constrainted.array();
+    }else{
+        beta_random_constrainted.setOnes(Br[0].cols());;
     }
 
 	dbeta_r_old.setZero(Br[0].cols());
@@ -593,40 +606,72 @@ void NormalMixedEffect::step_theta(const double stepsize,
 }
 void NormalMixedEffect::step_beta(const double stepsize,const double learning_rate,const int burnin)
 {
+  grad_beta.tail( n_f) = grad_beta.tail( n_f).cwiseProduct( beta_fixed_constrainted);
+  grad_beta.head( n_r) = grad_beta.head( n_r).cwiseProduct(beta_random_constrainted);
+  Eigen::VectorXd step1;
+  step1.setZero(n_f + n_r);
+  int n_unconstrained = beta_fixed_constrainted.sum() + beta_random_constrainted.sum() ;
+  if( n_unconstrained < n_f + n_r)
+  {
+      Eigen::VectorXd constrianed;
+      constrianed.setZero(n_f + n_r);
+      for(int i = 0; i < n_r ; i++)
+        constrianed(i) = beta_random_constrainted(i);
+      for(int i = 0; i < n_f ; i++)
+        constrianed(i + n_r) = beta_fixed_constrainted(i);
 
-  Eigen::VectorXd step1  = H_beta.ldlt().solve(grad_beta);
+      solve_const_x_Ab(step1, 
+                       constrianed,
+                       grad_beta,
+                       H_beta);
+
+
+  }else{
+    step1  = H_beta.ldlt().solve(grad_beta);
+  }
   if(Bf.size() > 0){
     dbeta_f_old.array() *= learning_rate;
     dbeta_f_old += 0.5 * step1.tail(n_f);
-    dbeta_f_old += 0.5 * H_beta.bottomRightCorner(n_f, n_f).ldlt().solve( grad_beta.tail( n_f));;
-    beta_fixed  += stepsize *  dbeta_f_old;
+    solve_const_x_Ab(dbeta_f_old, 
+                     beta_fixed_constrainted,
+                     0.5 * grad_beta.tail( n_f),
+                     H_beta.bottomRightCorner(n_f, n_f));
+    dbeta_f_old =  dbeta_f_old.cwiseProduct(beta_fixed_constrainted);
+    beta_fixed  += stepsize * dbeta_f_old;
   }
 
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
     dbeta_r_old += 0.5 *  step1.head(n_r);
-    dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ weight_total;
+    dbeta_r_old += 0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total;
+    dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;
     grad_beta_r2.setZero(Br[0].cols());
   }
-
   H_beta.setZero(n_f + n_r, n_f + n_r);
 
 }
 void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_f_old.array() *= learning_rate;
-	dbeta_f_old += H_beta_fixed.ldlt().solve(grad_beta_f);
-  beta_fixed += stepsize *  dbeta_f_old;
+
+  solve_const_x_Ab(dbeta_f_old, 
+                   beta_fixed_constrainted,
+                   grad_beta_f,
+                   H_beta_fixed);
+  beta_fixed += stepsize *  (beta_fixed_constrainted * dbeta_f_old);
   H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 
 }
 void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_r_old.array() *= learning_rate;
-	dbeta_r_old += 0.5 *  H_beta_random.ldlt().solve(grad_beta_r);
-	dbeta_r_old += 0.5 * (Sigma * grad_beta_r2)/ weight_total;
-  beta_random += stepsize * dbeta_r_old;
+  solve_const_x_Ab(dbeta_r_old, 
+                   beta_random_constrainted,
+                   0.5 * grad_beta_r,
+                   H_beta_random);
+	dbeta_r_old += 0.5 * (Sigma * ( beta_random_constrainted * grad_beta_r2))/ weight_total;
+  beta_random += stepsize *  (beta_random_constrainted * dbeta_r_old);
   grad_beta_r2.setZero(Br[0].cols());
   H_beta_random.setZero(Br[0].cols(), Br[0].cols());
 }

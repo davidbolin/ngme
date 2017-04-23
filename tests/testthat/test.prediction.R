@@ -1,3 +1,4 @@
+#DOES NOT WORK!!!
 require(testthat)
 context("Prediction")
 test_that("Subset prediction", {

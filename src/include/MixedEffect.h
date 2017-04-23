@@ -38,7 +38,9 @@ class MixedEffect {
     Eigen::MatrixXd EU;
     std::vector< Eigen::MatrixXd > Bf; // fixed covariates
     std::vector< Eigen::MatrixXd > Br; // mixed covariates
+    Eigen::VectorXd beta_random_constrainted;
     Eigen::VectorXd beta_random;
+    Eigen::VectorXd beta_fixed_constrainted;
     Eigen::VectorXd beta_fixed;
 	Eigen::VectorXd dbeta_r_old;
 	Eigen::VectorXd dbeta_f_old;
@@ -406,6 +408,10 @@ class NIGMixedEffect  : public MixedEffect{
 };
 
 // mixed effect util
+
+//solve constrained 
+// solves x[constrained == 1] += A[constrained==1, H_constrained == 1]^{-1} b
+void solve_const_x_Ab(Eigen::VectorXd & , const Eigen::VectorXd & , const Eigen::VectorXd & ,const  Eigen::MatrixXd & );
 
 // sampling NormalCanoncial N_c(b, Q^) \propto e^{-x'Qx + bx}
 Eigen::VectorXd sample_Nc(const Eigen::VectorXd & ,const  Eigen::MatrixXd & );
