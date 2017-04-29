@@ -25,7 +25,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 1;
+  int debug = 0;
   //**********************************
   //      basic parameter
   //**********************************
@@ -359,11 +359,15 @@ List predictLong_cpp(Rcpp::List in_list)
 
           Eigen::VectorXd iV(process->Vs[i].size());
           iV.array() = process->Vs[i].array().inverse();
-
           Qi = Ki.transpose();
+
+          if(Ki.cols() != iV.size()){
+              Rcpp::Rcout << "the columns of Ki ( " << Ki.cols() << ") does not match iV length ( " <<  iV.size() << " )\n";
+              throw("input error\n");
+          }
+
           Qi =  Qi * iV.asDiagonal();
           Qi =  Qi * Ki;
-
           if(debug){
             Rcpp::Rcout << "Sample normals (" << rank  << ")\n";
           }
