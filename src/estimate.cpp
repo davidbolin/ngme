@@ -764,6 +764,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       		} else {
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       		}
+          
       	}
       	if(debug)
       	  Rcpp::Rcout << "estimate::simulate error\n";
