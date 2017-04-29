@@ -47,13 +47,42 @@ List predictLong_cpp(Rcpp::List in_list)
   }
 
 
+
+
+
+
+
+
+
+
+
+
+  Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
   //**********************************
-  //     setting up the main data
+  // mixed effect setup
+  //***********************************
+  if(silent == 0){
+    Rcpp::Rcout << " Setup mixed effect: RE = " << use_random_effect << " \n";
+  }
+  Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
+  std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
+  MixedEffect *mixobj;
+  if(type_mixedEffect == "Normal")
+    mixobj = new NormalMixedEffect;
+  else
+    mixobj   = new NIGMixedEffect;
+
+  mixobj->initFromList(mixedEffect_list);
+
+
+
+  //**********************************
+  //     setting up the prediction data
   //**********************************
   if(silent == 0){
-    Rcpp::Rcout << " Setup data\n";
+    Rcpp::Rcout << " Setup predict data\n";
   }
-  Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
+
 
   int nindv = obs_list.length(); //count number of patients
   std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
@@ -78,22 +107,57 @@ List predictLong_cpp(Rcpp::List in_list)
       As[count]            = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
       As_pred[count]       = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["Apred"]);
     }
-    if(predict_derivative == 1){
-      if(use_process == 1){
+    if(predict_derivative == 1)
+    {
+      if(use_process == 1)
+      {
         As_pred_1[count]       = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["Apred1"]);
       }
       Bfixed_pred_1[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred1"]);
-      if(use_random_effect == 1){
+      if(use_random_effect == 1)
+      {
         Brandom_pred_1[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred1"]);
+      
+        if(Brandom_pred_1[count].cols() != mixobj->beta_random.size())
+        {
+          Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom_1[" << count << "].cols() = " << Brandom_pred_1[count].cols() << " != " 
+                      << "mixobj->beta_random.size() = "<<  mixobj->beta_random.size()  << "\n";
+            throw("input error\n");
+        }
+
       }
+    if(Bfixed_pred_1[count].cols() != mixobj->beta_fixed.size())
+    {
+      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed_1[" << count << "].cols() = " << Bfixed_pred_1[count].cols() << " != " 
+                  << "mixobj->beta_fixed.size() = "<<  mixobj->beta_fixed.size()  << "\n";
+      throw("input error\n");
+
+    }
+
     }
     pred_ind[count]      = Rcpp::as<Eigen::MatrixXd>(obs_tmp["pred_ind"]);
     obs_ind[count]       = Rcpp::as<Eigen::MatrixXd>(obs_tmp["obs_ind"]);
     Ys[count]            = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
-    if(use_random_effect == 1){
+    if(use_random_effect == 1)
+    {
       Brandom_pred[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred"]);
+
+      if(Brandom_pred[count].cols() != mixobj->beta_random.size())
+      {
+        Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom[" << count << "].cols() = " << Brandom_pred[count].cols() << " != " 
+                   << "mixobj->beta_random.size() = "<<  mixobj->beta_random.size()  << "\n";
+        throw("input error\n"); 
+      }
     }
     Bfixed_pred[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred"]);
+    
+    if(Bfixed_pred[count].cols() != mixobj->beta_fixed.size())
+    {
+      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed[" << count << "].cols() = " << Bfixed_pred[count].cols() << " != " 
+                  << "mixobj->beta_fixed.size() = "<<  mixobj->beta_fixed.size()  << "\n";
+      throw("input error\n");
+
+    }
     count++;
   }
 
@@ -141,21 +205,7 @@ List predictLong_cpp(Rcpp::List in_list)
       count++;
     }
   }
-  //**********************************
-  // mixed effect setup
-  //***********************************
-  if(silent == 0){
-    Rcpp::Rcout << " Setup mixed effect: RE = " << use_random_effect << " \n";
-  }
-  Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
-  std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
-  MixedEffect *mixobj;
-  if(type_mixedEffect == "Normal")
-    mixobj = new NormalMixedEffect;
-  else
-    mixobj   = new NIGMixedEffect;
 
-  mixobj->initFromList(mixedEffect_list);
 
   //**********************************
   // measurement setup
@@ -362,7 +412,7 @@ List predictLong_cpp(Rcpp::List in_list)
           Qi = Ki.transpose();
 
           if(Ki.cols() != iV.size()){
-              Rcpp::Rcout << "the columns of Ki ( " << Ki.cols() << ") does not match iV length ( " <<  iV.size() << " )\n";
+              Rcpp::Rcout << "prediction::the columns of Ki ( " << Ki.cols() << ") does not match iV length ( " <<  iV.size() << " )\n";
               throw("input error\n");
           }
 
@@ -445,7 +495,6 @@ List predictLong_cpp(Rcpp::List in_list)
             Ai = As_pred[i];
             Ai = Ai.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
           }
-
           Eigen::VectorXd random_effect;
           if(use_random_effect == 1){
             random_effect= Bfixed_pred[i]*mixobj->beta_fixed + Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
