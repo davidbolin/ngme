@@ -1,15 +1,22 @@
-Package: LDMod
+Package: ngme
 Type: Package
-Title: Longitudinal data analysis
-Version: 0.1
-Date: 2016-08-27
-Author: David Bolin <davidbolin@gmail.com>, Jonas Wallin <jonas.wallin81@gmail.com>
+Title: Linear Mixed Effects Models With Flexible Distributions
+Version: 1.0.0
+Date: 2017-06-21
+Authors@R: c(
+    person("David", "Bolin", email = "davidbolin@gmail.com", role = c("aut")), 
+    person("Jonas", "Wallin", email = "jonas.wallin81@gmail.com", role = c("aut", "cre")), 
+    person("Ozgur", "Asar", email = "ozgurasarstat@gmail.com", role = c("aut")),
+    person("Peter John", "Diggle", email = "p.diggle@lancaster.ac.uk", role = c("aut")))
 Maintainer: David Bolin <davidbolin@gmail.com>
-Description: Functions for analysing longitudinal data
+Description: Inference and prediction for linear mixed effects (random effects) models with 
+    fixed effects, time-invariant random effects, time-varying random effects (defined as a 
+    stochastic process), and error term. The latter three components can be specified as 
+    Gaussian or non-Gaussian. One can drop the time-varying random effects term. 
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.12.1)
+Imports: MASS, Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
-Depends: Matrix, methods, MASS
+Depends: R (>= 3.4.0), Matrix, methods, MASS
 RoxygenNote: 6.0.1
 Suggests: knitr,
     rmarkdown
