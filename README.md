@@ -20,4 +20,4 @@
 * Add checks of initial values in estimation
 
 ## TO DO - OA
-- 
+- nglda_predict throws error!!!
