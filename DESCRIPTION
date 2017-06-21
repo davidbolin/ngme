@@ -8,7 +8,6 @@ Authors@R: c(
     person("Jonas", "Wallin", email = "jonas.wallin81@gmail.com", role = c("aut", "cre")), 
     person("Ozgur", "Asar", email = "ozgurasarstat@gmail.com", role = c("aut")),
     person("Peter John", "Diggle", email = "p.diggle@lancaster.ac.uk", role = c("aut")))
-Maintainer: David Bolin <davidbolin@gmail.com>
 Description: Inference and prediction for linear mixed effects (random effects) models with 
     fixed effects, time-invariant random effects, time-varying random effects (defined as a 
     stochastic process), and error term. The latter three components can be specified as 
