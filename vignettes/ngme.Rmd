@@ -1,6 +1,6 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "ngme: an R package for non-Gaussian longitudinal data analysis"
+author: "Asar, Bolin, Diggle, Wallin (alphabetical)"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
