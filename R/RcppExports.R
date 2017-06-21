@@ -2,70 +2,70 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 estimateLong_cpp <- function(in_list) {
-    .Call('LDMod_estimateLong_cpp', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_estimateLong_cpp', PACKAGE = 'ngme', in_list)
 }
 
 estimateFisher <- function(in_list) {
-    .Call('LDMod_estimateFisher', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_estimateFisher', PACKAGE = 'ngme', in_list)
 }
 
 predictLong_cpp <- function(in_list) {
-    .Call('LDMod_predictLong_cpp', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_predictLong_cpp', PACKAGE = 'ngme', in_list)
 }
 
 rGIG_cpp <- function(p, a, b, seed = 0L) {
-    .Call('LDMod_rGIG_cpp', PACKAGE = 'LDMod', p, a, b, seed)
+    .Call('ngme_rGIG_cpp', PACKAGE = 'ngme', p, a, b, seed)
 }
 
 simulateLongGH_cpp <- function(in_list) {
-    .Call('LDMod_simulateLongGH_cpp', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_simulateLongGH_cpp', PACKAGE = 'ngme', in_list)
 }
 
 simulateLongME_cpp <- function(in_list) {
-    .Call('LDMod_simulateLongME_cpp', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_simulateLongME_cpp', PACKAGE = 'ngme', in_list)
 }
 
 getDuplicateM <- function(n) {
-    .Call('LDMod_getDuplicateM', PACKAGE = 'LDMod', n)
+    .Call('ngme_getDuplicateM', PACKAGE = 'ngme', n)
 }
 
 test_d2_process <- function(Y, process_list, operator_list) {
-    .Call('LDMod_test_d2_process', PACKAGE = 'LDMod', Y, process_list, operator_list)
+    .Call('ngme_test_d2_process', PACKAGE = 'ngme', Y, process_list, operator_list)
 }
 
 test_sampling_NIG <- function(mixedEffect_list, meas_list, nsamples) {
-    .Call('LDMod_test_sampling_NIG', PACKAGE = 'LDMod', mixedEffect_list, meas_list, nsamples)
+    .Call('ngme_test_sampling_NIG', PACKAGE = 'ngme', mixedEffect_list, meas_list, nsamples)
 }
 
 test_logf_NIG <- function(U, mu, delta, iSigma, nu) {
-    .Call('LDMod_test_logf_NIG', PACKAGE = 'LDMod', U, mu, delta, iSigma, nu)
+    .Call('ngme_test_logf_NIG', PACKAGE = 'ngme', U, mu, delta, iSigma, nu)
 }
 
 test_dU_EiV <- function(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B) {
-    .Call('LDMod_test_dU_EiV', PACKAGE = 'LDMod', U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
+    .Call('ngme_test_dU_EiV', PACKAGE = 'ngme', U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
 }
 
 test_db_EiV_GIG <- function(p, a, b) {
-    .Call('LDMod_test_db_EiV_GIG', PACKAGE = 'LDMod', p, a, b)
+    .Call('ngme_test_db_EiV_GIG', PACKAGE = 'ngme', p, a, b)
 }
 
 test_EiV_NGIG <- function(U, Sigma, delta, mu, p, a, b) {
-    .Call('LDMod_test_EiV_NGIG', PACKAGE = 'LDMod', U, Sigma, delta, mu, p, a, b)
+    .Call('ngme_test_EiV_NGIG', PACKAGE = 'ngme', U, Sigma, delta, mu, p, a, b)
 }
 
 test_EiV_GIG <- function(p, a, b) {
-    .Call('LDMod_test_EiV_GIG', PACKAGE = 'LDMod', p, a, b)
+    .Call('ngme_test_EiV_GIG', PACKAGE = 'ngme', p, a, b)
 }
 
 test_PreDiagsolver <- function(in_list) {
-    .Call('LDMod_test_PreDiagsolver', PACKAGE = 'LDMod', in_list)
+    .Call('ngme_test_PreDiagsolver', PACKAGE = 'ngme', in_list)
 }
 
 sampleR <- function(n, w_in) {
-    .Call('LDMod_sampleR', PACKAGE = 'LDMod', n, w_in)
+    .Call('ngme_sampleR', PACKAGE = 'ngme', n, w_in)
 }
 
 sample_internalR <- function(n, p_in, selected_in, w_in) {
-    .Call('LDMod_sample_internalR', PACKAGE = 'LDMod', n, p_in, selected_in, w_in)
+    .Call('ngme_sample_internalR', PACKAGE = 'ngme', n, p_in, selected_in, w_in)
 }
 

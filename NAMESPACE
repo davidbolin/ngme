@@ -1,4 +1,4 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
 importFrom(Matrix)
-useDynLib(LDMod, .registration=TRUE)
+useDynLib(ngme, .registration=TRUE)

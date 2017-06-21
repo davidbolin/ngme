@@ -1,4 +1,4 @@
-Package: LDMod
+Package: ngme
 Type: Package
 Title: Linear Mixed Effects Models With Flexible Distributions
 Version: 1.0.0
