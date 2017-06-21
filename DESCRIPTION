@@ -10,3 +10,7 @@ License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
 Depends: Matrix, methods, MASS
+RoxygenNote: 6.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
