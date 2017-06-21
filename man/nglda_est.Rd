@@ -15,9 +15,9 @@ nglda_est(fixed, random, data, timeVar, reffects = "Normal",
   FALSE, n.process = NULL))
 }
 \arguments{
-\item{fixed}{A two-sided formula for fixed effects desgin matrix.}
+\item{fixed}{A two-sided formula to specify the fixed effects design matrix.}
 
-\item{random}{A one-sided formula for random effects desgin matrix.}
+\item{random}{A one-sided formula to specify the random effects design matrix.}
 
 \item{data}{A data-frame from which the response and covariates to be
 extracted.}
@@ -26,22 +26,21 @@ extracted.}
 random effects. Available options are:  \code{"Normal"} for Normal,
 and \code{"NIG"} for Normal-inverve Gaussian distributions.}
 
-\item{process}{A character vector with two elements for the specification of
+\item{process}{A character vector with two elements to specify 
 the process. Whilst the first element is for the covariance structure, the
 second element is for the process distribution. Available options for the
-first element are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
+first are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
 Motion), \code{"matern"} for Matern family; for the second element are:
-\code{"Normal"} for Normal, \code{"NIG"} Normal-inverse Gaussian,
+\code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
 \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
 distributions.}
 
-\item{error}{A character string for the distribution of the error term.
-Available options are \code{"Normal"} for Normal, \code{"NIG"}
+\item{error}{A character string to specify the distribution of the error term.
+Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
 Normal-inverse Gaussian, \code{"tdist"} for t-distribution.}
 
 \item{use.process}{A logical variable for inclusion of the stochastic process in
-the formulation of the mixed model. \code{"TRUE"} indicates inclusion, \code{"FALSE"}
-indicates exclusion.}
+the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
 
 \item{estimation.controls}{A list of control variables for parameter estimation.
 \itemize{
@@ -91,17 +90,22 @@ indicates exclusion.}
    approximate the stochastic process.
 }}
 
-\item{timevar}{A character string that indicates the name of the time
-variable.}
+\item{timevar}{A character string that indicates the name of the time variable.}
 }
 \value{
 A list of outputs.
 }
 \description{
-Estimates model parameters by maximum likelihood.
+Estimates model parameters using maximum likelihood implemented by a
+  computationally efficient stochastic gradient algorithm.
+}
+\details{
+This function is a user-friendly wrapper that calls 
+    the \code{estimate.wrapper} function.
 }
 \examples{
   \dontrun{
+  data(srft_data)
   nglda_est(...)
   }
 }

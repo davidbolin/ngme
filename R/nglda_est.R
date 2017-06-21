@@ -1,31 +1,30 @@
 
 #' @title Parameter estimation.
 #'
-#' @description Estimates model parameters by maximum likelihood.
+#' @description Estimates model parameters using maximum likelihood implemented by a
+#'   computationally efficient stochastic gradient algorithm.
 #'
-#' @param fixed A two-sided formula for fixed effects desgin matrix.
-#' @param random A one-sided formula for random effects desgin matrix.
+#' @param fixed A two-sided formula to specify the fixed effects design matrix.
+#' @param random A one-sided formula to specify the random effects design matrix.
 #' @param data A data-frame from which the response and covariates to be
 #'   extracted.
-#' @param timevar A character string that indicates the name of the time
-#'   variable.
+#' @param timevar A character string that indicates the name of the time variable.
 #' @param reffects A character string that indicates the distribution of the
 #'   random effects. Available options are:  \code{"Normal"} for Normal,
 #'   and \code{"NIG"} for Normal-inverve Gaussian distributions.
-#' @param process A character vector with two elements for the specification of
+#' @param process A character vector with two elements to specify 
 #'   the process. Whilst the first element is for the covariance structure, the
 #'   second element is for the process distribution. Available options for the
-#'   first element are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
+#'   first are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
 #'   Motion), \code{"matern"} for Matern family; for the second element are:
-#'   \code{"Normal"} for Normal, \code{"NIG"} Normal-inverse Gaussian,
+#'   \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
 #'   distributions.
-#' @param error A character string for the distribution of the error term.
-#'   Available options are \code{"Normal"} for Normal, \code{"NIG"}
+#' @param error A character string to specify the distribution of the error term.
+#'   Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
 #'   Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
 #' @param use.process A logical variable for inclusion of the stochastic process in
-#'   the formulation of the mixed model. \code{"TRUE"} indicates inclusion, \code{"FALSE"}
-#'   indicates exclusion.
+#'   the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.
 #' @param estimation.controls A list of control variables for parameter estimation.
 #'  \itemize{
 #'     \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
@@ -72,10 +71,12 @@
 #'  \item \code{n.process} A numerical value for the number of basis functions to
 #'     approximate the stochastic process.
 #'  }
-#'
+#' @details This function is a user-friendly wrapper that calls 
+#'     the \code{estimate.wrapper} function.
 #' @return A list of outputs.
 #' @examples
 #'   \dontrun{
+#'   data(srft_data)
 #'   nglda_est(...)
 #'   }
 
@@ -196,13 +197,13 @@
 
   # converting the followings to lists:
   # fixed effects design matrix, random effects design matrix, response matrix, time variable
-  data_fixed  <- data.frame(cbind(id, x_fixed))
+  data_fixed <- data.frame(cbind(id, x_fixed))
   B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
   B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))
 
   data_random <- data.frame(cbind(id, x_random))
-  B_random   <- split(data_random[, -1], data_random[,1])
-  B_random   <- lapply(B_random, function(x) as.matrix(x))
+  B_random    <- split(data_random[, -1], data_random[,1])
+  B_random    <- lapply(B_random, function(x) as.matrix(x))
 
   Y    <- tapply(y, id, function(x) x)
   locs <- tapply(data[, timeVar], id, function(x) x)
@@ -222,8 +223,6 @@
   #pSubsample2 <- other.controls$pSubsample2
   #seed    <- other.controls$seed
   #standardize.mixedEffects <- other.controls$standardize.mixedEffets
-
-  ###if(process[2] == "Matern") kappa <- process[3]
 
   estimate.fisher <- other.controls$estimate.fisher
 
@@ -317,7 +316,7 @@
     }
 
   }else{
-    operator_tau <- operator_tau_vec <-
+    operator_tau <- operator_tau_vec <- operator_kappa <- operator_kappa_vec <-
       process_nu <- process_nu_vec <- process_mu <- process_mu_vec <- NA
   }
 
