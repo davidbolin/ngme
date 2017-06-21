@@ -9,11 +9,36 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+# Modelling framework 
+
+The modelling framework that the package `ngme` provides functions for
+has the following form:
+$$
+\begin{aligned}
+Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + W_i(t_{ij}) + Z_{ij},
+\end{aligned}
+$$
+where 
+
+- $Y_{ij}$ is the $j$th response for subject $i$ at time $t_{ij}$,
+- ${\bf x}_{ij}$ is the matrix of fixed effects explanatory variables,
+- ${\bf \alpha}$ is the matrix of fixed effects coefficients,
+- ${\bf d}_{ij}$ is the matrix of random effects explanatory variables,
+- ${\bf U}_i$ is the matrix of subject-specific and time-invariant random effects coefficients,
+- $W_i(t)$ is subject- and time-spceific random effect, specificed as a stochastic process,
+- $Z_{ij}$ is random error.
+
+
+# Data
+
 ```{r, echo=TRUE}
 library(ngme)
 data(srft_data)
 knitr::kable(head(srft_data))
 ```
+
+
+# Analysis
 
 ```{r, echo=TRUE}
 set.seed(123)
@@ -38,14 +63,14 @@ srft_fit <- nglda_est(
 
  srft_fit
  summary(srft_fit)
- fitted(srft_fit)
- residuals(srft_fit)
+ head(fitted(srft_fit), 10)
+ head(residuals(srft_fit), 10)
  intervals(srft_fit)
- 
- #res.pre <- nglda_predict(srft_fit, id = unique(srft_data_sub$id), type = "Filter")
- #res.pre
- #plot(res.pre, id = unique(srft_data_sub$id)[11], pch = 19, cex = 0.5)
- #plot(res.pre, id = 2203400, pch = 19, cex = 0.5)
+
+res.pre <- nglda_predict(srft_fit, id = unique(srft_data_sub$id), type = "Filter")
+res.pre
+plot(res.pre, id = unique(srft_data_sub$id)[11], pch = 19, cex = 0.5)
+plot(res.pre, id = 2203400, pch = 19, cex = 0.5)
 ```
 
 
