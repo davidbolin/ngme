@@ -18,3 +18,6 @@
 * Add reasonable starting values
 * Add checks of input dimensions to all functions
 * Add checks of initial values in estimation
+
+## TO DO - OA
+- error with use.process = F, estimated fisher = F -- operator.kappa not found
