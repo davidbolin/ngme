@@ -100,7 +100,7 @@ nglda_predict <- function(object,
                          nSim  = control_list$nSim,
                          nBurnin = control_list$nBurnin,
                          silent  = control_list$silent
-  )
+                         )
 
   mae <- covered <- int.width <- crps <- rmse <- NULL
 

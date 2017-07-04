@@ -20,4 +20,5 @@
 * Add checks of initial values in estimation
 
 ## TO DO - OA
-- nglda_predict throws error!!!
+- nglda_predict throws error for use.process = F!!!
+- continue with predict.derivative!!!
