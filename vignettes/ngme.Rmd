@@ -11,14 +11,20 @@ vignette: >
 
 # Modelling framework 
 
-The modelling framework that the package `ngme` provides functions for
-has the following form:
+The modelling frameworks that the package `ngme` provides functions for
+has the following forms:
 $$
 \begin{aligned}
-Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + W_i(t_{ij}) + Z_{ij},
+Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + Z_{ij},
 \end{aligned}
 $$
-where 
+and
+$$
+\begin{aligned}
+Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + W_i(t_{ij}) + Z_{ij}.
+\end{aligned}
+$$
+Here, 
 
 - $Y_{ij}$ is the $j$th response for subject $i$ at time $t_{ij}$,
 - ${\bf x}_{ij}$ is the matrix of fixed effects explanatory variables,
@@ -28,6 +34,17 @@ where
 - $W_i(t)$ is subject- and time-spceific random effect, specificed as a stochastic process,
 - $Z_{ij}$ is random error.
 
+`ngme` includes `nglda_est` and `nglda_predict` as the main functions 
+ for parameter estimation based on maximum likelihood 
+ implemented with a computationally efficient stochastic gradient algorithm and 
+ prediction based on Gibbs sampling, respectively. `print`, `summary`, `plot`, 
+ `fitted`, `residuals`, `intervals` functions are available as the supplemetary. 
+ 
+ Within `ngme` one can choose to specify the distributions as
+ 
+ - Normal and Normal-inverse Gaussian for ${\bf U}_i$,
+ - Normal, Normal-inverse Gaussian, generalised asymmetric Laplace and Cauchy for $W_i(t)$,
+ - Normal, Normal-inverse Gaussian and t for $Z_{ij}$.
 
 # Data
 
@@ -36,7 +53,6 @@ library(ngme)
 data(srft_data)
 knitr::kable(head(srft_data))
 ```
-
 
 # Analysis
 
@@ -53,11 +69,10 @@ srft_fit <- nglda_est(
   process = c("Normal", "matern"),
   error = "tdist",
   timeVar = "fu",
-  use.process = F,
-  estimation.controls = list(nIter = 1000, nIter.fisher = 10),
+  use.process = T,
+  estimation.controls = list(nIter = 10, nIter.fisher = 10),
   other.controls = list(estimate.fisher = T, silent = T)
 )
-
 
  #srft_fit2 <- update(srft_fit, use.process = F)
 
@@ -72,7 +87,6 @@ res.pre
 plot(res.pre, id = unique(srft_data_sub$id)[11], pch = 19, cex = 0.5)
 plot(res.pre, id = 2203400, pch = 19, cex = 0.5)
 ```
-
 
 Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
 
