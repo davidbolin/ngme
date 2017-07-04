@@ -1,13 +1,13 @@
 #' @title Prediction.
 #'
-#' @description Obtains predicted values based on filterin and smoothing distributions.
+#' @description Obtains predicted values based on filtering and smoothing distributions.
 #'
 #' @param object A fitted object obtained by calling \code{"nglda_est"}.
 #' @param id A numeric vector containing the ID's of the subjects for whom
 #'   predictions are to be obtained.
 #' @param type A character string for the type of prediction: \code{"Filter"} for
-#'   filtered states, \code{"Smoothing"} for smoothed states.
-#' @param quantiles A vector that contains two numeric values for the quantiles
+#'   filtering, \code{"Smoothing"} for smoothing.
+#' @param quantiles A two-elemnent vector that contains the quantiles
 #'   of the predictions to be calculated.
 #' @param control_list A list of control variables.
 #'  \itemize{
@@ -18,9 +18,19 @@
 #'    predictions for the derivatives of the process
 #'  \item \code{"excursions"} A list of excursion probabilities to compute. 
 #'    Each list should contain: 
-#'    \code{"type"} - type of excursion '>' or '<',
-#'    \code{"level"} - level to compute excursion probability for,
-#'    \code{"process"} - which process to compute the probability for, 'X', 'W', 'Y','Xderivative' or 'Wderivative'.
+#'    \itemize{
+#'    \item \code{"type"} - type of excursion '>' or '<',
+#'    \item \code{"level"} - level to compute excursion probability for,
+#'    \item \code{"process"} - which expression for the model, 
+#'    \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
+#'    \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
+#'    \code{'X'} for \eqn{x\alpha + dU + W}, 
+#'    \code{'W'} for \eqn{W}, 
+#'    \code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
+#'    \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
+#'    and  
+#'    \code{'Wderivative'} for the first derivariate of \eqn{W}.
+#'    } 
 #'  \item \code{"crps"} A logical variable for calculating 
 #'    continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
 #'    calculate, \code{"FALSE"} do not calculate.
@@ -52,7 +62,7 @@ nglda_predict <- function(object,
                             crps.skip = 1,
                             nSim = 10,
                             nBurnin = 10,
-                            silent = FALSE,
+                            silent = FALSE
                           )
                           )
   {
@@ -89,7 +99,7 @@ nglda_predict <- function(object,
                          operator_list = operator_list,
                          nSim  = control_list$nSim,
                          nBurnin = control_list$nBurnin,
-                         silent  = control_list$silent,
+                         silent  = control_list$silent
   )
 
   mae <- covered <- int.width <- crps <- rmse <- NULL
