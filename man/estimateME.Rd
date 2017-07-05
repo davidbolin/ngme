@@ -34,6 +34,8 @@ estimateME(Y, mixedEffect_list, measurment_list, step0 = 0.3, alpha = 0.3,
 
 \item{nSim}{- number of samples of the gibbs sampler to estimate the gradient}
 
+\item{silent}{- print iteration info}
+
 \item{seed}{- (unsinged int) seed for debuging}
 
 \item{locs}{- list with position of the observations (Y)}

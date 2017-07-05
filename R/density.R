@@ -1,13 +1,19 @@
-#
-# marginal nig density
-#
-# @param x     point to evalute
-# @param delta location parameter
-# @param mu    shift parameter
-# @param nu    shape parameter
-# @param sigma scaling parameter
-#
-#
+#' @title Density function of Normal inverse Gaussian distribution.
+#'
+#' @description A function to calculate the value of the probability density 
+#'    function of Normal inverse Gaussian distribution.
+#' @param x     A numeric vector for quantiles.
+#' @param delta A numeric value for the location parameter.
+#' @param mu    A numeric value for the shift parameter.
+#' @param nu    A numeric value for the shape parameter.
+#' @param sigma A numeric value for the scaling parameter.
+#' @details WE NEED PDF OF NIG(delta, mu, nu, sigma).
+#' @return A list of outputs.
+#' @examples
+#'   \dontrun{
+#'   dnig(...)
+#'   }
+
 dnig <- function(x, delta, mu, nu, sigma)
 {
   c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi
@@ -17,11 +23,19 @@ dnig <- function(x, delta, mu, nu, sigma)
   f <- f * besselK(coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2), 1)
   return(f)
 }
-##
-# analysis figure of mixed effect
-# @param res output of ME
-# @param dRE dimension to plot of random effect
-##
+
+#' @title Plot for mixed effects model fit.
+#'
+#' @description A function to plot the results of mixed effects model fit.
+#' @param res   A fitted object from mixed model fit.
+#' @param dRE   A numeric vector for dimension to plot.
+#' @details STUFF.
+#' @return A plot.
+#' @examples
+#'   \dontrun{
+#'   plot_GH_noise(...)
+#'   }
+
 plot_GH_noise  <- function(res, dRE = c())
 {
   resid <- c()

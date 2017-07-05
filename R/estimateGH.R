@@ -327,7 +327,7 @@ estimate.wrapper <- function(Y,
 #' @param pSubsample2     - precentage of data used in each gradient subsampling weighted by gradient
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
-#' @parma silent          - print iteration info
+#' @param silent          - print iteration info
 #' @param seed            - (unsinged int) seed for debuging
 estimateLong <- function(Y,
                          locs,
@@ -474,7 +474,7 @@ estimateLong <- function(Y,
 #'                                               1 - sample size weighted
 #' @param nIter           - number of iteration of the stochastic gradient
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
-#' @parma silent          - print iteration info
+#' @param silent          - print iteration info
 #' @param seed            - (unsinged int) seed for debuging
 estimateME <- function(Y,
                          mixedEffect_list,
