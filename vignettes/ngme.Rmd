@@ -69,7 +69,7 @@ srft_fit <- nglda_est(
   process = c("Normal", "matern"),
   error = "tdist",
   timeVar = "fu",
-  use.process = T,
+  use.process = F,
   estimation.controls = list(nIter = 10, nIter.fisher = 10),
   other.controls = list(estimate.fisher = T, silent = T)
 )

@@ -80,27 +80,51 @@ nglda_predict <- function(object,
   B_fixed <- mixedEffect_list$B_fixed
   B_random <- mixedEffect_list$B_random
 
-  predict <- predictLong(Y = Y,
-                         locs = locs,
-                         pInd = pInd,
-                         locs.pred = locs,
-                         Brandom.pred = B_random,
-                         Bfixed.pred = B_fixed,
-                         return.samples = control_list$return.samples,
-                         type = type,
-                         quantiles = quantiles,
-                         predict.derivatives = control_list$predict.derivatives,
-                         excursions = control_list$excursions,
-                         crps = control_list$crps,
-                         crps.skip = control_list$crps.skip,
-                         mixedEffect_list = mixedEffect_list,
-                         measurment_list = measurementError_list,
-                         processes_list = processes_list,
-                         operator_list = operator_list,
-                         nSim  = control_list$nSim,
-                         nBurnin = control_list$nBurnin,
-                         silent  = control_list$silent
-                         )
+  if(object$use_process == TRUE){
+    predict <- predictLong(Y = Y,
+                           locs = locs,
+                           pInd = pInd,
+                           locs.pred = locs,
+                           Brandom.pred = B_random,
+                           Bfixed.pred = B_fixed,
+                           return.samples = control_list$return.samples,
+                           type = type,
+                           quantiles = quantiles,
+                           predict.derivatives = control_list$predict.derivatives,
+                           excursions = control_list$excursions,
+                           crps = control_list$crps,
+                           crps.skip = control_list$crps.skip,
+                           mixedEffect_list = mixedEffect_list,
+                           measurment_list = measurementError_list,
+                           processes_list = processes_list,
+                           operator_list = operator_list,
+                           nSim  = control_list$nSim,
+                           nBurnin = control_list$nBurnin,
+                           silent  = control_list$silent
+    )
+  }else{
+    predict <- predictLong(Y = Y,
+                           locs = locs,
+                           pInd = pInd,
+                           locs.pred = locs,
+                           Brandom.pred = B_random,
+                           Bfixed.pred = B_fixed,
+                           return.samples = control_list$return.samples,
+                           type = type,
+                           quantiles = quantiles,
+                           predict.derivatives = control_list$predict.derivatives,
+                           excursions = control_list$excursions,
+                           crps = control_list$crps,
+                           crps.skip = control_list$crps.skip,
+                           mixedEffect_list = mixedEffect_list,
+                           measurment_list = measurementError_list,
+                           operator_list = operator_list,
+                           nSim  = control_list$nSim,
+                           nBurnin = control_list$nBurnin,
+                           silent  = control_list$silent
+    )
+  }
+  
 
   mae <- covered <- int.width <- crps <- rmse <- NULL
 
