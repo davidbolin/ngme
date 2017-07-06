@@ -6,8 +6,10 @@
 #' @param a A numeric vector for a parameters.
 #' @param b A numeric vector for b parameters.
 #' @param seed A numeric value for setting the seed of random number generation.
-#' @details This function is a user-friendly wrapper that calls 
-#'     the \code{rGIG_cpp} function. WE NEED PDF OF GIG(p, a, b).
+#' @details This function is a user-friendly wrapper that calls the \code{rGIG_cpp} 
+#'  function. Probability density function of GIG(p, a, b) is given by 
+#'  \deqn{f(x; p, a, b) = ((a/b)^(p/2))/(2K_p(sqrt(ab))) x^(p-1) exp(-(a/2)x - (b/2)/x),}
+#'  where \eqn{K_p} is modified Bessel function of the second kind of order p. 
 #' @return A list of outputs.
 #' @examples
 #'   \dontrun{

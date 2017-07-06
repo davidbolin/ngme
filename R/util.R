@@ -35,6 +35,7 @@ standardize.covariates <- function(B.list)
     return(NULL)
   }
 }
+
 scale.beta <- function(beta,B.list,inv = FALSE)
 {
   if(!is.matrix(beta))
@@ -54,7 +55,7 @@ scale.beta <- function(beta,B.list,inv = FALSE)
   }
 }
 
-scale.sigma <- function(sigma,B.list,inv = FALSE)
+scale.sigma <- function(sigma, B.list, inv = FALSE)
 {
   if(inv){
     return(B.list$Minv%*%sigma%*%t(B.list$Minv))
