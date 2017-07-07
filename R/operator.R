@@ -1,3 +1,8 @@
+#' Compute observation matrix linking basis functions to measurement locations
+#' @param operator_list - the operator list created using create_operator
+#' @param locs - list of measurement locations
+#' @param i - index in the list 'locs' for which the observation matrix should be computed
+#' @return observation matrix.
 build.A.matrix <- function(operator_list,locs,i)
 {
   if(operator_list$manifold == "R2"){
@@ -21,6 +26,12 @@ build.A.matrix <- function(operator_list,locs,i)
   }
 }
 
+#' internal function for computing observation matrix for 1D problems
+#' @param loc vector of measurement locations
+#' @param x vector of node locations for the basis functions
+#' @param right.boundary Boundary condition for the right boundary
+#' @param left.boundary Boundary condition for the left boundary
+#' @return observation matrix
 spde.A <- function(loc,x,right.boundary='neumann',left.boundary='neumann')
 {
   if(min(loc)< min(x) || max(loc) > max(x))
@@ -60,6 +71,10 @@ spde.A <- function(loc,x,right.boundary='neumann',left.boundary='neumann')
   return(A)
 }
 
+#' internal function for computing FEM matrices for 1D problems
+#' @param x vector containing node locations
+#' @param right.boundary
+#' @return list containg mass matrix, stiffness matrix, and some related quantities
 spde.basis <- function(x,right.boundary = 'neumann',left.boundary = 'neumann')
 {
   n = length(x)
@@ -106,7 +121,8 @@ spde.basis <- function(x,right.boundary = 'neumann',left.boundary = 'neumann')
               h = h))
 }
 
-
+#' internal function for computing FEM matrices for 2D problems
+#' @param mesh inla.mesh object.
 create_operator_matern2D <- function(mesh)
 {
   INLA:::inla.require.inherits(mesh, c("inla.mesh", "inla.mesh.1d"), "'mesh'")
@@ -127,7 +143,14 @@ create_operator_matern2D <- function(mesh)
               manifold ="R2")
 }
 
-
+#' function for computing the operator_list
+#' @param locs measurement locations
+#' @param n number of FEM basis functions that should be used
+#' @param name operator type (matern, fd2 supported atm)
+#' @param right.boundary boundary condition at right boundary
+#' @param left.boundary boundary condition at left boundary
+#' @param common.grid should a common grid be used for all subjects?
+#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
 create_operator <- function(locs,
                             n,
                             name = "matern",
@@ -152,8 +175,13 @@ create_operator <- function(locs,
 
 }
 #' creates matrices for Matern 1D operator
-#'
-#' @return operator_List list to to use in simulation and estimation object
+#'@param locs meansurement locations
+#'@param n number of FEM basis functions that should be used
+#' @param right.boundary boundary condition at right boundary
+#' @param left.boundary boundary condition at left boundary
+#' @param common.grid should a common grid be used for all subjects?
+#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
+#' @return operator_List
 create_matrices_Matern <- function(locs,
                                    n,
                                    right.boundary = 'neumann',
@@ -199,7 +227,13 @@ create_matrices_Matern <- function(locs,
   return(operator_List)
 }
 #' creates matrices for Finite difference operator, one sided
-#'
+#'@param locs meansurement locations
+#'@param n number of FEM basis functions that should be used
+#' @param right.boundary boundary condition at right boundary
+#' @param left.boundary boundary condition at left boundary
+#' @param common.grid should a common grid be used for all subjects?
+#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
+#' @return operator_List
 create_matrices_FD2 <- function(locs,
                                 n,
                                 right.boundary = 'neumann',
@@ -244,7 +278,12 @@ create_matrices_FD2 <- function(locs,
                           common.grid = common.grid)
   return(operator_List)
 }
-
+#' creates mesh for FEM discretization
+#'@param locs meansurement locations
+#'@param n number of FEM basis functions that should be used
+#' @param common.grid should a common grid be used for all subjects?
+#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
+#' @return list of meshes
 create.meshes.1d <- function(locs,n,common.grid,extend = NULL)
 {
   loc <- h <- list()

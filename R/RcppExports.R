@@ -3,7 +3,6 @@
 
 estimateLong_cpp <- function(in_list) {
     .Call(ngme_estimateLong_cpp, in_list)
-
 }
 
 estimateFisher <- function(in_list) {

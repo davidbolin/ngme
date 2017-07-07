@@ -1,5 +1,10 @@
-# simulate data from the prior model
-# @param Y only used to get size of objects
+#' simulate data from the prior model
+#' @param Y only used to get size of objects
+#' @param locs measurement locations
+#' @param mixedEffect_list mixed effects list
+#' @param measurement_list measurement error list
+#' @param process_list process list
+#' @param operator_list operator list
 simulateLongPrior <- function( Y,
                                locs,
                                mixedEffect_list,
@@ -54,11 +59,11 @@ simulateLongPrior <- function( Y,
   return(output)
 }
 
-
-#' Simulating longitudal model
+#CAN THIS FUNCTION BE REMOVED? /DB
+#' Simulating longitudal model using only R functions
 #'
-#' @param locs list of location of observations
-#' @param theta lost with covariates mu, kappa, sigma_eps, sigma
+#' @param locs list of observation locations
+#' @param theta list with parameters covariates mu, kappa, sigma_eps, sigma
 #' @param B list of matrix with covariates
 simulateLong.R <- function(loc,
                            theta,

@@ -1,36 +1,21 @@
+#' standardize covariates to avoid numerical issues
+#' @param   B.list           - list with matrices containing covariates.
 standardize.covariates <- function(B.list)
 {
   if(!is.null(B.list)){
-    if(0){
-      n <- length(B.list)
-      n.cov <- dim(B.list[[1]])[2]
-      n.obs <- sum(unlist(lapply(B.list,length))/n.cov)
-      m <- lapply(B.list,colMeans)
-      #means <- rowMeans(matrix(unlist(m,use.names = FALSE),n.cov,n))
-      #ss = lapply(B.list,function(x) colSums(t((t(x)-means)^2)))
-      ss = lapply(B.list,function(x) colSums(x^2))
-      stds <- sqrt(rowSums(matrix(unlist(ss,use.names = FALSE),n.cov,n))/n.obs)
-
-      B.out <- B.list
-      ss <- rep(0,n.cov)
-      for(i in 1:n){
-        B.out[[i]] <- t(t(B.list[[i]])/stds)
-      }
-      return(list(B = B.out,M = diag(stds), Minv = diag(1/stds)))
+    n.cov <- dim(B.list[[1]])[2]
+    if(n.cov>1){
+      BB = lapply(B.list,function(x) t(x)%*%x)
+      Bs = Reduce("+",BB)/length(B.list)
+      R = chol(Bs)
+      Ri = solve(R)
+      B.out = lapply(B.list,function(x) x%*%Ri)
     } else {
-      n.cov <- dim(B.list[[1]])[2]
-      if(n.cov>1){
-        BB = lapply(B.list,function(x) t(x)%*%x)
-        Bs = Reduce("+",BB)/length(B.list)
-        R = chol(Bs)
-        Ri = solve(R)
-        B.out = lapply(B.list,function(x) x%*%Ri)
-      } else {
-        return(list(B  =B.list, M = matrix(1), Minv = matrix(1)))
-      }
-
-      return(list(B  =B.out, M = R, Minv = Ri))
+      return(list(B  =B.list, M = matrix(1), Minv = matrix(1)))
     }
+
+    return(list(B  =B.out, M = R, Minv = Ri))
+
   } else {
     return(NULL)
   }
@@ -55,6 +40,10 @@ scale.beta <- function(beta,B.list,inv = FALSE)
   }
 }
 
+#' Scale covariance matrix for standardized covariates
+#' @param sigma - Covariance matrix in original scale
+#' @param B.list - list of rescaled covariates.
+#' @param inv - set to true if inverse rescaleing is wanted (input sigma is given in transformed scale)
 scale.sigma <- function(sigma, B.list, inv = FALSE)
 {
   if(inv){
@@ -68,6 +57,7 @@ scale.sigma <- function(sigma, B.list, inv = FALSE)
 #function returns a list groups and a vector free.
 #each element in groups contains a vector of elements sufficient to make t(B)*B full rank
 #the elments in free can be sampled freely given that one of the vectors in groups is sampled
+#' @param B - List of matrices containing the fixed effect matrices.
 group.fixed <- function(B)
 {
   ncov = dim(B[[1]])[2]
