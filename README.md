@@ -21,3 +21,4 @@
 
 ## TO DO - OA
 - continue with predict.derivative!!!
+- LDMod in simulate function!
