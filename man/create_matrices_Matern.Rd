@@ -2,14 +2,44 @@
 % Please edit documentation in R/operator.R
 \name{create_matrices_Matern}
 \alias{create_matrices_Matern}
-\title{creates matrices for Matern 1D operator}
+\title{Create matrices for Matern.}
 \usage{
 create_matrices_Matern(locs, n, right.boundary = "neumann",
   left.boundary = "neumann", common.grid = TRUE, extend = NULL)
 }
+\arguments{
+\item{locs}{A numeric list for the meansurement locations.}
+
+\item{n}{A numeric value for the number of FEM basis functions that should be used.}
+
+\item{right.boundary}{A character string denoting the boundary condition 
+for the right boundary.}
+
+\item{left.boundary}{A character string denoting the boundary condition 
+for the left boundary.}
+
+\item{common.grid}{A logical variable for using a common grid for all subjects, 
+\code{"TRUE"} indicates using a common grid, 
+\code{"FALSE"} uncommon grids.}
+
+\item{extend}{A numeric vector with two elements specifying the amount of extension 
+of the grid to the left and right beyondthe measurement locations.}
+}
 \value{
-operator_List list to to use in simulation and estimation object
+Returns matrices.
 }
 \description{
-creates matrices for Matern 1D operator
+A function to create matrices for Matern 1D (longitudinal) operator.
+}
+\details{
+This is a supplementary function to be used internally by other functions.
+}
+\examples{
+  \dontrun{
+  create_matrices_Matern(...)
+  }
+
+}
+\seealso{
+\code{\link{create_operator}}
 }

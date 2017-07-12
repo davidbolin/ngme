@@ -2,19 +2,19 @@
 % Please edit documentation in R/simulate.R
 \name{simulateLong.R}
 \alias{simulateLong.R}
-\title{Simulating longitudal model}
+\title{Simulating longitudal model using only R functions}
 \usage{
 simulateLong.R(loc, theta, n = 100, B = NULL, noise = c("Normal", "NIG",
   "GAL"), mixedEffect = FALSE, Bmixed = NULL, mixedEffectList = NULL,
   operatorType = "Matern", boundary = NULL)
 }
 \arguments{
-\item{theta}{lost with covariates mu, kappa, sigma_eps, sigma}
+\item{theta}{list with parameters covariates mu, kappa, sigma_eps, sigma}
 
 \item{B}{list of matrix with covariates}
 
-\item{locs}{list of location of observations}
+\item{locs}{list of observation locations}
 }
 \description{
-Simulating longitudal model
+Simulating longitudal model using only R functions
 }

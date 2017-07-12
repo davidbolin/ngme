@@ -228,7 +228,7 @@ create_operator_matern2D <- function(mesh)
 #' 
 #' @details This is a supplementary function to be used internally by other functions.
 #' 
-#' @seealso \link{\code{estimateLong}}
+#' @seealso \code{\link{estimateLong}}
 #' 
 #' @examples
 #'   \dontrun{
@@ -271,14 +271,12 @@ create_operator <- function(locs,
 #' @param left.boundary A character string denoting the boundary condition 
 #'    for the left boundary.
 #' @inheritParams create_operator
-#' @param common.grid should a common grid be used for all subjects?
-#' @param extend should the grid be extended beyond the measurement locations? 
-#' vector with two values specifying the amount to extend in each direction.
 #' 
-#' @return operator_List
-#' #' @details This is a supplementary function to be used internally by other functions.
+#' @return Returns matrices. 
 #' 
-#' @seealso \link{\code{create_operator}}
+#' @details This is a supplementary function to be used internally by other functions.
+#' 
+#' @seealso \code{\link{create_operator}}
 #' 
 #' @examples
 #'   \dontrun{
@@ -331,14 +329,20 @@ create_matrices_Matern <- function(locs,
   return(operator_List)
 }
 
-#' creates matrices for Finite difference operator, one sided
-#'@param locs meansurement locations
-#'@param n number of FEM basis functions that should be used
-#' @param right.boundary boundary condition at right boundary
-#' @param left.boundary boundary condition at left boundary
-#' @param common.grid should a common grid be used for all subjects?
-#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
-#' @return operator_List
+#' @title Create matrices for Finite difference.
+#' @description A function to create matrices for Finite difference operator, one sided.
+#' @inheritParams create_matrices_Matern
+#' @return Returns matrices.
+#' 
+#' @details This is a supplementary function to be used internally by other functions.
+#' 
+#' @seealso \code{\link{create_operator}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   create_matrices_FD2(...)
+#'   }
+#' 
 
 create_matrices_FD2 <- function(locs,
                                 n,
@@ -385,12 +389,22 @@ create_matrices_FD2 <- function(locs,
   return(operator_List)
 }
 
-#' creates mesh for FEM discretization
-#'@param locs meansurement locations
-#'@param n number of FEM basis functions that should be used
-#' @param common.grid should a common grid be used for all subjects?
-#' @param extend should the grid be extended beyond the measurement locations? vector with two values specifying the amount to extend in each direction.
-#' @return list of meshes
+#' @title Create meshes.
+#' 
+#' @description A function to create mesh for FEM discretization.
+#' @inheritParams create_matrices_FD2
+#' 
+#' @return Returns a list of meshes.
+#' 
+#' @details This is a supplementary function to be used internally by other functions.
+#' 
+#' @seealso \code{\link{create_matrices_Matern}}, \code{\link{create_matrices_FD2}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   create_meshes.1d(...)
+#'   }
+#' 
 
 create.meshes.1d <- function(locs,n,common.grid,extend = NULL)
 {
