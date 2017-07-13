@@ -1,5 +1,21 @@
-#' standardize covariates to avoid numerical issues
-#' @param   B.list           - list with matrices containing covariates.
+#' 
+#' @title Standardise covariates.
+#' 
+#' @description A function to standardise covariates to avoid numerical issues.
+#' @param B.list A numerical list that contains covariate matrices.
+#' 
+#' @details This function is supplementary and internally used. 
+#' 
+#' @return A list of standardised covariate matrices.
+#' 
+#' @seealso \code{\link{estimateLong}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   standardize.covariates(...)
+#'   }
+#'  
+
 standardize.covariates <- function(B.list)
 {
   if(!is.null(B.list)){
@@ -21,7 +37,30 @@ standardize.covariates <- function(B.list)
   }
 }
 
-scale.beta <- function(beta,B.list,inv = FALSE)
+#' @title Scale fixed effects coefficients.
+#'
+#' @description A function to scale the fixed effects coefficients. 
+#'
+#' @param beta A numerical matrix of fixed effects estimates (in original scale).
+#' @param B.list A numerical list of re-scaled covariate matrices.
+#' @param inc A logical variable; 
+#'    \code{"TRUE"} indicates the use of inverse re-scaling 
+#'    (meaningful to use if \code{"sigma"} is given in transformed scale), 
+#'    \code{"FALSE"} no use of inverse re-scaling. 
+#'    
+#' @details This function is supplementary and internally used. 
+#' 
+#' @return A matrix of scaled fixed effects coefficients.
+#' 
+#' @seealso \code{\link{estimateLong}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   scale.beta(...)
+#'   }
+#'
+
+scale.beta <- function(beta, B.list, inv = FALSE)
 {
   if(!is.matrix(beta))
     beta = as.matrix(beta)
@@ -40,10 +79,25 @@ scale.beta <- function(beta,B.list,inv = FALSE)
   }
 }
 
-#' Scale covariance matrix for standardized covariates
-#' @param sigma - Covariance matrix in original scale
-#' @param B.list - list of rescaled covariates.
-#' @param inv - set to true if inverse rescaleing is wanted (input sigma is given in transformed scale)
+#' @title Scale covariance matrix.
+#' 
+#' @description A function to scale covariance matrix.
+#' 
+#' @param sigma A numerical matrix of covariance matrix (in original scale).
+#' @inheritParams scale.beta
+#'    
+#' @details This function is supplementary and internally used. 
+#' 
+#' @return A list of scaled covariance matrix.
+#' 
+#' @seealso \code{\link{estimateLong}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   scale.sigma(...)
+#'   }
+#'
+
 scale.sigma <- function(sigma, B.list, inv = FALSE)
 {
   if(inv){
@@ -53,11 +107,26 @@ scale.sigma <- function(sigma, B.list, inv = FALSE)
   }
 }
 
-#group individuals based on Fixed effect matrix B
-#function returns a list groups and a vector free.
-#each element in groups contains a vector of elements sufficient to make t(B)*B full rank
-#the elments in free can be sampled freely given that one of the vectors in groups is sampled
-#' @param B - List of matrices containing the fixed effect matrices.
+#' @title Group individuals.
+#' 
+#' @description A function to group individuals based on fixed effect matrix B.
+#' 
+#' @param B A numeric list that contains fixed effects covariate matrices
+#' 
+#' @return Returns a list of groups and a vector free.
+#' 
+#' @details This function is supplementary and internally used. 
+#' Each element in groups contains a vector of elements sufficient to make t(B)*B full rank.
+#  The elments in free can be sampled freely given that one of the vectors in groups is sampled
+#' 
+#' @seealso \code{\link{estimateLong}}
+#' 
+#' @examples
+#'   \dontrun{
+#'   scale.fixed(...)
+#'   }
+#'
+
 group.fixed <- function(B)
 {
   ncov = dim(B[[1]])[2]

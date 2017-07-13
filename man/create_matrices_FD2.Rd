@@ -2,7 +2,7 @@
 % Please edit documentation in R/operator.R
 \name{create_matrices_FD2}
 \alias{create_matrices_FD2}
-\title{Creat matrices for Finite difference.}
+\title{Create matrices for Finite difference.}
 \usage{
 create_matrices_FD2(locs, n, right.boundary = "neumann",
   left.boundary = "neumann", common.grid = TRUE, extend = NULL)

@@ -2,17 +2,30 @@
 % Please edit documentation in R/util.R
 \name{scale.sigma}
 \alias{scale.sigma}
-\title{Scale covariance matrix for standardized covariates}
+\title{Scale covariance matrix.}
 \usage{
 \method{scale}{sigma}(sigma, B.list, inv = FALSE)
 }
 \arguments{
-\item{sigma}{- Covariance matrix in original scale}
+\item{sigma}{A numerical matrix of covariance matrix (in original scale).}
 
-\item{B.list}{- list of rescaled covariates.}
-
-\item{inv}{- set to true if inverse rescaleing is wanted (input sigma is given in transformed scale)}
+\item{B.list}{A numerical list of re-scaled covariate matrices.}
+}
+\value{
+A list of scaled covariance matrix.
 }
 \description{
-Scale covariance matrix for standardized covariates
+A function to scale covariance matrix.
+}
+\details{
+This function is supplementary and internally used.
+}
+\examples{
+  \dontrun{
+  scale.sigma(...)
+  }
+
+}
+\seealso{
+\code{\link{estimateLong}}
 }

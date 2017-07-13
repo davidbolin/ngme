@@ -2,13 +2,28 @@
 % Please edit documentation in R/util.R
 \name{standardize.covariates}
 \alias{standardize.covariates}
-\title{standardize covariates to avoid numerical issues}
+\title{Standardise covariates.}
 \usage{
 standardize.covariates(B.list)
 }
 \arguments{
-\item{B.list}{- list with matrices containing covariates.}
+\item{B.list}{A numerical list that contains covariate matrices.}
+}
+\value{
+A list of standardised covariate matrices.
 }
 \description{
-standardize covariates to avoid numerical issues
+A function to standardise covariates to avoid numerical issues.
+}
+\details{
+This function is supplementary and internally used.
+}
+\examples{
+  \dontrun{
+  standardize.covariates(...)
+  }
+ 
+}
+\seealso{
+\code{\link{estimateLong}}
 }
