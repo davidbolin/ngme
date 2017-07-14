@@ -1,3 +1,7 @@
+#' @title STUFF
+#' 
+#' @description STUFF
+#' 
 #' @param   pInd        - indices of longitudinal samples to do prediction for
 #' @param   locs.pred   - list with positions to predict
 #' @param   Brandom.pred - random effect covaraites at prediction locations

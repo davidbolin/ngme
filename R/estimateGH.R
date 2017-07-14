@@ -1,3 +1,57 @@
+#'
+#' @title Wrapper for parameter estimation. 
+#' 
+#' @description A wrapper function for parameter estimation. 
+#' 
+#' @param Y A numeric list that contains outcome values. 
+#' @param locs A numeric list that contains the timings at which the outcomes 
+#'    are collected. 
+#' @param B_random A numeric list of random effects covariate matrices.
+#' @param B_fixed A numeric list of fixed effects covariate matrices.
+#' @param operator.type A character string for specifying the operator type. 
+#'   Available options are: 
+#'   \code{"fd2"} for integrated Random-Walk (integrated Brownian Motion), 
+#'   and \code{"matern"} for Matern family. 
+#' @param n.process A numerical value for the number of basis functions to
+#'     approximate the stochastic process.
+#' @param measurement.distribution A character string to specify the distribution 
+#'   of the error term. Available options are: \code{"Normal"} for Normal, \code{"NIG"} 
+#'   for Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
+#' @param random.effect.distribution A character string that indicates the distribution 
+#'   of the random effects. Available options are:  \code{"Normal"} for Normal,
+#'   and \code{"NIG"} for Normal-inverve Gaussian distributions.
+#' @param process.distribution A character vector that indicates the distribution of 
+#'   the process. Available options are: 
+#'   \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
+#'   \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
+#'   distributions.
+#' @param individual.sigma A logical variable for specifying patient-specific mixture
+#'     random variable for the error-term; \code{"FALSE"} indicates do not obtain,
+#'     \code{"TRUE"} obtain.
+#' @param silent A logical value for printing the details of the iterations;
+#'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
+#' @param estimation.options A list of control inputs. See \code{"estimation.controls"} 
+#'     for the \code{"nglda_est"} function. 
+#' @param estimate_fisher A logical variable for whether Fisher-Information matrix
+#'     to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
+#' @inheritParams  
+#' @param ... Additional arguments.     
+#' 
+#' @return A list of fitted results.
+#'
+#' @details This function is a wrapper function (wraps \code{"estimateLong"}) 
+#'    for parameter estimation. It internally selects the initial values to 
+#'    start the stochastic gradient algorithn. The function is not advised to 
+#'    be used. It is indeed called within wrapped by \code{"nglda_est"} that is a 
+#'    more user-friendly function for parameter estimation. 
+#'    
+#' @seealso \code{\link{nglda_est}}, \code{\link{estimateLong}}    
+#'
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'   estimate.wrapper(...)
+#'   }
 estimate.wrapper <- function(Y,
                              locs,
                              B_random,
@@ -290,6 +344,12 @@ estimate.wrapper <- function(Y,
   return(res)
 }
 
+#'
+#' @title Estimate parameters.
+#' 
+#' @description A function that estimates parameters by 
+#'    calling the \code{"estimateLong_cpp()"} function.
+#'
 #' @param   Y           - list with the observations
 #' @param   locs        - list with position of the observations (Y)
 #' @param mixedEffect_list -
@@ -329,6 +389,7 @@ estimate.wrapper <- function(Y,
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @param silent          - print iteration info
 #' @param seed            - (unsinged int) seed for debuging
+
 estimateLong <- function(Y,
                          locs,
                          mixedEffect_list,
@@ -442,9 +503,10 @@ estimateLong <- function(Y,
 }
 
 #'
-#' estimating mixed effect model
+#' @title estimating mixed effect model
 #'
-#'
+#' @description
+#' 
 #' @param   Y           - list with the observations
 #' @param   locs        - list with position of the observations (Y)
 #' @param mixedEffect_list -
@@ -476,6 +538,7 @@ estimateLong <- function(Y,
 #' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
 #' @param silent          - print iteration info
 #' @param seed            - (unsinged int) seed for debuging
+
 estimateME <- function(Y,
                          mixedEffect_list,
                          measurment_list,
