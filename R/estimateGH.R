@@ -52,6 +52,7 @@
 #'   data(srft_data)
 #'   estimate.wrapper(...)
 #'   }
+
 estimate.wrapper <- function(Y,
                              locs,
                              B_random,
@@ -353,47 +354,72 @@ estimate.wrapper <- function(Y,
 #' @inheritParams estimate.wrapper
 #' @param mixedEffect_list A list of inputs for random effects. 
 #'   \itemize{
-#'   \item \code{noise}       the distribution of the mixed effect
-#'   \item \code{B_random}    list for the random effect covariates (needs to be matrix, can be NULL)
-#'   \item \code{B_fixed}     list for the fixed  effect covariates (needs to be matrix, can be NULL)
-#'   \item \code{beta_random} initial parameters of the random effect (mean parameter) (if not specified set to zero)
-#'   \item \code{beta_fixed}  initial parameters of the fixed  effect (if not specified set to zero)
-#'   \item \code{Sigma}       initial parameters of the covariance of random effect (if not specified set to I )
-#'   \item \code{nu}          shape parameter for noise (NIG only)
-#'   \item \code{mu}          shift parameter for noise (NIG only)
-#'   \item \code{U}           (list) inital guess of the random effect
-#'   \item \code{V}           (list) inital guess of the variance effect
+#'   \item \code{noise} The distribution of the mixed effects.
+#'   \item \code{B_random} A list that contains the random effect 
+#'      covariates (needs to be matrix, can be NULL).
+#'   \item \code{B_fixed} A list that contains the fixed effect 
+#'      covariates (needs to be matrix, can be NULL).
+#'   \item \code{beta_random} Initial values for the parameters of the 
+#'      random effects (mean parameter) (if not specified set to zero).
+#'   \item \code{beta_fixed} Initial  values for the parameters of the 
+#'      fixed effects (if not specified set to zero).
+#'   \item \code{Sigma} Initial values for the parameters of the 
+#'      variance-covariance matrix of the random effects 
+#'      (if not specified set to I ).
+#'   \item \code{nu} Shape parameter for noise (NIG only)
+#'   \item \code{mu} Shift parameter for noise (NIG only)
+#'   \item \code{U} A list of inital values of the random effects.
+#'   \item \code{V} A list of inital values of the variance effects.
 #'   }
-#'
 #' @param measurment_list A list of inputs for measurement error.
 #'   \itemize{
-#'   \item \code{sigma} measurement noise variance
-#'   \item \code{nu}    shape parameter for noise (NIG only)
-#'   \item \code{Vs}    (list) inital guess for the noise of the measurement
+#'   \item \code{sigma} Measurement noise variance parameter.
+#'   \item \code{nu}    Shape parameter for noise (NIG only).
+#'   \item \code{Vs}    A list of inital values for the noise of the measurement.
 #'   }
-#'
 #' @param processes_list A list of inputs for the process.
 #'   \itemize{
-#'   \item \code{noise} either Normal, NIG or GAL (change name to type rather then noise)
-#'   \item \code{nu}    shape parameter for NIG or GAL
-#'   \item \code{mu}    assymetric parameter for NIG or GAL
+#'   \item \code{noise} Distribution of the process.
+#'   \item \code{nu}    Shape parameter (for NIG or GAL).
+#'   \item \code{mu}    Asymmetry parameter (for NIG or GAL).
 #'   }
+#' @param learning_rate A numeric value for the parameter of stochastic gradient.
+#' @param nBurnin_learningrate A numeric value until which the learning will
+#'     not be started.
+#' @param nPar_burnin A numeric value; "M-step" updates will be used until this
+#'     iteration.
+#' @param polyak_rate A numeric value for moving average of parameters;
+#'     -1: inactive, 0: pure mean.
+#' @param step0 A numeric value for stepsize for the optimizer; step0 / i^alpha.
+#' @param alpha A numeric value for stepsize for the optimizer; step0 / i^alpha.
+#' @param pSubsample A numeric value for the portion of data to be used in each
+#'     gradient iteration.
+#' @param subsample.type A numeric value for the type of subsampling;
+#'     0: uniform without sampling, 1: sample size weighted,
+#'     3: weighted sampling by gradient size.
+#' @param pSubsample2 A numeric value for the portion of the data
+#'     to be used in each gradient subsampling weighted by gradient.
+#' @param nIter A numeric value for the number of iteration that will be
+#'     used by the stochastic gradient.
+#' @param nSim A numeric value for the number of samples of the Gibbs sampler
+#'     to estimate the gradient.
+#' @param silent A logical value for printing the details of the iterations;
+#'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
+#' @param seed A numerical value for starting the Gibbs samplers from fixed seed.
+#' 
+#' @return A list of fitted results.
 #'
-#' @param learning_rate   - parameter for sthocastic gradient
-#' @param nBurnin_learningrate - don't start learning before
-#' @param nPar_burnin - use "M-step" updates until this iteration.
-#' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
-#' @param step0           - stepsize for optimizer is step0 / i^alpha
-#' @param alpha           - stepsize for optimizer is step0 / i^alpha
-#' @param pSubsample      - precentage of data used in each gradient subsampling
-#' @param subsample.type  - Type of subsampling: 0 - uniform without replacement
-#'                                               1 - sample size weighted
-#'                                               3 - weighted sampling by gradient size
-#' @param pSubsample2     - precentage of data used in each gradient subsampling weighted by gradient
-#' @param nIter           - number of iteration of the stochastic gradient
-#' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
-#' @param silent          - print iteration info
-#' @param seed            - (unsinged int) seed for debuging
+#' @details This function calls \code{"estimateLong_cpp()"} internally. 
+#'    It is wrapped by \code{"estimate.wrapper"}), and is not advised to 
+#'    be used. 
+#'    
+#' @seealso \code{\link{nglda_est}}, \code{\link{estimate.wrapper}}    
+#'
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'   estimateLong(...)
+#'   }
 
 estimateLong <- function(Y,
                          locs,

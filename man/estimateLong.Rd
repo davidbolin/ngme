@@ -20,59 +20,73 @@ are collected.}
 
 \item{mixedEffect_list}{A list of inputs for random effects. 
 \itemize{
-\item \code{noise}       the distribution of the mixed effect
-\item \code{B_random}    list for the random effect covariates (needs to be matrix, can be NULL)
-\item \code{B_fixed}     list for the fixed  effect covariates (needs to be matrix, can be NULL)
-\item \code{beta_random} initial parameters of the random effect (mean parameter) (if not specified set to zero)
-\item \code{beta_fixed}  initial parameters of the fixed  effect (if not specified set to zero)
-\item \code{Sigma}       initial parameters of the covariance of random effect (if not specified set to I )
-\item \code{nu}          shape parameter for noise (NIG only)
-\item \code{mu}          shift parameter for noise (NIG only)
-\item \code{U}           (list) inital guess of the random effect
-\item \code{V}           (list) inital guess of the variance effect
+\item \code{noise} The distribution of the mixed effects.
+\item \code{B_random} A list that contains the random effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{B_fixed} A list that contains the fixed effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{beta_random} Initial values for the parameters of the 
+   random effects (mean parameter) (if not specified set to zero).
+\item \code{beta_fixed} Initial  values for the parameters of the 
+   fixed effects (if not specified set to zero).
+\item \code{Sigma} Initial values for the parameters of the 
+   variance-covariance matrix of the random effects 
+   (if not specified set to I ).
+\item \code{nu} Shape parameter for noise (NIG only)
+\item \code{mu} Shift parameter for noise (NIG only)
+\item \code{U} A list of inital values of the random effects.
+\item \code{V} A list of inital values of the variance effects.
 }}
 
 \item{measurment_list}{A list of inputs for measurement error.
 \itemize{
-\item \code{sigma} measurement noise variance
-\item \code{nu}    shape parameter for noise (NIG only)
-\item \code{Vs}    (list) inital guess for the noise of the measurement
+\item \code{sigma} Measurement noise variance parameter.
+\item \code{nu}    Shape parameter for noise (NIG only).
+\item \code{Vs}    A list of inital values for the noise of the measurement.
 }}
 
 \item{processes_list}{A list of inputs for the process.
 \itemize{
-\item \code{noise} either Normal, NIG or GAL (change name to type rather then noise)
-\item \code{nu}    shape parameter for NIG or GAL
-\item \code{mu}    assymetric parameter for NIG or GAL
+\item \code{noise} Distribution of the process.
+\item \code{nu}    Shape parameter (for NIG or GAL).
+\item \code{mu}    Asymmetry parameter (for NIG or GAL).
 }}
 
-\item{step0}{- stepsize for optimizer is step0 / i^alpha}
+\item{step0}{A numeric value for stepsize for the optimizer; step0 / i^alpha.}
 
-\item{alpha}{- stepsize for optimizer is step0 / i^alpha}
+\item{alpha}{A numeric value for stepsize for the optimizer; step0 / i^alpha.}
 
-\item{learning_rate}{- parameter for sthocastic gradient}
+\item{learning_rate}{A numeric value for the parameter of stochastic gradient.}
 
-\item{nBurnin_learningrate}{- don't start learning before}
+\item{nBurnin_learningrate}{A numeric value until which the learning will
+not be started.}
 
-\item{pSubsample}{- precentage of data used in each gradient subsampling}
+\item{pSubsample}{A numeric value for the portion of data to be used in each
+gradient iteration.}
 
-\item{polyak_rate}{- taking moving average of parameters (-1 means inactive, 0 mean pure mean)}
+\item{polyak_rate}{A numeric value for moving average of parameters;
+-1: inactive, 0: pure mean.}
 
-\item{subsample.type}{- Type of subsampling: 0 - uniform without replacement
-1 - sample size weighted
-3 - weighted sampling by gradient size}
+\item{subsample.type}{A numeric value for the type of subsampling;
+0: uniform without sampling, 1: sample size weighted,
+3: weighted sampling by gradient size.}
 
-\item{nPar_burnin}{- use "M-step" updates until this iteration.}
+\item{nPar_burnin}{A numeric value; "M-step" updates will be used until this
+iteration.}
 
-\item{pSubsample2}{- precentage of data used in each gradient subsampling weighted by gradient}
+\item{pSubsample2}{A numeric value for the portion of the data
+to be used in each gradient subsampling weighted by gradient.}
 
-\item{nIter}{- number of iteration of the stochastic gradient}
+\item{nIter}{A numeric value for the number of iteration that will be
+used by the stochastic gradient.}
 
-\item{nSim}{- number of samples of the gibbs sampler to estimate the gradient}
+\item{nSim}{A numeric value for the number of samples of the Gibbs sampler
+to estimate the gradient.}
 
-\item{silent}{- print iteration info}
+\item{silent}{A logical value for printing the details of the iterations;
+\code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
 
-\item{seed}{- (unsinged int) seed for debuging}
+\item{seed}{A numerical value for starting the Gibbs samplers from fixed seed.}
 
 \item{estimate_fisher}{A logical variable for whether Fisher-Information matrix
 to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
