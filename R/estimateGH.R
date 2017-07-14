@@ -614,6 +614,24 @@ estimateME <- function(Y,
   return(output)
 }
 
+#' @title STUFF.
+#' 
+#' @description STUFF
+#' @param input STUFF
+#' @param seed STUFF
+#' 
+#' @return STUFF
+#' 
+#' @details STUFF
+#' 
+#' @seealso \code{\link{ngld_est}}, \code{\link{estimateLong}}, \code{\link{estimateME}}    
+#'
+#' @examples
+#'   \dontrun{
+#'   setseed_ME(...)
+#'   }
+#' 
+
 setseed_ME <- function(input, seed)
 {
   seed.old <- sample.int(10^6, 1)
@@ -624,8 +642,30 @@ setseed_ME <- function(input, seed)
   return(input)
 }
 
-# Treat random effects as fixed effects to obtain start values using OLS
-ME.startvalues <- function(Y,mixedEffect_list)
+
+#' 
+#' @title Obtain initials for random effects.
+#' 
+#' @description A function to obtain initial values for the random effects. 
+#' 
+#' @inheritParams estimateLong
+#' @param mixedEffect_list A list for random effects. 
+#' 
+#' @return Returns a list for the mixed effects. 
+#'     See e.g. \code{mixedEffect_list} in the \code{"EstimateLong"} function.
+#' 
+#' @details The function treats random effects as fixed effects to 
+#'    obtain start values using ordinary least squares (OLS).
+#' 
+#' @seealso \code{\link{estimate.wrapper}}    
+#'
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'   ME.startvalues(...)
+#'   }
+#' 
+ME.startvalues <- function(Y, mixedEffect_list)
 {
   n = length(mixedEffect_list$B_fixed)
   nc.f= dim(mixedEffect_list$B_fixed[[1]])[2]
@@ -680,7 +720,26 @@ ME.startvalues <- function(Y,mixedEffect_list)
   return(mixedEffect_list)
 }
 
-operator.startvalues <- function(Y,locs,mixedEffect_list,operator_list,measurement_list)
+#' @title Obtain initial values for the operator.
+#' 
+#' @description A function to obtain initials for the operator.
+#' 
+#' @inheritParams estimateLong
+#' @param mixedEffect_list A list for random effects.  
+#' @param operator_list A list for operator.
+#' @param measurement_list A list for measurement error.
+#' 
+#' @return A list for operator. 
+#'    See e.g. \code{"operator_list"} in \code{"estimateLong"}.
+#' 
+#' @seealso \code{\link{estimate.wrapper}}    
+#'
+#' @examples
+#'   \dontrun{
+#'   operator.startvalues(...)
+#'   }
+#'   
+operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measurement_list)
 {
   if(operator_list$type == "fd2"){
     operator_list$tau = 1/measurement_list$sigma

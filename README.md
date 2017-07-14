@@ -22,3 +22,5 @@
 ## TO DO - OA
 - continue with predict.derivative!!!
 - LDMod in simulate function!
+- setseed_ME ???
+- put examples
