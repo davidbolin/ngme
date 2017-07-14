@@ -410,7 +410,7 @@ estimate.wrapper <- function(Y,
 #' @return A list of fitted results.
 #'
 #' @details This function calls \code{"estimateLong_cpp()"} internally. 
-#'    It is wrapped by \code{"estimate.wrapper"}), and is not advised to 
+#'    It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
 #'    be used. 
 #'    
 #' @seealso \code{\link{nglda_est}}, \code{\link{estimate.wrapper}}    
@@ -534,41 +534,27 @@ estimateLong <- function(Y,
 }
 
 #'
-#' @title estimating mixed effect model
+#' @title Parameter estimation without process.
 #'
-#' @description
+#' @description A function to estimate the model parameters without process component.
 #' 
-#' @param   Y           - list with the observations
-#' @param   locs        - list with position of the observations (Y)
-#' @param mixedEffect_list -
-#' @param   noise       - the distribution of the mixed effect
-#' @param   B_random    - list for the random effect covariates (needs to be matrix, can be NULL)
-#' @param   B_fixed     - list for the fixed  effect covariates (needs to be matrix, can be NULL)
-#' @param   beta_random - initial parameters of the random effect (mean parameter) (if not specified set to zero)
-#' @param   beta_fixed  - initial parameters of the fixed  effect (if not specified set to zero)
-#' @param   Sigma       - initial parameters of the covariance of random effect (if not specified set to I )
-#' @param   nu          - shape parameter for noise (NIG only)
-#' @param   mu          - shift parameter for noise (NIG only)
-#' @param   U           - (list) inital guess of the random effect
-#' @param   V           - (list) inital guess of the variance effect
+#' @inheritParams estimateLong
+#' 
+#' @return A list of fitted results.
 #'
-#' @param measurment_list   - list for measurement error:
-#' @param     sigma       - measurement noise variance
-#' @param     nu          - shape parameter for noise (NIG only)
-#' @param     Vs          - (list) inital guess for the noise of the measurement
-#' @param operator_list   - list created using create_operator function!
+#' @details This function fits the classical Laird-Ware mixed effects model, i.e. 
+#'    texcluding the process component, with Normal and more flexible distributions. 
+#'    The function calls \code{"estimateLong_cpp()"} internally. 
+#'    It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
+#'    be used. 
+#'    
+#' @seealso \code{\link{nglda_est}}, \code{\link{estimate.wrapper}}    
 #'
-#' @param learning_rate   - parameter for sthocastic gradient
-#' @param polyak_rate     - taking moving average of parameters (-1 means inactive, 0 mean pure mean)
-#' @param step0           - stepsize for optimizer is step0 / i^alpha
-#' @param alpha           - stepsize for optimizer is step0 / i^alpha
-#' @param pSubsample      - precentage of data used in each gradient subsampling
-#' @param subsample.type  - Type of subsampling: 0 - uniform without replacement
-#'                                               1 - sample size weighted
-#' @param nIter           - number of iteration of the stochastic gradient
-#' @param nSim            - number of samples of the gibbs sampler to estimate the gradient
-#' @param silent          - print iteration info
-#' @param seed            - (unsinged int) seed for debuging
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'   estimateME(...)
+#'   }
 
 estimateME <- function(Y,
                          mixedEffect_list,

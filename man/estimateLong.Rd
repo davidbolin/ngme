@@ -91,7 +91,24 @@ to estimate the gradient.}
 \item{estimate_fisher}{A logical variable for whether Fisher-Information matrix
 to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
 }
+\value{
+A list of fitted results.
+}
 \description{
 A function that estimates parameters by 
    calling the \code{"estimateLong_cpp()"} function.
+}
+\details{
+This function calls \code{"estimateLong_cpp()"} internally. 
+   It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
+   be used.
+}
+\examples{
+  \dontrun{
+  data(srft_data)
+  estimateLong(...)
+  }
+}
+\seealso{
+\code{\link{nglda_est}}, \code{\link{estimate.wrapper}}
 }

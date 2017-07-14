@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimateGH.R
 \name{estimateME}
 \alias{estimateME}
-\title{estimating mixed effect model}
+\title{Parameter estimation without process.}
 \usage{
 estimateME(Y, mixedEffect_list, measurment_list, step0 = 0.3, alpha = 0.3,
   learning_rate = 0, nBurnin_learningrate = NULL, pSubsample = 1,
@@ -11,63 +11,93 @@ estimateME(Y, mixedEffect_list, measurment_list, step0 = 0.3, alpha = 0.3,
   nBurnin = 10, silent = FALSE, seed = NULL, estimate_fisher = FALSE)
 }
 \arguments{
-\item{Y}{- list with the observations}
+\item{Y}{A numeric list that contains outcome values.}
 
-\item{mixedEffect_list}{-}
+\item{mixedEffect_list}{A list of inputs for random effects. 
+\itemize{
+\item \code{noise} The distribution of the mixed effects.
+\item \code{B_random} A list that contains the random effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{B_fixed} A list that contains the fixed effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{beta_random} Initial values for the parameters of the 
+   random effects (mean parameter) (if not specified set to zero).
+\item \code{beta_fixed} Initial  values for the parameters of the 
+   fixed effects (if not specified set to zero).
+\item \code{Sigma} Initial values for the parameters of the 
+   variance-covariance matrix of the random effects 
+   (if not specified set to I ).
+\item \code{nu} Shape parameter for noise (NIG only)
+\item \code{mu} Shift parameter for noise (NIG only)
+\item \code{U} A list of inital values of the random effects.
+\item \code{V} A list of inital values of the variance effects.
+}}
 
-\item{measurment_list}{- list for measurement error:}
+\item{measurment_list}{A list of inputs for measurement error.
+\itemize{
+\item \code{sigma} Measurement noise variance parameter.
+\item \code{nu}    Shape parameter for noise (NIG only).
+\item \code{Vs}    A list of inital values for the noise of the measurement.
+}}
 
-\item{step0}{- stepsize for optimizer is step0 / i^alpha}
+\item{step0}{A numeric value for stepsize for the optimizer; step0 / i^alpha.}
 
-\item{alpha}{- stepsize for optimizer is step0 / i^alpha}
+\item{alpha}{A numeric value for stepsize for the optimizer; step0 / i^alpha.}
 
-\item{learning_rate}{- parameter for sthocastic gradient}
+\item{learning_rate}{A numeric value for the parameter of stochastic gradient.}
 
-\item{pSubsample}{- precentage of data used in each gradient subsampling}
+\item{nBurnin_learningrate}{A numeric value until which the learning will
+not be started.}
 
-\item{polyak_rate}{- taking moving average of parameters (-1 means inactive, 0 mean pure mean)}
+\item{pSubsample}{A numeric value for the portion of data to be used in each
+gradient iteration.}
 
-\item{subsample.type}{- Type of subsampling: 0 - uniform without replacement
-1 - sample size weighted}
+\item{pSubsample2}{A numeric value for the portion of the data
+to be used in each gradient subsampling weighted by gradient.}
 
-\item{nIter}{- number of iteration of the stochastic gradient}
+\item{polyak_rate}{A numeric value for moving average of parameters;
+-1: inactive, 0: pure mean.}
 
-\item{nSim}{- number of samples of the gibbs sampler to estimate the gradient}
+\item{subsample.type}{A numeric value for the type of subsampling;
+0: uniform without sampling, 1: sample size weighted,
+3: weighted sampling by gradient size.}
 
-\item{silent}{- print iteration info}
+\item{nPar_burnin}{A numeric value; "M-step" updates will be used until this
+iteration.}
 
-\item{seed}{- (unsinged int) seed for debuging}
+\item{nIter}{A numeric value for the number of iteration that will be
+used by the stochastic gradient.}
 
-\item{locs}{- list with position of the observations (Y)}
+\item{nSim}{A numeric value for the number of samples of the Gibbs sampler
+to estimate the gradient.}
 
-\item{noise}{- the distribution of the mixed effect}
+\item{silent}{A logical value for printing the details of the iterations;
+\code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
 
-\item{B_random}{- list for the random effect covariates (needs to be matrix, can be NULL)}
+\item{seed}{A numerical value for starting the Gibbs samplers from fixed seed.}
 
-\item{B_fixed}{- list for the fixed  effect covariates (needs to be matrix, can be NULL)}
-
-\item{beta_random}{- initial parameters of the random effect (mean parameter) (if not specified set to zero)}
-
-\item{beta_fixed}{- initial parameters of the fixed  effect (if not specified set to zero)}
-
-\item{Sigma}{- initial parameters of the covariance of random effect (if not specified set to I )}
-
-\item{nu}{- shape parameter for noise (NIG only)}
-
-\item{mu}{- shift parameter for noise (NIG only)}
-
-\item{U}{- (list) inital guess of the random effect}
-
-\item{V}{- (list) inital guess of the variance effect}
-
-\item{sigma}{- measurement noise variance}
-
-\item{nu}{- shape parameter for noise (NIG only)}
-
-\item{Vs}{- (list) inital guess for the noise of the measurement}
-
-\item{operator_list}{- list created using create_operator function!}
+\item{estimate_fisher}{A logical variable for whether Fisher-Information matrix
+to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
+}
+\value{
+A list of fitted results.
 }
 \description{
-
+A function to estimate the model parameters without process component.
+}
+\details{
+This function fits the classical Laird-Ware mixed effects model, i.e. 
+   texcluding the process component, with Normal and more flexible distributions. 
+   The function calls \code{"estimateLong_cpp()"} internally. 
+   It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
+   be used.
+}
+\examples{
+  \dontrun{
+  data(srft_data)
+  estimateME(...)
+  }
+}
+\seealso{
+\code{\link{nglda_est}}, \code{\link{estimate.wrapper}}
 }
