@@ -358,6 +358,10 @@ predictLong <- function( Y,
   return(out_list)
 }
 
+#' @title STUFF
+#' 
+#' @description STUFF
+#' 
 updateLists <- function(mixedEffect_list,
                         processes_list,
                         operator_list,

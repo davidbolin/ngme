@@ -13,15 +13,38 @@ estimateLong(Y, locs, mixedEffect_list, measurment_list, processes_list,
   estimate_fisher = FALSE)
 }
 \arguments{
-\item{Y}{- list with the observations}
+\item{Y}{A numeric list that contains outcome values.}
 
-\item{locs}{- list with position of the observations (Y)}
+\item{locs}{A numeric list that contains the timings at which the outcomes 
+are collected.}
 
-\item{mixedEffect_list}{-}
+\item{mixedEffect_list}{A list of inputs for random effects. 
+\itemize{
+\item \code{noise}       the distribution of the mixed effect
+\item \code{B_random}    list for the random effect covariates (needs to be matrix, can be NULL)
+\item \code{B_fixed}     list for the fixed  effect covariates (needs to be matrix, can be NULL)
+\item \code{beta_random} initial parameters of the random effect (mean parameter) (if not specified set to zero)
+\item \code{beta_fixed}  initial parameters of the fixed  effect (if not specified set to zero)
+\item \code{Sigma}       initial parameters of the covariance of random effect (if not specified set to I )
+\item \code{nu}          shape parameter for noise (NIG only)
+\item \code{mu}          shift parameter for noise (NIG only)
+\item \code{U}           (list) inital guess of the random effect
+\item \code{V}           (list) inital guess of the variance effect
+}}
 
-\item{measurment_list}{- list for measurement error:}
+\item{measurment_list}{A list of inputs for measurement error.
+\itemize{
+\item \code{sigma} measurement noise variance
+\item \code{nu}    shape parameter for noise (NIG only)
+\item \code{Vs}    (list) inital guess for the noise of the measurement
+}}
 
-\item{processes_list}{- for the stochastic noise driving the}
+\item{processes_list}{A list of inputs for the process.
+\itemize{
+\item \code{noise} either Normal, NIG or GAL (change name to type rather then noise)
+\item \code{nu}    shape parameter for NIG or GAL
+\item \code{mu}    assymetric parameter for NIG or GAL
+}}
 
 \item{step0}{- stepsize for optimizer is step0 / i^alpha}
 
@@ -51,37 +74,8 @@ estimateLong(Y, locs, mixedEffect_list, measurment_list, processes_list,
 
 \item{seed}{- (unsinged int) seed for debuging}
 
-\item{noise}{- the distribution of the mixed effect}
-
-\item{B_random}{- list for the random effect covariates (needs to be matrix, can be NULL)}
-
-\item{B_fixed}{- list for the fixed  effect covariates (needs to be matrix, can be NULL)}
-
-\item{beta_random}{- initial parameters of the random effect (mean parameter) (if not specified set to zero)}
-
-\item{beta_fixed}{- initial parameters of the fixed  effect (if not specified set to zero)}
-
-\item{Sigma}{- initial parameters of the covariance of random effect (if not specified set to I )}
-
-\item{nu}{- shape parameter for noise (NIG only)}
-
-\item{mu}{- shift parameter for noise (NIG only)}
-
-\item{U}{- (list) inital guess of the random effect}
-
-\item{V}{- (list) inital guess of the variance effect}
-
-\item{sigma}{- measurement noise variance}
-
-\item{nu}{- shape parameter for noise (NIG only)}
-
-\item{Vs}{- (list) inital guess for the noise of the measurement}
-
-\item{noise}{- either Normal, NIG or GAL (change name to type rather then noise)}
-
-\item{nu}{- shape parameter for NIG or GAL}
-
-\item{mu}{- assymetric parameter for NIG or GAL}
+\item{estimate_fisher}{A logical variable for whether Fisher-Information matrix
+to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
 }
 \description{
 A function that estimates parameters by 
