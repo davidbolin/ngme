@@ -1,6 +1,6 @@
 ---
 title: "ngme: an R package for non-Gaussian longitudinal data analysis"
-author: "Asar, Bolin, Diggle, Wallin (alphabetical)"
+author: "Some lads"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -11,8 +11,8 @@ vignette: >
 
 # Modelling framework 
 
-The modelling frameworks that the package `ngme` provides functions for
-has the following forms:
+The modelling frameworks that the package `ngme` 
+provides functions for have the following forms:
 $$
 \begin{aligned}
 Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + Z_{ij},
@@ -26,6 +26,7 @@ Y_{ij} = {\bf x}_{ij}^{\prime} {\bf \alpha} + {\bf d}_{ij}^{\prime} {\bf U}_i + 
 $$
 Here, 
 
+- $i = 1, \ldots, m$, $j = 1, \ldots, n_i$, 
 - $Y_{ij}$ is the $j$th response for subject $i$ at time $t_{ij}$,
 - ${\bf x}_{ij}$ is the matrix of fixed effects explanatory variables,
 - ${\bf \alpha}$ is the matrix of fixed effects coefficients,
@@ -35,103 +36,142 @@ Here,
 - $Z_{ij}$ is random error.
 
 `ngme` includes `nglda_est` and `nglda_predict` as the main functions 
- for parameter estimation based on maximum likelihood 
- implemented with a computationally efficient stochastic gradient algorithm and 
- prediction based on Gibbs sampling, respectively. `print`, `summary`, `plot`, 
- `fitted`, `residuals`, `intervals` functions are available as the supplemetary. 
+for parameter estimation based on maximum likelihood 
+implemented with a computationally efficient stochastic gradient algorithm 
+and prediction based on either filtering or smoothing distributions, 
+respectively. `print`, `summary`, `plot`, `fitted`, `residuals`, `intervals` 
+functions are available as the supplemetary. 
  
- Within `ngme` one can choose to specify the distributions as
+Within `ngme` one can choose to specify the distributions as
  
- - Normal and Normal-inverse Gaussian for ${\bf U}_i$,
- - Normal, Normal-inverse Gaussian, generalised asymmetric Laplace and Cauchy for $W_i(t)$,
- - Normal, Normal-inverse Gaussian and t for $Z_{ij}$.
+- Normal and Normal-inverse Gaussian (NIG) for ${\bf U}_i$,
+- Normal, NIG, generalised asymmetric Laplace (GAL) and Cauchy for $W_i(t)$,
+- Normal, NIG and t for $Z_{ij}$.
 
 # Data
+
+The data-set used to illustrate the usage of the package `ngme` comes 
+from a primary care cohort on kidney patients in the city of Salford 
+in Greater Manchester, United Kingdom. The data-set contains 392,870 
+repeated measures in total that belong to 22,910 patients. It contains 
+the following variables:
+
+- id: identification number,
+- egfr: estimated glomerular filtration rate (eGFR) measurements; 
+        this variable is the longitudinal outcome,
+- sex: sex of a patient; 0 = male, 1 = female,
+- bage: baseline age of a patient (in years),
+- fu: follow-up time, $t_{ij}$, (in years), calculated as the difference 
+      between age at measurement and age at baseline,
+- pwl: a piecewise linear term at the age of 56.5, 
+       calculated as max(0, age - 56.5), 
+       where age denotes age at measurement. 
+
+For more details of the data-set, see 
+Digge, Sousa and Asar (2015, Biostatistics, 16(3), 522-536). 
+
+The code chunk given below shows how to load the data-set and 
+exemplifies the data-format by printing the first 10 rows. 
 
 ```{r, echo=TRUE}
 library(ngme)
 data(srft_data)
-knitr::kable(head(srft_data))
+knitr::kable(head(srft_data, 10))
 ```
 
 # Analysis
+
+Here we use randomly selected 100 patients' data for the sake 
+of computational time. 
 
 ```{r, echo=TRUE}
 set.seed(123)
 rs_id <- sample(unique(srft_data$id), 100, replace = F)
 srft_data_sub <- srft_data[srft_data$id %in% rs_id, ]
+```
 
+The below code chunk fits the following model:
+$$
+log(eGFR)_{ij} = \beta_0 + \beta_1 bage_{i} + \beta_2 sex_i + 
+                 \beta_3 t_{ij} + \beta_4 \max(0, age_{ij} - 56.5) + 
+                 U_{0i} + U_{1i} t_{ij} + W_i(t_{ij}) + Z_{ij},
+$$
+with 
+
+- bivariate NIG distributed $U_{0i}$ and $U_{1i}$,
+- GAL distributed $W_i(\cdot)$ with Matern covariance family,
+- t distributed $Z_{ij}$.
+
+```{r, echo = TRUE}
 srft_fit <- nglda_est(
   fixed = log(egfr) ~ bage + sex + fu + pwl,
   random = ~ fu + bage|id,
   data = srft_data_sub,
   reffects = "NIG",
-  process = c("Normal", "matern"),
+  process = c("GAL", "matern"),
   error = "tdist",
   timeVar = "fu",
-  use.process = F,
+  use.process = T,
   estimation.controls = list(nIter = 10, nIter.fisher = 10),
   other.controls = list(estimate.fisher = T, silent = T)
 )
+```
+Typing the fitted object's name, `srft_fit`, 
+displays a conscise list of results:
 
- #srft_fit2 <- update(srft_fit, use.process = F)
-
- srft_fit
- summary(srft_fit)
- head(fitted(srft_fit), 10)
- head(residuals(srft_fit), 10)
- intervals(srft_fit)
-
-res.pre <- nglda_predict(srft_fit, id = unique(srft_data_sub$id), type = "Filter")
-res.pre
-plot(res.pre, id = unique(srft_data_sub$id)[11], pch = 19, cex = 0.5)
-plot(res.pre, id = 2203400, pch = 19, cex = 0.5)
+```{r, echo = TRUE}
+srft_fit
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
-
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
-## Vignette Info
-
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+`summary` function provides a more thorough list of results:
+```
+summary(srft_fit)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+Marginal fitted values, $\hat{Y}_{ij} = {\bf x}_{ij} \hat{{\bf \beta}}$, 
+and marginal residuals, $Y_{ij} - \hat{Y}_{ij}$ can be obtained using 
+the `fitted` and `residual` functions, respectively:
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{r, echo = TRUE}
+#just print the first 10 elements for each
+head(fitted(srft_fit), 10)
+head(residuals(srft_fit), 10)
 ```
 
-Also a quote using `>`:
+95\% confidence intervals for the fixed effects coefficients 
+could be obtained using the `intervals` function:
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+```{r, echo = TRUE}
+intervals(srft_fit)
+```
+
+Predictions based on filtering distribution could be obtained using the function 
+`nglda_predict`:
+
+```{r, echo = TRUE}
+ res.pred <- nglda_predict(srft_fit, id = unique(srft_data_sub$id), 
+                          type = "Filter", control_list = list(silent = T))
+
+```
+A summary of results including accuracy measures can be viewed by
+
+```{r, echo = TRUE}
+res.pred
+```
+
+Predictions for a selected subject, e.g. the first subject in the 
+`srft_data_sub`, could be plotted using
+
+```{r, echo = TRUE}
+plot(res.pred, id = unique(srft_data_sub$id)[1], pch = 19, cex = 0.5)
+```
+
+In this plot, dots are observed data, black lines is the mean 
+of the predictive distribution, and red lines are the 95\% 
+prediction intervals. 
+
+
+MORE STUFF???
+
+MAYBE WITH REGARDS PREDICTIONS, EXCURSIONS, MANIPULATIONS OF PREDICTIONS...
+
