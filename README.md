@@ -26,4 +26,5 @@
 - put examples
 - GHmixedInit
 - check explanations for the functions
+- estimateLong doesnt recognise silent?
 - vignette
