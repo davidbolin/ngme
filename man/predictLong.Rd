@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.R
 \name{predictLong}
 \alias{predictLong}
-\title{STUFF}
+\title{Obtain predictions}
 \usage{
 predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
   return.samples = FALSE, type = "Filter", quantiles = NULL,
@@ -12,25 +12,118 @@ predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
   max.num.threads = 2, repeat.mix = 10)
 }
 \arguments{
-\item{pInd}{- indices of longitudinal samples to do prediction for}
+\item{Y}{A numeric list that contains outcome values.}
 
-\item{locs.pred}{- list with positions to predict}
+\item{locs}{A numeric list that contains the timings at which the outcomes 
+are collected.}
 
-\item{Brandom.pred}{- random effect covaraites at prediction locations}
+\item{pInd}{A numeric vector that contains the indices of longitudinal 
+subjects for whom the predictions are to be obtained.}
 
-\item{Bfixed.pred}{- fixed effect covaraites at prediction locations}
+\item{locs.pred}{A numeric list that contains the timings of the repeated 
+measurements.}
 
-\item{return.samples}{- return samples used for prediction?}
+\item{Brandom.pred}{A numeric list that contains random effects covaraite 
+matrices.}
 
-\item{type}{- Type of prediction: Filter or Smoothing}
+\item{Bfixed.pred}{A numeric list that contains fixed effects covaraite 
+matrices.}
 
-\item{quantiles}{- list of posterior quantiles to compute}
+\item{type}{A character string for the type of prediction: \code{"Filter"} for
+filtering, \code{"Smoothing"} for smoothing.}
 
-\item{excursions}{- list of excursion probabilities to compute. Each list should contain:
-type  - type of excursion '>' or '<'.
-level - level to compute excursion probability for
-process - which process to compute the probability for, 'X', 'W', 'Y','Xderivative' or 'Wderivative'}
+\item{quantiles}{A two-elemnent vector that contains the quantiles
+of the predictions to be calculated.}
+
+\item{predict.derivatives}{STUFF}
+
+\item{excursions}{A list of excursion probabilities to compute. 
+Each list should contain: 
+\itemize{
+\item \code{"type"} - type of excursion '>' or '<',
+\item \code{"level"} - level to compute excursion probability for,
+\item \code{"process"} - which expression for the model, 
+\eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
+\eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
+\code{'X'} for \eqn{x\alpha + dU + W}, 
+\code{'W'} for \eqn{W}, 
+\code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
+\code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
+and  
+\code{'Wderivative'} for the first derivariate of \eqn{W}.
+}}
+
+\item{crps}{A logical variable for calculating 
+continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
+calculate, \code{"FALSE"} do not calculate.}
+
+\item{crps.skip}{A numerical value, say a, that indicates every \emph{a}th 
+element of the sample to be used to compute the crps score.}
+
+\item{mixedEffect_list}{A list of inputs for random effects. 
+\itemize{
+\item \code{noise} The distribution of the mixed effects.
+\item \code{B_random} A list that contains the random effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{B_fixed} A list that contains the fixed effect 
+   covariates (needs to be matrix, can be NULL).
+\item \code{beta_random} Initial values for the parameters of the 
+   random effects (mean parameter) (if not specified set to zero).
+\item \code{beta_fixed} Initial  values for the parameters of the 
+   fixed effects (if not specified set to zero).
+\item \code{Sigma} Initial values for the parameters of the 
+   variance-covariance matrix of the random effects 
+   (if not specified set to I ).
+\item \code{nu} Shape parameter for noise (NIG only)
+\item \code{mu} Shift parameter for noise (NIG only)
+\item \code{U} A list of inital values of the random effects.
+\item \code{V} A list of inital values of the variance effects.
+}}
+
+\item{measurment_list}{A list of inputs for measurement error.
+\itemize{
+\item \code{sigma} Measurement noise variance parameter.
+\item \code{nu}    Shape parameter for noise (NIG only).
+\item \code{Vs}    A list of inital values for the noise of the measurement.
+}}
+
+\item{processes_list}{A list of inputs for the process.
+\itemize{
+\item \code{noise} Distribution of the process.
+\item \code{nu}    Shape parameter (for NIG or GAL).
+\item \code{mu}    Asymmetry parameter (for NIG or GAL).
+}}
+
+\item{nSim}{A numeric value for the number of samples of the Gibbs sampler
+to estimate the gradient.}
+
+\item{silent}{A logical value for printing the details of the iterations;
+\code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
+
+\item{max.num.threads}{STUFF}
+
+\item{repeat.mix}{STUFF}
+}
+\value{
+.samples A logical variable for returning the 
+   Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
+   return, \code{"FALSE"} do not return.
+
+A list of output.
 }
 \description{
-STUFF
+A function to obtain predictions based on either filtering 
+   or smoothing distributions.
+}
+\details{
+This function calls \code{"predictLong_cpp"} internally. 
+   It is wrapped by \code{"nglda_predict"}, and not advised to be used.
+}
+\examples{
+  \dontrun{
+  predictLong(...)
+  }  
+}
+\seealso{
+\code{\link{nglda_predict}}
 }

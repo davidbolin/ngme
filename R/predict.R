@@ -1,20 +1,60 @@
-#' @title STUFF
+#'  
+#' @title Obtain predictions
 #' 
-#' @description STUFF
+#' @description A function to obtain predictions based on either filtering 
+#'    or smoothing distributions.
 #' 
-#' @param   pInd        - indices of longitudinal samples to do prediction for
-#' @param   locs.pred   - list with positions to predict
-#' @param   Brandom.pred - random effect covaraites at prediction locations
-#' @param   Bfixed.pred  - fixed effect covaraites at prediction locations
-#' @param   quantiles   - list of posterior quantiles to compute
-#' @param   excursions   - list of excursion probabilities to compute. Each list should contain:
-#'                type  - type of excursion '>' or '<'.
-#'                level - level to compute excursion probability for
-#'                process - which process to compute the probability for, 'X', 'W', 'Y','Xderivative' or 'Wderivative'
-#'
-#' @param   return.samples - return samples used for prediction?
-#' @param   type        - Type of prediction: Filter or Smoothing
-# All other parameters explained in help text for estimateGH.R
+#' @param pInd A numeric vector that contains the indices of longitudinal 
+#'    subjects for whom the predictions are to be obtained. 
+#' @param locs.pred A numeric list that contains the timings of the repeated 
+#'    measurements. 
+#' @param Brandom.pred A numeric list that contains random effects covaraite 
+#'    matrices.
+#' @param Bfixed.pred  A numeric list that contains fixed effects covaraite 
+#'    matrices.
+#' @return.samples A logical variable for returning the 
+#'    Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
+#'    return, \code{"FALSE"} do not return.
+#' @param type A character string for the type of prediction: \code{"Filter"} for
+#'   filtering, \code{"Smoothing"} for smoothing.
+#' @param quantiles A two-elemnent vector that contains the quantiles
+#'   of the predictions to be calculated.
+#' @param predict.derivatives STUFF
+#' @param excursions A list of excursion probabilities to compute. 
+#'    Each list should contain: 
+#'    \itemize{
+#'    \item \code{"type"} - type of excursion '>' or '<',
+#'    \item \code{"level"} - level to compute excursion probability for,
+#'    \item \code{"process"} - which expression for the model, 
+#'    \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
+#'    \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
+#'    \code{'X'} for \eqn{x\alpha + dU + W}, 
+#'    \code{'W'} for \eqn{W}, 
+#'    \code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
+#'    \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
+#'    and  
+#'    \code{'Wderivative'} for the first derivariate of \eqn{W}.
+#'    } 
+#' @param crps A logical variable for calculating 
+#'    continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
+#'    calculate, \code{"FALSE"} do not calculate.
+#' @param crps.skip A numerical value, say a, that indicates every \emph{a}th 
+#'    element of the sample to be used to compute the crps score.  
+#' @inheritParams estimateLong
+#' @param max.num.threads STUFF
+#' @param repeat.mix STUFF
+#' 
+#' @return A list of output.
+#' 
+#' @details This function calls \code{"predictLong_cpp"} internally. 
+#'    It is wrapped by \code{"nglda_predict"}, and not advised to be used. 
+#' 
+#' @seealso \code{\link{nglda_predict}}
+#' @examples
+#'   \dontrun{
+#'   predictLong(...)
+#'   }  
+
 predictLong <- function( Y,
                          locs,
                          pInd,
@@ -362,6 +402,24 @@ predictLong <- function( Y,
 #' 
 #' @description STUFF
 #' 
+#' @param mixedEffect_list A list of inputs for the random effects. 
+#' @param processes_list A list of inputs for the process. 
+#' @param operator_list A list of inputs for the operator.
+#' @param measurement_list A list of inputs for the measurement error.
+#' @param locs A numeric list that contains the timings at which the outcomes 
+#'    are collected. 
+#' @param Brandom A numeric list of random effects covariate matrices.
+#' @param Bfixed A numeric list of fixed effects covariate matrices.
+#' 
+#' @return A list of output.
+#' 
+#' @details STUFF 
+#' 
+#' @examples
+#'   \dontrun{
+#'   updateLists(...)
+#'   }
+
 updateLists <- function(mixedEffect_list,
                         processes_list,
                         operator_list,

@@ -62,6 +62,10 @@ A list of output.
 \description{
 Obtains predicted values based on filtering and smoothing distributions.
 }
+\details{
+This function is a wrapper function that calls 
+   \code{"predictLong"} internally.
+}
 \examples{
   \dontrun{
   nglda_predict(...)

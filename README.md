@@ -24,3 +24,6 @@
 - LDMod in simulate function!
 - setseed_ME ???
 - put examples
+- GHmixedInit
+- check explanations for the functions
+- vignette

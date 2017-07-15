@@ -7,6 +7,33 @@
 updateLists(mixedEffect_list, processes_list, operator_list, measurement_list,
   Bfixed, Brandom, locs)
 }
+\arguments{
+\item{mixedEffect_list}{A list of inputs for the random effects.}
+
+\item{processes_list}{A list of inputs for the process.}
+
+\item{operator_list}{A list of inputs for the operator.}
+
+\item{measurement_list}{A list of inputs for the measurement error.}
+
+\item{Bfixed}{A numeric list of fixed effects covariate matrices.}
+
+\item{Brandom}{A numeric list of random effects covariate matrices.}
+
+\item{locs}{A numeric list that contains the timings at which the outcomes 
+are collected.}
+}
+\value{
+A list of output.
+}
 \description{
 STUFF
+}
+\details{
+STUFF
+}
+\examples{
+  \dontrun{
+  updateLists(...)
+  }
 }

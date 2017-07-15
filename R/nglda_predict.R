@@ -44,6 +44,10 @@
 #'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
 #'  }
 #' @return A list of output.
+#' 
+#' @details This function is a wrapper function that calls 
+#'    \code{"predictLong"} internally. 
+#' 
 #' @seealso \code{\link{nglda_est}}
 #' @examples
 #'   \dontrun{
