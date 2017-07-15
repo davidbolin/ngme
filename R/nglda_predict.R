@@ -71,6 +71,23 @@ nglda_predict <- function(object,
                           )
   {
 
+  if(length(control_list) < 8){
+    control_list_full <- list(
+      return.samples = TRUE,
+      predict.derivaties = NULL,
+      excursions = NULL,
+      crps = TRUE,
+      crps.skip = 1,
+      nSim = 10,
+      nBurnin = 10,
+      silent = FALSE
+    )
+    for(i in 1:length(control_list)){
+        control_list_full[names(control_list)[i]] <- control_list[i]
+    }
+  }
+  control_list <- control_list_full
+  
   Y                <- object$Y
   locs             <- object$locs
   mixedEffect_list <- object$mixedEffect_list
