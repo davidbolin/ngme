@@ -24,7 +24,7 @@
 - LDMod in simulate function!
 - setseed_ME ???
 - put examples
-- GHmixedInit
+- GHmixedInit and simulate
 - check explanations for the functions
 - estimateLong doesnt recognise silent?
 - vignette
