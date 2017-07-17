@@ -92,7 +92,7 @@ srft_data_sub <- srft_data[srft_data$id %in% rs_id, ]
 
 The below code chunk fits the following model:
 $$
-log(eGFR)_{ij} = \beta_0 + \beta_1 bage_{i} + \beta_2 sex_i + 
+\log(eGFR)_{ij} = \beta_0 + \beta_1 bage_{i} + \beta_2 sex_i + 
                  \beta_3 t_{ij} + \beta_4 \max(0, age_{ij} - 56.5) + 
                  U_{0i} + U_{1i} t_{ij} + W_i(t_{ij}) + Z_{ij},
 $$
