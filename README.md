@@ -24,7 +24,10 @@
 - LDMod in simulate function!
 - setseed_ME ???
 - put examples
-- GHmixedInit and simulate
+- GHmixedInit can be deleted - JW approved
+- simulate functions
 - check explanations for the functions
 - estimateLong doesnt recognise silent?
 - vignette
+- shape parameter is only 0.5 currently
+
