@@ -30,4 +30,5 @@
 - estimateLong doesnt recognise silent?
 - vignette
 - shape parameter is only 0.5 currently
+- all the params of gig can be estimated
 
