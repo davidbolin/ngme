@@ -50,7 +50,7 @@
 #' @param other.controls A list of control variables.
 #'  \itemize{
 #'  \item \code{step0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
-#'  \item \code{alpha0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
+#'  \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
 #'  \item \code{nBurnin_learningrate} A numeric value until which the learning will
 #'     not be started.
 #'  \item \code{subsample.type} A numeric value for the type of subsampling;
@@ -228,7 +228,7 @@
                    estimation.options = estimation.controls,
                    estimate_fisher = other.controls$estimate.fisher#,
                    #step0 <- other.controls$step0,
-                   #alpha0 <- other.controls$alpha0,
+                   #alpha <- other.controls$alpha,
                    #nBurnin_learningrate <- other.controls$nBurn_learningrate,
                    #####nBurnin_base <- other.controls$nBurnin_base,
                    #subsample.type <- other.controls$subsample.type,
