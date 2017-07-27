@@ -226,15 +226,15 @@
                    individual.sigma = other.controls$individual.sigma,
                    silent = other.controls$silent,
                    estimation.options = estimation.controls,
-                   estimate_fisher = other.controls$estimate.fisher,
-                   step0 <- other.controls$step0,
-                   alpha0 <- other.controls$alpha0,
-                   nBurnin_learningrate <- other.controls$nBurn_learningrate,
-                   #nBurnin_base <- other.controls$nBurnin_base,
-                   subsample.type <- other.controls$subsample.type,
-                   pSubsample2 <- other.controls$pSubsample2,
-                   seed    <- other.controls$seed,
-                   standardize.mixedEffects <- other.controls$standardize.mixedEffets 
+                   estimate_fisher = other.controls$estimate.fisher#,
+                   #step0 <- other.controls$step0,
+                   #alpha0 <- other.controls$alpha0,
+                   #nBurnin_learningrate <- other.controls$nBurn_learningrate,
+                   #####nBurnin_base <- other.controls$nBurnin_base,
+                   #subsample.type <- other.controls$subsample.type,
+                   #pSubsample2 <- other.controls$pSubsample2,
+                   #seed    <- other.controls$seed,
+                   #standardize.mixedEffects <- other.controls$standardize.mixedEffets 
                    )
 
   #
