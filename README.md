@@ -32,4 +32,5 @@
 - shape parameter is only 0.5 currently
 - all the params of gig can be estimated
 - it seems we don't use estimateME in estimate.wrapper
+- subsample.type = 4 ??
 
