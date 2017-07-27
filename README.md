@@ -19,7 +19,7 @@
 * Add checks of input dimensions to all functions
 * Add checks of initial values in estimation
 
-## TO DO - OA
+## TO DO AND NOTES - OA
 - continue with predict.derivative!!!
 - LDMod in simulate function!
 - setseed_ME ???
@@ -31,4 +31,5 @@
 - vignette
 - shape parameter is only 0.5 currently
 - all the params of gig can be estimated
+- it seems we don't use estimateME in estimate.wrapper
 
