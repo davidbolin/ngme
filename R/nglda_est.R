@@ -211,21 +211,7 @@
   idlist <- unique(id)
   n.pers <- length(idlist)
 
-  #
-  # The followings are not passed into estimate.wrapper!!!
-  #
-
-  #step0 <- other.controls$step0
-  #alpha <- other.controls$alpha
-  #nBurnin_learningrate <- other.controls$nBurn_learningrate
-  #nBurnin_base <- other.controls$nBurnin_base
-  #subsample.type <- other.controls$subsample.type
-  #pSubsample2 <- other.controls$pSubsample2
-  #seed    <- other.controls$seed
-  #standardize.mixedEffects <- other.controls$standardize.mixedEffets
-
-  estimate.fisher <- other.controls$estimate.fisher
-
+  # estimating the parameters using estimate.wrapper function
   fit <- estimate.wrapper(
                    Y = Y,
                    locs = locs,
@@ -240,7 +226,15 @@
                    individual.sigma = other.controls$individual.sigma,
                    silent = other.controls$silent,
                    estimation.options = estimation.controls,
-                   estimate_fisher = estimate.fisher
+                   estimate_fisher = other.controls$estimate.fisher,
+                   step0 <- other.controls$step0,
+                   alpha0 <- other.controls$alpha0,
+                   nBurnin_learningrate <- other.controls$nBurn_learningrate,
+                   #nBurnin_base <- other.controls$nBurnin_base,
+                   subsample.type <- other.controls$subsample.type,
+                   pSubsample2 <- other.controls$pSubsample2,
+                   seed    <- other.controls$seed,
+                   standardize.mixedEffects <- other.controls$standardize.mixedEffets 
                    )
 
   #
@@ -332,7 +326,7 @@
   }
 
   # checking Fisher Matrix is estimated?
-  if(estimate.fisher == TRUE){
+  if(other.controls$estimate.fisher == TRUE){
 
     # names for fixed effects in Fisher Matrix
     fisher_est <- fit$FisherMatrix
@@ -346,7 +340,7 @@
 
   out <- list(
     use_process = use.process,
-    estimate_fisher = estimate.fisher,
+    estimate_fisher = other.controls$estimate.fisher,
     x_fixed_f = x_fixed_f,
     x_random = x_random,
     random_distr = reffects,
