@@ -36,3 +36,5 @@
 - nglda_est to ngme
 - nglda_predict to predict.ngme
 - remove estimate.wrapper
+- 1: uniform sampling, 2 is the sample size weighted, 3 is the gradient, and 4 is the grouped sampler for subsample.type
+- to use everybody's data set pSubsample = 1
