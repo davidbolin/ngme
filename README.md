@@ -33,4 +33,6 @@
 - all the params of gig can be estimated
 - it seems we don't use estimateME in estimate.wrapper
 - subsample.type = 4 ??
-
+- nglda_est to ngme
+- nglda_predict to predict.ngme
+- remove estimate.wrapper
