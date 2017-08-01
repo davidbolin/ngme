@@ -4,8 +4,8 @@
 \alias{ngme}
 \title{Parameter estimation.}
 \usage{
-ngme(fixed, random, data, timeVar, reffects = "Normal",
-  process = c("Normal", "fd2"), error = "Normal", use.process = TRUE,
+ngme(fixed, random, use.process = TRUE, reffects = "Normal",
+  process = c("Normal", "fd2"), error = "Normal", data, timeVar = NULL,
   silent = TRUE, controls = list(learning.rate = 0, polyak_rate = 0.1,
   nBurnin = 100, nSim = 2, nIter.gauss = 1000, nIter = 10000, pSubsample = 0.1,
   nPar_burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3, alpha =
@@ -18,8 +18,8 @@ ngme(fixed, random, data, timeVar, reffects = "Normal",
 
 \item{random}{A one-sided formula to specify the random effects design matrix.}
 
-\item{data}{A data-frame from which the response and covariates to be
-extracted.}
+\item{use.process}{A logical variable for inclusion of the stochastic process in
+the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
 
 \item{reffects}{A character string that indicates the distribution of the
 random effects. Available options are:  \code{"Normal"} for Normal,
@@ -32,14 +32,15 @@ first are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
 Motion), \code{"matern"} for Matern family; for the second element are:
 \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
 \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
-distributions.}
+distributions. \code{prcess} is going to be ignored when \code{use.process} 
+is set to FALSE.}
 
 \item{error}{A character string to specify the distribution of the error term.
 Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
 Normal-inverse Gaussian, \code{"tdist"} for t-distribution.}
 
-\item{use.process}{A logical variable for inclusion of the stochastic process in
-the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
+\item{data}{A data-frame from which the response and covariates to be
+extracted.}
 
 \item{silent}{A logical value for printing the details of the iterations;
 \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
@@ -89,7 +90,8 @@ the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
      approximate the stochastic process.
 }}
 
-\item{timevar}{A character string that indicates the name of the time variable.}
+\item{timevar}{A character string that indicates the name of the time variable. 
+It does not need to be specified when \code{use.process} is set to FALSE.}
 }
 \value{
 A list of outputs.

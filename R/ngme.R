@@ -6,9 +6,8 @@
 #'
 #' @param fixed A two-sided formula to specify the fixed effects design matrix.
 #' @param random A one-sided formula to specify the random effects design matrix.
-#' @param data A data-frame from which the response and covariates to be
-#'   extracted.
-#' @param timevar A character string that indicates the name of the time variable.
+#' @param use.process A logical variable for inclusion of the stochastic process in
+#'   the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.
 #' @param reffects A character string that indicates the distribution of the
 #'   random effects. Available options are:  \code{"Normal"} for Normal,
 #'   and \code{"NIG"} for Normal-inverve Gaussian distributions.
@@ -19,12 +18,15 @@
 #'   Motion), \code{"matern"} for Matern family; for the second element are:
 #'   \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
-#'   distributions.
+#'   distributions. \code{prcess} is going to be ignored when \code{use.process} 
+#'   is set to FALSE.
 #' @param error A character string to specify the distribution of the error term.
 #'   Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
 #'   Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
-#' @param use.process A logical variable for inclusion of the stochastic process in
-#'   the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.
+#' @param data A data-frame from which the response and covariates to be
+#'   extracted.
+#' @param timevar A character string that indicates the name of the time variable. 
+#'   It does not need to be specified when \code{use.process} is set to FALSE.
 #' @param silent A logical value for printing the details of the iterations;
 #'       \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.   
 #' @param controls A list of control variables for parameter estimation.
@@ -83,12 +85,12 @@
 
 ngme <- function(fixed,
                  random,
-                 data,
-                 timeVar,
+                 use.process = TRUE,
                  reffects = "Normal",
                  process = c("Normal", "fd2"),
                  error = "Normal",
-                 use.process = TRUE,
+                 data,
+                 timeVar = NULL,
                  silent = TRUE,
                  controls = list(learning.rate = 0,
                                  polyak_rate = 0.1,
@@ -115,46 +117,57 @@ ngme <- function(fixed,
 {
   
   # being sure that estimation.controls includes everything
-  if(length(estimation.controls) < 10){
-    estimation.controls.full <- list(learning.rate = 0,
-                                     polyak_rate = 0.1,
-                                     nBurnin = 100,
-                                     nSim = 2,
-                                     nIter.gauss = 1000,
-                                     nIter = 10000,
-                                     pSubsample = 0.1,
-                                     nPar_burnin = 0,
-                                     nIter.fisher = 1000,
-                                     nSim.fisher = 1000)
-    for(i in 1:length(estimation.controls.full)){
-      if(!(names(estimation.controls.full)[i] %in% names(estimation.controls))){
-        estimation.controls[names(estimation.controls.full)[i]] <- estimation.controls.full[i]
+  if(length(controls) < 21){
+    controls.full <- list(learning.rate = 0,
+                          polyak_rate = 0.1,
+                          nBurnin = 100,
+                          nSim = 2,
+                          nIter.gauss = 1000,
+                          nIter = 10000,
+                          pSubsample = 0.1,
+                          nPar_burnin = 0,
+                          nIter.fisher = 1000,
+                          nSim.fisher = 1000, 
+                          step0 = 0.3,
+                          alpha = 0.3,
+                          nBurnin_learningrate = NULL,
+                          nBurnin_base = 0,
+                          subsample.type = 4,
+                          pSubsample2 = 0.3,
+                          seed = NULL,
+                          standardize.mixedEffects = FALSE,
+                          estimate.fisher = TRUE,
+                          individual.sigma = FALSE,
+                          n.process = NULL)
+    for(i in 1:length(controls.full)){
+      if(!(names(controls.full)[i] %in% names(controls))){
+        controls[names(controls.full)[i]] <- controls.full[i]
       }
     }
     
   }
   
-  # being sure that other.controls includes everything
-  if(length(other.controls) < 10){
-    other.controls.full = list(step0 = 0.3,
-                               alpha = 0.3,
-                               nBurnin_learningrate = NULL,
-                               nBurnin_base = 0,
-                               subsample.type = 1,
-                               pSubsample2 = 0.3,
-                               silent  = FALSE,
-                               seed    = NULL,
-                               standardize.mixedEffects = FALSE,
-                               estimate.fisher  = TRUE,
-                               individual.sigma = FALSE)
-    for(i in 1:length(other.controls.full)){
-      if(!(names(other.controls.full)[i] %in% names(other.controls))){
-        other.controls[names(other.controls.full)[i]] <- other.controls.full[i]
-      }
-    }
-  }
+  # # being sure that other.controls includes everything
+  # if(length(other.controls) < 10){
+  #   other.controls.full = list(step0 = 0.3,
+  #                              alpha = 0.3,
+  #                              nBurnin_learningrate = NULL,
+  #                              nBurnin_base = 0,
+  #                              subsample.type = 1,
+  #                              pSubsample2 = 0.3,
+  #                              silent  = FALSE,
+  #                              seed    = NULL,
+  #                              standardize.mixedEffects = FALSE,
+  #                              estimate.fisher  = TRUE,
+  #                              individual.sigma = FALSE)
+  #   for(i in 1:length(other.controls.full)){
+  #     if(!(names(other.controls.full)[i] %in% names(other.controls))){
+  #       other.controls[names(other.controls.full)[i]] <- other.controls.full[i]
+  #     }
+  #   }
+  # }
   
-  # correct input?
+  # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
     stop("Process distribution should be one of the following: NIG, Normal, GAL, CH")
   }
@@ -164,6 +177,10 @@ ngme <- function(fixed,
   if(!(error %in% c("NIG", "Normal", "tdist"))){
     stop("Measurement error distribution should be one of the following: NIG, Normal, tdist")
   }
+  
+  # correct input for timeVar
+  if(use.process == TRUE & is.null(timeVar) == TRUE)
+    stop("Specify timeVar")
   
   # extract id variable
   idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
