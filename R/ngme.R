@@ -25,6 +25,8 @@
 #'   Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
 #' @param use.process A logical variable for inclusion of the stochastic process in
 #'   the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.
+#' @param silent A logical value for printing the details of the iterations;
+#'       \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.   
 #' @param controls A list of control variables for parameter estimation.
 #'  \itemize{
 #'     \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
@@ -50,7 +52,7 @@
 #'     \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
 #'     \item \code{nBurnin_learningrate} A numeric value until which the learning will
 #'       not be started.
-#'     \item \coe{nBurnin_base} STUFF.   
+#'     \item \code{nBurnin_base} STUFF.   
 #'     \item \code{subsample.type} A numeric value for the type of subsampling;
 #'       1: uniform sampling, 
 #'       2: sample size weighted,
@@ -58,8 +60,6 @@
 #'       4: grouped sub-sampler.
 #'     \item \code{pSubsample2} A numeric value for the portion of the data
 #'       to be used in each gradient subsampling weighted by gradient.
-#'     \item \code{silent} A logical value for printing the details of the iterations;
-#'       \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
 #'     \item \code{seed} A numerical value for starting the Gibbs samplers from fixed seed.
 #'     \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
 #'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
@@ -71,45 +71,46 @@
 #'     \item \code{n.process} A numerical value for the number of basis functions to
 #'       approximate the stochastic process.
 #'  }
-#' @details This function is a user-friendly wrapper that calls 
-#'     the \code{estimate.wrapper} function.
-#' @return A list of outputs.
+#' @details This function is a user-friendly wrapper that calls the \code{estimateLong} function. 
+#'     Generic functions \code{summary}, \code{print} and \code{plot} are available for the 
+#'     output returned by the function \code{ngme}.
+#' @return A list of outputs. 
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)
-#'   nglda_est(...)
+#'   ngme(...)
 #'   }
 
-nglda_est <- function(fixed,
-                      random,
-                      data,
-                      timeVar,
-                      reffects = "Normal",
-                      process = c("Normal", "fd2"),
-                      error = "Normal",
-                      use.process = TRUE,
-                      controls = list(learning.rate = 0,
-                                      polyak_rate = 0.1,
-                                      nBurnin = 100,
-                                      nSim = 2,
-                                      nIter.gauss = 1000,
-                                      nIter = 10000,
-                                      pSubsample = 0.1,
-                                      nPar_burnin = 0,
-                                      nIter.fisher = 1000,
-                                      nSim.fisher = 1000,
-                                      step0 = 0.3,
-                                      alpha = 0.3,
-                                      nBurnin_learningrate = NULL,
-                                      #nBurnin_base = 0,
-                                      subsample.type = 1,
-                                      pSubsample2 = 0.3,
-                                      silent = FALSE,
-                                      seed = NULL,
-                                      standardize.mixedEffects = FALSE,
-                                      estimate.fisher = TRUE,
-                                      individual.sigma = FALSE,
-                                      n.process = NULL)
+ngme <- function(fixed,
+                 random,
+                 data,
+                 timeVar,
+                 reffects = "Normal",
+                 process = c("Normal", "fd2"),
+                 error = "Normal",
+                 use.process = TRUE,
+                 silent = TRUE,
+                 controls = list(learning.rate = 0,
+                                 polyak_rate = 0.1,
+                                 nBurnin = 100,
+                                 nSim = 2,
+                                 nIter.gauss = 1000,
+                                 nIter = 10000,
+                                 pSubsample = 0.1,
+                                 nPar_burnin = 0,
+                                 nIter.fisher = 1000,
+                                 nSim.fisher = 1000,
+                                 step0 = 0.3,
+                                 alpha = 0.3,
+                                 nBurnin_learningrate = NULL,
+                                 nBurnin_base = 0,
+                                 subsample.type = 4,
+                                 pSubsample2 = 0.3,
+                                 seed = NULL,
+                                 standardize.mixedEffects = FALSE,
+                                 estimate.fisher = TRUE,
+                                 individual.sigma = FALSE,
+                                 n.process = NULL)
 )
 {
   
