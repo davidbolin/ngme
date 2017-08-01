@@ -30,9 +30,8 @@
 - estimateLong doesnt recognise silent?
 - vignette
 - shape parameter is only 0.5 currently
-- all the params of gig can be estimated
+- all the params of gig can be estimated - future work
 - it seems we don't use estimateME in estimate.wrapper
-- subsample.type = 4 ??
 - nglda_est to ngme
 - nglda_predict to predict.ngme
 - remove estimate.wrapper
