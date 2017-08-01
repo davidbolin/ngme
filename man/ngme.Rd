@@ -6,10 +6,10 @@
 \usage{
 ngme(fixed, random, use.process = TRUE, reffects = "Normal",
   process = c("Normal", "fd2"), error = "Normal", data, timeVar = NULL,
-  silent = TRUE, controls = list(learning.rate = 0, polyak_rate = 0.1,
+  silent = TRUE, controls = list(learning.rate = 0, polyak.rate = 0.1,
   nBurnin = 100, nSim = 2, nIter.gauss = 1000, nIter = 10000, pSubsample = 0.1,
-  nPar_burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3, alpha =
-  0.3, nBurnin_learningrate = NULL, nBurnin_base = 0, subsample.type = 4,
+  nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3, alpha =
+  0.3, nBurnin.learningrate = NULL, nBurnin.base = 0, subsample.type = 4,
   pSubsample2 = 0.3, seed = NULL, standardize.mixedEffects = FALSE,
   estimate.fisher = TRUE, individual.sigma = FALSE, n.process = NULL))
 }
@@ -22,33 +22,39 @@ ngme(fixed, random, use.process = TRUE, reffects = "Normal",
 the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
 
 \item{reffects}{A character string that indicates the distribution of the
-random effects. Available options are:  \code{"Normal"} for Normal,
-and \code{"NIG"} for Normal-inverve Gaussian distributions.}
+random effects. Available options are:  
+\code{"Normal"} for Normal, and 
+\code{"NIG"} for Normal-inverve Gaussian distributions.}
 
 \item{process}{A character vector with two elements to specify 
 the process. Whilst the first element is for the covariance structure, the
 second element is for the process distribution. Available options for the
-first are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
-Motion), \code{"matern"} for Matern family; for the second element are:
-\code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
-\code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
-distributions. \code{prcess} is going to be ignored when \code{use.process} 
-is set to FALSE.}
+first are: 
+\code{"fd2"} for integrated Random-Walk (integrated Brownian Motion), 
+\code{"matern"} for Matern family; 
+for the second element are:
+\code{"Normal"} for Normal, 
+\code{"NIG"} for Normal-inverse Gaussian,
+\code{"GAL"} for generalised-asymmetric Laplace, and 
+\code{"CH"} for Cauchy
+distributions. 
+\code{prcess} is ignored when \code{use.process} is set to FALSE.}
 
 \item{error}{A character string to specify the distribution of the error term.
-Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
-Normal-inverse Gaussian, \code{"tdist"} for t-distribution.}
+Available options are: 
+\code{"Normal"} for Normal, 
+\code{"NIG"} for Normal-inverse Gaussian, 
+\code{"tdist"} for t-distribution.}
 
-\item{data}{A data-frame from which the response and covariates to be
-extracted.}
+\item{data}{A data-frame from which the response and covariates to be extracted.}
 
 \item{silent}{A logical value for printing the details of the iterations;
 \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
 
-\item{controls}{A list of control variables for parameter estimation.
+\item{controls}{A list of control variables.
 \itemize{
    \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
-   \item \code{polyak_rate} A numeric value for moving average of parameters;
+   \item \code{polyak.rate} A numeric value for moving average of parameters;
      -1: inactive, 0: pure mean.
    \item \code{nBurnin} A numeric value for the number of steps before starting
      gradient estimation.
@@ -60,7 +66,7 @@ extracted.}
      used by the stochastic gradient.
    \item \code{pSubsample} A numeric value for the portion of data to be used in each
      gradient iteration. \code{pSubsample = 1} indicates use of all subjects' data.  
-   \item \code{nPar_burnin} A numeric value; "M-step" updates will be used until this
+   \item \code{nPar.burnin} A numeric value; "M-step" updates will be used until this
      iteration.
    \item \code{nIter.fisher} A numeric value for the number of iterations to be used to
      obtain the Fisher-Information matrix.
@@ -68,9 +74,9 @@ extracted.}
      to obtain the Fisher-Information matrix.
    \item \code{step0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
    \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
-   \item \code{nBurnin_learningrate} A numeric value until which the learning will
+   \item \code{nBurnin.learningrate} A numeric value until which the learning will
      not be started.
-   \item \code{nBurnin_base} STUFF.   
+   \item \code{nBurnin.base} STUFF.   
    \item \code{subsample.type} A numeric value for the type of subsampling;
      1: uniform sampling, 
      2: sample size weighted,
@@ -97,8 +103,8 @@ It does not need to be specified when \code{use.process} is set to FALSE.}
 A list of outputs.
 }
 \description{
-Estimates model parameters using maximum likelihood implemented by a
-  computationally efficient stochastic gradient algorithm.
+Estimates model parameters using maximum likelihood that is 
+  implemented by a computationally efficient stochastic gradient algorithm.
 }
 \details{
 This function is a user-friendly wrapper that calls the \code{estimateLong} function. 

@@ -1,38 +1,44 @@
 
 #' @title Parameter estimation.
 #'
-#' @description Estimates model parameters using maximum likelihood implemented by a
-#'   computationally efficient stochastic gradient algorithm.
+#' @description Estimates model parameters using maximum likelihood that is 
+#'   implemented by a computationally efficient stochastic gradient algorithm.
 #'
 #' @param fixed A two-sided formula to specify the fixed effects design matrix.
 #' @param random A one-sided formula to specify the random effects design matrix.
 #' @param use.process A logical variable for inclusion of the stochastic process in
 #'   the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.
 #' @param reffects A character string that indicates the distribution of the
-#'   random effects. Available options are:  \code{"Normal"} for Normal,
-#'   and \code{"NIG"} for Normal-inverve Gaussian distributions.
+#'   random effects. Available options are:  
+#'   \code{"Normal"} for Normal, and 
+#'   \code{"NIG"} for Normal-inverve Gaussian distributions.
 #' @param process A character vector with two elements to specify 
 #'   the process. Whilst the first element is for the covariance structure, the
 #'   second element is for the process distribution. Available options for the
-#'   first are: \code{"fd2"} for integrated Random-Walk (integrated Brownian
-#'   Motion), \code{"matern"} for Matern family; for the second element are:
-#'   \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
-#'   \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
-#'   distributions. \code{prcess} is going to be ignored when \code{use.process} 
-#'   is set to FALSE.
+#'   first are: 
+#'   \code{"fd2"} for integrated Random-Walk (integrated Brownian Motion), 
+#'   \code{"matern"} for Matern family; 
+#'   for the second element are:
+#'   \code{"Normal"} for Normal, 
+#'   \code{"NIG"} for Normal-inverse Gaussian,
+#'   \code{"GAL"} for generalised-asymmetric Laplace, and 
+#'   \code{"CH"} for Cauchy
+#'   distributions. 
+#'   \code{prcess} is ignored when \code{use.process} is set to FALSE.
 #' @param error A character string to specify the distribution of the error term.
-#'   Available options are: \code{"Normal"} for Normal, \code{"NIG"} for 
-#'   Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
-#' @param data A data-frame from which the response and covariates to be
-#'   extracted.
+#'   Available options are: 
+#'   \code{"Normal"} for Normal, 
+#'   \code{"NIG"} for Normal-inverse Gaussian, 
+#'   \code{"tdist"} for t-distribution.
+#' @param data A data-frame from which the response and covariates to be extracted.
 #' @param timevar A character string that indicates the name of the time variable. 
 #'   It does not need to be specified when \code{use.process} is set to FALSE.
 #' @param silent A logical value for printing the details of the iterations;
 #'       \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.   
-#' @param controls A list of control variables for parameter estimation.
+#' @param controls A list of control variables.
 #'  \itemize{
 #'     \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
-#'     \item \code{polyak_rate} A numeric value for moving average of parameters;
+#'     \item \code{polyak.rate} A numeric value for moving average of parameters;
 #'       -1: inactive, 0: pure mean.
 #'     \item \code{nBurnin} A numeric value for the number of steps before starting
 #'       gradient estimation.
@@ -44,7 +50,7 @@
 #'       used by the stochastic gradient.
 #'     \item \code{pSubsample} A numeric value for the portion of data to be used in each
 #'       gradient iteration. \code{pSubsample = 1} indicates use of all subjects' data.  
-#'     \item \code{nPar_burnin} A numeric value; "M-step" updates will be used until this
+#'     \item \code{nPar.burnin} A numeric value; "M-step" updates will be used until this
 #'       iteration.
 #'     \item \code{nIter.fisher} A numeric value for the number of iterations to be used to
 #'       obtain the Fisher-Information matrix.
@@ -52,9 +58,9 @@
 #'       to obtain the Fisher-Information matrix.
 #'     \item \code{step0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
 #'     \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
-#'     \item \code{nBurnin_learningrate} A numeric value until which the learning will
+#'     \item \code{nBurnin.learningrate} A numeric value until which the learning will
 #'       not be started.
-#'     \item \code{nBurnin_base} STUFF.   
+#'     \item \code{nBurnin.base} STUFF.   
 #'     \item \code{subsample.type} A numeric value for the type of subsampling;
 #'       1: uniform sampling, 
 #'       2: sample size weighted,
@@ -93,19 +99,19 @@ ngme <- function(fixed,
                  timeVar = NULL,
                  silent = TRUE,
                  controls = list(learning.rate = 0,
-                                 polyak_rate = 0.1,
+                                 polyak.rate = 0.1,
                                  nBurnin = 100,
                                  nSim = 2,
                                  nIter.gauss = 1000,
                                  nIter = 10000,
                                  pSubsample = 0.1,
-                                 nPar_burnin = 0,
+                                 nPar.burnin = 0,
                                  nIter.fisher = 1000,
                                  nSim.fisher = 1000,
                                  step0 = 0.3,
                                  alpha = 0.3,
-                                 nBurnin_learningrate = NULL,
-                                 nBurnin_base = 0,
+                                 nBurnin.learningrate = NULL,
+                                 nBurnin.base = 0,
                                  subsample.type = 4,
                                  pSubsample2 = 0.3,
                                  seed = NULL,
@@ -119,19 +125,19 @@ ngme <- function(fixed,
   # being sure that estimation.controls includes everything
   if(length(controls) < 21){
     controls.full <- list(learning.rate = 0,
-                          polyak_rate = 0.1,
+                          polyak.rate = 0.1,
                           nBurnin = 100,
                           nSim = 2,
                           nIter.gauss = 1000,
                           nIter = 10000,
                           pSubsample = 0.1,
-                          nPar_burnin = 0,
+                          nPar.burnin = 0,
                           nIter.fisher = 1000,
                           nSim.fisher = 1000, 
                           step0 = 0.3,
                           alpha = 0.3,
-                          nBurnin_learningrate = NULL,
-                          nBurnin_base = 0,
+                          nBurnin.learningrate = NULL,
+                          nBurnin.base = 0,
                           subsample.type = 4,
                           pSubsample2 = 0.3,
                           seed = NULL,
@@ -179,9 +185,10 @@ ngme <- function(fixed,
   }
   
   # correct input for timeVar
-  if(use.process == TRUE & is.null(timeVar) == TRUE)
+  if(use.process == TRUE & is.null(timeVar) == TRUE){
     stop("Specify timeVar")
-  
+  }
+    
   # extract id variable
   idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
   id <- data[, idname]
@@ -226,8 +233,8 @@ ngme <- function(fixed,
   Y    <- tapply(y, id, function(x) x)
   locs <- tapply(data[, timeVar], id, function(x) x)
   
-  idlist <- unique(id)
-  n.pers <- length(idlist)
+  #idlist <- unique(id) -- probably unnecessary
+  #n.pers <- length(idlist) -- defıned below
   
   # # estimating the parameters using estimate.wrapper function
   # fit <- estimate.wrapper(
@@ -275,73 +282,94 @@ ngme <- function(fixed,
   #                              estimate_fisher = FALSE,
   #                              ...)
   
-  estimation.controls = list(learning.rate = 0,
-                             polyak_rate = 0.1,
-                             nBurnin = 100,
-                             nSim = 2,
-                             nIter.gauss = 1000,
-                             nIter = 10000,
-                             pSubsample = 0.1,
-                             subsample.type = 4,
-                             nPar_burnin = 0,
-                             nIter.fisher = 1000,
-                             nSim.fisher = 1000)
-  if(!missing(estimation.options) && !is.null(estimation.options)){
-    for(i in 1:length(estimation.options)){
-      estimation.controls[names(estimation.options)[i]] = estimation.options[i]
-    }
-  }
-  if(!silent)
+  # INCLUDED IN CONTROLS
+  #
+  # estimation.controls = list(learning.rate = 0,
+  #                            polyak_rate = 0.1,
+  #                            nBurnin = 100,
+  #                            nSim = 2,
+  #                            nIter.gauss = 1000,
+  #                            nIter = 10000,
+  #                            pSubsample = 0.1,
+  #                            subsample.type = 4,
+  #                            nPar_burnin = 0,
+  #                            nIter.fisher = 1000,
+  #                            nSim.fisher = 1000)
+  # if(!missing(estimation.options) && !is.null(estimation.options)){
+  #   for(i in 1:length(estimation.options)){
+  #     estimation.controls[names(estimation.options)[i]] = estimation.options[i]
+  #   }
+  # }
+  
+  ##
+  ## Obtain starting values
+  ## 
+
+  # setup the lists that are going to be passed into the 
+  # functions that will obtain the starting value
+  if(!silent){
     cat("Setup lists\n")
-  Vin <- list()
-  n.pers = length(Y)
-  for(i in 1:n.pers)
-  {
-    Vin[[i]] <- rep(1, length(Y[[i]]))
   }
+
+  Vin <- lapply(Y, function(x) rep(1, length(x)))
   measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
-  mixedEffect_list  <- list(B_random = B_random,
-                            B_fixed  = B_fixed,
-                            noise = "Normal",
-                            Sigma_epsilon=1)
+  
+  mixedEffect_list <- list(B_random = B_random,
+                           B_fixed  = B_fixed,
+                           noise = "Normal",
+                           Sigma_epsilon = 1
+                           )
   if(use.process){
-    if(is.null(n.process)){
-      n.process = max(round(mean(unlist(lapply(locs,length)))),1)
+    if(is.null(controls$n.process)){
+      n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
+      operator_list <- create_operator(locs, n.process, name = process[2])
+    }else{
+      operator_list <- create_operator(locs, controls$n.process, name = process[2])
     }
-    operator_list <- create_operator(locs, n.process, name = operator.type)
     
     process_list = list(noise = "Normal",
                         nu  = 1,
-                        mu  = 0)
+                        mu  = 0
+                        )
     process_list$V <- list()
     process_list$X <- list()
+    
     for(i in 1:length(locs))
     {
-      process_list$X[[i]] <- rep(0,length(operator_list$h[[1]]))
+      process_list$X[[i]] <- rep(0, length(operator_list$h[[1]]))
       process_list$V[[i]] <- operator_list$h[[1]]
     }
   }
   
-  #starting values for measurement error and mixed effects using OLS:
-  if(!silent)
-    cat("Calculate starting values\n")
-  mixedEffect_list <- ME.startvalues(Y,mixedEffect_list)
-  measurement_list$sigma = mixedEffect_list$sigma
+  # starting values for measurement error and mixed effects using OLS:
+  if(!silent){
+    cat("Calculate starting values\n")    
+  }
+
+  mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
+  measurement_list$sigma <- mixedEffect_list$sigma
   
+  # the case where the model formulation consists of W(t)
   if(use.process){
-    #starting values for process:
-    operator_list$type  <- operator.type
+    
+    #starting values for process
+    operator_list$type  <- process[2]
     operator_list <- operator.startvalues(Y, 
                                           locs,
                                           mixedEffect_list, 
                                           operator_list, 
-                                          measurement_list)
-    
-    
-    if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
-      #estimate Gaussian process model
-      if(!silent)
+                                          measurement_list
+                                          )
+    #estimate Gaussian process model    
+    if(reffects != "Normal" || process[1] != "Normal" || error != "Normal"){
+      
+      if(!silent){
         cat("Estimate Gaussian")
+      }
+      
+      ##
+      ## HERE!!!!!
+      ##
       
       fit <- estimateLong(Y, 
                           locs,
@@ -349,14 +377,14 @@ ngme <- function(fixed,
                           measurement_list,
                           process_list,
                           operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nSim = estimation.controls$nSim,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
+                          learning_rate = controls$learning.rate,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          polyak_rate = controls$polyak.rate,
+                          nSim = controls$nSim,
+                          nBurnin = controls$nBurnin,
+                          nIter = controls$nIter,
+                          nPar_burnin = controls$nPar.burnin,
+                          pSubsample = controls$pSubsample,
                           silent = silent,
                           estimate_fisher = FALSE,
                           ...)
@@ -456,8 +484,7 @@ ngme <- function(fixed,
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
     }
-  } else {
-    
+  } else {## the case of the model excludes W(t)
     if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
       if(!silent)
         cat("Estimate Gaussian")
