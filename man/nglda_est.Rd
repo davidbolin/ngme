@@ -68,7 +68,7 @@ the mixed model: \code{"TRUE"} indicates inclusion, \code{"FALSE"} exclusion.}
 \item{other.controls}{A list of control variables.
 \itemize{
 \item \code{step0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
-\item \code{alpha0} A numeric value for stepsize for the optimizer; step0 / i^alpha.
+\item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
 \item \code{nBurnin_learningrate} A numeric value until which the learning will
    not be started.
 \item \code{subsample.type} A numeric value for the type of subsampling;
