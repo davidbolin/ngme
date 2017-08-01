@@ -6,6 +6,6 @@
 #' @section Function list: ...
 #' 
 #' @docType package
-#' @name ngme
+#' @name ngme_package
 #'
 NULL
