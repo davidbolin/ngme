@@ -35,4 +35,3 @@
 - nglda_est to ngme
 - nglda_predict to predict.ngme
 - remove estimate.wrapper
-- add explanations to nBurnin_base
