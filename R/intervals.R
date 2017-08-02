@@ -2,24 +2,26 @@
 #'
 #' @description Calculates confidence intervals for model parameters.
 #'
-#' @param object A fitted object by calling \code{"nglda_est"}.
+#' @param object A fitted object by calling \code{"ngme"}.
 #' @param type A character string for the type of parameters;
 #'   \code{"fixed"} for fixed effects.
 #' @param level A numerical value indicating the confidence level.
 #'
 #' @details Parameter estimates for random-effects and noise parameters
 #'    are not available currently.
-#' @seealso \code{\link{nglda_est}}
+#' @seealso \code{\link{ngme}}
 #'
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
-#'   fitted(fit)
+#'   fit <- ngme(...)
+#'   intervals(fit)
 #'   }
 #'
   intervals <- function(object, type = "fixed", level = 0.95){
 
-    if(!summary(object)$estimate_fisher) stop("Fisher matrix was not estimated")
+    if(!summary(object)$estimate_fisher){
+      stop("Fisher matrix was not estimated")
+    }
 
     if(type == "fixed"){
 

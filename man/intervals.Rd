@@ -7,7 +7,7 @@
 intervals(object, type = "fixed", level = 0.95)
 }
 \arguments{
-\item{object}{A fitted object by calling \code{"nglda_est"}.}
+\item{object}{A fitted object by calling \code{"ngme"}.}
 
 \item{type}{A character string for the type of parameters;
 \code{"fixed"} for fixed effects.}
@@ -23,11 +23,11 @@ Parameter estimates for random-effects and noise parameters
 }
 \examples{
   \dontrun{
-  fit <- nglda_est(...)
-  fitted(fit)
+  fit <- ngme(...)
+  intervals(fit)
   }
 
 }
 \seealso{
-\code{\link{nglda_est}}
+\code{\link{ngme}}
 }
