@@ -19,9 +19,13 @@
 * Add checks of input dimensions to all functions
 * Add checks of initial values in estimation
 
-## TO DO AND NOTES - OA
+## TO DO -- OA
+- shape parameter is only 0.5 currently - future work
+- all the params of gig can be estimated - future work
+
+NOTES - OA
 - continue with predict.derivative!!!
-- LDMod in simulate function!
+- see LDMod in simulate function!
 - setseed_ME ???
 - put examples
 - GHmixedInit can be deleted - JW approved
@@ -29,9 +33,11 @@
 - check explanations for the functions
 - estimateLong doesnt recognise silent?
 - vignette
-- shape parameter is only 0.5 currently
-- all the params of gig can be estimated - future work
 - it seems we don't use estimateME in estimate.wrapper
 - nglda_est to ngme
 - nglda_predict to predict.ngme
-- remove estimate.wrapper
+- remove estimateME
+
+- remove nglda_est - TEST FIRST THE REPLACER
+- remove estimate.wrapper - TEST FIRST THE REPLACER
+- remove nglda_predict - TEST FIRST THE REPLACER
