@@ -82,7 +82,9 @@
 #'  }
 #' @details This function is a user-friendly wrapper that calls the \code{estimateLong} function. 
 #'     Generic functions \code{summary}, \code{print} and \code{plot} are available for the 
-#'     output returned by the function \code{ngme}.
+#'     output returned by the function \code{ngme}. For Matern covariance function, 
+#'     currently the shape parameter is set to 0.5 which corresponds to exponential correlation 
+#'     function. 
 #' @return A list of outputs. 
 #' @examples
 #'   \dontrun{
