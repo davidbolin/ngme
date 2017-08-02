@@ -6,8 +6,8 @@
 \usage{
 ngme(fixed, random, use.process = TRUE, reffects = "Normal",
   process = c("Normal", "fd2"), error = "Normal", data, timeVar = NULL,
-  silent = TRUE, controls = list(learning.rate = 0, polyak.rate = 0.1,
-  nBurnin = 100, nSim = 2, nIter.gauss = 1000, nIter = 10000, pSubsample = 0.1,
+  silent = TRUE, nIter, controls = list(learning.rate = 0, polyak.rate =
+  0.1, nBurnin = 100, nSim = 2, nIter.gauss = 1000, pSubsample = 0.1,
   nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3, alpha =
   0.3, nBurnin.learningrate = NULL, nBurnin.base = 0, subsample.type = 4,
   pSubsample2 = 0.3, seed = NULL, standardize.mixedEffects = FALSE,
@@ -51,6 +51,9 @@ Available options are:
 \item{silent}{A logical value for printing the details of the iterations;
 \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.}
 
+\item{nIter}{A numeric value for the number of iteration that will be
+used by the stochastic gradient.}
+
 \item{controls}{A list of control variables.
 \itemize{
    \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
@@ -62,8 +65,6 @@ Available options are:
      to estimate the gradient.
    \item \code{nIter.gauss} A numerical value for the number of iterations to be used
      to obtain the initial values for models with non-Gaussian processes.
-   \item \code{nIter} A numeric value for the number of iteration that will be
-     used by the stochastic gradient.
    \item \code{pSubsample} A numeric value for the portion of data to be used in each
      gradient iteration. \code{pSubsample = 1} indicates use of all subjects' data.  
    \item \code{nPar.burnin} A numeric value; "M-step" updates will be used until this
@@ -76,7 +77,8 @@ Available options are:
    \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
    \item \code{nBurnin.learningrate} A numeric value until which the learning will
      not be started.
-   \item \code{nBurnin.base} STUFF.   
+   \item \code{nBurnin.base} A numerical value for burn-in simulations that are performed  
+     for a subject that is sampled for the first time in the estimation method. 
    \item \code{subsample.type} A numeric value for the type of subsampling;
      1: uniform sampling, 
      2: sample size weighted,

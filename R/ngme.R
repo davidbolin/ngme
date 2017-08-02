@@ -34,7 +34,9 @@
 #' @param timevar A character string that indicates the name of the time variable. 
 #'   It does not need to be specified when \code{use.process} is set to FALSE.
 #' @param silent A logical value for printing the details of the iterations;
-#'       \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.   
+#'   \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.  
+#' @param nIter A numeric value for the number of iteration that will be
+#'   used by the stochastic gradient.
 #' @param controls A list of control variables.
 #'  \itemize{
 #'     \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
@@ -46,8 +48,6 @@
 #'       to estimate the gradient.
 #'     \item \code{nIter.gauss} A numerical value for the number of iterations to be used
 #'       to obtain the initial values for models with non-Gaussian processes.
-#'     \item \code{nIter} A numeric value for the number of iteration that will be
-#'       used by the stochastic gradient.
 #'     \item \code{pSubsample} A numeric value for the portion of data to be used in each
 #'       gradient iteration. \code{pSubsample = 1} indicates use of all subjects' data.  
 #'     \item \code{nPar.burnin} A numeric value; "M-step" updates will be used until this
@@ -60,7 +60,8 @@
 #'     \item \code{alpha} A numeric value for stepsize for the optimizer; step0 / i^alpha.
 #'     \item \code{nBurnin.learningrate} A numeric value until which the learning will
 #'       not be started.
-#'     \item \code{nBurnin.base} STUFF.   
+#'     \item \code{nBurnin.base} A numerical value for burn-in simulations that are performed  
+#'       for a subject that is sampled for the first time in the estimation method. 
 #'     \item \code{subsample.type} A numeric value for the type of subsampling;
 #'       1: uniform sampling, 
 #'       2: sample size weighted,
@@ -98,12 +99,12 @@ ngme <- function(fixed,
                  data,
                  timeVar = NULL,
                  silent = TRUE,
+                 nIter,
                  controls = list(learning.rate = 0,
                                  polyak.rate = 0.1,
                                  nBurnin = 100,
                                  nSim = 2,
                                  nIter.gauss = 1000,
-                                 nIter = 10000,
                                  pSubsample = 0.1,
                                  nPar.burnin = 0,
                                  nIter.fisher = 1000,
@@ -119,17 +120,16 @@ ngme <- function(fixed,
                                  estimate.fisher = TRUE,
                                  individual.sigma = FALSE,
                                  n.process = NULL)
-)
+                 )
 {
   
   # being sure that estimation.controls includes everything
-  if(length(controls) < 21){
+  if(length(controls) < 20){
     controls.full <- list(learning.rate = 0,
                           polyak.rate = 0.1,
                           nBurnin = 100,
                           nSim = 2,
                           nIter.gauss = 1000,
-                          nIter = 10000,
                           pSubsample = 0.1,
                           nPar.burnin = 0,
                           nIter.fisher = 1000,
@@ -153,26 +153,6 @@ ngme <- function(fixed,
     
   }
   
-  # # being sure that other.controls includes everything
-  # if(length(other.controls) < 10){
-  #   other.controls.full = list(step0 = 0.3,
-  #                              alpha = 0.3,
-  #                              nBurnin_learningrate = NULL,
-  #                              nBurnin_base = 0,
-  #                              subsample.type = 1,
-  #                              pSubsample2 = 0.3,
-  #                              silent  = FALSE,
-  #                              seed    = NULL,
-  #                              standardize.mixedEffects = FALSE,
-  #                              estimate.fisher  = TRUE,
-  #                              individual.sigma = FALSE)
-  #   for(i in 1:length(other.controls.full)){
-  #     if(!(names(other.controls.full)[i] %in% names(other.controls))){
-  #       other.controls[names(other.controls.full)[i]] <- other.controls.full[i]
-  #     }
-  #   }
-  # }
-  
   # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
     stop("Process distribution should be one of the following: NIG, Normal, GAL, CH")
@@ -186,7 +166,7 @@ ngme <- function(fixed,
   
   # correct input for timeVar
   if(use.process == TRUE & is.null(timeVar) == TRUE){
-    stop("Specify timeVar")
+    stop("timeVar should be specified, since the model consists of process")
   }
     
   # extract id variable
@@ -209,7 +189,6 @@ ngme <- function(fixed,
   x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed)]
   
   #random effects design matrix
-  
   random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
   random_names_id_excluded <- random_names[!(random_names %in% idname)]
   random_formula           <- as.formula(paste("~", paste(random_names_id_excluded, collapse = "+")))
@@ -233,77 +212,7 @@ ngme <- function(fixed,
   Y    <- tapply(y, id, function(x) x)
   locs <- tapply(data[, timeVar], id, function(x) x)
   
-  #idlist <- unique(id) -- probably unnecessary
-  #n.pers <- length(idlist) -- defıned below
-  
-  # # estimating the parameters using estimate.wrapper function
-  # fit <- estimate.wrapper(
-  #   Y = Y,
-  #   locs = locs,
-  #   B_random = B_random,
-  #   B_fixed = B_fixed,
-  #   use.process = use.process,
-  #   operator.type = process[2],
-  #   n.process = other.controls$n.process,
-  #   measurement.distribution = error,
-  #   random.effect.distribution = reffects,
-  #   process.distribution = process[1],
-  #   individual.sigma = other.controls$individual.sigma,
-  #   silent = other.controls$silent,
-  #   estimation.options = estimation.controls,
-  #   estimate_fisher = other.controls$estimate.fisher#,
-  #   #step0 <- other.controls$step0,
-  #   #alpha <- other.controls$alpha,
-  #   #nBurnin_learningrate <- other.controls$nBurn_learningrate,
-  #   #####nBurnin_base <- other.controls$nBurnin_base,
-  #   #subsample.type <- other.controls$subsample.type,
-  #   #pSubsample2 <- other.controls$pSubsample2,
-  #   #seed    <- other.controls$seed,
-  #   #standardize.mixedEffects <- other.controls$standardize.mixedEffets 
-  # )
-  
-  #####
-  ##### IMPORT ESTIMATE.WRAPPER
-  #####
-
-  # estimate.wrapper <- function(Y,
-  #                              locs,
-  #                              B_random,
-  #                              B_fixed,
-  #                              use.process = TRUE,
-  #                              operator.type = "fd2",
-  #                              n.process = NULL,
-  #                              measurement.distribution = "Normal",
-  #                              random.effect.distribution= "Normal",
-  #                              process.distribution= "Normal",
-  #                              individual.sigma = FALSE,
-  #                              silent = FALSE,
-  #                              estimation.options = NULL,
-  #                              estimate_fisher = FALSE,
-  #                              ...)
-  
-  # INCLUDED IN CONTROLS
-  #
-  # estimation.controls = list(learning.rate = 0,
-  #                            polyak_rate = 0.1,
-  #                            nBurnin = 100,
-  #                            nSim = 2,
-  #                            nIter.gauss = 1000,
-  #                            nIter = 10000,
-  #                            pSubsample = 0.1,
-  #                            subsample.type = 4,
-  #                            nPar_burnin = 0,
-  #                            nIter.fisher = 1000,
-  #                            nSim.fisher = 1000)
-  # if(!missing(estimation.options) && !is.null(estimation.options)){
-  #   for(i in 1:length(estimation.options)){
-  #     estimation.controls[names(estimation.options)[i]] = estimation.options[i]
-  #   }
-  # }
-  
-  ##
   ## Obtain starting values
-  ## 
 
   # setup the lists that are going to be passed into the 
   # functions that will obtain the starting value
@@ -360,67 +269,83 @@ ngme <- function(fixed,
                                           operator_list, 
                                           measurement_list
                                           )
-    #estimate Gaussian process model    
+    # at least one of random effects, process or measurement error non-Gaussian   
     if(reffects != "Normal" || process[1] != "Normal" || error != "Normal"){
       
+      # first fit the Gaussian model to obtain initials
       if(!silent){
         cat("Estimate Gaussian")
       }
-      
-      ##
-      ## HERE!!!!!
-      ##
-      
+
       fit <- estimateLong(Y, 
                           locs,
                           mixedEffect_list,
                           measurement_list,
                           process_list,
                           operator_list,
-                          learning_rate = controls$learning.rate,
-                          nBurnin_learningrate = controls$nBurnin.learningrate,
-                          polyak_rate = controls$polyak.rate,
-                          nSim = controls$nSim,
-                          nBurnin = controls$nBurnin,
-                          nIter = controls$nIter,
-                          nPar_burnin = controls$nPar.burnin,
-                          pSubsample = controls$pSubsample,
+                          nIter = nIter,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
       
-      if(!silent)
+      # then fit the non-Gaussin model
+      if(!silent){
         cat("Estimate non-Gaussian")
+      }
       
-      fit$mixedEffect_list$noise = random.effect.distribution
-      fit$mixedEffect_list$nu = as.matrix(10)
-      fit$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
+      fit$mixedEffect_list$noise <- reffects
+      fit$mixedEffect_list$nu    <- as.matrix(10)
+      fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
       
-      fit$processes_list$noise = process.distribution
-      fit$processes_list$mu = 0
-      fit$processes_list$nu = 10
+      fit$processes_list$noise <- process[1]
+      fit$processes_list$mu    <- 0
+      fit$processes_list$nu    <- 10
       
-      fit$measurementError_list$noise = measurement.distribution
-      fit$measurementError_list$nu = 10
-      fit$measurementError_list$common_V = individual.sigma
-      fit$measurementError_list$Vs = Vin
+      fit$measurementError_list$noise    <- error
+      fit$measurementError_list$nu       <-  10
+      fit$measurementError_list$common_V <- controls$individual.sigma
+      fit$measurementError_list$Vs       <- Vin
       
+      # Obtain parameter estimates
       fit <- estimateLong(Y, 
                           locs,
                           fit$mixedEffect_list,
                           fit$measurementError_list,
                           fit$processes_list,
                           fit$operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
+                          nIter = nIter,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
+      # Obtain Fisher matrix
       if(estimate_fisher){
         fit.f <- estimateLong(Y, 
                               locs,
@@ -428,41 +353,58 @@ ngme <- function(fixed,
                               fit$measurementError_list,
                               fit$processes_list,
                               fit$operator_list,
-                              learning_rate = estimation.controls$learning.rate,
-                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                              polyak_rate = -1,
-                              nBurnin = estimation.controls$nBurnin,
-                              nIter = estimation.controls$nIter.fisher,
-                              nSim = estimation.controls$nSim.fisher,
-                              nPar_burnin = estimation.controls$nPar_burnin,
-                              pSubsample = estimation.controls$pSubsample,
+                              nIter = controls$nIter.fisher,
                               silent = silent,
-                              estimate_fisher = estimate_fisher,
-                              ...)
+                              learning_rate = controls$learning.rate,
+                              polyak_rate = -1,
+                              nBurnin = controls$nBurnin,
+                              nSim = controls$nSim.fisher,
+                              pSubsample = controls$pSubsample,
+                              nPar_burnin = controls$nPar.burnin,
+                              step0 = controls$step0,
+                              alpha = controls$alpha,
+                              nBurnin_learningrate = controls$nBurnin.learningrate,
+                              nBurnin_base = controls$nBurnin.base, 
+                              subsample.type = controls$subsample.type,
+                              pSubsample2 = controls$pSubsample2,
+                              seed = controls$seed, 
+                              standardize.mixedEffects = controls$standardize.mixedEffects,
+                              estimate_fisher = TRUE
+                              )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
-    } else {
-      if(!silent)
-        cat("Estimate Model")
+    } else { # random effects, process and measurement error are all Gaussian
       
+      if(!silent){
+        cat("Estimate Model")
+      }
+      
+      # Obtain parameter estimates
       fit <- estimateLong(Y, 
                           locs,
                           mixedEffect_list,
                           measurement_list,
                           process_list,
                           operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nSim = estimation.controls$nSim,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
-                          subsample.type = estimation.controls$subsample.type,
+                          nIter = nIter,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
+      # Obtain Fisher matrix
       if(estimate_fisher){
         fit.f <- estimateLong(Y, 
                               locs,
@@ -470,67 +412,100 @@ ngme <- function(fixed,
                               fit$measurementError_list,
                               fit$processes_list,
                               fit$operator_list,
-                              learning_rate = estimation.controls$learning.rate,
-                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                              polyak_rate = -1,
-                              nIter = estimation.controls$nIter.fisher,
-                              nSim = estimation.controls$nSim.fisher,
-                              nBurnin = estimation.controls$nBurnin,
-                              nPar_burnin = estimation.controls$nPar_burnin,
-                              pSubsample = estimation.controls$pSubsample,
+                              nIter = controls$nIter.fisher,
                               silent = silent,
-                              estimate_fisher = estimate_fisher,
-                              ...)
+                              learning_rate = controls$learning.rate,
+                              polyak_rate = -1,
+                              nBurnin = controls$nBurnin,
+                              nSim = controls$nSim.fisher,
+                              pSubsample = controls$pSubsample,
+                              nPar_burnin = controls$nPar.burnin,
+                              step0 = controls$step0,
+                              alpha = controls$alpha,
+                              nBurnin_learningrate = controls$nBurnin.learningrate,
+                              nBurnin_base = controls$nBurnin.base, 
+                              subsample.type = controls$subsample.type,
+                              pSubsample2 = controls$pSubsample2,
+                              seed = controls$seed, 
+                              standardize.mixedEffects = controls$standardize.mixedEffects,
+                              estimate_fisher = TRUE
+                              )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
     }
   } else {## the case of the model excludes W(t)
+    
+    # either random effects or measurement error is non-Gaussian
     if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
-      if(!silent)
-        cat("Estimate Gaussian")
+      
+      if(!silent){
+        cat("Estimate Gaussian") 
+      }
+      
+      # first fit the Gaussian model to obtain the initials 
       fit <- estimateLong(Y, 
                           locs,
                           mixedEffect_list,
                           measurement_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nSim = estimation.controls$nSim,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter.gauss,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
+                          nIter = controls$nIter.gauss,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
-      if(!silent)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
+      
+      # then fit the non-Gaussian model
+      if(!silent){
         cat("Estimate non-Gaussian")
+      }
       
-      fit$mixedEffect_list$noise = random.effect.distribution
-      fit$mixedEffect_list$nu = as.matrix(10)
-      fit$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
+      fit$mixedEffect_list$noise <- reffects
+      fit$mixedEffect_list$nu    <- as.matrix(10)
+      fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
       
-      fit$measurementError_list$noise = measurement.distribution
-      fit$measurementError_list$nu = 10
-      fit$measurementError_list$common_V = individual.sigma
-      fit$measurementError_list$Vs = Vin
+      fit$measurementError_list$noise    <- error
+      fit$measurementError_list$nu       <- 10
+      fit$measurementError_list$common_V <- controls$individual.sigma
+      fit$measurementError_list$Vs       <- Vin
       
+      # Obtain parameter estimates
       fit <- estimateLong(Y, 
                           locs,
                           fit$mixedEffect_list,
                           fit$measurementError_list,
                           fit$processes_list,
                           fit$operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
+                          nIter = nIter,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
+      # Obtain Fisher matrix
       if(estimate_fisher){
         fit.f <- estimateLong(Y, 
                               locs,
@@ -538,60 +513,81 @@ ngme <- function(fixed,
                               fit$measurementError_list,
                               fit$processes_list,
                               fit$operator_list,
-                              learning_rate = estimation.controls$learning.rate,
-                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                              polyak_rate = -1,
-                              nSim = estimation.controls$nSim.fisher,
-                              nBurnin = estimation.controls$nBurnin,
-                              nIter = estimation.controls$nIter.fisher,
-                              nPar_burnin = estimation.controls$nPar_burnin,
-                              pSubsample = estimation.controls$pSubsample,
+                              nIter = nIter,
                               silent = silent,
-                              estimate_fisher = estimate_fisher,
-                              ...)
+                              learning_rate = controls$learning.rate,
+                              polyak_rate = -1,
+                              nBurnin = controls$nBurnin,
+                              nSim = controls$nSim,
+                              pSubsample = controls$pSubsample,
+                              nPar_burnin = controls$nPar.burnin,
+                              step0 = controls$step0,
+                              alpha = controls$alpha,
+                              nBurnin_learningrate = controls$nBurnin.learningrate,
+                              nBurnin_base = controls$nBurnin.base, 
+                              subsample.type = controls$subsample.type,
+                              pSubsample2 = controls$pSubsample2,
+                              seed = controls$seed, 
+                              standardize.mixedEffects = controls$standardize.mixedEffects,
+                              estimate_fisher = TRUE
+                              )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
-    } else {
+    } else {# both random effects and measurement error are Gaussian
+      
+      # Obtain parameter estimates
       fit <- estimateLong(Y, 
                           locs,
                           mixedEffect_list,
                           measurement_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nSim = estimation.controls$nSim,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
+                          nIter = nIter,
                           silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
+                          learning_rate = controls$learning.rate,
+                          polyak_rate = controls$polyak.rate,
+                          nBurnin = controls$nBurnin,
+                          nSim = controls$nSim,
+                          pSubsample = controls$pSubsample,
+                          nPar_burnin = controls$nPar.burnin,
+                          step0 = controls$step0,
+                          alpha = controls$alpha,
+                          nBurnin_learningrate = controls$nBurnin.learningrate,
+                          nBurnin_base = controls$nBurnin.base, 
+                          subsample.type = controls$subsample.type,
+                          pSubsample2 = controls$pSubsample2,
+                          seed = controls$seed, 
+                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          estimate_fisher = FALSE
+                          )
+      # Obtain Fisher matrix
       if(estimate_fisher){
         fit.f <- estimateLong(Y, 
                               locs,
                               res$mixedEffect_list,
                               res$measurementError_list,
                               learning_rate = estimation.controls$learning.rate,
-                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                              polyak_rate = -1,
-                              nSim = estimation.controls$nSim.fisher,
-                              nBurnin = estimation.controls$nBurnin,
-                              nIter = estimation.controls$nIter.fisher,
-                              nPar_burnin = estimation.controls$nPar_burnin,
-                              pSubsample = estimation.controls$pSubsample,
+                              nIter = nIter,
                               silent = silent,
-                              estimate_fisher = estimate_fisher,
-                              ...)
+                              learning_rate = controls$learning.rate,
+                              polyak_rate = -1,
+                              nBurnin = controls$nBurnin,
+                              nSim = controls$nSim,
+                              pSubsample = controls$pSubsample,
+                              nPar_burnin = controls$nPar.burnin,
+                              step0 = controls$step0,
+                              alpha = controls$alpha,
+                              nBurnin_learningrate = controls$nBurnin.learningrate,
+                              nBurnin_base = controls$nBurnin.base, 
+                              subsample.type = controls$subsample.type,
+                              pSubsample2 = controls$pSubsample2,
+                              seed = controls$seed, 
+                              standardize.mixedEffects = controls$standardize.mixedEffects,
+                              estimate_fisher = TRUE
+                              )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
     }
   }
   
-  
-  #####
-  #####
-  #####
   
   #
   # Preparing the output
@@ -740,7 +736,7 @@ ngme <- function(fixed,
     call = match.call()
   )
   
-  class(out) <- "nglda_est"
+  class(out) <- "ngme"
   out
   
 }
