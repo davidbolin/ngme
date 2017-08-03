@@ -5,9 +5,9 @@
 \title{Prediction.}
 \usage{
 \method{predict}{ngme}(object, id, type = "Filter", quantiles = c(0.025,
-  0.975), control_list = list(return.samples = TRUE, predict.derivaties =
-  NULL, excursions = NULL, crps = TRUE, crps.skip = 1, nSim = 10, nBurnin = 10,
-  silent = FALSE))
+  0.975), controls = list(return.samples = TRUE, predict.derivaties = NULL,
+  excursions = NULL, crps = TRUE, crps.skip = 1, nSim = 10, nBurnin = 10, silent
+  = TRUE))
 }
 \arguments{
 \item{object}{A fitted object obtained by calling \code{"ngme"}.}
@@ -21,7 +21,7 @@ filtering, \code{"Smoothing"} for smoothing.}
 \item{quantiles}{A two-elemnent vector that contains the quantiles
 of the predictions to be calculated.}
 
-\item{control_list}{A list of control variables.
+\item{controls}{A list of control variables.
 \itemize{
 \item \code{"return.samples"} A logical variable for returning the 
   Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 

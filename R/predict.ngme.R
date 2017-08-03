@@ -1,3 +1,4 @@
+
 #' @title Prediction.
 #'
 #' @description Obtains predicted values based on filtering and smoothing distributions.
@@ -67,8 +68,8 @@ predict.ngme <- function(object,
                             crps.skip = 1,
                             nSim = 10,
                             nBurnin = 10,
-                            silent = FALSE
-                          )
+                            silent = TRUE
+                            )
                           )
   {
 
@@ -81,7 +82,7 @@ predict.ngme <- function(object,
       crps.skip = 1,
       nSim = 10,
       nBurnin = 10,
-      silent = FALSE
+      silent = TRUE
     )
     for(i in 1:length(controls)){
         controls_full[names(controls)[i]] <- controls[i]
@@ -123,7 +124,7 @@ predict.ngme <- function(object,
                            nSim  = controls$nSim,
                            nBurnin = controls$nBurnin,
                            silent  = controls$silent
-    )
+                           )
   }else{
     predict <- predictLong(Y = Y,
                            locs = locs,
@@ -144,10 +145,9 @@ predict.ngme <- function(object,
                            nSim  = controls$nSim,
                            nBurnin = controls$nBurnin,
                            silent  = controls$silent
-    )
+                           )
   }
   
-
   mae <- covered <- int.width <- crps <- rmse <- NULL
 
   n.obs <- rep(0, length(pInd))

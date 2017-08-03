@@ -2,7 +2,8 @@
 title: "ngme: an R package for non-Gaussian longitudinal data analysis"
 author: "Some lads"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+#output: rmarkdown::html_vignette
+output:   pdf_document
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -86,7 +87,7 @@ of computational time.
 
 ```{r, echo=TRUE}
 set.seed(123)
-rs_id <- sample(unique(srft_data$id), 100, replace = F)
+rs_id <- sample(unique(srft_data$id), 50, replace = F)
 srft_data_sub <- srft_data[srft_data$id %in% rs_id, ]
 ```
 
@@ -112,7 +113,7 @@ srft_fit <- ngme(
   error = "tdist",
   timeVar = "fu",
   use.process = T,
-  nIter = 1000,
+  nIter = 100,
   controls = list(nSim.fisher = 10)
 )
 ```
@@ -124,7 +125,8 @@ srft_fit
 ```
 
 `summary` function provides a more thorough list of results:
-```
+
+```{r, echo = TRUE}
 summary(srft_fit)
 ```
 
@@ -148,9 +150,9 @@ intervals(srft_fit)
 Predictions based on filtering distribution could be obtained using the function 
 `nglda_predict`:
 
-```{r, echo = TRUE}
+```{r, echo = FALSE}
  res.pred <- predict(srft_fit, id = unique(srft_data_sub$id), 
-                     type = "Filter", control_list = list(silent = T))
+                      type = "Filter", controls = list(silent = T))
 
 ```
 A summary of results including accuracy measures can be viewed by
@@ -169,7 +171,6 @@ plot(res.pred, id = unique(srft_data_sub$id)[1], pch = 19, cex = 0.5)
 In this plot, dots are observed data, black lines is the mean 
 of the predictive distribution, and red lines are the 95\% 
 prediction intervals. 
-
 
 MORE STUFF???
 
