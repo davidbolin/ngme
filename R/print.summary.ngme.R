@@ -1,20 +1,20 @@
-#' @title Print function for \code{"summary.nglda_est"} function.
+#' @title Print function for \code{"summary.ngme"} function.
 #'
-#' @description Prints \code{"summary.nglda_est"} objects concisely.
+#' @description A function to print \code{"summary.ngme"} objects concisely.
 #'
-#' @param object A fitted object by calling \code{"summary.nglda_est"}.
+#' @param object A fitted object returned by the \code{"summary.ngme"} function.
 #' @param ... Additional arguments; none used currently.
 #'
-#' @seealso \code{\link{nglda_est}}, \code{\link{summary.nglda_est}},
+#' @seealso \code{\link{ngme}}, \code{\link{summary.ngme}},
 #'   \code{\link{print}}, \code{\link{summary}}
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
+#'   fit <- ngme(...)
 #'   summary(fit)
 #'   }
 #'
 
-print.summary.nglda_est <- function(object, ...){
+print.summary.ngme <- function(object, ...){
 
   cat("Call:\n")
   print(object$call)
