@@ -3,7 +3,7 @@ title: "ngme: an R package for non-Gaussian longitudinal data analysis"
 author: "Some lads"
 date: "`r Sys.Date()`"
 #output: rmarkdown::html_vignette
-output:   pdf_document
+output: pdf_document
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -36,11 +36,11 @@ Here,
 - $W_i(t)$ is subject- and time-spceific random effect, specificed as a stochastic process,
 - $Z_{ij}$ is random error.
 
-`ngme` includes `nglda_est` and `nglda_predict` as the main functions 
-for parameter estimation based on maximum likelihood 
-implemented with a computationally efficient stochastic gradient algorithm 
-and prediction based on either filtering or smoothing distributions, 
-respectively. `print`, `summary`, `plot`, `fitted`, `residuals`, `intervals` 
+The `ngme` package includes the function `ngme` for parameter estimation 
+based on maximum likelihood implemented with a computationally efficient 
+stochastic gradient algorithm. Predictions based on either filtering or 
+smoothing distributions could be obtained using the generic function `predict`. 
+`print`, `summary`, `plot`, `fitted`, `residuals`, `intervals` 
 functions are available as the supplemetary. 
  
 Within `ngme` one can choose to specify the distributions as
@@ -54,7 +54,7 @@ Within `ngme` one can choose to specify the distributions as
 The data-set used to illustrate the usage of the package `ngme` comes 
 from a primary care cohort on kidney patients in the city of Salford 
 in Greater Manchester, United Kingdom. The data-set contains 392,870 
-repeated measures in total that belong to 22,910 patients. It contains 
+repeated measurements in total that belong to 22,910 patients. It contains 
 the following variables:
 
 - id: identification number,
@@ -82,7 +82,7 @@ knitr::kable(head(srft_data, 10))
 
 # Analysis
 
-Here we use randomly selected 100 patients' data for the sake 
+Here we use randomly selected 50 patients' data for the sake 
 of computational time. 
 
 ```{r, echo=TRUE}
@@ -117,8 +117,7 @@ srft_fit <- ngme(
   controls = list(nSim.fisher = 10)
 )
 ```
-Typing the fitted object's name, `srft_fit`, 
-displays a conscise list of results:
+Typing the fitted object's name, `srft_fit`, displays a conscise list of results:
 
 ```{r, echo = TRUE}
 srft_fit
@@ -148,24 +147,25 @@ intervals(srft_fit)
 ```
 
 Predictions based on filtering distribution could be obtained using the function 
-`nglda_predict`:
+`predict`:
 
 ```{r, echo = FALSE}
- res.pred <- predict(srft_fit, id = unique(srft_data_sub$id), 
+ pred <- predict(srft_fit, id = unique(srft_data_sub$id), 
                       type = "Filter", controls = list(silent = T))
 
 ```
+
 A summary of results including accuracy measures can be viewed by
 
 ```{r, echo = TRUE}
-res.pred
+ pred
 ```
 
 Predictions for a selected subject, e.g. the first subject in the 
 `srft_data_sub`, could be plotted using
 
 ```{r, echo = TRUE}
-plot(res.pred, id = unique(srft_data_sub$id)[1], pch = 19, cex = 0.5)
+ plot(pred, id = unique(srft_data_sub$id)[1], pch = 19, cex = 0.5)
 ```
 
 In this plot, dots are observed data, black lines is the mean 
