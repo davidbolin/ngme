@@ -9,7 +9,7 @@
 #'   filtering, \code{"Smoothing"} for smoothing.
 #' @param quantiles A two-elemnent vector that contains the quantiles
 #'   of the predictions to be calculated.
-#' @param control_list A list of control variables.
+#' @param controls A list of control variables.
 #'  \itemize{
 #'  \item \code{"return.samples"} A logical variable for returning the 
 #'    Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
@@ -59,7 +59,7 @@ predict.ngme <- function(object,
                           id,
                           type = "Filter",
                           quantiles = c(0.025, 0.975),
-                          control_list = list(
+                          controls = list(
                             return.samples = TRUE,
                             predict.derivaties = NULL,
                             excursions = NULL,
@@ -72,8 +72,8 @@ predict.ngme <- function(object,
                           )
   {
 
-  if(length(control_list) < 8){
-    control_list_full <- list(
+  if(length(controls) < 8){
+    controls_full <- list(
       return.samples = TRUE,
       predict.derivaties = NULL,
       excursions = NULL,
@@ -83,11 +83,11 @@ predict.ngme <- function(object,
       nBurnin = 10,
       silent = FALSE
     )
-    for(i in 1:length(control_list)){
-        control_list_full[names(control_list)[i]] <- control_list[i]
+    for(i in 1:length(controls)){
+        controls_full[names(controls)[i]] <- controls[i]
     }
   }
-  control_list <- control_list_full
+  controls <- controls_full
   
   Y                <- object$Y
   locs             <- object$locs
@@ -109,20 +109,20 @@ predict.ngme <- function(object,
                            locs.pred = locs,
                            Brandom.pred = B_random,
                            Bfixed.pred = B_fixed,
-                           return.samples = control_list$return.samples,
+                           return.samples = controls$return.samples,
                            type = type,
                            quantiles = quantiles,
-                           predict.derivatives = control_list$predict.derivatives,
-                           excursions = control_list$excursions,
-                           crps = control_list$crps,
-                           crps.skip = control_list$crps.skip,
+                           predict.derivatives = controls$predict.derivatives,
+                           excursions = controls$excursions,
+                           crps = controls$crps,
+                           crps.skip = controls$crps.skip,
                            mixedEffect_list = mixedEffect_list,
                            measurment_list = measurementError_list,
                            processes_list = processes_list,
                            operator_list = operator_list,
-                           nSim  = control_list$nSim,
-                           nBurnin = control_list$nBurnin,
-                           silent  = control_list$silent
+                           nSim  = controls$nSim,
+                           nBurnin = controls$nBurnin,
+                           silent  = controls$silent
     )
   }else{
     predict <- predictLong(Y = Y,
@@ -131,19 +131,19 @@ predict.ngme <- function(object,
                            locs.pred = locs,
                            Brandom.pred = B_random,
                            Bfixed.pred = B_fixed,
-                           return.samples = control_list$return.samples,
+                           return.samples = controls$return.samples,
                            type = type,
                            quantiles = quantiles,
-                           predict.derivatives = control_list$predict.derivatives,
-                           excursions = control_list$excursions,
-                           crps = control_list$crps,
-                           crps.skip = control_list$crps.skip,
+                           predict.derivatives = controls$predict.derivatives,
+                           excursions = controls$excursions,
+                           crps = controls$crps,
+                           crps.skip = controls$crps.skip,
                            mixedEffect_list = mixedEffect_list,
                            measurment_list = measurementError_list,
                            operator_list = operator_list,
-                           nSim  = control_list$nSim,
-                           nBurnin = control_list$nBurnin,
-                           silent  = control_list$silent
+                           nSim  = controls$nSim,
+                           nBurnin = controls$nBurnin,
+                           silent  = controls$silent
     )
   }
   
