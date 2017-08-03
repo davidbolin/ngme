@@ -2,7 +2,7 @@
 #'
 #' @description Obtains predicted values based on filtering and smoothing distributions.
 #'
-#' @param object A fitted object obtained by calling \code{"nglda_est"}.
+#' @param object A fitted object obtained by calling \code{"ngme"}.
 #' @param id A numeric vector containing the ID's of the subjects for whom
 #'   predictions are to be obtained.
 #' @param type A character string for the type of prediction: \code{"Filter"} for
@@ -48,13 +48,14 @@
 #' @details This function is a wrapper function that calls 
 #'    \code{"predictLong"} internally. 
 #' 
-#' @seealso \code{\link{nglda_est}}
+#' @seealso \code{\link{ngme}}
 #' @examples
 #'   \dontrun{
-#'   nglda_predict(...)
+#'   fit <- ngme(...)
+#'   predict(fit, ...)
 #'   }
 
-nglda_predict <- function(object,
+predict.ngme <- function(object,
                           id,
                           type = "Filter",
                           quantiles = c(0.025, 0.975),
@@ -195,7 +196,7 @@ nglda_predict <- function(object,
               locs = locs,
               id_list = id_list
               )
-  class(out) <- "nglda_predict"
+  class(out) <- "predict.ngme"
   out
 
 }
