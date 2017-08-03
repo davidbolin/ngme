@@ -1,19 +1,21 @@
-#' @title Summary function for \code{"nglda_est"} objects.
+
+#' @title Summary function for \code{"ngme"} objects.
 #'
-#' @description Summarises the output of \code{"nglda_est"} objects.
+#' @description A function to summarise the output contained in 
+#'    \code{"ngme"} objects.
 #'
-#' @param object A fitted object by calling \code{"nglda_est"}.
+#' @param object A fitted object by calling \code{"ngme"}.
 #' @param ... Additional arguments; none used currently.
 #'
-#' @seealso \code{\link{nglda_est}}, \code{\link{print.summary.nglda_est}},
+#' @seealso \code{\link{ngme}}, \code{\link{print.summary.ngme}},
 #'   \code{\link{print}}, \code{\link{summary}}
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
+#'   fit <- ngme(...)
 #'   summary(fit)
 #'   }
 
-summary.nglda_est <- function(object, ...){
+summary.ngme <- function(object, ...){
 
   if(object$estimate_fisher){ # if fisher is estimated
     se_est       <- sqrt(diag(solve(object$fisher_est)))
@@ -185,7 +187,7 @@ summary.nglda_est <- function(object, ...){
                 estimate_fisher = object$estimate_fisher)
   }
 
-    class(out) <- "summary.nglda_est"
+    class(out) <- "summary.ngme"
     out
 
 }
