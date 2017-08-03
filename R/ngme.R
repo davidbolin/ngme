@@ -125,7 +125,7 @@ ngme <- function(fixed,
                  )
 {
   
-  # being sure that estimation.controls includes everything
+  # being sure that controls includes everything
   if(length(controls) < 20){
     controls.full <- list(learning.rate = 0,
                           polyak.rate = 0.1,
@@ -348,7 +348,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(estimate_fisher){
+      if(controls$estimate.fisher){
         fit.f <- estimateLong(Y, 
                               locs,
                               fit$mixedEffect_list,
@@ -407,7 +407,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(estimate_fisher){
+      if(controls$estimate.fisher){
         fit.f <- estimateLong(Y, 
                               locs,
                               fit$mixedEffect_list,
@@ -508,7 +508,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(estimate_fisher){
+      if(controls$estimate.fisher){
         fit.f <- estimateLong(Y, 
                               locs,
                               fit$mixedEffect_list,
@@ -561,12 +561,12 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(estimate_fisher){
+      if(controls$estimate.fisher){
         fit.f <- estimateLong(Y, 
                               locs,
                               res$mixedEffect_list,
                               res$measurementError_list,
-                              learning_rate = estimation.controls$learning.rate,
+                              learning_rate = controls$learning.rate,
                               nIter = nIter,
                               silent = silent,
                               learning_rate = controls$learning.rate,
@@ -616,7 +616,7 @@ ngme <- function(fixed,
   fixed_est2_vec <- fit$mixedEffect_list$betar_vec
   colnames(fixed_est1_vec) <- colnames(x_fixed)
   colnames(fixed_est2_vec) <- to_del_x_fixed
-  fixed_est_vec <- matrix(NA, ncol = ncol(x_fixed_f), nrow = estimation.controls$nIter)
+  fixed_est_vec <- matrix(NA, ncol = ncol(x_fixed_f), nrow = nIter)
   colnames(fixed_est_vec) <- colnames(x_fixed_f)
   fixed_est_vec[, colnames(fixed_est_vec) %in% names(fixed_est1)] <- fixed_est1_vec
   fixed_est_vec[, colnames(fixed_est_vec) %in% names(fixed_est2)] <- fixed_est2_vec
@@ -680,7 +680,7 @@ ngme <- function(fixed,
   }
   
   # checking Fisher Matrix is estimated?
-  if(other.controls$estimate.fisher == TRUE){
+  if(controls$estimate.fisher == TRUE){
     
     # names for fixed effects in Fisher Matrix
     fisher_est <- fit$FisherMatrix
@@ -694,7 +694,7 @@ ngme <- function(fixed,
   
   out <- list(
     use_process = use.process,
-    estimate_fisher = other.controls$estimate.fisher,
+    estimate_fisher = controls$estimate.fisher,
     x_fixed_f = x_fixed_f,
     x_random = x_random,
     random_distr = reffects,
