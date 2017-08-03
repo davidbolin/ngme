@@ -1,19 +1,20 @@
 
-#' @title Print function for \code{"nglda_est"} objects.
+#' @title Print function for \code{"ngme"} objects.
 #'
-#' @description Prints \code{"nglda_est"} objects concisely.
+#' @description A function to print results stored in the 
+#'    objects returned by the \code{"ngme"} function.
 #'
-#' @param object A fitted object by calling \code{"nglda_est"}.
+#' @param object A fitted object by calling \code{"ngme"}.
 #' @param ... Additional arguments; none used currently.
 #'
-#' @seealso \code{\link{nglda_est}}, \code{\link{print}}
+#' @seealso \code{\link{ngme}}, \code{\link{print}}
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
+#'   fit <- ngme(...)
 #'   fit
 #'   }
 
-print.nglda_est <- function(object, ...){
+print.ngme <- function(object, ...){
 
   cat("Call:\n")
   print(object$call)
