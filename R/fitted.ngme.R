@@ -2,22 +2,22 @@
 #'
 #' @description Calculates fitted values.
 #'
-#' @param object A fitted object by calling \code{"summary.nglda_est"}.
+#' @param object A fitted object by calling \code{"ngme"} function.
 #' @param type A character string for the type of fitted values;
 #'   \code{"marginal"} for fixed effects.
 #' @param ... Additional arguments; none used currently.
 #'
-#' @details Subject-specific fitted values can be obtained using \code{"nglda_predict"}.
-#' @seealso \code{\link{nglda_est}}, \code{\link{fitted}}
+#' @details Subject-specific fitted values can be obtained using \code{"predict.ngme"}.
+#' @seealso \code{\link{ngme}}, \code{\link{fitted}}
 #'
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
+#'   fit <- ngme(...)
 #'   fitted(fit)
 #'   }
 #'
 
- fitted.nglda_est <- function(object, type = "marginal", ...){
+ fitted.ngme <- function(object, type = "marginal", ...){
 
    if(type == "marginal"){
      marg_fit <- as.numeric(object$x_fixed_f %*% object$fixed_est)
