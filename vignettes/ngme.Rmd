@@ -103,7 +103,7 @@ with
 - t distributed $Z_{ij}$.
 
 ```{r, echo = TRUE}
-srft_fit <- nglda_est(
+srft_fit <- ngme(
   fixed = log(egfr) ~ bage + sex + fu + pwl,
   random = ~ fu + bage|id,
   data = srft_data_sub,
@@ -112,8 +112,8 @@ srft_fit <- nglda_est(
   error = "tdist",
   timeVar = "fu",
   use.process = T,
-  estimation.controls = list(nIter = 10, nIter.fisher = 10),
-  other.controls = list(estimate.fisher = T, silent = T)
+  nIter = 1000,
+  controls = list(nSim.fisher = 10)
 )
 ```
 Typing the fitted object's name, `srft_fit`, 
@@ -149,8 +149,8 @@ Predictions based on filtering distribution could be obtained using the function
 `nglda_predict`:
 
 ```{r, echo = TRUE}
- res.pred <- nglda_predict(srft_fit, id = unique(srft_data_sub$id), 
-                          type = "Filter", control_list = list(silent = T))
+ res.pred <- predict(srft_fit, id = unique(srft_data_sub$id), 
+                     type = "Filter", control_list = list(silent = T))
 
 ```
 A summary of results including accuracy measures can be viewed by
