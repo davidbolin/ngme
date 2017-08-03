@@ -2,7 +2,7 @@
 #'
 #' @description Plots the predicted values for a specific subject.
 #'
-#' @param object A fitted object by calling \code{"nglda_est"}.
+#' @param object A fitted object returned by the \code{"predict.ngme"} function.
 #' @param id A numerical value or character string for ID of the subject
 #'   for whom the plot will be generated.
 #' @param control A list of control variables.
@@ -12,16 +12,17 @@
 #'   }
 #' @param ... Additional arguments; none used currently.
 #'
-#' @seealso \code{\link{nglda_predict}}
+#' @seealso \code{\link{predict.ngme}}
 #'
 #' @examples
 #'   \dontrun{
-#'   pred <- nglda_predict(...)
-#'   plot(fit, 1)
+#'   fit <- ngme(...)
+#'   pred <- predict(fit, ...)
+#'   plot(pred, 1)
 #'   }
 #'
 
-plot.nglda_predict <- function(object, id,
+plot.predict.ngme <- function(object, id,
                                control = list(xlim_x = 0.1,
                                               ylim_c = 0.01),
                                ...){
