@@ -1,21 +1,22 @@
 
-#' @title Print function for \code{"nglda_predict"} objects.
+#' @title Print function for \code{"predict.ngme"} objects.
 #'
-#' @description Prints the output produced by \code{"nglda_predict"} concisely.
+#' @description Prints the output contained in the \code{"predict.ngme"} objects concisely.
 #'
-#' @param object A fitted object by calling \code{"nglda_predict"}.
+#' @param object A fitted object by calling \code{"predict.ngme"}.
 #' @param ... Additional arguments; none used currently.
 #'
 #' @details MAE, RMSE, CRPS, Interval coverage, Interval width
 #'
-#' @seealso \code{\link{nglda_predict}}, \code{\link{print}}
+#' @seealso \code{\link{predict.ngme}}, \code{\link{print}}
 #' @examples
 #'   \dontrun{
-#'   pred <- nglda_predict(...)
+#'   fit <- ngme(...)
+#'   pred <- predict.ngme(fit, ...)
 #'   pred
 #'   }
 
-print.nglda_predict <- function(object, ...){
+print.predict.ngme <- function(object, ...){
 
   cat("Call:\n")
   print(object$call)
@@ -45,6 +46,5 @@ print.nglda_predict <- function(object, ...){
   cat("CRPS (SD) = ", object$mean.crps," (", object$std.crps, ")\n", sep = "")
   cat("Interval coverage (SD) = ", object$coverage.mean, " (", object$coverage.std,")\n", sep = "")
   cat("Interval width (SD) = ", object$mean.int.width, " (", object$std.int.width,")\n", sep = "")
-
 
 }
