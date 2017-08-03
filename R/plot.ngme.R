@@ -3,7 +3,7 @@
 #' @description Plots the parameter estimates at successive iterations
 #'    of the stochastic algorithm.
 #'
-#' @param object A fitted object by calling \code{"nglda_est"}.
+#' @param object A fitted object returned by the \code{"ngme"} function.
 #' @param param A character string for which parameter set the traces
 #'   are to be plotted;
 #'   \code{"fixed"} for fixed effects,
@@ -12,16 +12,16 @@
 #'   \code{"error"} for error term.
 #' @param ... Additional arguments; none used currently.
 #'
-#' @seealso \code{\link{nglda_est}}
+#' @seealso \code{\link{ngme}}
 #'
 #' @examples
 #'   \dontrun{
-#'   fit <- nglda_est(...)
+#'   fit <- ngme(...)
 #'   fitted(fit)
 #'   }
 #'
 
-plot.nglda_est <- function(object, param = "fixed", ...){
+plot.ngme <- function(object, param = "fixed", ...){
 
   # if process was not specified in the model
   if(param == "process" && object$use_process == FALSE){
