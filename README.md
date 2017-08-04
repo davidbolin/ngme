@@ -23,7 +23,7 @@
 - shape parameter is only 0.5 currently - future work
 - all the params of gig can be estimated - future work
 
-NOTES - OA
+## NOTES -- OA
 - continue with predict.derivative!!!
 - setseed_ME ???
 - put examples
