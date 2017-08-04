@@ -25,17 +25,11 @@
 
 NOTES - OA
 - continue with predict.derivative!!!
-- see LDMod in simulate function!
 - setseed_ME ???
 - put examples
 - GHmixedInit can be deleted - JW approved
-- simulate functions
-- check explanations for the functions
+- simulate functions - remove?? see LDMod in simulate function!
 - estimateLong doesnt recognise silent?
-- vignette
-- it seems we don't use estimateME in estimate.wrapper
-- nglda_est to ngme
-- nglda_predict to predict.ngme
 - remove estimateME
 
 - remove nglda_est - TEST FIRST THE REPLACER
