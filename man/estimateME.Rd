@@ -59,11 +59,16 @@ to be used in each gradient subsampling weighted by gradient.}
 -1: inactive, 0: pure mean.}
 
 \item{subsample.type}{A numeric value for the type of subsampling;
-0: uniform without sampling, 1: sample size weighted,
-3: weighted sampling by gradient size.}
+1: uniform sampling, 
+2: sample size weighted,
+3: weighted sampling by gradient size, 
+4: grouped sub-sampler.}
 
 \item{nPar_burnin}{A numeric value; "M-step" updates will be used until this
 iteration.}
+
+\item{nBurnin_base}{A numerical value for burn-in simulations that are performed
+for a subject that is sampled for the first time in the estimation method.}
 
 \item{nIter}{A numeric value for the number of iteration that will be
 used by the stochastic gradient.}
