@@ -29,3 +29,4 @@
 - put examples
 - simulate functions - remove?? see LDMod in simulate function!
 - estimateLong doesnt recognise silent?
+- pSubsample2 seems un-used
