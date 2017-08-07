@@ -30,8 +30,3 @@
 - GHmixedInit can be deleted - JW approved
 - simulate functions - remove?? see LDMod in simulate function!
 - estimateLong doesnt recognise silent?
-- remove estimateME
-
-- remove nglda_est - TEST FIRST THE REPLACER
-- remove estimate.wrapper - TEST FIRST THE REPLACER
-- remove nglda_predict - TEST FIRST THE REPLACER
