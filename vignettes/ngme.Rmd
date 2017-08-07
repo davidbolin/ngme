@@ -157,7 +157,7 @@ intervals(srft_fit)
 Predictions based on filtering distribution could be obtained using the function 
 `predict`:
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 pred <- predict(srft_fit, id = unique(srft_data_sub$id), 
                 type = "Filter", controls = list(silent = T))
 
