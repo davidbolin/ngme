@@ -1,357 +1,11 @@
-#'
-#' @title Wrapper for parameter estimation. 
-#' 
-#' @description A wrapper function for parameter estimation. 
-#' 
-#' @param Y A numeric list that contains outcome values. 
-#' @param locs A numeric list that contains the timings at which the outcomes 
-#'    are collected. 
-#' @param B_random A numeric list of random effects covariate matrices.
-#' @param B_fixed A numeric list of fixed effects covariate matrices.
-#' @param operator.type A character string for specifying the operator type. 
-#'   Available options are: 
-#'   \code{"fd2"} for integrated Random-Walk (integrated Brownian Motion), 
-#'   and \code{"matern"} for Matern family. 
-#' @param n.process A numerical value for the number of basis functions to
-#'     approximate the stochastic process.
-#' @param measurement.distribution A character string to specify the distribution 
-#'   of the error term. Available options are: \code{"Normal"} for Normal, \code{"NIG"} 
-#'   for Normal-inverse Gaussian, \code{"tdist"} for t-distribution.
-#' @param random.effect.distribution A character string that indicates the distribution 
-#'   of the random effects. Available options are:  \code{"Normal"} for Normal,
-#'   and \code{"NIG"} for Normal-inverve Gaussian distributions.
-#' @param process.distribution A character vector that indicates the distribution of 
-#'   the process. Available options are: 
-#'   \code{"Normal"} for Normal, \code{"NIG"} for Normal-inverse Gaussian,
-#'   \code{"GAL"} for generalised-asymmetric Laplace, and \code{"CH"} for Cauchy
-#'   distributions.
-#' @param individual.sigma A logical variable for specifying patient-specific mixture
-#'     random variable for the error-term; \code{"FALSE"} indicates do not obtain,
-#'     \code{"TRUE"} obtain.
-#' @param silent A logical value for printing the details of the iterations;
-#'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
-#' @param estimation.options A list of control inputs. See \code{"estimation.controls"} 
-#'     for the \code{"nglda_est"} function. 
-#' @param estimate_fisher A logical variable for whether Fisher-Information matrix
-#'     to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
-#' @inheritParams  
-#' @param ... Additional arguments.     
-#' 
-#' @return A list of fitted results.
-#'
-#' @details This function is a wrapper function (wraps \code{"estimateLong"}) 
-#'    for parameter estimation. It internally selects the initial values to 
-#'    start the stochastic gradient algorithn. The function is not advised to 
-#'    be used. It is indeed called within wrapped by \code{"nglda_est"} that is a 
-#'    more user-friendly function for parameter estimation. 
-#'    
-#' @seealso \code{\link{nglda_est}}, \code{\link{estimateLong}}    
-#'
-#' @examples
-#'   \dontrun{
-#'   data(srft_data)
-#'   estimate.wrapper(...)
-#'   }
-
-estimate.wrapper <- function(Y,
-                             locs,
-                             B_random,
-                             B_fixed,
-                             use.process = TRUE,
-                             operator.type = "fd2",
-                             n.process = NULL,
-                             measurement.distribution = "Normal",
-                             random.effect.distribution= "Normal",
-                             process.distribution= "Normal",
-                             individual.sigma = FALSE,
-                             silent = FALSE,
-                             estimation.options = NULL,
-                             estimate_fisher = FALSE,
-                             ...)
-{
-
-  estimation.controls = list(learning.rate = 0,
-                             polyak_rate = 0.1,
-                             nBurnin = 100,
-                             nSim = 2,
-                             nIter.gauss = 1000,
-                             nIter = 10000,
-                             pSubsample = 0.1,
-                             subsample.type = 4,
-                             nPar_burnin = 0,
-                             nIter.fisher = 1000,
-                             nSim.fisher = 1000)
-  if(!missing(estimation.options) && !is.null(estimation.options)){
-    for(i in 1:length(estimation.options)){
-      estimation.controls[names(estimation.options)[i]] = estimation.options[i]
-    }
-}
-  if(!silent)
-    cat("Setup lists\n")
-  Vin <- list()
-  n.pers = length(Y)
-  for(i in 1:n.pers)
-  {
-    Vin[[i]] <- rep(1, length(Y[[i]]))
-  }
-  measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
-  mixedEffect_list  <- list(B_random = B_random,
-                            B_fixed  = B_fixed,
-                            noise = "Normal",
-                            Sigma_epsilon=1)
-  if(use.process){
-    if(is.null(n.process)){
-      n.process = max(round(mean(unlist(lapply(locs,length)))),1)
-    }
-    operator_list <- create_operator(locs, n.process, name = operator.type)
-
-    process_list = list(noise = "Normal",
-                        nu  = 1,
-                        mu  = 0)
-    process_list$V <- list()
-    process_list$X <- list()
-    for(i in 1:length(locs))
-    {
-      process_list$X[[i]] <- rep(0,length(operator_list$h[[1]]))
-      process_list$V[[i]] <- operator_list$h[[1]]
-    }
-  }
-
-  #starting values for measurement error and mixed effects using OLS:
-  if(!silent)
-    cat("Calculate starting values\n")
-  mixedEffect_list <- ME.startvalues(Y,mixedEffect_list)
-  measurement_list$sigma = mixedEffect_list$sigma
-
-  if(use.process){
-    #starting values for process:
-    operator_list$type  <- operator.type
-    operator_list <- operator.startvalues(Y,locs,mixedEffect_list,operator_list,measurement_list)
-
-
-    if(random.effect.distribution != "Normal" || process.distribution != "Normal" || measurement.distribution != "Normal"){
-      #estimate Gaussian process model
-      if(!silent)
-        cat("Estimate Gaussian")
-
-      res <- estimateLong(Y, locs,
-                            mixedEffect_list,
-                            measurement_list,
-                            process_list,
-                            operator_list,
-                            learning_rate = estimation.controls$learning.rate,
-                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = estimation.controls$polyak_rate,
-                            nSim = estimation.controls$nSim,
-                            nBurnin = estimation.controls$nBurnin,
-                            nIter = estimation.controls$nIter,
-                            nPar_burnin = estimation.controls$nPar_burnin,
-                            pSubsample = estimation.controls$pSubsample,
-                            silent = silent,
-                            estimate_fisher = FALSE,
-                            ...)
-
-      if(!silent)
-        cat("Estimate non-Gaussian")
-
-      res$mixedEffect_list$noise = random.effect.distribution
-      res$mixedEffect_list$nu = as.matrix(10)
-      res$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
-
-      res$processes_list$noise = process.distribution
-      res$processes_list$mu = 0
-      res$processes_list$nu = 10
-
-      res$measurementError_list$noise = measurement.distribution
-      res$measurementError_list$nu = 10
-      res$measurementError_list$common_V = individual.sigma
-      res$measurementError_list$Vs = Vin
-
-      res <- estimateLong(Y, locs,
-                          res$mixedEffect_list,
-                          res$measurementError_list,
-                          res$processes_list,
-                          res$operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
-                          silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
-      if(estimate_fisher){
-        res.f <- estimateLong(Y, locs,
-                          res$mixedEffect_list,
-                          res$measurementError_list,
-                          res$processes_list,
-                          res$operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = -1,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter.fisher,
-                          nSim = estimation.controls$nSim.fisher,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
-                          silent = silent,
-                          estimate_fisher = estimate_fisher,
-                          ...)
-       res$FisherMatrix <- res.f$FisherMatrix
-      }
-    } else {
-      if(!silent)
-        cat("Estimate Model")
-
-      res <- estimateLong(Y, locs,
-                          mixedEffect_list,
-                          measurement_list,
-                          process_list,
-                          operator_list,
-                          learning_rate = estimation.controls$learning.rate,
-                          nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                          polyak_rate = estimation.controls$polyak_rate,
-                          nSim = estimation.controls$nSim,
-                          nBurnin = estimation.controls$nBurnin,
-                          nIter = estimation.controls$nIter,
-                          nPar_burnin = estimation.controls$nPar_burnin,
-                          pSubsample = estimation.controls$pSubsample,
-                          subsample.type = estimation.controls$subsample.type,
-                          silent = silent,
-                          estimate_fisher = FALSE,
-                          ...)
-      if(estimate_fisher){
-        res.f <- estimateLong(Y, locs,
-                              res$mixedEffect_list,
-                              res$measurementError_list,
-                              res$processes_list,
-                              res$operator_list,
-                              learning_rate = estimation.controls$learning.rate,
-                              nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                              polyak_rate = -1,
-                              nIter = estimation.controls$nIter.fisher,
-                              nSim = estimation.controls$nSim.fisher,
-                              nBurnin = estimation.controls$nBurnin,
-                              nPar_burnin = estimation.controls$nPar_burnin,
-                              pSubsample = estimation.controls$pSubsample,
-                              silent = silent,
-                              estimate_fisher = estimate_fisher,
-                              ...)
-        res$FisherMatrix <- res.f$FisherMatrix
-      }
-    }
-  } else {
-
-      if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
-        if(!silent)
-          cat("Estimate Gaussian")
-        res <- estimateLong(Y, locs,
-                            mixedEffect_list,
-                            measurement_list,
-                            learning_rate = estimation.controls$learning.rate,
-                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = estimation.controls$polyak_rate,
-                            nSim = estimation.controls$nSim,
-                            nBurnin = estimation.controls$nBurnin,
-                            nIter = estimation.controls$nIter.gauss,
-                            nPar_burnin = estimation.controls$nPar_burnin,
-                            pSubsample = estimation.controls$pSubsample,
-                            silent = silent,
-                            estimate_fisher = FALSE,
-                            ...)
-          if(!silent)
-          cat("Estimate non-Gaussian")
-
-        res$mixedEffect_list$noise = random.effect.distribution
-        res$mixedEffect_list$nu = as.matrix(10)
-        res$mixedEffect_list$mu = matrix(0,dim(B_random[[1]])[2],1)
-
-        res$measurementError_list$noise = measurement.distribution
-        res$measurementError_list$nu = 10
-        res$measurementError_list$common_V = individual.sigma
-        res$measurementError_list$Vs = Vin
-
-        res <- estimateLong(Y, locs,
-                            res$mixedEffect_list,
-                            res$measurementError_list,
-                            res$processes_list,
-                            res$operator_list,
-                            learning_rate = estimation.controls$learning.rate,
-                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = estimation.controls$polyak_rate,
-                            nBurnin = estimation.controls$nBurnin,
-                            nIter = estimation.controls$nIter,
-                            nPar_burnin = estimation.controls$nPar_burnin,
-                            pSubsample = estimation.controls$pSubsample,
-                            silent = silent,
-                            estimate_fisher = FALSE,
-                            ...)
-        if(estimate_fisher){
-          res.f <- estimateLong(Y, locs,
-                                res$mixedEffect_list,
-                                res$measurementError_list,
-                                res$processes_list,
-                                res$operator_list,
-                                learning_rate = estimation.controls$learning.rate,
-                                nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                                polyak_rate = -1,
-                                nSim = estimation.controls$nSim.fisher,
-                                nBurnin = estimation.controls$nBurnin,
-                                nIter = estimation.controls$nIter.fisher,
-                                nPar_burnin = estimation.controls$nPar_burnin,
-                                pSubsample = estimation.controls$pSubsample,
-                                silent = silent,
-                                estimate_fisher = estimate_fisher,
-                                ...)
-          res$FisherMatrix <- res.f$FisherMatrix
-        }
-      } else {
-        res <- estimateLong(Y, locs,
-                            mixedEffect_list,
-                            measurement_list,
-                            learning_rate = estimation.controls$learning.rate,
-                            nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                            polyak_rate = estimation.controls$polyak_rate,
-                            nSim = estimation.controls$nSim,
-                            nBurnin = estimation.controls$nBurnin,
-                            nIter = estimation.controls$nIter,
-                            nPar_burnin = estimation.controls$nPar_burnin,
-                            pSubsample = estimation.controls$pSubsample,
-                            silent = silent,
-                            estimate_fisher = FALSE,
-                            ...)
-        if(estimate_fisher){
-          res.f <- estimateLong(Y, locs,
-                                res$mixedEffect_list,
-                                res$measurementError_list,
-                                learning_rate = estimation.controls$learning.rate,
-                                nBurnin_learningrate = estimation.controls$nBurnin_learningrate,
-                                polyak_rate = -1,
-                                nSim = estimation.controls$nSim.fisher,
-                                nBurnin = estimation.controls$nBurnin,
-                                nIter = estimation.controls$nIter.fisher,
-                                nPar_burnin = estimation.controls$nPar_burnin,
-                                pSubsample = estimation.controls$pSubsample,
-                                silent = silent,
-                                estimate_fisher = estimate_fisher,
-                                ...)
-          res$FisherMatrix <- res.f$FisherMatrix
-        }
-      }
-  }
-
-  return(res)
-}
-
-#'
 #' @title Estimate parameters.
 #' 
 #' @description A function that estimates parameters by 
 #'    calling the \code{"estimateLong_cpp()"} function.
 #'
-#' @inheritParams estimate.wrapper
+#' @param Y A numeric list that contains outcome values. 
+#' @param locs A numeric list that contains the timings at which the outcomes 
+#'    are collected. 
 #' @param mixedEffect_list A list of inputs for random effects. 
 #'   \itemize{
 #'   \item \code{noise} The distribution of the mixed effects.
@@ -383,20 +37,24 @@ estimate.wrapper <- function(Y,
 #'   \item \code{nu}    Shape parameter (for NIG or GAL).
 #'   \item \code{mu}    Asymmetry parameter (for NIG or GAL).
 #'   }
+#' @param step0 A numeric value for stepsize for the optimizer; step0 / i^alpha.
+#' @param alpha A numeric value for stepsize for the optimizer; step0 / i^alpha.
 #' @param learning_rate A numeric value for the parameter of stochastic gradient.
 #' @param nBurnin_learningrate A numeric value until which the learning will
 #'     not be started.
-#' @param nPar_burnin A numeric value; "M-step" updates will be used until this
-#'     iteration.
-#' @param polyak_rate A numeric value for moving average of parameters;
-#'     -1: inactive, 0: pure mean.
-#' @param step0 A numeric value for stepsize for the optimizer; step0 / i^alpha.
-#' @param alpha A numeric value for stepsize for the optimizer; step0 / i^alpha.
+#' @param nBurnin_base A numerical value for burn-in simulations that are performed  
+#'       for a subject that is sampled for the first time in the estimation method. 
 #' @param pSubsample A numeric value for the portion of data to be used in each
 #'     gradient iteration.
+#' @param polyak_rate A numeric value for moving average of parameters;
+#'     -1: inactive, 0: pure mean.
 #' @param subsample.type A numeric value for the type of subsampling;
-#'     0: uniform without sampling, 1: sample size weighted,
-#'     3: weighted sampling by gradient size.
+#'       1: uniform sampling, 
+#'       2: sample size weighted,
+#'       3: weighted sampling by gradient size, 
+#'       4: grouped sub-sampler.
+#' @param nPar_burnin A numeric value; "M-step" updates will be used until this
+#'     iteration.
 #' @param pSubsample2 A numeric value for the portion of the data
 #'     to be used in each gradient subsampling weighted by gradient.
 #' @param nIter A numeric value for the number of iteration that will be
@@ -406,19 +64,22 @@ estimate.wrapper <- function(Y,
 #' @param silent A logical value for printing the details of the iterations;
 #'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
 #' @param seed A numerical value for starting the Gibbs samplers from fixed seed.
-#' 
+#' @param standardize.mixedEffects A logical variable for standardising the covariates;
+#'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
+#' @param estimate_fisher A logical variable for whether Fisher-Information matrix
+#'     to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
 #' @return A list of fitted results.
 #'
 #' @details This function calls \code{"estimateLong_cpp()"} internally. 
-#'    It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
-#'    be used. 
+#'    It is wrapped by \code{"ngme"}, and is not advised to 
+#'    be used alone. 
 #'    
-#' @seealso \code{\link{nglda_est}}, \code{\link{estimate.wrapper}}    
+#' @seealso \code{\link{ngme}} 
 #'
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)
-#'   estimateLong(...)
+#'   fit <- estimateLong(...)
 #'   }
 
 estimateLong <- function(Y,

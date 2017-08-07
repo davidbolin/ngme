@@ -61,6 +61,9 @@ are collected.}
 \item{nBurnin_learningrate}{A numeric value until which the learning will
 not be started.}
 
+\item{nBurnin_base}{A numerical value for burn-in simulations that are performed
+for a subject that is sampled for the first time in the estimation method.}
+
 \item{pSubsample}{A numeric value for the portion of data to be used in each
 gradient iteration.}
 
@@ -68,8 +71,10 @@ gradient iteration.}
 -1: inactive, 0: pure mean.}
 
 \item{subsample.type}{A numeric value for the type of subsampling;
-0: uniform without sampling, 1: sample size weighted,
-3: weighted sampling by gradient size.}
+1: uniform sampling, 
+2: sample size weighted,
+3: weighted sampling by gradient size, 
+4: grouped sub-sampler.}
 
 \item{nPar_burnin}{A numeric value; "M-step" updates will be used until this
 iteration.}
@@ -88,6 +93,9 @@ to estimate the gradient.}
 
 \item{seed}{A numerical value for starting the Gibbs samplers from fixed seed.}
 
+\item{standardize.mixedEffects}{A logical variable for standardising the covariates;
+\code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.}
+
 \item{estimate_fisher}{A logical variable for whether Fisher-Information matrix
 to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
 }
@@ -100,15 +108,15 @@ A function that estimates parameters by
 }
 \details{
 This function calls \code{"estimateLong_cpp()"} internally. 
-   It is wrapped by \code{"estimate.wrapper"}, and is not advised to 
-   be used.
+   It is wrapped by \code{"ngme"}, and is not advised to 
+   be used alone.
 }
 \examples{
   \dontrun{
   data(srft_data)
-  estimateLong(...)
+  fit <- estimateLong(...)
   }
 }
 \seealso{
-\code{\link{nglda_est}}, \code{\link{estimate.wrapper}}
+\code{\link{ngme}}
 }
