@@ -25,8 +25,7 @@
 
 ## NOTES -- OA
 - continue with predict.derivative!!!
-- setseed_ME ???
+- setseed_ME - explanations to be added
 - put examples
-- GHmixedInit can be deleted - JW approved
 - simulate functions - remove?? see LDMod in simulate function!
 - estimateLong doesnt recognise silent?
