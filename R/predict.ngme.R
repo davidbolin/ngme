@@ -57,7 +57,7 @@
 #'   }
 
 predict.ngme <- function(object,
-                          id,
+                          id = NULL,
                           type = "Filter",
                           quantiles = c(0.025, 0.975),
                           controls = list(
@@ -83,12 +83,12 @@ predict.ngme <- function(object,
       nSim = 10,
       nBurnin = 10,
       silent = TRUE
-    )
+      )
     for(i in 1:length(controls)){
         controls_full[names(controls)[i]] <- controls[i]
     }
+    controls <- controls_full
   }
-  controls <- controls_full
   
   Y                <- object$Y
   locs             <- object$locs
@@ -98,6 +98,9 @@ predict.ngme <- function(object,
   operator_list    <- object$operator_list
 
   id_list <- as.numeric(names(Y))
+  if(is.null(id)){
+    id <- id_list
+  }
   pInd <- which(id_list %in% id)
 
   B_fixed <- mixedEffect_list$B_fixed
