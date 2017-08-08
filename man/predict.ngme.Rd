@@ -4,16 +4,17 @@
 \alias{predict.ngme}
 \title{Prediction.}
 \usage{
-\method{predict}{ngme}(object, id, type = "Filter", quantiles = c(0.025,
-  0.975), controls = list(return.samples = TRUE, predict.derivaties = NULL,
-  excursions = NULL, crps = TRUE, crps.skip = 1, nSim = 10, nBurnin = 10, silent
-  = TRUE))
+\method{predict}{ngme}(object, id = NULL, type = "Filter",
+  quantiles = c(0.025, 0.975), controls = list(return.samples = TRUE,
+  predict.derivaties = NULL, excursions = NULL, crps = TRUE, crps.skip = 1, nSim
+  = 10, nBurnin = 10, silent = TRUE))
 }
 \arguments{
 \item{object}{A fitted object obtained by calling \code{"ngme"}.}
 
 \item{id}{A numeric vector containing the ID's of the subjects for whom
-predictions are to be obtained.}
+predictions are to be obtained. Default is set to \code{"NULL"} 
+indicating perform predictions for all the subjects.}
 
 \item{type}{A character string for the type of prediction: \code{"Filter"} for
 filtering, \code{"Smoothing"} for smoothing.}

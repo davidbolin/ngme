@@ -5,7 +5,8 @@
 #'
 #' @param object A fitted object obtained by calling \code{"ngme"}.
 #' @param id A numeric vector containing the ID's of the subjects for whom
-#'   predictions are to be obtained.
+#'   predictions are to be obtained. Default is set to \code{"NULL"} 
+#'   indicating perform predictions for all the subjects.
 #' @param type A character string for the type of prediction: \code{"Filter"} for
 #'   filtering, \code{"Smoothing"} for smoothing.
 #' @param quantiles A two-elemnent vector that contains the quantiles
