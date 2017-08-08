@@ -111,7 +111,7 @@ summary.ngme <- function(object, ...){
     if(object$use_process){ # if use.process = TRUE
       operator_results <- matrix(object$operator_tau, ncol = 1)
       colnames(operator_results) <- "Estimate"
-      rownames(operator_results) <- "operator_tau_est"
+      rownames(operator_results) <- "operator_tau"
 
       if(object$operator_type %in% c("matern")){
         operator_results <- rbind(operator_results, object$operator_kappa)
@@ -131,7 +131,9 @@ summary.ngme <- function(object, ...){
 
     if(object$error_distr == "Normal"){
 
-      meas_error_results <- list(meas_error_sigma_est = object$meas_error_sigma)
+      meas_error_results <- matrix(c(object$meas_error_sigma))
+      rownames(meas_error_results) <- c("sigma")
+      colnames(meas_error_results) <- c("Estimate")
 
     }else if(object$error_distr %in% c("NIG", "tdist")){
       meas_error_sigma_est    <- object$meas_error_sigma
