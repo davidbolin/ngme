@@ -33,3 +33,4 @@
 - consider ~ -1 + ... in fixed input of ngme 
 - seed seems not working
 - x and y axes in plot.predict.ngme
+- add mean or median as an option to the predict.ngme function
