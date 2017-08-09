@@ -438,7 +438,7 @@ ngme <- function(fixed,
   } else {## the case of the model excludes W(t)
     
     # either random effects or measurement error is non-Gaussian
-    if(random.effect.distribution != "Normal" || measurement.distribution != "Normal"){
+    if(reffects != "Normal" || error != "Normal"){
       
       if(!silent){
         cat("Estimate Gaussian") 
