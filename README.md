@@ -34,3 +34,4 @@
 - seed seems not working
 - x and y axes in plot.predict.ngme
 - add mean or median as an option to the predict.ngme function
+- check calculation of coverages and width in predict.ngme
