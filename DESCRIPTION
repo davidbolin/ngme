@@ -13,7 +13,7 @@ Description: Inference and prediction for linear mixed effects (random effects) 
     stochastic process), and error term. The latter three components can be specified as 
     Gaussian or non-Gaussian. One can drop the time-varying random effects term. 
 License: GPL (>= 2)
-Imports: MASS, Rcpp (>= 0.12.1)
+Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
 Depends: R (>= 3.4.0), Matrix, methods, MASS
 RoxygenNote: 6.0.1
