@@ -31,6 +31,3 @@ A function to obtain initials for the operator.
   }
   
 }
-\seealso{
-\code{\link{estimate.wrapper}}
-}

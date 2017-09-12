@@ -312,8 +312,6 @@ ME.startvalues <- function(Y, mixedEffect_list)
 #' 
 #' @return A list for operator. 
 #'    See e.g. \code{"operator_list"} in \code{"estimateLong"}.
-#' 
-#' @seealso \code{\link{estimate.wrapper}}    
 #'
 #' @examples
 #'   \dontrun{
