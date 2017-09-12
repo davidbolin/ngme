@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // estimateLong_cpp
 List estimateLong_cpp(Rcpp::List in_list);
-RcppExport SEXP ngme_estimateLong_cpp(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_estimateLong_cpp(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // estimateFisher
 List estimateFisher(Rcpp::List in_list);
-RcppExport SEXP ngme_estimateFisher(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_estimateFisher(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,7 +30,7 @@ END_RCPP
 }
 // predictLong_cpp
 List predictLong_cpp(Rcpp::List in_list);
-RcppExport SEXP ngme_predictLong_cpp(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_predictLong_cpp(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,7 +41,7 @@ END_RCPP
 }
 // rGIG_cpp
 Eigen::VectorXd rGIG_cpp(Eigen::VectorXd p, Eigen::VectorXd a, Eigen::VectorXd b, unsigned long seed);
-RcppExport SEXP ngme_rGIG_cpp(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP, SEXP seedSEXP) {
+RcppExport SEXP _ngme_rGIG_cpp(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,7 +55,7 @@ END_RCPP
 }
 // simulateLongGH_cpp
 List simulateLongGH_cpp(Rcpp::List in_list);
-RcppExport SEXP ngme_simulateLongGH_cpp(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_simulateLongGH_cpp(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -66,7 +66,7 @@ END_RCPP
 }
 // simulateLongME_cpp
 List simulateLongME_cpp(Rcpp::List in_list);
-RcppExport SEXP ngme_simulateLongME_cpp(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_simulateLongME_cpp(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -77,7 +77,7 @@ END_RCPP
 }
 // getDuplicateM
 Eigen::MatrixXi getDuplicateM(const int n);
-RcppExport SEXP ngme_getDuplicateM(SEXP nSEXP) {
+RcppExport SEXP _ngme_getDuplicateM(SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -88,7 +88,7 @@ END_RCPP
 }
 // test_d2_process
 Rcpp::List test_d2_process(Rcpp::List Y, Rcpp::List process_list, Rcpp::List operator_list);
-RcppExport SEXP ngme_test_d2_process(SEXP YSEXP, SEXP process_listSEXP, SEXP operator_listSEXP) {
+RcppExport SEXP _ngme_test_d2_process(SEXP YSEXP, SEXP process_listSEXP, SEXP operator_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,7 @@ END_RCPP
 }
 // test_sampling_NIG
 Rcpp::List test_sampling_NIG(Rcpp::List mixedEffect_list, Rcpp::List meas_list, int nsamples);
-RcppExport SEXP ngme_test_sampling_NIG(SEXP mixedEffect_listSEXP, SEXP meas_listSEXP, SEXP nsamplesSEXP) {
+RcppExport SEXP _ngme_test_sampling_NIG(SEXP mixedEffect_listSEXP, SEXP meas_listSEXP, SEXP nsamplesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -114,7 +114,7 @@ END_RCPP
 }
 // test_logf_NIG
 double test_logf_NIG(const Eigen::VectorXd& U, const Eigen::VectorXd& mu, const Eigen::VectorXd& delta, const Eigen::MatrixXd& iSigma, const double nu);
-RcppExport SEXP ngme_test_logf_NIG(SEXP USEXP, SEXP muSEXP, SEXP deltaSEXP, SEXP iSigmaSEXP, SEXP nuSEXP) {
+RcppExport SEXP _ngme_test_logf_NIG(SEXP USEXP, SEXP muSEXP, SEXP deltaSEXP, SEXP iSigmaSEXP, SEXP nuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -129,7 +129,7 @@ END_RCPP
 }
 // test_dU_EiV
 Rcpp::List test_dU_EiV(const Eigen::VectorXd& U, const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& delta, const Eigen::VectorXd& mu, const double p_GIG, const double a_GIG, const double b_GIG, const Eigen::VectorXd& res, const Eigen::MatrixXd& Q_noise, const Eigen::MatrixXd& B);
-RcppExport SEXP ngme_test_dU_EiV(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP p_GIGSEXP, SEXP a_GIGSEXP, SEXP b_GIGSEXP, SEXP resSEXP, SEXP Q_noiseSEXP, SEXP BSEXP) {
+RcppExport SEXP _ngme_test_dU_EiV(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP p_GIGSEXP, SEXP a_GIGSEXP, SEXP b_GIGSEXP, SEXP resSEXP, SEXP Q_noiseSEXP, SEXP BSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -149,7 +149,7 @@ END_RCPP
 }
 // test_db_EiV_GIG
 double test_db_EiV_GIG(double p, double a, double b);
-RcppExport SEXP ngme_test_db_EiV_GIG(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
+RcppExport SEXP _ngme_test_db_EiV_GIG(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -162,7 +162,7 @@ END_RCPP
 }
 // test_EiV_NGIG
 double test_EiV_NGIG(Eigen::VectorXd& U, Eigen::MatrixXd& Sigma, Eigen::VectorXd& delta, Eigen::VectorXd& mu, double p, double a, double b);
-RcppExport SEXP ngme_test_EiV_NGIG(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
+RcppExport SEXP _ngme_test_EiV_NGIG(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -179,7 +179,7 @@ END_RCPP
 }
 // test_EiV_GIG
 double test_EiV_GIG(double p, double a, double b);
-RcppExport SEXP ngme_test_EiV_GIG(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
+RcppExport SEXP _ngme_test_EiV_GIG(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -192,7 +192,7 @@ END_RCPP
 }
 // test_PreDiagsolver
 double test_PreDiagsolver(Rcpp::List in_list);
-RcppExport SEXP ngme_test_PreDiagsolver(SEXP in_listSEXP) {
+RcppExport SEXP _ngme_test_PreDiagsolver(SEXP in_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -203,7 +203,7 @@ END_RCPP
 }
 // sampleR
 Eigen::VectorXi sampleR(int n, Eigen::VectorXd w_in);
-RcppExport SEXP ngme_sampleR(SEXP nSEXP, SEXP w_inSEXP) {
+RcppExport SEXP _ngme_sampleR(SEXP nSEXP, SEXP w_inSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -215,7 +215,7 @@ END_RCPP
 }
 // sample_internalR
 Rcpp::List sample_internalR(int n, Eigen::VectorXd p_in, Eigen::VectorXd selected_in, Eigen::VectorXd w_in);
-RcppExport SEXP ngme_sample_internalR(SEXP nSEXP, SEXP p_inSEXP, SEXP selected_inSEXP, SEXP w_inSEXP) {
+RcppExport SEXP _ngme_sample_internalR(SEXP nSEXP, SEXP p_inSEXP, SEXP selected_inSEXP, SEXP w_inSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -229,23 +229,23 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"ngme_estimateLong_cpp", (DL_FUNC) &ngme_estimateLong_cpp, 1},
-    {"ngme_estimateFisher", (DL_FUNC) &ngme_estimateFisher, 1},
-    {"ngme_predictLong_cpp", (DL_FUNC) &ngme_predictLong_cpp, 1},
-    {"ngme_rGIG_cpp", (DL_FUNC) &ngme_rGIG_cpp, 4},
-    {"ngme_simulateLongGH_cpp", (DL_FUNC) &ngme_simulateLongGH_cpp, 1},
-    {"ngme_simulateLongME_cpp", (DL_FUNC) &ngme_simulateLongME_cpp, 1},
-    {"ngme_getDuplicateM", (DL_FUNC) &ngme_getDuplicateM, 1},
-    {"ngme_test_d2_process", (DL_FUNC) &ngme_test_d2_process, 3},
-    {"ngme_test_sampling_NIG", (DL_FUNC) &ngme_test_sampling_NIG, 3},
-    {"ngme_test_logf_NIG", (DL_FUNC) &ngme_test_logf_NIG, 5},
-    {"ngme_test_dU_EiV", (DL_FUNC) &ngme_test_dU_EiV, 10},
-    {"ngme_test_db_EiV_GIG", (DL_FUNC) &ngme_test_db_EiV_GIG, 3},
-    {"ngme_test_EiV_NGIG", (DL_FUNC) &ngme_test_EiV_NGIG, 7},
-    {"ngme_test_EiV_GIG", (DL_FUNC) &ngme_test_EiV_GIG, 3},
-    {"ngme_test_PreDiagsolver", (DL_FUNC) &ngme_test_PreDiagsolver, 1},
-    {"ngme_sampleR", (DL_FUNC) &ngme_sampleR, 2},
-    {"ngme_sample_internalR", (DL_FUNC) &ngme_sample_internalR, 4},
+    {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
+    {"_ngme_estimateFisher", (DL_FUNC) &_ngme_estimateFisher, 1},
+    {"_ngme_predictLong_cpp", (DL_FUNC) &_ngme_predictLong_cpp, 1},
+    {"_ngme_rGIG_cpp", (DL_FUNC) &_ngme_rGIG_cpp, 4},
+    {"_ngme_simulateLongGH_cpp", (DL_FUNC) &_ngme_simulateLongGH_cpp, 1},
+    {"_ngme_simulateLongME_cpp", (DL_FUNC) &_ngme_simulateLongME_cpp, 1},
+    {"_ngme_getDuplicateM", (DL_FUNC) &_ngme_getDuplicateM, 1},
+    {"_ngme_test_d2_process", (DL_FUNC) &_ngme_test_d2_process, 3},
+    {"_ngme_test_sampling_NIG", (DL_FUNC) &_ngme_test_sampling_NIG, 3},
+    {"_ngme_test_logf_NIG", (DL_FUNC) &_ngme_test_logf_NIG, 5},
+    {"_ngme_test_dU_EiV", (DL_FUNC) &_ngme_test_dU_EiV, 10},
+    {"_ngme_test_db_EiV_GIG", (DL_FUNC) &_ngme_test_db_EiV_GIG, 3},
+    {"_ngme_test_EiV_NGIG", (DL_FUNC) &_ngme_test_EiV_NGIG, 7},
+    {"_ngme_test_EiV_GIG", (DL_FUNC) &_ngme_test_EiV_GIG, 3},
+    {"_ngme_test_PreDiagsolver", (DL_FUNC) &_ngme_test_PreDiagsolver, 1},
+    {"_ngme_sampleR", (DL_FUNC) &_ngme_sampleR, 2},
+    {"_ngme_sample_internalR", (DL_FUNC) &_ngme_sample_internalR, 4},
     {NULL, NULL, 0}
 };
 

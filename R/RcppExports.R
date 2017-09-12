@@ -2,70 +2,70 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 estimateLong_cpp <- function(in_list) {
-    .Call(ngme_estimateLong_cpp, in_list)
+    .Call(`_ngme_estimateLong_cpp`, in_list)
 }
 
 estimateFisher <- function(in_list) {
-    .Call(ngme_estimateFisher, in_list)
+    .Call(`_ngme_estimateFisher`, in_list)
 }
 
 predictLong_cpp <- function(in_list) {
-    .Call(ngme_predictLong_cpp, in_list)
+    .Call(`_ngme_predictLong_cpp`, in_list)
 }
 
 rGIG_cpp <- function(p, a, b, seed = 0L) {
-    .Call(ngme_rGIG_cpp, p, a, b, seed)
+    .Call(`_ngme_rGIG_cpp`, p, a, b, seed)
 }
 
 simulateLongGH_cpp <- function(in_list) {
-    .Call(ngme_simulateLongGH_cpp, in_list)
+    .Call(`_ngme_simulateLongGH_cpp`, in_list)
 }
 
 simulateLongME_cpp <- function(in_list) {
-    .Call(ngme_simulateLongME_cpp, in_list)
+    .Call(`_ngme_simulateLongME_cpp`, in_list)
 }
 
 getDuplicateM <- function(n) {
-    .Call(ngme_getDuplicateM, n)
+    .Call(`_ngme_getDuplicateM`, n)
 }
 
 test_d2_process <- function(Y, process_list, operator_list) {
-    .Call(ngme_test_d2_process, Y, process_list, operator_list)
+    .Call(`_ngme_test_d2_process`, Y, process_list, operator_list)
 }
 
 test_sampling_NIG <- function(mixedEffect_list, meas_list, nsamples) {
-    .Call(ngme_test_sampling_NIG, mixedEffect_list, meas_list, nsamples)
+    .Call(`_ngme_test_sampling_NIG`, mixedEffect_list, meas_list, nsamples)
 }
 
 test_logf_NIG <- function(U, mu, delta, iSigma, nu) {
-    .Call(ngme_test_logf_NIG, U, mu, delta, iSigma, nu)
+    .Call(`_ngme_test_logf_NIG`, U, mu, delta, iSigma, nu)
 }
 
 test_dU_EiV <- function(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B) {
-    .Call(ngme_test_dU_EiV, U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
+    .Call(`_ngme_test_dU_EiV`, U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
 }
 
 test_db_EiV_GIG <- function(p, a, b) {
-    .Call(ngme_test_db_EiV_GIG, p, a, b)
+    .Call(`_ngme_test_db_EiV_GIG`, p, a, b)
 }
 
 test_EiV_NGIG <- function(U, Sigma, delta, mu, p, a, b) {
-    .Call(ngme_test_EiV_NGIG, U, Sigma, delta, mu, p, a, b)
+    .Call(`_ngme_test_EiV_NGIG`, U, Sigma, delta, mu, p, a, b)
 }
 
 test_EiV_GIG <- function(p, a, b) {
-    .Call(ngme_test_EiV_GIG, p, a, b)
+    .Call(`_ngme_test_EiV_GIG`, p, a, b)
 }
 
 test_PreDiagsolver <- function(in_list) {
-    .Call(ngme_test_PreDiagsolver, in_list)
+    .Call(`_ngme_test_PreDiagsolver`, in_list)
 }
 
 sampleR <- function(n, w_in) {
-    .Call(ngme_sampleR, n, w_in)
+    .Call(`_ngme_sampleR`, n, w_in)
 }
 
 sample_internalR <- function(n, p_in, selected_in, w_in) {
-    .Call(ngme_sample_internalR, n, p_in, selected_in, w_in)
+    .Call(`_ngme_sample_internalR`, n, p_in, selected_in, w_in)
 }
 

@@ -25,7 +25,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 1;
+  int debug = 0;
   //**********************************
   //      basic parameter
   //**********************************
@@ -117,10 +117,10 @@ List predictLong_cpp(Rcpp::List in_list)
       if(use_random_effect == 1)
       {
         Brandom_pred_1[count]  = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Brandom_pred1"]);
-      
+
         if(Brandom_pred_1[count].cols() != mixobj->beta_random.size())
         {
-          Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom_1[" << count << "].cols() = " << Brandom_pred_1[count].cols() << " != " 
+          Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom_1[" << count << "].cols() = " << Brandom_pred_1[count].cols() << " != "
                       << "mixobj->beta_random.size() = "<<  mixobj->beta_random.size()  << "\n";
             throw("input error\n");
         }
@@ -128,7 +128,7 @@ List predictLong_cpp(Rcpp::List in_list)
       }
     if(Bfixed_pred_1[count].cols() != mixobj->beta_fixed.size())
     {
-      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed_1[" << count << "].cols() = " << Bfixed_pred_1[count].cols() << " != " 
+      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed_1[" << count << "].cols() = " << Bfixed_pred_1[count].cols() << " != "
                   << "mixobj->beta_fixed.size() = "<<  mixobj->beta_fixed.size()  << "\n";
       throw("input error\n");
 
@@ -144,16 +144,16 @@ List predictLong_cpp(Rcpp::List in_list)
 
       if(Brandom_pred[count].cols() != mixobj->beta_random.size())
       {
-        Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom[" << count << "].cols() = " << Brandom_pred[count].cols() << " != " 
+        Rcpp::Rcout << "predict: error dimension missmatch :\n Brandom[" << count << "].cols() = " << Brandom_pred[count].cols() << " != "
                    << "mixobj->beta_random.size() = "<<  mixobj->beta_random.size()  << "\n";
-        throw("input error\n"); 
+        throw("input error\n");
       }
     }
     Bfixed_pred[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred"]);
-    
+
     if(Bfixed_pred[count].cols() != mixobj->beta_fixed.size())
     {
-      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed[" << count << "].cols() = " << Bfixed_pred[count].cols() << " != " 
+      Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed[" << count << "].cols() = " << Bfixed_pred[count].cols() << " != "
                   << "mixobj->beta_fixed.size() = "<<  mixobj->beta_fixed.size()  << "\n";
       throw("input error\n");
 
