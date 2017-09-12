@@ -427,7 +427,10 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 	  for( List::iterator it = group_list.begin(); it != group_list.end(); ++it ) {
 	    groups[count] = Rcpp::as<Eigen::VectorXd>(*it);
-	    Rcpp::Rcout << "group: "<< groups[count] << "\n";
+	    if(debug){
+	      Rcpp::Rcout << "group: "<< groups[count] << "\n";
+	    }
+
 	    count++;
 	  }
 	  int gsum = 0;
@@ -439,11 +442,13 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  if(groups.size()>0){
 	    gmean = gsum/groups.size();
 	  }
+    if(debug){
+      int nfree = free.size();
+      for(int i=0;i<nfree;i++){
+        Rcpp::Rcout << "free[i]: "<< free[i] << "\n";
+      }
+    }
 
-	  int nfree = free.size();
-	  for(int i=0;i<nfree;i++){
-	    Rcpp::Rcout << "free[i]: "<< free[i] << "\n";
-	  }
 	}
 	//***********************************
 	//Debug setup
@@ -764,7 +769,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       		} else {
         		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       		}
-          
+
       	}
       	if(debug)
       	  Rcpp::Rcout << "estimate::simulate error\n";
