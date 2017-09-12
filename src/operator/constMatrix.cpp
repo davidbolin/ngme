@@ -162,7 +162,7 @@ void constMatrix::step_theta(const double stepsize,
 	else
 		tauVec[counter] = polyak_rate * tau + (1 - polyak_rate) * tauVec[counter-1];
 
-  Rcpp::Rcout << "tauVec[" << counter << "] = " << tauVec[counter] << "\n";
+  //Rcpp::Rcout << "tauVec[" << counter << "] = " << tauVec[counter] << "\n";
 	counter++;
 	clear_gradient();
 	ddtau  = 0;
