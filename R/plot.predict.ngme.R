@@ -47,10 +47,14 @@ plot.predict.ngme <- function(object, id,
   x_range <- range(locs_i)
   y_range <- range(c(mean_i, llim_i, ulim_i, y_i))
 
-  plot(locs_i,   mean_i, type = "l",
+  Time    <- locs_i
+  Outcome <- mean_i
+  
+  plot(Time,   Outcome, type = "l",
        xlim = c(x_range[1], x_range[2] + control$xlim_x),
        ylim = c(y_range[1] - control$ylim_c, y_range[2] + control$ylim_c),
-       xlab = "Time", ylab = "Outcome", ...)
+       ...
+       )
   lines(locs_i,  llim_i, col = 2, ...)
   lines(locs_i,  ulim_i, col = 2, ...)
   points(locs_i, y_i, ...)
