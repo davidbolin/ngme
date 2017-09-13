@@ -28,7 +28,6 @@
 - setseed_ME - explanations to be added
 - put examples
 - simulate functions - remove?? see LDMod in simulate function!
-- estimateLong doesnt recognise silent?
 - pSubsample2 seems un-used
 - consider ~ -1 + ... in fixed input of ngme 
 - seed seems not working
