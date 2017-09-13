@@ -67,8 +67,8 @@ predict.ngme <- function(object,
                             excursions = NULL,
                             crps = TRUE,
                             crps.skip = 1,
-                            nSim = 10,
-                            nBurnin = 10,
+                            nSim = 1000,
+                            nBurnin = 100,
                             silent = TRUE
                             )
                           )
