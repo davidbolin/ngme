@@ -1,5 +1,5 @@
 graphics.off()
-library(LDMod)
+library(ngme)
 
 n.threads <- 1
 nIter <- 100
@@ -129,7 +129,8 @@ if(use.random.effect){
                            excursions       = list(list(type = '<', level = -0.05, process = 'Xderivative')),
                            return.samples = TRUE,
                            quantiles = c(0.05,0.95),
-                           max.num.threads = n.threads)
+                           max.num.threads = n.threads,
+                           seed = 1)
 
 }
 

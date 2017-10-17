@@ -47,14 +47,9 @@ List predictLong_cpp(Rcpp::List in_list)
   }
 
 
-
-
-
-
-
-
-
-
+  unsigned long seed = 0;
+  if(in_list.containsElementNamed("seed"))
+    seed = Rcpp::as< unsigned long > (in_list["seed"]);
 
 
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
@@ -277,8 +272,13 @@ List predictLong_cpp(Rcpp::List in_list)
   std::vector<std::mt19937> random_engine(nP);
   std::vector<gig> rgig(nP);
   for (int i = 0; i < nP; ++i) {
-    random_engine[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
-    rgig[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    if(in_list.containsElementNamed("seed")){
+      random_engine[i].seed(seed);
+      rgig[i].seed(seed);
+    }else{
+      random_engine[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+      rgig[i].seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    }
   }
 
   Eigen::VectorXd b, Ysim;

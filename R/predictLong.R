@@ -1,59 +1,59 @@
-#'  
+#'
 #' @title Obtain predictions
-#' 
-#' @description A function to obtain predictions based on either filtering 
+#'
+#' @description A function to obtain predictions based on either filtering
 #'    or smoothing distributions.
-#' 
-#' @param pInd A numeric vector that contains the indices of longitudinal 
-#'    subjects for whom the predictions are to be obtained. 
-#' @param locs.pred A numeric list that contains the timings of the repeated 
-#'    measurements. 
-#' @param Brandom.pred A numeric list that contains random effects covaraite 
+#'
+#' @param pInd A numeric vector that contains the indices of longitudinal
+#'    subjects for whom the predictions are to be obtained.
+#' @param locs.pred A numeric list that contains the timings of the repeated
+#'    measurements.
+#' @param Brandom.pred A numeric list that contains random effects covaraite
 #'    matrices.
-#' @param Bfixed.pred  A numeric list that contains fixed effects covaraite 
+#' @param Bfixed.pred  A numeric list that contains fixed effects covaraite
 #'    matrices.
-#' @return.samples A logical variable for returning the 
-#'    Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
+#' @return.samples A logical variable for returning the
+#'    Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates
 #'    return, \code{"FALSE"} do not return.
 #' @param type A character string for the type of prediction: \code{"Filter"} for
 #'   filtering, \code{"Smoothing"} for smoothing.
 #' @param quantiles A two-elemnent vector that contains the quantiles
 #'   of the predictions to be calculated.
 #' @param predict.derivatives STUFF
-#' @param excursions A list of excursion probabilities to compute. 
-#'    Each list should contain: 
+#' @param excursions A list of excursion probabilities to compute.
+#'    Each list should contain:
 #'    \itemize{
 #'    \item \code{"type"} - type of excursion '>' or '<',
 #'    \item \code{"level"} - level to compute excursion probability for,
-#'    \item \code{"process"} - which expression for the model, 
-#'    \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
-#'    \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
-#'    \code{'X'} for \eqn{x\alpha + dU + W}, 
-#'    \code{'W'} for \eqn{W}, 
-#'    \code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
-#'    \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
-#'    and  
+#'    \item \code{"process"} - which expression for the model,
+#'    \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
+#'    \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
+#'    \code{'X'} for \eqn{x\alpha + dU + W},
+#'    \code{'W'} for \eqn{W},
+#'    \code{'Y'} for \eqn{x\alpha + dU + W + Z},
+#'    \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W},
+#'    and
 #'    \code{'Wderivative'} for the first derivariate of \eqn{W}.
-#'    } 
-#' @param crps A logical variable for calculating 
-#'    continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
+#'    }
+#' @param crps A logical variable for calculating
+#'    continuous ranked probability score (CRPS); \code{"TRUE"} indicates
 #'    calculate, \code{"FALSE"} do not calculate.
-#' @param crps.skip A numerical value, say a, that indicates every \emph{a}th 
-#'    element of the sample to be used to compute the crps score.  
+#' @param crps.skip A numerical value, say a, that indicates every \emph{a}th
+#'    element of the sample to be used to compute the crps score.
 #' @inheritParams estimateLong
 #' @param max.num.threads STUFF
 #' @param repeat.mix STUFF
-#' 
+#'
 #' @return A list of output.
-#' 
-#' @details This function calls \code{"predictLong_cpp"} internally. 
-#'    It is wrapped by \code{"nglda_predict"}, and not advised to be used. 
-#' 
+#'
+#' @details This function calls \code{"predictLong_cpp"} internally.
+#'    It is wrapped by \code{"nglda_predict"}, and not advised to be used.
+#'
 #' @seealso \code{\link{nglda_predict}}
 #' @examples
 #'   \dontrun{
 #'   predictLong(...)
-#'   }  
+#'   }
 
 predictLong <- function( Y,
                          locs,
@@ -76,7 +76,8 @@ predictLong <- function( Y,
                          nBurnin = 10,   # steps before starting prediction
                          silent  = FALSE, # print iteration info
                          max.num.threads = 2,
-                         repeat.mix = 10
+                         repeat.mix = 10,
+                         seed    = NULL
 )
 {
 
@@ -164,7 +165,9 @@ predictLong <- function( Y,
   if(sum(abs(unlist(lapply(locs.pred,length))-unlist(lapply(lapply(locs.pred,unique),length))))>0){
     stop("Prediction locations should be unique")
   }
-
+  if(!is.null(predict.derivatives)){
+    locs.pred.delta <- locs.pred
+  }
   for(i in 1:n.patient){
     if(is.list(locs)){
       li = locs[[i]]
@@ -227,7 +230,8 @@ predictLong <- function( Y,
 
       if(!is.null(predict.derivatives)){
         if(use.process){
-          obs_list[[i]]$Apred = build.A.matrix(operator_list,locs.pred+predict.derivatives$delta,i)
+          locs.pred.delta[[i]] <- locs.pred.delta[[i]]+predict.derivatives$delta
+          obs_list[[i]]$Apred1 = build.A.matrix(operator_list,locs.pred.delta,i)
         }
         obs_list[[i]]$Bfixed_pred1 = predict.derivatives$Bfixed[[i]]
         if(use.random.effect){
@@ -257,6 +261,8 @@ predictLong <- function( Y,
     input$processes_list   = processes_list
     input$operator_list    = operator_list
   }
+  if(is.null(seed) == FALSE)
+    input <- setseed_ME(input, seed)
 
   output <- predictLong_cpp(input)
   out_list <- list()
@@ -399,22 +405,22 @@ predictLong <- function( Y,
 }
 
 #' @title STUFF
-#' 
+#'
 #' @description STUFF
-#' 
-#' @param mixedEffect_list A list of inputs for the random effects. 
-#' @param processes_list A list of inputs for the process. 
+#'
+#' @param mixedEffect_list A list of inputs for the random effects.
+#' @param processes_list A list of inputs for the process.
 #' @param operator_list A list of inputs for the operator.
 #' @param measurement_list A list of inputs for the measurement error.
-#' @param locs A numeric list that contains the timings at which the outcomes 
-#'    are collected. 
+#' @param locs A numeric list that contains the timings at which the outcomes
+#'    are collected.
 #' @param Brandom A numeric list of random effects covariate matrices.
 #' @param Bfixed A numeric list of fixed effects covariate matrices.
-#' 
+#'
 #' @return A list of output.
-#' 
-#' @details STUFF 
-#' 
+#'
+#' @details STUFF
+#'
 #' @examples
 #'   \dontrun{
 #'   updateLists(...)
