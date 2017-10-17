@@ -10,8 +10,8 @@ ngme(fixed, random, use.process = TRUE, reffects = "Normal",
   0.1, nBurnin = 100, nSim = 2, nIter.gauss = 1000, pSubsample = 0.1,
   nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3, alpha =
   0.3, nBurnin.learningrate = NULL, nBurnin.base = 0, subsample.type = 4,
-  pSubsample2 = 0.3, seed = NULL, standardize.mixedEffects = FALSE,
-  estimate.fisher = TRUE, individual.sigma = FALSE, n.process = NULL))
+  pSubsample2 = 0.3, standardize.mixedEffects = FALSE, estimate.fisher = TRUE,
+  individual.sigma = FALSE, n.process = NULL))
 }
 \arguments{
 \item{fixed}{A two-sided formula to specify the fixed effects design matrix.}
@@ -86,7 +86,6 @@ used by the stochastic gradient.}
      4: grouped sub-sampler.
    \item \code{pSubsample2} A numeric value for the portion of the data
      to be used in each gradient subsampling weighted by gradient.
-   \item \code{seed} A numerical value for starting the Gibbs samplers from fixed seed.
    \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
      \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
    \item \code{estimate.fisher} A logical variable for whether Fisher-Information matrix

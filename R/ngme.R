@@ -69,7 +69,6 @@
 #'       4: grouped sub-sampler.
 #'     \item \code{pSubsample2} A numeric value for the portion of the data
 #'       to be used in each gradient subsampling weighted by gradient.
-#'     \item \code{seed} A numerical value for starting the Gibbs samplers from fixed seed.
 #'     \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
 #'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
 #'     \item \code{estimate.fisher} A logical variable for whether Fisher-Information matrix
