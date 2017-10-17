@@ -117,7 +117,6 @@ ngme <- function(fixed,
                                  nBurnin.base = 0,
                                  subsample.type = 4,
                                  pSubsample2 = 0.3,
-                                 seed = NULL,
                                  standardize.mixedEffects = FALSE,
                                  estimate.fisher = TRUE,
                                  individual.sigma = FALSE,
@@ -125,6 +124,7 @@ ngme <- function(fixed,
                  )
 {
   
+  controls$seed <- ceiling(10^8 * runif(1))
   # being sure that controls includes everything
   if(length(controls) < 20){
     controls.full <- list(learning.rate = 0,
@@ -142,7 +142,6 @@ ngme <- function(fixed,
                           nBurnin.base = 0,
                           subsample.type = 4,
                           pSubsample2 = 0.3,
-                          seed = NULL,
                           standardize.mixedEffects = FALSE,
                           estimate.fisher = TRUE,
                           individual.sigma = FALSE,
