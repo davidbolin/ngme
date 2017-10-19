@@ -20,7 +20,7 @@ updateLists(mixedEffect_list, processes_list, operator_list, measurement_list,
 
 \item{Brandom}{A numeric list of random effects covariate matrices.}
 
-\item{locs}{A numeric list that contains the timings at which the outcomes 
+\item{locs}{A numeric list that contains the timings at which the outcomes
 are collected.}
 }
 \value{

@@ -9,7 +9,7 @@ predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
   predict.derivatives = NULL, excursions = NULL, crps = FALSE,
   crps.skip = 10, mixedEffect_list, measurment_list, processes_list,
   operator_list = NULL, nSim = 1, nBurnin = 10, silent = FALSE,
-  max.num.threads = 2, repeat.mix = 10)
+  max.num.threads = 2, repeat.mix = 10, seed = NULL)
 }
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}
@@ -17,16 +17,16 @@ predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
 \item{locs}{A numeric list that contains the timings at which the outcomes 
 are collected.}
 
-\item{pInd}{A numeric vector that contains the indices of longitudinal 
+\item{pInd}{A numeric vector that contains the indices of longitudinal
 subjects for whom the predictions are to be obtained.}
 
-\item{locs.pred}{A numeric list that contains the timings of the repeated 
+\item{locs.pred}{A numeric list that contains the timings of the repeated
 measurements.}
 
-\item{Brandom.pred}{A numeric list that contains random effects covaraite 
+\item{Brandom.pred}{A numeric list that contains random effects covaraite
 matrices.}
 
-\item{Bfixed.pred}{A numeric list that contains fixed effects covaraite 
+\item{Bfixed.pred}{A numeric list that contains fixed effects covaraite
 matrices.}
 
 \item{type}{A character string for the type of prediction: \code{"Filter"} for
@@ -37,27 +37,27 @@ of the predictions to be calculated.}
 
 \item{predict.derivatives}{STUFF}
 
-\item{excursions}{A list of excursion probabilities to compute. 
-Each list should contain: 
+\item{excursions}{A list of excursion probabilities to compute.
+Each list should contain:
 \itemize{
 \item \code{"type"} - type of excursion '>' or '<',
 \item \code{"level"} - level to compute excursion probability for,
-\item \code{"process"} - which expression for the model, 
-\eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
-\eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
-\code{'X'} for \eqn{x\alpha + dU + W}, 
-\code{'W'} for \eqn{W}, 
-\code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
-\code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
-and  
+\item \code{"process"} - which expression for the model,
+\eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
+\eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
+\code{'X'} for \eqn{x\alpha + dU + W},
+\code{'W'} for \eqn{W},
+\code{'Y'} for \eqn{x\alpha + dU + W + Z},
+\code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W},
+and
 \code{'Wderivative'} for the first derivariate of \eqn{W}.
 }}
 
-\item{crps}{A logical variable for calculating 
-continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
+\item{crps}{A logical variable for calculating
+continuous ranked probability score (CRPS); \code{"TRUE"} indicates
 calculate, \code{"FALSE"} do not calculate.}
 
-\item{crps.skip}{A numerical value, say a, that indicates every \emph{a}th 
+\item{crps.skip}{A numerical value, say a, that indicates every \emph{a}th
 element of the sample to be used to compute the crps score.}
 
 \item{mixedEffect_list}{A list of inputs for random effects. 
@@ -103,26 +103,28 @@ to estimate the gradient.}
 \item{max.num.threads}{STUFF}
 
 \item{repeat.mix}{STUFF}
+
+\item{seed}{A numerical value for starting the Gibbs samplers from fixed seed.}
 }
 \value{
-.samples A logical variable for returning the 
-   Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
+.samples A logical variable for returning the
+   Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates
    return, \code{"FALSE"} do not return.
 
 A list of output.
 }
 \description{
-A function to obtain predictions based on either filtering 
+A function to obtain predictions based on either filtering
    or smoothing distributions.
 }
 \details{
-This function calls \code{"predictLong_cpp"} internally. 
+This function calls \code{"predictLong_cpp"} internally.
    It is wrapped by \code{"nglda_predict"}, and not advised to be used.
 }
 \examples{
   \dontrun{
   predictLong(...)
-  }  
+  }
 }
 \seealso{
 \code{\link{nglda_predict}}
