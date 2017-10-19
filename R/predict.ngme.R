@@ -74,7 +74,9 @@ predict.ngme <- function(object,
                           )
   {
 
-  if(length(controls) < 8){
+  controls$seed <- ceiling(10^8 * runif(1))
+
+  if(length(controls) < 9){
     controls_full <- list(
       return.samples = TRUE,
       predict.derivaties = NULL,
@@ -127,7 +129,8 @@ predict.ngme <- function(object,
                            operator_list = operator_list,
                            nSim  = controls$nSim,
                            nBurnin = controls$nBurnin,
-                           silent  = controls$silent
+                           silent  = controls$silent,
+                           seed = controls$seed
                            )
   }else{
     predict <- predictLong(Y = Y,
@@ -148,7 +151,8 @@ predict.ngme <- function(object,
                            operator_list = operator_list,
                            nSim  = controls$nSim,
                            nBurnin = controls$nBurnin,
-                           silent  = controls$silent
+                           silent  = controls$silent,
+                           seed = controls$seed
                            )
   }
   
