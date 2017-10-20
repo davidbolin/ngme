@@ -4,8 +4,8 @@
 \alias{plot.predict.ngme}
 \title{Prediction plots.}
 \usage{
-\method{plot}{predict.ngme}(object, id, control = list(xlim_x = 0.1, ylim_c =
-  0.01), ...)
+\method{plot}{predict.ngme}(object, id, col_m = "black", col_c = "red",
+  col_p = "black", ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"predict.ngme"} function.}
@@ -13,11 +13,12 @@
 \item{id}{A numerical value or character string for ID of the subject
 for whom the plot will be generated.}
 
-\item{control}{A list of control variables.
-\itemize{
-\item \code{"xlim_x"} A numerical value to control the range of x-axis.
-\item \code{"ylim_c"} A numerical value to control the range of y-axis.
-}}
+\item{col_m}{A character value for defining the colour of prediction mean 
+or median.}
+
+\item{col_c}{A character value for defining the colour of prediction intervals.}
+
+\item{col_p}{A character value for defining the colour of observed data.}
 
 \item{...}{Additional arguments; none used currently.}
 }
