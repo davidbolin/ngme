@@ -51,18 +51,17 @@ plot.predict.ngme <- function(object,
   y_range_inc <- diff(y_range)/100
 
   Time    <- locs_i
-  Outcome <- mean_i
+  Outcome <- y_i
+    
+  plot(Time, 
+       Outcome, 
+       col = col_p,
+       ylim = c(y_range[1] - y_range_inc, y_range[2] + y_range_inc),
+       ...)
   
-    plot(Time, 
-         Outcome, 
-         type = "l",
-         col = col_m,
-         ylim = c(y_range[1] - y_range_inc, y_range[2] + y_range_inc),
-         ...
-         )
-    lines(locs_i,  llim_i, col = col_c, ...)
-    lines(locs_i,  ulim_i, col = col_c, ...)
-    points(locs_i, y_i,    col = col_p, ...)
+  lines(locs_i, mean_i, col = col_m)
+  lines(locs_i, llim_i, col = col_c)
+  lines(locs_i, ulim_i, col = col_c)
         
   }else{#the subject has one measurement - do not produce a plot
     print("The subject has 1 measurement, no plot is produced")
