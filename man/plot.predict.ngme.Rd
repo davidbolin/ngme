@@ -4,14 +4,16 @@
 \alias{plot.predict.ngme}
 \title{Prediction plots.}
 \usage{
-\method{plot}{predict.ngme}(object, id, col_m = "black", col_c = "red",
-  col_p = "black", ...)
+\method{plot}{predict.ngme}(object, id, plot_excursions = FALSE,
+  col_m = "black", col_c = "red", col_p = "black", ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"predict.ngme"} function.}
 
 \item{id}{A numerical value or character string for ID of the subject
 for whom the plot will be generated.}
+
+\item{plot_excursions}{A logical for plotting excursions.}
 
 \item{col_m}{A character value for defining the colour of prediction mean 
 or median.}

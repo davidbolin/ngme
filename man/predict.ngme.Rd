@@ -6,8 +6,8 @@
 \usage{
 \method{predict}{ngme}(object, id = NULL, type = "Filter",
   quantiles = c(0.025, 0.975), controls = list(return.samples = TRUE,
-  predict.derivaties = NULL, excursions = NULL, crps = TRUE, crps.skip = 1, nSim
-  = 1000, nBurnin = 100, silent = TRUE))
+  predict.derivatives = NULL, excursions = NULL, crps = TRUE, crps.skip = 1,
+  nSim = 1000, nBurnin = 100, silent = TRUE))
 }
 \arguments{
 \item{object}{A fitted object obtained by calling \code{"ngme"}.}

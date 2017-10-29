@@ -32,3 +32,4 @@
 - consider ~ -1 + ... in fixed input of ngme 
 - add mean or median as an option to the predict.ngme function
 - check calculation of coverages and width in predict.ngme
+- plot for excursions
