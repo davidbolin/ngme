@@ -110,7 +110,7 @@ predict.ngme <- function(object,
   B_random <- mixedEffect_list$B_random
 
   if(object$use_process == TRUE){
-    predict <- predictLong(Y = Y,
+    preds <- predictLong(Y = Y,
                            locs = locs,
                            pInd = pInd,
                            locs.pred = locs,
@@ -133,7 +133,7 @@ predict.ngme <- function(object,
                            seed = controls$seed
                            )
   }else{
-    predict <- predictLong(Y = Y,
+    preds <- predictLong(Y = Y,
                            locs = locs,
                            pInd = pInd,
                            locs.pred = locs,
@@ -161,12 +161,12 @@ predict.ngme <- function(object,
   n.obs <- rep(0, length(pInd))
 
   for(i in 1:length(pInd)){
-    mae <- c(mae, abs(predict$X.summary[[i]]$Median - Y[[pInd[i]]]))
+    mae <- c(mae, abs(preds$X.summary[[i]]$Median - Y[[pInd[i]]]))
     n.obs[i] <- length(Y[[pInd[i]]])
-    covered <- c(covered,(predict$Y.summary[[i]]$quantiles[[1]]$field < Y[[pInd[i]]]) & (predict$Y.summary[[i]]$quantiles[[2]]$field > Y[[pInd[i]]]))
-    int.width <- c(int.width, predict$Y.summary[[i]]$quantiles[[2]]$field - predict$Y.summary[[i]]$quantiles[[1]]$field)
-    crps <- c(crps, predict$Y.summary[[i]]$crps)
-    rmse <- c(rmse, (predict$X.summary[[i]]$Mean - Y[[pInd[i]]])^2)
+    covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field < Y[[pInd[i]]]) & (preds$Y.summary[[i]]$quantiles[[2]]$field > Y[[pInd[i]]]))
+    int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field - preds$Y.summary[[i]]$quantiles[[1]]$field)
+    crps <- c(crps, preds$Y.summary[[i]]$crps)
+    rmse <- c(rmse, (preds$X.summary[[i]]$Mean - Y[[pInd[i]]])^2)
   }
 
   mean.mae       <- mean(mae)
@@ -180,7 +180,7 @@ predict.ngme <- function(object,
   mean.int.width <- mean(int.width)
   std.int.width  <- sqrt(var(int.width))
 
-  out <- list(predictions = predict,
+  out <- list(predictions = preds,
               id = id,
               type = type,
               call = match.call(),
