@@ -63,7 +63,7 @@ predict.ngme <- function(object,
                           quantiles = c(0.025, 0.975),
                           controls = list(
                             return.samples = TRUE,
-                            predict.derivaties = NULL,
+                            predict.derivatives = NULL,
                             excursions = NULL,
                             crps = TRUE,
                             crps.skip = 1,
