@@ -283,7 +283,7 @@ ngme <- function(fixed,
                           measurement_list,
                           process_list,
                           operator_list,
-                          nIter = nIter,
+                          nIter = nIter.gauss,
                           silent = silent,
                           learning_rate = controls$learning.rate,
                           polyak_rate = controls$polyak.rate,
@@ -302,7 +302,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       
-      # then fit the non-Gaussin model
+      # then fit the non-Gaussian model
       if(!silent){
         cat("Estimate non-Gaussian")
       }
