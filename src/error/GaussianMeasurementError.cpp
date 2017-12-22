@@ -86,7 +86,7 @@ void GaussianMeasurementError::step_theta(const double stepsize,
   	if(vec_counter == 0 || polyak_rate == -1)
   		sigma_vec[vec_counter] = sigma;
   	else
-  		sigma_vec[vec_counter] = polyak_rate * sigma  + (1 - polyak_rate) * sigma_vec[vec_counter - 2];
+  		sigma_vec[vec_counter] = polyak_rate * sigma  + (1 - polyak_rate) * sigma_vec[vec_counter - 1];
   	vec_counter++;
   	}
 }
