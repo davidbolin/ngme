@@ -16,10 +16,10 @@ are to be plotted;
 \code{"process"} for stochastic process,
 \code{"error"} for error term.}
 
-\item{...}{Additional arguments; none used currently.}
-
-\item{exclude}{A numeric value for excluding a portion of the 
+\item{n.exclude}{A numeric value for excluding a portion of the 
 trajectory (from left) for plotting.}
+
+\item{...}{Additional arguments; none used currently.}
 }
 \description{
 Plots the parameter estimates at successive iterations
