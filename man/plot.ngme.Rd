@@ -4,7 +4,7 @@
 \alias{plot.ngme}
 \title{Trace plots.}
 \usage{
-\method{plot}{ngme}(object, param = "fixed", ...)
+\method{plot}{ngme}(object, param = "fixed", n.exclude = 0, ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"ngme"} function.}
@@ -17,6 +17,9 @@ are to be plotted;
 \code{"error"} for error term.}
 
 \item{...}{Additional arguments; none used currently.}
+
+\item{exclude}{A numeric value for excluding a portion of the 
+trajectory (from left) for plotting.}
 }
 \description{
 Plots the parameter estimates at successive iterations
