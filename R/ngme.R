@@ -105,7 +105,6 @@ ngme <- function(fixed,
                                  polyak.rate = 0.1,
                                  nBurnin = 100,
                                  nSim = 2,
-                                 nIter.gauss = 1000,
                                  pSubsample = 0.1,
                                  nPar.burnin = 0,
                                  nIter.fisher = 1000,
@@ -119,18 +118,34 @@ ngme <- function(fixed,
                                  standardize.mixedEffects = FALSE,
                                  estimate.fisher = TRUE,
                                  individual.sigma = FALSE,
-                                 n.process = NULL)
+                                 n.process = NULL),
+                 controls.init = list(learning.rate.init = 0,
+                                      polyak.rate.init = 0.1,
+                                      nBurnin.init = 100,
+                                      nSim.init = 2,
+                                      nIter.init = 1000,
+                                      pSubsample.init = 0.1,
+                                      nPar.burnin.init = 0,
+                                      step0.init = 0.3,
+                                      alpha.init = 0.3,
+                                      nBurnin.learningrate.init = NULL,
+                                      nBurnin.base.init = 0,
+                                      subsample.type.init = 4,
+                                      pSubsample2.init = 0.3,
+                                      standardize.mixedEffects.init = FALSE,
+                                      individual.sigma.init = FALSE,
+                                      n.process.init = NULL)
                  )
 {
+  gen_seed <- ceiling(10^8 * runif(1))
+  controls$seed <- controls.init$seed.init <- gen_seed
   
-  controls$seed <- ceiling(10^8 * runif(1))
   # being sure that controls includes everything
-  if(length(controls) < 20){
+  if(length(controls) < 19){
     controls.full <- list(learning.rate = 0,
                           polyak.rate = 0.1,
                           nBurnin = 100,
                           nSim = 2,
-                          nIter.gauss = 1000,
                           pSubsample = 0.1,
                           nPar.burnin = 0,
                           nIter.fisher = 1000,
@@ -148,6 +163,31 @@ ngme <- function(fixed,
     for(i in 1:length(controls.full)){
       if(!(names(controls.full)[i] %in% names(controls))){
         controls[names(controls.full)[i]] <- controls.full[i]
+      }
+    }
+    
+  }
+  
+  if(length(controls.init) < 17){
+    controls.init.full <- list(learning.rate.init = 0,
+                          polyak.rate.init = 0.1,
+                          nBurnin.init = 100,
+                          nSim.init = 2,
+                          nIter.init = 1000,
+                          pSubsample.init = 0.1,
+                          nPar.burnin.init = 0,
+                          step0.init = 0.3,
+                          alpha.init = 0.3,
+                          nBurnin.learningrate.init = NULL,
+                          nBurnin.base.init = 0,
+                          subsample.type.init = 4,
+                          pSubsample2.init = 0.3,
+                          standardize.mixedEffects.init = FALSE,
+                          individual.sigma.init = FALSE,
+                          n.process.init = NULL)
+    for(i in 1:length(controls.init.full)){
+      if(!(names(controls.init.full)[i] %in% names(controls.init))){
+        controls.init[names(controls.init.full)[i]] <- controls.init.full[i]
       }
     }
     
@@ -283,22 +323,22 @@ ngme <- function(fixed,
                           measurement_list,
                           process_list,
                           operator_list,
-                          nIter = controls$nIter.gauss,
+                          nIter = controls.init$nIter.init,
                           silent = silent,
-                          learning_rate = controls$learning.rate,
-                          polyak_rate = controls$polyak.rate,
-                          nBurnin = controls$nBurnin,
-                          nSim = controls$nSim,
-                          pSubsample = controls$pSubsample,
-                          nPar_burnin = controls$nPar.burnin,
-                          step0 = controls$step0,
-                          alpha = controls$alpha,
-                          nBurnin_learningrate = controls$nBurnin.learningrate,
-                          nBurnin_base = controls$nBurnin.base, 
-                          subsample.type = controls$subsample.type,
-                          pSubsample2 = controls$pSubsample2,
-                          seed = controls$seed, 
-                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          learning_rate = controls.init$learning.rate.init,
+                          polyak_rate = controls.init$polyak.rate.init,
+                          nBurnin = controls.init$nBurnin.init,
+                          nSim = controls.init$nSim.init,
+                          pSubsample = controls.init$pSubsample.init,
+                          nPar_burnin = controls.init$nPar.burnin.init,
+                          step0 = controls.init$step0.init,
+                          alpha = controls.init$alpha.init,
+                          nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
+                          nBurnin_base = controls.init$nBurnin.base.init, 
+                          subsample.type = controls.init$subsample.type.init,
+                          pSubsample2 = controls.init$pSubsample2.init,
+                          seed = controls.init$seed.init, 
+                          standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
                           estimate_fisher = FALSE
                           )
       
@@ -447,22 +487,22 @@ ngme <- function(fixed,
                           locs,
                           mixedEffect_list,
                           measurement_list,
-                          nIter = controls$nIter.gauss,
+                          nIter = controls.init$nIter.init,
                           silent = silent,
-                          learning_rate = controls$learning.rate,
-                          polyak_rate = controls$polyak.rate,
-                          nBurnin = controls$nBurnin,
-                          nSim = controls$nSim,
-                          pSubsample = controls$pSubsample,
-                          nPar_burnin = controls$nPar.burnin,
-                          step0 = controls$step0,
-                          alpha = controls$alpha,
-                          nBurnin_learningrate = controls$nBurnin.learningrate,
-                          nBurnin_base = controls$nBurnin.base, 
-                          subsample.type = controls$subsample.type,
-                          pSubsample2 = controls$pSubsample2,
-                          seed = controls$seed, 
-                          standardize.mixedEffects = controls$standardize.mixedEffects,
+                          learning_rate = controls.init$learning.rate.init,
+                          polyak_rate = controls.init$polyak.rate.init,
+                          nBurnin = controls.init$nBurnin.init,
+                          nSim = controls.init$nSim.init,
+                          pSubsample = controls.init$pSubsample.init,
+                          nPar_burnin = controls.init$nPar.burnin.init,
+                          step0 = controls.init$step0.init,
+                          alpha = controls.init$alpha.init,
+                          nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
+                          nBurnin_base = controls.init$nBurnin.base.init, 
+                          subsample.type = controls.init$subsample.type.init,
+                          pSubsample2 = controls.init$pSubsample2.init,
+                          seed = controls.init$seed.init, 
+                          standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
                           estimate_fisher = FALSE
                           )
       
