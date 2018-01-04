@@ -80,10 +80,10 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
     if(object$process_distr %in% c("Normal", "CH")){
       
       if(n.exclude == 0){
-        plot(object$operator_tau_est_vec, 
+        plot(object$operator_tau_vec, 
              main = "Process", xlab = "Iteration", ylab = "tau", type = "l")
       }else{
-        plot(as.matrix(object$operator_tau_est_vec)[-c(1:n.exclude), ], 
+        plot(as.matrix(object$operator_tau_vec)[-c(1:n.exclude), ], 
              main = "Process", xlab = "Iteration", ylab = "tau", type = "l")
       }
       
