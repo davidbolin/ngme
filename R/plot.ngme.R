@@ -43,22 +43,28 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
 
     # preparing the ranef_Sigma_vec: excluding duplicated columns and adding column names
     ncol_Sigma        <- ncol(summary(object)$random_results$Sigma_est)
-    cols_omit         <- unlist(lapply(1:(ncol_Sigma-1), function(i) (ncol_Sigma * i + 1):(ncol_Sigma * i + i)))
-    ranef_results_vec <- object$ranef_Sigma_vec
-    ranef_results_vec <- ranef_results_vec[, -cols_omit]
-
-    colnames_Sigma_est          <- colnames(summary(object)$random_results$Sigma_est)
-    #colnames_Sigma_est          <- substr(colnames_Sigma_est, 1, 3)
-    colnames_Sigma_est_ext      <- paste(rep(colnames_Sigma_est,each = ncol_Sigma), colnames_Sigma_est, sep = "_")
-    colnames_Sigma_est_ext      <- colnames_Sigma_est_ext[-cols_omit]
-    colnames(ranef_results_vec) <- colnames_Sigma_est_ext
+    if(ncol_Sigma > 1){
+      cols_omit         <- unlist(lapply(1:(ncol_Sigma-1), function(i) (ncol_Sigma * i + 1):(ncol_Sigma * i + i)))
+      ranef_results_vec <- object$ranef_Sigma_vec
+      ranef_results_vec <- ranef_results_vec[, -cols_omit]      
+      
+      colnames_Sigma_est          <- colnames(summary(object)$random_results$Sigma_est)
+      #colnames_Sigma_est          <- substr(colnames_Sigma_est, 1, 3)
+      colnames_Sigma_est_ext      <- paste(rep(colnames_Sigma_est,each = ncol_Sigma), colnames_Sigma_est, sep = "_")
+      colnames_Sigma_est_ext      <- colnames_Sigma_est_ext[-cols_omit]
+      colnames(ranef_results_vec) <- colnames_Sigma_est_ext
+    }else{
+      ranef_results_vec <- object$ranef_Sigma_vec
+      colnames(ranef_results_vec) <- colnames(summary(object)$random_results$Sigma_est)
+    }
 
     if(summary(object)$random_distr %in% ("Normal")){
       
       if(n.exclude == 0){
         plot.ts(ranef_results_vec, main = "Random effects", xlab = "Iteration")
       }else{
-        plot.ts(as.matrix(ranef_results_vec)[-c(1:n.exclude), ], main = "Random effects", xlab = "Iteration")
+        plot.ts(as.matrix(ranef_results_vec)[-c(1:n.exclude), ], 
+                main = "Random effects", xlab = "Iteration", ylab = colnames(ranef_results_vec))
       }
       
     }else if(summary(object)$random_distr %in% ("NIG")){

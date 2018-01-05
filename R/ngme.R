@@ -670,6 +670,11 @@ ngme <- function(fixed,
     
     ranef_nu <- fit$mixedEffect_list$nu
     ranef_nu_vec <- fit$mixedEffect_list$nu_vec
+    
+    if(rev(ranef_nu_vec)[1] == 100){
+      warning("nu = 100 indicates NIG has converged to Normal")
+    }
+    
   }else{
     ranef_mu <- ranef_mu_vec <- ranef_nu <- ranef_nu_vec <- NA
   }
@@ -694,6 +699,10 @@ ngme <- function(fixed,
       process_nu <- fit$processes_list$nu
       process_nu_vec <- fit$processes_list$nu_vec
       
+      if(process[1] == "NIG" && rev(process_nu_vec)[1] == 100){
+        warning("nu = 100 indicates NIG has converged to Normal")
+      }
+      
       process_mu <- fit$processes_list$mu
       process_mu_vec <- fit$processes_list$mu_vec
     }else{
@@ -712,6 +721,11 @@ ngme <- function(fixed,
   if(error %in% c("NIG", "tdist")){
     meas_error_nu <- fit$measurementError_list$nu
     meas_error_nu_vec <- fit$measurementError_list$nu_vec
+    
+    if(error == "NIG" && rev(meas_error_nu_vec)[1] == 100){
+      warning("nu = 100 indicates NIG has converged to Normal")
+    }
+    
   }else{
     meas_error_nu <- meas_error_nu_vec <- NA
   }
