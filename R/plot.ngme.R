@@ -71,7 +71,7 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
       
       ranef_results_vec <- cbind(ranef_results_vec, object$ranef_mu_vec, object$ranef_nu_vec)
       colnames(ranef_results_vec)[(ncol(ranef_results_vec)-ncol_Sigma ) : (ncol(ranef_results_vec))] <-
-        c(paste("mu", colnames_Sigma_est, sep = "_"), "nu")
+        c(paste("mu", colnames(summary(object)$random_results$Sigma_est), sep = "_"), "nu")
       
       if(n.exclude == 0){
         plot.ts(ranef_results_vec, main = "Random effects", xlab = "Iteration")
