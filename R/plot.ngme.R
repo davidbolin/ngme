@@ -94,7 +94,7 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
       }
       
     }else if(object$process_distr %in% c("NIG", "GAL")){
-      process_results_vec <- cbind(object$operator_tau_est_vec,
+      process_results_vec <- cbind(object$operator_tau_vec,
                                    object$process_mu_vec,
                                    object$process_nu_vec)
       colnames(process_results_vec) <- c("tau", "mu", "nu")
