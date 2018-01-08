@@ -134,7 +134,8 @@ ngme <- function(fixed,
                                       pSubsample2.init = 0.3,
                                       standardize.mixedEffects.init = FALSE,
                                       individual.sigma.init = FALSE,
-                                      n.process.init = NULL)
+                                      n.process.init = NULL),
+                 init.fit = NULL
                  )
 {
   gen_seed <- ceiling(10^8 * runif(1))
@@ -168,27 +169,31 @@ ngme <- function(fixed,
     
   }
   
-  if(length(controls.init) < 17){
-    controls.init.full <- list(learning.rate.init = 0,
-                          polyak.rate.init = 0.1,
-                          nBurnin.init = 100,
-                          nSim.init = 2,
-                          nIter.init = 1000,
-                          pSubsample.init = 0.1,
-                          nPar.burnin.init = 0,
-                          step0.init = 0.3,
-                          alpha.init = 0.3,
-                          nBurnin.learningrate.init = NULL,
-                          nBurnin.base.init = 0,
-                          subsample.type.init = 4,
-                          pSubsample2.init = 0.3,
-                          standardize.mixedEffects.init = FALSE,
-                          individual.sigma.init = FALSE,
-                          n.process.init = NULL)
-    for(i in 1:length(controls.init.full)){
-      if(!(names(controls.init.full)[i] %in% names(controls.init))){
-        controls.init[names(controls.init.full)[i]] <- controls.init.full[i]
+  if(is.null(init.fit) == TRUE){
+    
+    if(length(controls.init) < 17){
+      controls.init.full <- list(learning.rate.init = 0,
+                                 polyak.rate.init = 0.1,
+                                 nBurnin.init = 100,
+                                 nSim.init = 2,
+                                 nIter.init = 1000,
+                                 pSubsample.init = 0.1,
+                                 nPar.burnin.init = 0,
+                                 step0.init = 0.3,
+                                 alpha.init = 0.3,
+                                 nBurnin.learningrate.init = NULL,
+                                 nBurnin.base.init = 0,
+                                 subsample.type.init = 4,
+                                 pSubsample2.init = 0.3,
+                                 standardize.mixedEffects.init = FALSE,
+                                 individual.sigma.init = FALSE,
+                                 n.process.init = NULL)
+      for(i in 1:length(controls.init.full)){
+        if(!(names(controls.init.full)[i] %in% names(controls.init))){
+          controls.init[names(controls.init.full)[i]] <- controls.init.full[i]
+        }
       }
+      
     }
     
   }
@@ -252,95 +257,112 @@ ngme <- function(fixed,
   Y    <- tapply(y, id, function(x) x)
   locs <- tapply(data[, timeVar], id, function(x) x)
   
-  ## Obtain starting values
-
-  # setup the lists that are going to be passed into the 
-  # functions that will obtain the starting value
-  if(!silent){
-    cat("Setup lists\n")
-  }
-
+  ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
-  measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
   
-  mixedEffect_list <- list(B_random = B_random,
-                           B_fixed  = B_fixed,
-                           noise = "Normal",
-                           Sigma_epsilon = 1
-                           )
-  if(use.process){
-    if(is.null(controls$n.process)){
-      n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
-      operator_list <- create_operator(locs, n.process, name = process[2])
-    }else{
-      operator_list <- create_operator(locs, controls$n.process, name = process[2])
+  ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
+  
+  if(is.null(init.fit) == TRUE || 
+     (reffects == "Normal" & (use.process == TRUE & process[1] == "Normal") & error == "Normal") || 
+     (reffects == "Normal" & use.process == FALSE & error == "Normal")){
+    
+    # setup the lists that are going to be passed into the 
+    # functions that will obtain the starting value
+    if(!silent){
+      cat("Setup lists\n")
     }
     
-    process_list = list(noise = "Normal",
-                        nu  = 1,
-                        mu  = 0
-                        )
-    process_list$V <- list()
-    process_list$X <- list()
+    measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
     
-    for(i in 1:length(locs))
-    {
-      process_list$X[[i]] <- rep(0, length(operator_list$h[[1]]))
-      process_list$V[[i]] <- operator_list$h[[1]]
+    mixedEffect_list <- list(B_random = B_random,
+                             B_fixed  = B_fixed,
+                             noise = "Normal",
+                             Sigma_epsilon = 1)
+    
+    if(use.process){
+      if(is.null(controls$n.process)){
+        n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
+        operator_list <- create_operator(locs, n.process, name = process[2])
+      }else{
+        operator_list <- create_operator(locs, controls$n.process, name = process[2])
+      }
+      
+      process_list = list(noise = "Normal",
+                          nu  = 1,
+                          mu  = 0
+      )
+      process_list$V <- list()
+      process_list$X <- list()
+      
+      for(i in 1:length(locs))
+      {
+        process_list$X[[i]] <- rep(0, length(operator_list$h[[1]]))
+        process_list$V[[i]] <- operator_list$h[[1]]
+      }
     }
-  }
-  
-  # starting values for measurement error and mixed effects using OLS:
-  if(!silent){
-    cat("Calculate starting values\n")    
+    
+    # starting values for measurement error and mixed effects using OLS:
+    if(!silent){
+      cat("Calculate starting values\n")    
+    }
+    
+    mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
+    measurement_list$sigma <- mixedEffect_list$sigma  
+    
   }
 
-  mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
-  measurement_list$sigma <- mixedEffect_list$sigma
-  
-  # the case where the model formulation consists of W(t)
+  # Fitting the models: the case where the model formulation consists of W(t)
   if(use.process){
     
-    #starting values for process
-    operator_list$type  <- process[2]
-    operator_list <- operator.startvalues(Y, 
-                                          locs,
-                                          mixedEffect_list, 
-                                          operator_list, 
-                                          measurement_list
-                                          )
+    if(is.null(init.fit) == TRUE || 
+       (reffects == "Normal" & process[1] == "Normal" & error == "Normal")){
+      
+      #starting values for process
+      operator_list$type  <- process[2]
+      operator_list <- operator.startvalues(Y, 
+                                            locs,
+                                            mixedEffect_list, 
+                                            operator_list, 
+                                            measurement_list)  
+    }
+    
     # at least one of random effects, process or measurement error non-Gaussian   
     if(reffects != "Normal" || process[1] != "Normal" || error != "Normal"){
       
-      # first fit the Gaussian model to obtain initials
-      if(!silent){
-        cat("Estimate Gaussian")
+      if(is.null(init.fit) == TRUE){
+        
+        # first fit the Gaussian model to obtain initials
+        if(!silent){
+          cat("Estimate Gaussian")
+        }
+        
+        fit <- estimateLong(Y, 
+                            locs,
+                            mixedEffect_list,
+                            measurement_list,
+                            process_list,
+                            operator_list,
+                            nIter = controls.init$nIter.init,
+                            silent = silent,
+                            learning_rate = controls.init$learning.rate.init,
+                            polyak_rate = controls.init$polyak.rate.init,
+                            nBurnin = controls.init$nBurnin.init,
+                            nSim = controls.init$nSim.init,
+                            pSubsample = controls.init$pSubsample.init,
+                            nPar_burnin = controls.init$nPar.burnin.init,
+                            step0 = controls.init$step0.init,
+                            alpha = controls.init$alpha.init,
+                            nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
+                            nBurnin_base = controls.init$nBurnin.base.init, 
+                            subsample.type = controls.init$subsample.type.init,
+                            pSubsample2 = controls.init$pSubsample2.init,
+                            seed = controls.init$seed.init, 
+                            standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
+                            estimate_fisher = FALSE)  
+        
+      }else{
+        fit <- init.fit
       }
-
-      fit <- estimateLong(Y, 
-                          locs,
-                          mixedEffect_list,
-                          measurement_list,
-                          process_list,
-                          operator_list,
-                          nIter = controls.init$nIter.init,
-                          silent = silent,
-                          learning_rate = controls.init$learning.rate.init,
-                          polyak_rate = controls.init$polyak.rate.init,
-                          nBurnin = controls.init$nBurnin.init,
-                          nSim = controls.init$nSim.init,
-                          pSubsample = controls.init$pSubsample.init,
-                          nPar_burnin = controls.init$nPar.burnin.init,
-                          step0 = controls.init$step0.init,
-                          alpha = controls.init$alpha.init,
-                          nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
-                          nBurnin_base = controls.init$nBurnin.base.init, 
-                          subsample.type = controls.init$subsample.type.init,
-                          pSubsample2 = controls.init$pSubsample2.init,
-                          seed = controls.init$seed.init, 
-                          standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
-                          estimate_fisher = FALSE
-                          )
       
       # then fit the non-Gaussian model
       if(!silent){
@@ -473,38 +495,45 @@ ngme <- function(fixed,
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
     }
-  } else {## the case of the model excludes W(t)
+  } else {## Fitting the models: the case where W(t) is excluded
     
     # either random effects or measurement error is non-Gaussian
     if(reffects != "Normal" || error != "Normal"){
       
-      if(!silent){
-        cat("Estimate Gaussian") 
+      if(is.null(init.fit) == TRUE){
+        
+        if(!silent){
+          cat("Estimate Gaussian") 
+        }
+        
+        # first fit the Gaussian model to obtain the initials 
+        fit <- estimateLong(Y, 
+                            locs,
+                            mixedEffect_list,
+                            measurement_list,
+                            nIter = controls.init$nIter.init,
+                            silent = silent,
+                            learning_rate = controls.init$learning.rate.init,
+                            polyak_rate = controls.init$polyak.rate.init,
+                            nBurnin = controls.init$nBurnin.init,
+                            nSim = controls.init$nSim.init,
+                            pSubsample = controls.init$pSubsample.init,
+                            nPar_burnin = controls.init$nPar.burnin.init,
+                            step0 = controls.init$step0.init,
+                            alpha = controls.init$alpha.init,
+                            nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
+                            nBurnin_base = controls.init$nBurnin.base.init, 
+                            subsample.type = controls.init$subsample.type.init,
+                            pSubsample2 = controls.init$pSubsample2.init,
+                            seed = controls.init$seed.init, 
+                            standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
+                            estimate_fisher = FALSE)
+        
+      }else{
+        
+        fit <- init.fit
+        
       }
-      
-      # first fit the Gaussian model to obtain the initials 
-      fit <- estimateLong(Y, 
-                          locs,
-                          mixedEffect_list,
-                          measurement_list,
-                          nIter = controls.init$nIter.init,
-                          silent = silent,
-                          learning_rate = controls.init$learning.rate.init,
-                          polyak_rate = controls.init$polyak.rate.init,
-                          nBurnin = controls.init$nBurnin.init,
-                          nSim = controls.init$nSim.init,
-                          pSubsample = controls.init$pSubsample.init,
-                          nPar_burnin = controls.init$nPar.burnin.init,
-                          step0 = controls.init$step0.init,
-                          alpha = controls.init$alpha.init,
-                          nBurnin_learningrate = controls.init$nBurnin.learningrate.init,
-                          nBurnin_base = controls.init$nBurnin.base.init, 
-                          subsample.type = controls.init$subsample.type.init,
-                          pSubsample2 = controls.init$pSubsample2.init,
-                          seed = controls.init$seed.init, 
-                          standardize.mixedEffects = controls.init$standardize.mixedEffects.init,
-                          estimate_fisher = FALSE
-                          )
       
       # then fit the non-Gaussian model
       if(!silent){
