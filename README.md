@@ -35,3 +35,5 @@
 - plot for excursions
 - put a note that if nu reaches the limit use normal
 - newdata in predict
+- fit.init is expected to be gaussian atm
+- controls.init vs fit.init
