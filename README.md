@@ -37,3 +37,4 @@
 - newdata in predict
 - fit.init is expected to be gaussian atm
 - controls.init vs fit.init
+- process nu never becomes 0.001 for normal nig normal model
