@@ -33,3 +33,7 @@
 - add mean or median as an option to the predict.ngme function
 - check calculation of coverages and width in predict.ngme
 - plot for excursions
+- put a note that if nu reaches the limit use normal
+- newdata in predict
+- fit.init is expected to be gaussian atm
+- controls.init vs fit.init
