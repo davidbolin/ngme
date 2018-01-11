@@ -69,14 +69,15 @@ predict.ngme <- function(object,
                             crps.skip = 1,
                             nSim = 1000,
                             nBurnin = 100,
-                            silent = TRUE
+                            silent = TRUE,
+                            return.preds = TRUE
                             )
                           )
   {
 
   controls$seed <- ceiling(10^8 * runif(1))
 
-  if(length(controls) < 9){
+  if(length(controls) < 10){
     controls_full <- list(
       return.samples = TRUE,
       predict.derivaties = NULL,
@@ -159,7 +160,7 @@ predict.ngme <- function(object,
   mae <- covered <- int.width <- crps <- rmse <- NULL
 
   n.obs <- rep(0, length(pInd))
-
+  
   for(i in 1:length(pInd)){
     mae <- c(mae, abs(preds$X.summary[[i]]$Median - Y[[pInd[i]]]))
     n.obs[i] <- length(Y[[pInd[i]]])
@@ -180,30 +181,55 @@ predict.ngme <- function(object,
   mean.int.width <- mean(int.width)
   std.int.width  <- sqrt(var(int.width))
 
-  out <- list(predictions = preds,
-              id = id,
-              type = type,
-              call = match.call(),
-              mae = mae,
-              n.obs = n.obs,
-              covered = covered,
-              int.width = int.width,
-              crps = crps,
-              rmse = rmse,
-              mean.mae = mean.mae,
-              std.mae = std.mae,
-              coverage.mean = coverage.mean,
-              coverage.std = coverage.std,
-              mean.rmse = mean.rmse,
-              std.rmse = std.rmse,
-              mean.crps = mean.crps,
-              std.crps = std.crps,
-              mean.int.width = mean.int.width,
-              std.int.width = std.int.width,
-              Y = Y,
-              locs = locs,
-              id_list = id_list
-              )
+  if(controls$return.pred == TRUE){
+    out <- list(predictions = preds,
+                id = id,
+                type = type,
+                call = match.call(),
+                mae = mae,
+                n.obs = n.obs,
+                covered = covered,
+                int.width = int.width,
+                crps = crps,
+                rmse = rmse,
+                mean.mae = mean.mae,
+                std.mae = std.mae,
+                coverage.mean = coverage.mean,
+                coverage.std = coverage.std,
+                mean.rmse = mean.rmse,
+                std.rmse = std.rmse,
+                mean.crps = mean.crps,
+                std.crps = std.crps,
+                mean.int.width = mean.int.width,
+                std.int.width = std.int.width,
+                Y = Y,
+                locs = locs,
+                id_list = id_list)
+  }else{
+    out <- list(id = id,
+                type = type,
+                call = match.call(),
+                mae = mae,
+                n.obs = n.obs,
+                covered = covered,
+                int.width = int.width,
+                crps = crps,
+                rmse = rmse,
+                mean.mae = mean.mae,
+                std.mae = std.mae,
+                coverage.mean = coverage.mean,
+                coverage.std = coverage.std,
+                mean.rmse = mean.rmse,
+                std.rmse = std.rmse,
+                mean.crps = mean.crps,
+                std.crps = std.crps,
+                mean.int.width = mean.int.width,
+                std.int.width = std.int.width,
+                Y = Y,
+                locs = locs,
+                id_list = id_list)
+  }
+  
   class(out) <- "predict.ngme"
   out
 
