@@ -84,9 +84,10 @@ predict.ngme <- function(object,
       excursions = NULL,
       crps = TRUE,
       crps.skip = 1,
-      nSim = 10,
-      nBurnin = 10,
-      silent = TRUE
+      nSim = 1000,
+      nBurnin = 100,
+      silent = TRUE,
+      return.preds = TRUE
       )
     for(i in 1:length(controls)){
         controls_full[names(controls)[i]] <- controls[i]
@@ -161,6 +162,10 @@ predict.ngme <- function(object,
 
   n.obs <- rep(0, length(pInd))
   
+  if(controls$silent == FALSE){
+    cat("Calculating accuracy measures", "\n")
+  }
+  
   for(i in 1:length(pInd)){
     mae <- c(mae, abs(preds$X.summary[[i]]$Median - Y[[pInd[i]]]))
     n.obs[i] <- length(Y[[pInd[i]]])
@@ -181,7 +186,7 @@ predict.ngme <- function(object,
   mean.int.width <- mean(int.width)
   std.int.width  <- sqrt(var(int.width))
 
-  if(controls$return.pred == TRUE){
+  if(controls$return.preds == TRUE){
     out <- list(predictions = preds,
                 id = id,
                 type = type,
@@ -206,7 +211,8 @@ predict.ngme <- function(object,
                 locs = locs,
                 id_list = id_list)
   }else{
-    out <- list(id = id,
+    out <- list(predictions = preds, 
+                id = id,
                 type = type,
                 call = match.call(),
                 mae = mae,
