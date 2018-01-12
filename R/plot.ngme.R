@@ -30,7 +30,6 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
     stop("No process was included in the model fit")
   }
 
-
   if(param == "fixed"){
     
     if(n.exclude == 0){
@@ -93,27 +92,42 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
 
     if(object$process_distr %in% c("Normal", "CH")){
       
-      if(n.exclude == 0){
-        plot(object$operator_tau_vec, 
-             main = "Process", xlab = "Iteration", ylab = "tau", type = "l")
-      }else{
-        plot(as.matrix(object$operator_tau_vec)[-c(1:n.exclude), ], 
-             main = "Process", xlab = "Iteration", ylab = "tau", type = "l")
+      if(object$operator_type == "fd2"){
+        process_results_vec <- matrix(object$operator_tau_vec, ncol = 1)
+        colnames(process_results_vec) <- "tau"
+      }else if(object$operator_type == "matern"){
+        process_results_vec <- cbind(object$operator_tau_vec, 
+                                     object$operator_kappa_vec)
+        colnames(process_results_vec) <- c("tau", "kappa")
       }
-      
-    }else if(object$process_distr %in% c("NIG", "GAL")){
-      process_results_vec <- cbind(object$operator_tau_vec,
-                                   object$process_mu_vec,
-                                   object$process_nu_vec)
-      colnames(process_results_vec) <- c("tau", "mu", "nu")
       
       if(n.exclude == 0){
         plot.ts(process_results_vec, main = "Process", xlab = "Iteration")
       }else{
-        plot.ts(as.matrix(process_results_vec)[-c(1:n.exclude), ], main = "Process", xlab = "Iteration")
+        plot.ts(process_results_vec[-c(1:n.exclude), ], main = "Process", xlab = "Iteration")
+      }
+      
+    }else if(object$process_distr %in% c("NIG", "GAL")){
+      
+      if(object$operator_type == "fd2"){
+        process_results_vec <- cbind(object$operator_tau_vec,
+                                     object$process_mu_vec,
+                                     object$process_nu_vec)
+        colnames(process_results_vec) <- c("tau", "mu", "nu")
+      }else if(object$operator_type == "matern"){
+        process_results_vec <- cbind(object$operator_tau_vec,
+                                     object$operator_kappa_vec,
+                                     object$process_mu_vec,
+                                     object$process_nu_vec)
+        colnames(process_results_vec) <- c("tau", "kappa","mu", "nu")
+      }
+      
+      if(n.exclude == 0){
+        plot.ts(process_results_vec, main = "Process", xlab = "Iteration")
+      }else{
+        plot.ts(process_results_vec[-c(1:n.exclude), ], main = "Process", xlab = "Iteration")
       }
     }
-
 
   }else if(param == "error"){
 
