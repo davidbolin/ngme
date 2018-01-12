@@ -23,7 +23,7 @@
 #'   }
 #'
 
-plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
+plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...){
 
   # if process was not specified in the model
   if(param == "process" && object$use_process == FALSE){
@@ -34,9 +34,17 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, ...){
   if(param == "fixed"){
     
     if(n.exclude == 0){
-      plot.ts(object$fixed_est_vec, main = "Fixed effects", xlab = "Iteration")
+      if(is.null(index) == TRUE){
+        plot.ts(object$fixed_est_vec, main = "Fixed effects", xlab = "Iteration")
+      }else{
+        plot.ts(object$fixed_est_vec[, index], main = "Fixed effects", xlab = "Iteration")  
+        }
     }else{
-      plot.ts(as.matrix(object$fixed_est_vec)[-c(1:n.exclude), ], main = "Fixed effects", xlab = "Iteration")
+      if(is.null(index) == TRUE){
+        plot.ts(as.matrix(object$fixed_est_vec)[-c(1:n.exclude), ], main = "Fixed effects", xlab = "Iteration")
+      }else{
+        plot.ts(as.matrix(object$fixed_est_vec)[-c(1:n.exclude), index], main = "Fixed effects", xlab = "Iteration")
+      }
     }
 
   }else if(param == "random"){
