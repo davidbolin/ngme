@@ -40,3 +40,4 @@
 - process nu never becomes 0.001 for normal nig normal model
 - warning nu = 100 atm, not for 99.99
 - get rid of the for loop at the end of predict.ngme
+- ylabs in plot.ngme
