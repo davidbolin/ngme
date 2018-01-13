@@ -175,16 +175,18 @@ predict.ngme <- function(object,
     rmse <- c(rmse, (preds$X.summary[[i]]$Mean - Y[[pInd[i]]])^2)
   }
 
+  sum.n.obs <- sum(n.obs)
+  
   mean.mae       <- mean(mae)
-  std.mae        <- sqrt(var(mae)/sum(n.obs))
+  std.mae        <- sqrt(var(mae)/sum.n.obs)
   coverage.mean  <- 100 * mean(covered)
-  coverage.std   <- 100 * sqrt(var(covered)/sum(n.obs))
+  coverage.std   <- 100 * sqrt(var(covered)/sum.n.obs)
   mean.rmse      <- sqrt(mean(rmse))
-  std.rmse       <- sqrt(var(rmse)/sum(n.obs))
+  std.rmse       <- sqrt(var(rmse)/sum.n.obs)
   mean.crps      <- mean(crps)
-  std.crps       <- sqrt(var(crps))
+  std.crps       <- sqrt(var(crps)/sum.n.obs)
   mean.int.width <- mean(int.width)
-  std.int.width  <- sqrt(var(int.width))
+  std.int.width  <- sqrt(var(int.width)/sum.n.obs)
 
   if(controls$return.preds == TRUE){
     out <- list(predictions = preds,
