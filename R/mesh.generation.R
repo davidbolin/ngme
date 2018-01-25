@@ -104,17 +104,13 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
   }
   s = sort(x)
 
-  if(length(s)<2){
+  if(length(s)<3){
     s = c(s[1]-2*cutoff,s,s[length(s)]+2*cutoff)
   }
   max_l = max(s)
   min_l = min(s)
 
   loc_len = max_l - min_l
-  if(loc_len == 0){
-    loc_len = cutoff #add nodes if there is only one location
-    extend_grid = TRUE
-  }
   if(extend_grid){
     s = c(min_l-extend[1]*loc_len,s,max_l+extend[2]*loc_len)
   }
@@ -135,6 +131,7 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
     d = diff(s)
     n.mesh= n.mesh-1
   }
+
   #add nodes to satify max.dist
   if(refine){
     while(max(d)>max.dist){

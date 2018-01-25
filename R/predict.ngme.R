@@ -248,32 +248,53 @@ predict.ngme <- function(object,
   }
 
 
-  preds <- merge.pred.lists(preds.list)
-  mae <- covered <- int.width <- crps <- rmse <- NULL
+  preds <- merge.pred.lists(preds.list,pInd)
 
-  n.obs <- rep(0, length(pInd))
 
   if(controls$silent == FALSE){
     cat("Calculating accuracy measures", "\n")
   }
 
+  if(type=="Filter"){
+    p.start = 2
+  } else {
+    p.start = 1
+  }
+  mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
   for(i in 1:length(pInd)){
-    mae <- c(mae, abs(preds$X.summary[[i]]$Median - object$Y[[pInd[i]]]))
-    n.obs[i] <- length(object$Y[[pInd[i]]])
-    covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field < object$Y[[pInd[i]]]) & (preds$Y.summary[[i]]$quantiles[[2]]$field > object$Y[[pInd[i]]]))
-    int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field - preds$Y.summary[[i]]$quantiles[[1]]$field)
-    crps <- c(crps, preds$Y.summary[[i]]$crps)
-    rmse <- c(rmse, (preds$X.summary[[i]]$Mean - Y[[pInd[i]]])^2)
+    n.obs.i = length(object$Y[[pInd[i]]])
+    if(n.obs.i>=p.start){
+      n.obs <- c(n.obs,length(object$Y[[pInd[i]]])-p.start+1)
+      yi = object$Y[[pInd[i]]][p.start:n.obs.i]
+
+      mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
+      mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))
+
+      rmse.mean <- c(rmse.mean, (preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi)^2)
+      rmse.median <- c(rmse.median, (preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi)^2)
+
+      covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i] < yi & (preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] > yi)))
+      int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] - preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i])
+
+      crps <- c(crps, preds$Y.summary[[i]]$crps[p.start:n.obs.i])
+    }
   }
 
   sum.n.obs <- sum(n.obs)
 
-  mean.mae       <- mean(mae)
-  std.mae        <- sqrt(var(mae)/sum.n.obs)
+  mean.mae.mean.predictor       <- mean(mae.mean)
+  mean.mae.median.predictor     <- mean(mae.median)
+  std.mae.mean.predictor        <- sqrt(var(mae.mean)/sum.n.obs)
+  std.mae.median.predictor      <- sqrt(var(mae.median)/sum.n.obs)
+
+  mean.rmse.mean.predictor      <- sqrt(mean(rmse.mean))
+  mean.rmse.median.predictor    <- sqrt(mean(rmse.median))
+  std.rmse.mean.predictor       <- sqrt(var(rmse.mean)/sum.n.obs)
+  std.rmse.median.predictor     <- sqrt(var(rmse.median)/sum.n.obs)
+
   coverage.mean  <- 100 * mean(covered)
   coverage.std   <- 100 * sqrt(var(covered)/sum.n.obs)
-  mean.rmse      <- sqrt(mean(rmse))
-  std.rmse       <- sqrt(var(rmse)/sum.n.obs)
+
   mean.crps      <- mean(crps)
   std.crps       <- sqrt(var(crps)/sum.n.obs)
   mean.int.width <- mean(int.width)
@@ -284,18 +305,24 @@ predict.ngme <- function(object,
                 id = id,
                 type = type,
                 call = match.call(),
-                mae = mae,
+                mae.mean = mae.mean,
+                mae.median = mae.median,
+                rmse.mean = rmse.mean,
+                rmse.median = rmse.median,
                 n.obs = n.obs,
                 covered = covered,
                 int.width = int.width,
                 crps = crps,
-                rmse = rmse,
-                mean.mae = mean.mae,
-                std.mae = std.mae,
+                mean.mae.mean.predictor = mean.mae.mean.predictor,
+                mean.mae.median.predictor = mean.mae.median.predictor,
+                std.mae.mean.predictor = std.mae.mean.predictor,
+                std.mae.median.predictor = std.mae.median.predictor,
+                mean.rmse.mean.predictor = mean.rmse.mean.predictor,
+                mean.rmse.median.predictor = mean.rmse.median.predictor,
+                std.rmse.mean.predictor = std.rmse.mean.predictor,
+                std.rmse.median.predictor = std.rmse.median.predictor,
                 coverage.mean = coverage.mean,
                 coverage.std = coverage.std,
-                mean.rmse = mean.rmse,
-                std.rmse = std.rmse,
                 mean.crps = mean.crps,
                 std.crps = std.crps,
                 mean.int.width = mean.int.width,
@@ -334,7 +361,8 @@ predict.ngme <- function(object,
 
 }
 
-merge.pred.lists <- function(preds.list){
+merge.pred.lists <- function(preds.list,pInd){
+  #merge lists
   preds <- preds.list[[1]]
   if(length(preds.list)>1){
     for(i in 2:length(preds.list)){
@@ -342,6 +370,11 @@ merge.pred.lists <- function(preds.list){
         preds[[names(preds)[j]]] <- append(preds[[names(preds)[j]]],preds.list[[i]][[names(preds)[j]]])
       }
     }
+  }
+  #sort in correct order based on pInd
+  ind = match(pInd,preds$pInd)
+  for(j in 1:length(names(preds))){
+    preds[[names(preds)[j]]] <- preds[[names(preds)[j]]][ind]
   }
   return(preds)
 }
