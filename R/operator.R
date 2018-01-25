@@ -130,7 +130,7 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',
   #d1  = c(Inf,d[-n])
 
   #G = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(-1/dm1, (1/dm1 + 1/d), -1/dm1))
-  G = sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE)
+  G = as(sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE),"dgCMatrix")
 
   if(compute.Ce){
     Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(dm1/6, (dm1+d)/3, d/6))
