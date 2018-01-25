@@ -274,7 +274,7 @@ predictLong <- function( Y,
       out_list$Wderivative.samples <- output$WVec_deriv
     }
   }
-
+  out_list$pInd <- pInd
   out_list$locs <- locs.pred
   out_list$Y.summary <- list()
   out_list$X.summary <- list()
