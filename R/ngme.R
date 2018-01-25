@@ -264,6 +264,12 @@ ngme <- function(fixed,
   ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 
+  ## a warning message
+  
+  if(is.null(init.fit) == FALSE){
+    warning("'cutoff, max.dist and extend for controls are the same in the init.fit")
+  }
+  
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
 
   if(is.null(init.fit) == TRUE ||
