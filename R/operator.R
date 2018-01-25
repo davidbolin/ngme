@@ -121,33 +121,31 @@ spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann'
 #'   }
 #'
 
-spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
+spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',compute.Ce = FALSE)
 {
   n = length(x)
-  d <- c(Inf,diff(x))
-  dm1 = c(d[2:n],Inf)
-  d1  = c(Inf,d[1:(n-1)])
+  dx = diff(x)
+  d <- c(Inf,dx)
+  dm1 = c(d[-1],Inf)
+  #d1  = c(Inf,d[-n])
 
-  D = cBind(1/dm1, -(1/dm1 + 1/d), 1/dm1)
-  G = -bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=D)
+  #G = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(-1/dm1, (1/dm1 + 1/d), -1/dm1))
+  G = sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE)
 
-  D = cBind(dm1/6, (dm1+d)/3, d/6)
-  Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=D)
-  Ce[1,1] <- d[2]/3
-  Ce[1,2] <- d[2]/6
-  Ce[n,n] <- d[n]/3
-  Ce[n,n-1] <- d[n]/6
+  if(compute.Ce){
+    Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(dm1/6, (dm1+d)/3, d/6))
+    Ce[1,1] <- d[2]/3
+    Ce[1,2] <- d[2]/6
+    Ce[n,n] <- d[n]/3
+    Ce[n,n-1] <- d[n]/6
+  }
 
-  h = (c(diff(x),Inf)+d)/2
+
+  h = (c(dx,Inf)+d)/2
   h[1] <- (x[2]-x[1])/2
   h[n] <- (x[n]-x[n-1])/2
-  C = Diagonal(n,h)
-  Ci = Diagonal(n,1/h)
-
-  #B = sparseMatrix(dims=dim(C))
-  #B[n-1,n] = -1/(x[n]-x[n-1])
-  #B[n,n] = 1/(x[n]-x[n-1])
-  B = sparseMatrix(i=c(n-1,n),j=c(n,n),x = c(-1/(x[n]-x[n-1]),1/(x[n]-x[n-1])),dims = dim(C))
+  C = sparseMatrix(i=1:n,j=1:n,x=h,dims = c(n,n))
+  Ci = sparseMatrix(i=1:n,j=1:n,x=1/h,dims = c(n,n))
 
   if(left.boundary=='dirichlet'){
     C = C[-1,-1]
@@ -165,14 +163,14 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
     n = n-1
     h = h[-n]
   }
-
-  return(list(G=G,
-              C=C,
-              B = B,
-              Ce=Ce,
-              Ci=Ci,
-              loc=x,
-              h = h))
+out.list <- list(G=G,
+                 C=C,
+                 Ci=Ci,
+                 loc=x,
+                 h = h)
+  if(compute.Ce)
+    out.list$Ce = Ce
+  return(out.list)
 }
 
 #' @title Compute FEM matrices - 2D.
@@ -245,7 +243,8 @@ create_operator <- function(locs,
                             common.grid = FALSE,
                             extend  = NULL,
                             max.dist,
-                            cutoff = 1e-10)
+                            cutoff = 1e-10,
+                            n.cores = 1)
 {
   if(!missing(n) & !missing(max.dist)){
     stop("Supply either n or max.dist")
@@ -257,7 +256,8 @@ create_operator <- function(locs,
                                   common.grid = common.grid,
                                   extend = extend,
                                   max.dist = max.dist,
-                                  cutoff = cutoff))
+                                  cutoff = cutoff,
+                                  n.cores = n.cores))
   }else{
     return(create_matrices_FD2(locs = locs,
                                common.grid = common.grid,
@@ -305,36 +305,66 @@ create_matrices_Matern <- function(locs,
                                    common.grid = FALSE,
                                    extend = NULL,
                                    max.dist,
-                                   cutoff = 1e-10)
+                                   cutoff = 1e-10,
+                                   n.cores = 1)
 {
-
+  t1 <- Sys.time()
   meshes <- generate.adaptive.meshes.1d(locs,
                                         max.dist = max.dist,
                                         cutoff = cutoff,
                                         common.grid=common.grid,
-                                        extend = extend)
-
+                                        extend = extend,
+                                        n.cores = n.cores)
+  t.mesh <- Sys.time() - t1
   operator_List <- list()
   C <- Ci <- G <- Ce <- h <- list()
   if(common.grid || length(locs) == 1){
     MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary)
     for(i in 1:length(locs))
     {
-      C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix")
-      Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
+      C[[i]] = MatrixBlock$C
+      Ci[[i]] = MatrixBlock$Ci
       G[[i]] = MatrixBlock$G
       Ce[[i]] = MatrixBlock$Ce
       h[[i]] = MatrixBlock$h
     }
   } else {
-    for(i in 1:length(locs))
-    {
-      MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
-      C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix")
-      Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
-      G[[i]] = MatrixBlock$G
-      Ce[[i]] = MatrixBlock$Ce
-      h[[i]] = MatrixBlock$h
+    if(n.cores>1){
+      cl <- makeCluster(n.cores)
+      registerDoSNOW(cl)
+      clusterExport(cl, list = c('locs'),envir=environment())
+      b.list <- foreach(i = 1:length(locs)) %dopar%
+        {
+          m <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
+          m$i = i
+          return(m)
+        }
+      stopCluster(cl)
+
+      C <- lapply(b.list,function(x) x$C)
+      Ci <- lapply(b.list,function(x) x$Ci)
+      G <- lapply(b.list,function(x) x$G)
+      h <- lapply(b.list,function(x) x$h)
+
+      ind <- unlist(lapply(b.list,function(x) x$i))
+
+      C <- C[ind]
+      Ci <- Ci[ind]
+      G <- G[ind]
+      h <- h[ind]
+
+    } else {
+      t1 <- Sys.time()
+      for(i in 1:length(locs))
+      {
+        MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
+        C[[i]] = MatrixBlock$C
+        Ci[[i]] = MatrixBlock$Ci
+        G[[i]] = MatrixBlock$G
+        h[[i]] = MatrixBlock$h
+      }
+      t.block = Sys.time()-t1
+      cat(t.mesh," ",t.block,"\n")
     }
   }
 
@@ -342,7 +372,6 @@ create_matrices_Matern <- function(locs,
                         C = C,
                         Ci = Ci,
                         G = G,
-                        Ce = Ce,
                         h = h,
                         kappa = 0,
                         loc   = meshes$loc,

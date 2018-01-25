@@ -76,8 +76,7 @@
 #'     \item \code{individual.sigma} A logical variable for specifying patient-specific mixture
 #'       random variable for the error-term; \code{"FALSE"} indicates do not obtain,
 #'       \code{"TRUE"} obtain.
-#'     \item \code{n.process} A numerical value for the number of basis functions to
-#'       approximate the stochastic process.
+#'     \item \code{n.cores} A numerical value for the number of cores to use for parallel computing.
 #'  }
 #' @details This function is a user-friendly wrapper that calls the \code{estimateLong} function.
 #'     Generic functions \code{summary}, \code{print} and \code{plot} are available for the
@@ -121,7 +120,8 @@ ngme <- function(fixed,
                                  max.dist = NULL,
                                  cutoff = 1e-10,
                                  common.grid=FALSE,
-                                 extend = NULL),
+                                 extend = NULL,
+                                 n.cores = 1),
                  controls.init = list(learning.rate.init = 0,
                                       polyak.rate.init = 0.1,
                                       nBurnin.init = 100,
@@ -144,7 +144,7 @@ ngme <- function(fixed,
   controls$seed <- controls.init$seed.init <- gen_seed
 
   # being sure that controls includes everything
-  if(length(controls) < 22){
+  if(length(controls) < 23){
     controls.full <- list(learning.rate = 0,
                           polyak.rate = 0.1,
                           nBurnin = 100,
@@ -165,7 +165,8 @@ ngme <- function(fixed,
                           max.dist = NULL,
                           cutoff = 1e-10,
                           common.grid=FALSE,
-                          extend = NULL)
+                          extend = NULL,
+                          n.cores = 1)
     for(i in 1:length(controls.full)){
       if(!(names(controls.full)[i] %in% names(controls))){
         controls[names(controls.full)[i]] <- controls.full[i]
@@ -265,11 +266,11 @@ ngme <- function(fixed,
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 
   ## a warning message
-  
+
   if(is.null(init.fit) == FALSE){
     warning("'cutoff, max.dist and extend for controls are the same in the init.fit")
   }
-  
+
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
 
   if(is.null(init.fit) == TRUE ||
@@ -295,7 +296,8 @@ ngme <- function(fixed,
                                        common.grid = controls$common.grid,
                                        extend  = controls$extend,
                                        max.dist = controls$max.dist,
-                                       cutoff = controls$cutoff)
+                                       cutoff = controls$cutoff,
+                                       n.cores = controls$n.cores)
       #if(is.null(controls$n.process)){
       #  n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
       #  operator_list <- create_operator(locs, n.process, name = process[2])

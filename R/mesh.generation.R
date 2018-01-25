@@ -127,7 +127,6 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
     } else {
       s = c(s[seq(length=(i-1))],mean(s[i:(i+1)]),s[(i+1)+seq(length=n.mesh-(i+1))])
     }
-
     d = diff(s)
     n.mesh= n.mesh-1
   }
@@ -154,7 +153,7 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
 }
 
 
-generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,common.grid=TRUE,extend = NULL)
+generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,common.grid=FALSE,extend = NULL,n.cores = 1)
 {
   loc <- h <- hs <- n <- list()
   if(common.grid || length(locs)==1){
@@ -167,12 +166,38 @@ generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,comm
       n[[i]] <- m$n
     }
   } else {
-    for(i in 1:length(locs)){
-      m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
-      loc[[i]] <- m$loc
-      h[[i]] <- m$h
-      hs[[i]] <- m$hs
-      n[[i]] <- m$n
+    if(n.cores > 1){
+      cl <- makeCluster(n.cores)
+      registerDoSNOW(cl)
+      clusterExport(cl, list = c('locs'),envir=environment())
+      mesh.list <- foreach(i = 1:length(locs)) %dopar%
+      {
+        m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
+        m$i = i
+        return(m)
+      }
+      stopCluster(cl)
+
+      h <- lapply(mesh.list,function(x) x$h)
+      hs <- lapply(mesh.list,function(x) x$hs)
+      n <- lapply(mesh.list,function(x) x$n)
+      loc <- lapply(mesh.list,function(x) x$loc)
+
+      ind <- unlist(lapply(mesh.list,function(x) x$i))
+
+      h <- h[ind]
+      hs <- hs[ind]
+      n <- n[ind]
+      loc <- loc[ind]
+
+    } else {
+      for(i in 1:length(locs)){
+        m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
+        loc[[i]] <- m$loc
+        h[[i]] <- m$h
+        hs[[i]] <- m$hs
+        n[[i]] <- m$n
+      }
     }
   }
   return(list(loc=loc,h=h,hs=hs,n=n))
