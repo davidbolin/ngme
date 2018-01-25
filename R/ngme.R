@@ -731,7 +731,7 @@ ngme <- function(fixed,
 
     #operator
     operator_tau     <- fit$operator_list$tau
-    operator_tau_vec <- fit$operator_list$tauVec
+    operator_tau_vec <- fit$operator_list$tauVec[-1] #1st element is omitted
 
     #operator - matern
     if(process[2] %in% c("matern")){
