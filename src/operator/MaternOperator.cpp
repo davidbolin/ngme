@@ -5,17 +5,26 @@
 
 MaternOperator::~MaternOperator()
 {
-  delete Q;
-  delete d2tauQ;
-  delete dtauQ;
-  delete dkappaQ;
-  delete d2kappaQ;
-  delete Qsolver;
-  delete Qepssolver;
+  if(is_initialized == 1){
+    delete[] Q;
+    delete[] G;
+    delete[] C;
+    delete[] d2tauQ;
+    delete[] dtauQ;
+    delete[] dkappaQ;
+    delete[] d2kappaQ;
+    for(int i=0;i<nop;i++){
+      delete Qsolver[i];
+      delete Qepssolver[i];
+    }
+    delete[] Qsolver;
+    delete[] Qepssolver;
+  }
 }
 
 void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const & solver_list)
 {
+	is_initialized = 1;
 	npars = 2;
   std::vector<std::string> check_names =  {"C", "G", "kappa", "tau","h"};
   check_Rcpplist(init_list, check_names, "MaternOperator::initFromList");

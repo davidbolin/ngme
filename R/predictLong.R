@@ -107,10 +107,7 @@ predictLong <- function( Y,
   if(missing(locs.pred)){
     locs.pred <- locs
   }
-  common.grid = FALSE
-  if(length(operator_list$loc)==1){
-    common.grid = TRUE
-  }
+
   obs_list <- list()
 
   if(!missing(pInd) && !is.null(pInd)){
@@ -136,14 +133,13 @@ predictLong <- function( Y,
     if(use.process){
       processes_list$X    <- processes_list$X[pInd]
       processes_list$V    <- processes_list$V[pInd]
-      if(!common.grid){
-        operator_list$Q <- operator_list$Q[pInd]
-        operator_list$loc <- operator_list$loc[pInd]
-        operator_list$h <- operator_list$h[pInd]
-        if(operator_list$type == "Matern"){
-          operator_list$C <- operator_list$C[pInd]
-          operator_list$G <- operator_list$G[pInd]
-        }
+
+      operator_list$Q <- operator_list$Q[pInd]
+      operator_list$loc <- operator_list$loc[pInd]
+      operator_list$h <- operator_list$h[pInd]
+      if(tolower(operator_list$type) == "matern"){
+        operator_list$C <- operator_list$C[pInd]
+        operator_list$G <- operator_list$G[pInd]
       }
     }
 
@@ -266,6 +262,7 @@ predictLong <- function( Y,
 
   output <- predictLong_cpp(input)
   out_list <- list()
+
 
   if(return.samples){
     out_list$Y.samples <- output$YVec

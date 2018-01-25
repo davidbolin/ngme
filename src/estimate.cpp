@@ -34,7 +34,6 @@ Eigen::VectorXd GibbsSampling(int i,
 				   int               sampleX,
 				   int               sampleV,
 				   int               process_active,
-				   int common_grid,
 				   MixedEffect       & mixobj,
 				   operatorMatrix    & Kobj,
 				   MeasurementError  & errObj,
@@ -46,7 +45,7 @@ Eigen::VectorXd GibbsSampling(int i,
 {
   Eigen::VectorXd b;
   if(process_active){
-	  b.setZero(Kobj.d[0]);
+	  b.setZero(Kobj.d[i]);
 	 }
 
   Eigen::VectorXd  res = Y;
@@ -66,6 +65,7 @@ Eigen::VectorXd GibbsSampling(int i,
 
   if(debug)
     Rcpp::Rcout << "estimate::sample mix \n";
+
   if(errObj.noise == "Normal")
   	mixobj.sampleU( i, res, 2 * log(errObj.sigma));
   else
@@ -79,11 +79,9 @@ Eigen::VectorXd GibbsSampling(int i,
   if(process_active){
   	Eigen::VectorXd iV(process.Vs[i].size());
   	iV.array() = process.Vs[i].array().inverse();
-  	if(common_grid){
-			K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
-  	} else {
-  		K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
-		}
+
+		K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+
     Q = K.transpose();
     Q =  Q * iV.asDiagonal();
   	Q =  Q * K;
@@ -133,7 +131,6 @@ void grad_caculations(int i,
 					            Eigen::VectorXd&  res,
 				   	          Eigen::SparseMatrix<double,0,int>& A,
 				              double w,
-				              int common_grid,
 				              int process_active,
 				              MixedEffect       & mixobj,
 				              operatorMatrix    & Kobj,
@@ -191,11 +188,9 @@ void grad_caculations(int i,
 		Eigen::SparseMatrix<double, 0, int> K;
   	Eigen::VectorXd iV(process.Vs[i].size());
   	iV.array() = process.Vs[i].array().inverse();
-  	if(common_grid){
-  		K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
-  	} else {
-  	  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
-  	}
+
+	  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+
     if(process.type_process != "Normal"){
       if(errObj.noise != "Normal"){
         //TODO:: ADDD SCALING WITH W FOR PROCESS GRADIENT
@@ -342,8 +337,6 @@ List estimateLong_cpp(Rcpp::List in_list)
   double step0     = Rcpp::as< double    > (in_list["step0"]);
   int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
 
-
-
   unsigned long seed = 0;
   if(in_list.containsElementNamed("seed"))
     seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -473,7 +466,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	std::vector<  cholesky_solver >  Solver( nindv);
 	Eigen::SparseMatrix<double, 0, int> Q, K;
 	Eigen::VectorXd  z;
-	int common_grid = 1;
+
 	if(process_active){
 		Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
 		operator_list["nIter"] = nIter;
@@ -482,20 +475,13 @@ List estimateLong_cpp(Rcpp::List in_list)
 		operator_select(type_operator, &Kobj);
 		Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
-		if(Kobj->nop>1)
-	  	common_grid = 0;
-
-		z.setZero(Kobj->d[0]);
 		count = 0;
 		for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     	List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-    	if(common_grid == 1){
-    		Solver[count].init(Kobj->d[0], 0, 0, 0);
-      	K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-    	} else {
-    		Solver[count].init(Kobj->d[count], 0, 0, 0);
-    		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-    	}
+
+  		Solver[count].init(Kobj->d[count], 0, 0, 0);
+  		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+
     	Q = K.transpose();
   		Q = Q * K;
 			Q = Q + As[count].transpose()*As[count];
@@ -606,11 +592,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   count_vec.setZero(nindv);
   if(process_active){
     for(int i = 0; i < nindv; i++ ){
-      if(common_grid){
-        Vmean[i].setZero(Kobj->h[0].size());
-      } else {
-        Vmean[i].setZero(Kobj->h[i].size());
-      }
+      Vmean[i].setZero(Kobj->h[i].size());
     }
   }
 
@@ -764,12 +746,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::VectorXd  Y = Ys[i];
       if(estimate_fisher == 1){
       	if(process_active){
-      		if(common_grid == 1){
-        		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-      		} else {
-        		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
-      		}
-
+      		K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       	}
       	if(debug)
       	  Rcpp::Rcout << "estimate::simulate error\n";
@@ -813,19 +790,21 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  	burnin_done[i] = 0;
     int count_inner = 0;
     Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
-
+    z.setZero(Kobj->h[i].size()); //added
     for(int ii = 0; ii < n_simulations; ii ++)
     {
-      for(int j =0; j < K.rows(); j++)
+      if(debug)
+        Rcpp::Rcout << "simulate z\n";
+      for(int j =0; j < Kobj->h[i].size(); j++)
     		z[j] =  normal(random_engine);
-
+        if(debug)
+          Rcpp::Rcout << "Enter Gibbs\n";
      	  Eigen::VectorXd res =  GibbsSampling(i,
 				   					  Y,
 				   					  A,
 				  					  sampleX,
 				  					  sampleV,
 				   					  process_active,
-				   					  common_grid,
 				   					  *mixobj,
 				   					  *Kobj,
 				   					  *errObj,
@@ -845,7 +824,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 			              				res,
 				   	    		        A,
 				     	  	          weight[i],
-				      	  	        common_grid,
 				      		          process_active,
 				   			            *mixobj,
 				   			            *Kobj,

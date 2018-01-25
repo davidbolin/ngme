@@ -37,13 +37,12 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   h.resize(nop);
   h_average.resize(nop);
   m_loc.resize(nop);
+
   for(int i=0;i<nop;i++){
       //SEXP tmp = Q_list[i];
       Q[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(Q_list[i]);
       d[i] = Q[i].rows();
       Q[i] *= tau;
-
-
       loc[i]  = Rcpp::as< Eigen::VectorXd >( loc_list[i]);
       h[i]  = Rcpp::as< Eigen::VectorXd >(h_list[i]);
       h_average[i] = h[i].sum() / h[i].size();
@@ -176,5 +175,20 @@ Rcpp::List constMatrix::output_list()
   out_list["Cov_theta"]   = Cov_theta;
   return(out_list);
 }
+
+
+double constMatrix::trace_variance( const Eigen::SparseMatrix<double,0,int>& A, int i){
+
+  if( nop == 1)
+    i = 0;
+
+  Eigen::SparseMatrix<double,0,int> Qt = Q[i].transpose();
+  Eigen::SparseMatrix<double,0,int> At = A.transpose();
+  Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(Qt);
+  Eigen::MatrixXd QtAt = chol.solve(At);
+  Eigen::MatrixXd QQ = QtAt*h[i].asDiagonal()*QtAt.transpose();
+  return(QQ.trace());
+}
+
 
 #endif

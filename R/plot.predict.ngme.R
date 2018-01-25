@@ -6,8 +6,8 @@
 #' @param object A fitted object returned by the \code{"predict.ngme"} function.
 #' @param id A numerical value or character string for ID of the subject
 #'   for whom the plot will be generated.
-#' @param plot_excursions A logical for plotting excursions.   
-#' @param col_m A character value for defining the colour of prediction mean 
+#' @param plot_excursions A logical for plotting excursions.
+#' @param col_m A character value for defining the colour of prediction mean
 #'   or median.
 #' @param col_c A character value for defining the colour of prediction intervals.
 #' @param col_p A character value for defining the colour of observed data.
@@ -23,7 +23,7 @@
 #'   }
 #'
 
-plot.predict.ngme <- function(object, 
+plot.predict.ngme <- function(object,
                               id,
                               plot_excursions = FALSE,
                               col_m = "black",
@@ -32,58 +32,58 @@ plot.predict.ngme <- function(object,
                               ...){
 
   if(plot_excursions == FALSE){
-  
+
     Y         <- object$Y
     locs      <- object$predictions$locs
     id_list   <- object$id_list
     X.summary <- object$predictions$X.summary
-    
-    pInd     <- which(object$id == id)
+
+    pInd     <- which(names(locs) == id)#which(object$id == id)
     pInd_all <- which(id_list == id)
-    
-    locs_i <- locs[[pInd_all]]
-    
+
+    locs_i <- locs[[pInd]]
+
     if(length(locs_i) > 1){#if the subject has more than one measurement -- produce a plot
-      
+
       mean_i <- X.summary[[pInd]]$Mean
       llim_i <- X.summary[[pInd]]$quantiles[[1]]$field
       ulim_i <- X.summary[[pInd]]$quantiles[[2]]$field
       y_i    <- Y[[pInd_all]]
-      
+
       x_range <- range(locs_i)
       y_range <- range(c(mean_i, llim_i, ulim_i, y_i))
       y_range_inc <- diff(y_range)/100
-      
+
       Time    <- locs_i
       Outcome <- y_i
-      
-      plot(Time, 
-           Outcome, 
+
+      plot(Time,
+           Outcome,
            col = col_p,
            ylim = c(y_range[1] - y_range_inc, y_range[2] + y_range_inc),
            ...)
-      
+
       lines(locs_i, mean_i, col = col_m)
       lines(locs_i, llim_i, col = col_c)
       lines(locs_i, ulim_i, col = col_c)
-      
+
     }else{#the subject has one measurement - do not produce a plot
       print("The subject has 1 measurement, no plot is produced")
     }
-      
+
   }else{#plot_excursions = TRUE
-    
-    if(length(excursions_pred_nig$predictions$locs) > 1) 
+
+    if(length(excursions_pred_nig$predictions$locs) > 1)
       stop("More than one subject")
-    
+
     Time        <- excursions_pred_nig$predictions$locs
     Probability <- object$predict$Xderivative.summary[[1]]$excursions$P
-    
+
     plot(Time, Probability, type = "l")
-    
+
   }
-  
-  
+
+
 
 }
 

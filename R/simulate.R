@@ -25,9 +25,6 @@ simulateLongPrior <- function( Y,
 
   if(!missing(processes_list) && !is.null(processes_list)){
     common.grid = FALSE
-    if(length(operator_list$loc)==1){
-      common.grid = TRUE
-    }
     obs_list <- list()
     for(i in 1:length(locs)){
       obs_list[[i]] <- list(A = build.A.matrix(operator_list,locs,i), Y=Y[[i]], locs = locs[[i]])

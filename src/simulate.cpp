@@ -19,7 +19,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
-  int debug = 0;
+  int debug = 1;
  	//**********************************
 	//setting up the main data
 	//**********************************
@@ -50,11 +50,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	operator_select(type_operator, &Kobj);
 	Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
-	int common_grid = 1;
-	if(Kobj->nop>1){
-	  common_grid = 0;
-	}
-
 	if(debug == 1){
 	  Rcpp::Rcout << " Create solvers\n";
 	}
@@ -65,13 +60,10 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   counter = 0;
 	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-	  if(common_grid == 1){
-	    Solver[counter].init(Kobj->d[0], 0, 0, 0);
-	    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-	  } else {
-	    Solver[counter].init(Kobj->d[counter], 0, 0, 0);
-	    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[counter]);
-	  }
+
+    Solver[counter].init(Kobj->d[counter], 0, 0, 0);
+    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[counter]);
+
     Q = K.transpose();
     Q = Q  * K;
     Q = Q + As[counter].transpose()*As[counter];
@@ -138,15 +130,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 
 
   for(int i = 0; i < nindv; i++ ){
-    	if(common_grid == 1){
-    	  Xs[i].resize( Kobj->d[0] );
-    	  Vs[i] = Kobj->h[0];
-    	  Zs[i].resize(Kobj->d[0]);
-    	} else {
-    	  Xs[i].resize( Kobj->d[i] );
-    	  Vs[i] = Kobj->h[i];
-    	  Zs[i].resize(Kobj->d[i]);
-    	}
+	  Xs[i].resize( Kobj->d[i] );
+	  Vs[i] = Kobj->h[i];
+	  Zs[i].resize(Kobj->d[i]);
   }
 
   	/*
@@ -162,10 +148,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   	gig rgig;
   	rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
   	Eigen::VectorXd  z;
-  	z.setZero(Kobj->d[0]);
-
-  	Eigen::VectorXd b;
-  	b.setZero(Kobj->d[0]);
 
     //*********************************************
     //        simulating the measurement error
@@ -174,7 +156,8 @@ List simulateLongGH_cpp(Rcpp::List in_list)
       Rcpp::Rcout << " Simulate error\n";
     }
     std::vector< Eigen::VectorXd > Ysim = errObj->simulate( Ys);
-
+    Rcpp::List out_list;
+    out_list["E"]    = Ysim;
     //*********************************************
     //        simulating the mixed effect
     //*********************************************
@@ -196,39 +179,25 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
       if(type_processes != "Normal"){
-        if(common_grid){
-          Vs[i] = sampleV_pre(rgig, Kobj->h[0], nu, type_processes );
-        } else {
-          Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );
-        }
+        Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );
       }
       iV.resize(Vs[i].size());
       iV.array() = Vs[i].array().inverse();
       int d;
-      if(common_grid){
-        d = Kobj->d[0];
-      } else {
-        d = Kobj->d[i];
-      }
-      Eigen::VectorXd h;
+      d = Kobj->d[i];
 
+      Eigen::VectorXd h;
+      z.setZero(Kobj->d[i]);
+      h = Kobj->h[i];
       for(int ii =0; ii < d; ii++){
         z[ii] =   sqrt(Vs[i][ii]) * normal(random_engine);
         if(type_processes != "Normal"){
-          if(common_grid){
-            h = Kobj->h[0];
-          } else {
-            h = Kobj->h[i];
-          }
           z[ii] += - mu * h[ii] + Vs[i][ii] * mu;
         }
       }
 
-      if(common_grid){
-        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-      } else {
-        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
-      }
+      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+
       if(debug == 1){
         Rcpp::Rcout << " Chol" << K.rows() << " "<< K.cols() << "\n";
       }
@@ -243,7 +212,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     if(debug == 1){
       Rcpp::Rcout << " Save results\n";
     }
-  Rcpp::List out_list;
+
   out_list["Y"]    = Ysim;
   out_list["U"]    = mixobj->U;
   out_list["X"]    = Xs;
@@ -317,7 +286,8 @@ List simulateLongME_cpp(Rcpp::List in_list)
   //        simulating the measurement error
   //*********************************************
   std::vector< Eigen::VectorXd > Ysim = errObj->simulate( Ys);
-
+  Rcpp::List out_list;
+  out_list["E"]    = Ysim;
   //*********************************************
   //        simulating the mixed effect
   //*********************************************
@@ -328,8 +298,6 @@ List simulateLongME_cpp(Rcpp::List in_list)
     mixobj->add_cov(i, Ysim[i]);
   }
 
-
-  Rcpp::List out_list;
   out_list["Y"]    = Ysim;
   out_list["U"]    = mixobj->U;
 

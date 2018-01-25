@@ -1,24 +1,24 @@
 
 #' @title Observation matrix computation.
-#' 
-#' @description Computes observation matrix linking basis functions to 
+#'
+#' @description Computes observation matrix linking basis functions to
 #'    measurement locations.
-#' 
+#'
 #' @param operator_list A list for the operator created using \code{"create_operator"}.
 #' @param locs A list of measurement locations.
-#' @param i A numerical value for the index in \code{"locs"} for 
+#' @param i A numerical value for the index in \code{"locs"} for
 #'    which the observation matrix should be computed.
 #' @return An observation matrix.
-#' 
-#' @details This function is supplementary and internally used. 
-#' 
+#'
+#' @details This function is supplementary and internally used.
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   build.A.matrix(...)
 #'   }
-#'   
+#'
 
 build.A.matrix <- function(operator_list, locs, i)
 {
@@ -29,42 +29,35 @@ build.A.matrix <- function(operator_list, locs, i)
       return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[i]],loc=locs[[i]]))
     }
   } else {
-    if(operator_list$common.grid){
-      return(spde.A(locs[[i]],
-                    operator_list$loc[[1]],
-                    right.boundary = operator_list$right.boundary,
-                    left.boundary = operator_list$left.boundary))
-    }  else {
       return(spde.A(locs[[i]],
                     operator_list$loc[[i]],
                     right.boundary = operator_list$right.boundary,
                     left.boundary = operator_list$left.boundary))
-    }
   }
 }
 
 #' @title Computes observation matrix.
 #'
 #' @description A function to compute observation matrix for 1D problems.
-#' 
+#'
 #' @param loc A numeric vector of measurement locations.
 #' @param x A numeric vector of node locations for the basis functions.
-#' @param right.boundary A character string denoting the boundary condition 
+#' @param right.boundary A character string denoting the boundary condition
 #'    for the right boundary.
-#' @param left.boundary A character string denoting the boundary condition 
+#' @param left.boundary A character string denoting the boundary condition
 #'    for the left boundary.
-#'    
+#'
 #' @return Returns an observation matrix.
-#' 
-#' @details This is a supplementary function and internally used. 
-#' 
+#'
+#' @details This is a supplementary function and internally used.
+#'
 #' @seealso \code{\link{build.A.matrix}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   spde.A(...)
 #'   }
-#'  
+#'
 
 spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann')
 {
@@ -97,36 +90,36 @@ spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann'
 
   A <- sparseMatrix(i=i,j=j,x=vals, dims=c(n.loc,n.x))
   if(left.boundary=='dirichlet'){
-    A = A[,-1]
+    A = A[,-1,drop=FALSE]
   }
   if(right.boundary=='dirichlet'){
-    A = A[,-dim(A)[2]]
+    A = A[,-dim(A)[2],drop=FALSE]
   }
   return(A)
 }
 
 #' @title Compute FEM matrices.
-#' 
+#'
 #' @description A function to compute FEM matrices for 1D (longitudinal) problems.
-#' 
+#'
 #' @param x A numeric vector containing node locations.
-#' @param right.boundary A character string denoting the 
+#' @param right.boundary A character string denoting the
 #'    boundary condition for the right boundary.
-#' @param left.boundary A character string denoting the 
+#' @param left.boundary A character string denoting the
 #'    boundary condition for the left boundary.
-#' 
-#' @return Returns a list that contains mass matrix, stiffness matrix, 
+#'
+#' @return Returns a list that contains mass matrix, stiffness matrix,
 #'    and some other related quantities.
-#'    
-#' @details This is a supplementary function and internally used. 
-#' 
+#'
+#' @details This is a supplementary function and internally used.
+#'
 #' @seealso \code{\link{create_matrices_Matern}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   spde.basis(...)
 #'   }
-#'  
+#'
 
 spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
 {
@@ -151,12 +144,18 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
   C = Diagonal(n,h)
   Ci = Diagonal(n,1/h)
 
+  #B = sparseMatrix(dims=dim(C))
+  #B[n-1,n] = -1/(x[n]-x[n-1])
+  #B[n,n] = 1/(x[n]-x[n-1])
+  B = sparseMatrix(i=c(n-1,n),j=c(n,n),x = c(-1/(x[n]-x[n-1]),1/(x[n]-x[n-1])),dims = dim(C))
+
   if(left.boundary=='dirichlet'){
     C = C[-1,-1]
     Ci = Ci[-1,-1]
     G = G[-1,-1]
     Ce = Ce[-1,-1]
     n = n-1
+    h = h[-1]
   }
   if(right.boundary=='dirichlet'){
     C = C[-n,-n]
@@ -164,10 +163,12 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
     G = G[-n,-n]
     Ce = Ce[-n,-n]
     n = n-1
+    h = h[-n]
   }
 
   return(list(G=G,
               C=C,
+              B = B,
               Ce=Ce,
               Ci=Ci,
               loc=x,
@@ -175,18 +176,18 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann')
 }
 
 #' @title Compute FEM matrices - 2D.
-#' 
+#'
 #' @description A function to compute FEM matrices for 2D (spatial) problems.
-#' 
+#'
 #' @param mesh An \code{inla.mesh} object.
-#' 
+#'
 #' @details This is a supplementary function to be used internally by other functions.
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   create_operator_matern2D(...)
 #'   }
-#'  
+#'
 
 create_operator_matern2D <- function(mesh)
 {
@@ -208,33 +209,33 @@ create_operator_matern2D <- function(mesh)
               manifold ="R2")
 }
 
-#' @title Create operator components. 
-#' 
-#' @description A function to compute a list of objects for the operator. 
-#' 
-#' @param locs A numeric list of measurement locations. 
+#' @title Create operator components.
+#'
+#' @description A function to compute a list of objects for the operator.
+#'
+#' @param locs A numeric list of measurement locations.
 #' @param n A numeric value for the number of FEM basis functions that should be used.
-#' @param name A character string for the operator type, 
+#' @param name A character string for the operator type,
 #'    possible options are \code{"matern"} and \code{"fd2"}.
-#' @param right.boundary A character string denoting the boundary condition 
+#' @param right.boundary A character string denoting the boundary condition
 #'    for the right boundary.
-#' @param left.boundary A character string denoting the boundary condition 
+#' @param left.boundary A character string denoting the boundary condition
 #'    for the left boundary.
-#' @param common.grid A logical variable for using a common grid for all subjects, 
-#'    \code{"TRUE"} indicates using a common grid, 
+#' @param common.grid A logical variable for using a common grid for all subjects,
+#'    \code{"TRUE"} indicates using a common grid,
 #'    \code{"FALSE"} uncommon grids.
-#' @param extend A numeric vector with two elements specifying the amount of extension 
+#' @param extend A numeric vector with two elements specifying the amount of extension
 #'    of the grid to the left and right beyondthe measurement locations.
-#' 
+#'
 #' @details This is a supplementary function to be used internally by other functions.
-#' 
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   create_operator(...)
 #'   }
-#' 
+#'
 
 create_operator <- function(locs,
                             n,
@@ -242,68 +243,90 @@ create_operator <- function(locs,
                             right.boundary = 'neumann',
                             left.boundary='neumann',
                             common.grid = TRUE,
-                            extend  = NULL)
+                            extend  = NULL,
+                            max.dist,
+                            cutoff = 1e-10)
 {
+  if(!missing(n) & !missing(max.dist)){
+    stop("Supply either n or max.dist")
+  }
   if(tolower(name) == "matern"){
     return(create_matrices_Matern(locs = locs,
-                                  n = n,
                                   right.boundary = right.boundary,
                                   left.boundary = left.boundary,
                                   common.grid = common.grid,
-                                  extend = extend))
+                                  extend = extend,
+                                  max.dist = max.dist,
+                                  cutoff = cutoff))
   }else{
-    return(create_matrices_FD2(locs = locs,
-                               n = n,
+    return(create_matrices_FD2_fem(locs = locs,
                                common.grid = common.grid,
-                               extend = extend))
+                               extend = extend,
+                               max.dist = max.dist,
+                               cutoff = cutoff))
+    #return(create_matrices_FD2(locs = locs,
+    #                           n = n,
+    #                           common.grid = common.grid,
+    #                           extend = extend,
+    #                           max.dist = max.dist,
+    #                           cutoff = cutoff))
   }
 
 }
 
 #' @title Create matrices for Matern.
-#' 
+#'
 #' @description A function to create matrices for Matern 1D (longitudinal) operator.
-#' 
+#'
 #' @param locs A numeric list for the meansurement locations.
 #' @param n A numeric value for the number of FEM basis functions that should be used.
-#' @param right.boundary A character string denoting the boundary condition 
+#' @param right.boundary A character string denoting the boundary condition
 #'    for the right boundary.
-#' @param left.boundary A character string denoting the boundary condition 
+#' @param left.boundary A character string denoting the boundary condition
 #'    for the left boundary.
 #' @inheritParams create_operator
-#' 
-#' @return Returns matrices. 
-#' 
+#'
+#' @return Returns matrices.
+#'
 #' @details This is a supplementary function to be used internally by other functions.
-#' 
+#'
 #' @seealso \code{\link{create_operator}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   create_matrices_Matern(...)
 #'   }
-#' 
+#'
 
 create_matrices_Matern <- function(locs,
                                    n,
                                    right.boundary = 'neumann',
                                    left.boundary ='neumann',
                                    common.grid = TRUE,
-                                   extend = NULL)
+                                   extend = NULL,
+                                   max.dist,
+                                   cutoff = 1e-10)
 {
-  meshes <- create.meshes.1d(locs,n,common.grid,extend)
+
+  meshes <- generate.adaptive.meshes.1d(locs,
+                                        max.dist = max.dist,
+                                        cutoff = cutoff,
+                                        common.grid=common.grid,
+                                        extend = extend)
+
   operator_List <- list()
+  C <- Ci <- G <- Ce <- h <- list()
   if(common.grid || length(locs) == 1){
     MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary)
-    C = list(as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix"))
-    Ci = list(as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix"))
-    G = list(MatrixBlock$G)
-    Ce = list(MatrixBlock$Ce)
-  } else {
-    C <- Ci <- G <- Ce <- list()
-    if(length(n) == 1){
-      n <- rep(n,length(locs))
+    for(i in 1:length(locs))
+    {
+      C[[i]] = as(as(MatrixBlock$C,"CsparseMatrix"), "dgCMatrix")
+      Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
+      G[[i]] = MatrixBlock$G
+      Ce[[i]] = MatrixBlock$Ce
+      h[[i]] = MatrixBlock$h
     }
+  } else {
     for(i in 1:length(locs))
     {
       MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
@@ -311,6 +334,7 @@ create_matrices_Matern <- function(locs,
       Ci[[i]] = as(as(MatrixBlock$Ci,"CsparseMatrix"), "dgCMatrix")
       G[[i]] = MatrixBlock$G
       Ce[[i]] = MatrixBlock$Ce
+      h[[i]] = MatrixBlock$h
     }
   }
 
@@ -319,7 +343,7 @@ create_matrices_Matern <- function(locs,
                         Ci = Ci,
                         G = G,
                         Ce = Ce,
-                        h = meshes$h,
+                        h = h,
                         kappa = 0,
                         loc   = meshes$loc,
                         right.boundary=right.boundary,
@@ -333,28 +357,41 @@ create_matrices_Matern <- function(locs,
 #' @description A function to create matrices for Finite difference operator, one sided.
 #' @inheritParams create_matrices_Matern
 #' @return Returns matrices.
-#' 
+#'
 #' @details This is a supplementary function to be used internally by other functions.
-#' 
+#'
 #' @seealso \code{\link{create_operator}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   create_matrices_FD2(...)
 #'   }
-#' 
+#'
 
 create_matrices_FD2 <- function(locs,
                                 n,
                                 right.boundary = 'neumann',
                                 left.boundary='neumann',
                                 common.grid = TRUE,
-                                extend = NULL)
+                                extend = NULL,
+                                max.dist,
+                                cutoff = 1e-10)
 {
-  meshes <- create.meshes.1d(locs,n,common.grid,extend)
+  if(missing(max.dist) & missing(n))
+    stop("max.dist or n must be supplied")
+
+  if(missing(max.dist)){
+    meshes <- create.meshes.1d(locs,n,common.grid,extend)
+  } else {
+    meshes <- generate.adaptive.meshes.1d(locs,
+                                          max.dist = max.dist,
+                                          cutoff = cutoff,
+                                          common.grid=common.grid,
+                                          extend = extend)
+  }
   Q <- list()
   if(common.grid || length(locs) == 1) {
-    vec_toeplitz <- rep(0, length=n)
+    vec_toeplitz <- rep(0, length=meshes$n[[1]])
     h <- meshes$h[[1]][1]
     vec_toeplitz[1] <- -1 / h # -1/h
     vec_toeplitz[2] <- 1  / h  # 1/h
@@ -364,6 +401,7 @@ create_matrices_FD2 <- function(locs,
     # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
     Q[[1]] <-as(Operator_2D, "dgCMatrix")
   } else {
+    n = unlist(meshes$n)
     if(length(n) == 1){
       n = rep(n,length(locs))
     }
@@ -389,59 +427,50 @@ create_matrices_FD2 <- function(locs,
   return(operator_List)
 }
 
-#' @title Create meshes.
-#' 
-#' @description A function to create mesh for FEM discretization.
-#' @inheritParams create_matrices_FD2
-#' 
-#' @return Returns a list of meshes.
-#' 
-#' @details This is a supplementary function to be used internally by other functions.
-#' 
-#' @seealso \code{\link{create_matrices_Matern}}, \code{\link{create_matrices_FD2}}
-#' 
-#' @examples
-#'   \dontrun{
-#'   create_meshes.1d(...)
-#'   }
-#' 
 
-create.meshes.1d <- function(locs,n,common.grid,extend = NULL)
+create_matrices_FD2_fem <- function(locs,
+                                    common.grid = TRUE,
+                                    extend = NULL,
+                                    max.dist,
+                                    cutoff = 1e-10)
 {
-  loc <- h <- list()
-  if(missing(extend) | is.null(extend)){
-    extend  = c(0,0)
-  } else if(length(extend) == 1) {
-    extend = rep(extend,2)
-  }
-  if(common.grid || length(locs)==1){
-    min_l <- min(locs[[1]])
-    max_l <- max(locs[[1]])
-    if(length(locs) > 1){
-      for(i in 2:length(locs))
-      {
-        min_l <- min(min_l, min(locs[[i]]))
-        max_l <- max(max_l, max(locs[[i]]))
-      }
+
+  meshes <- generate.adaptive.meshes.1d(locs=locs,
+                                        max.dist = max.dist,
+                                        cutoff = cutoff,
+                                        common.grid=common.grid,
+                                        extend = extend)
+
+  Q <- h <- list()
+  if(common.grid || length(locs) == 1) {
+    MatrixBlock <- spde.basis(meshes$loc[[1]],left.boundary = "dirichlet")
+    for(i in 1:length(locs)){
+      #Q[[1]] = as(MatrixBlock$B - MatrixBlock$G,"dgCMatrix")
+      Q[[i]] = as(-MatrixBlock$G,"dgCMatrix")
+      h[[i]] <- MatrixBlock$h
+      #Q[[1]] = Matrix::t(L)%*%MatrixBlock$Ci%*%L,"dgCMatrix")
     }
-    loc_len = max_l - min_l
-    if(loc_len == 0){
-      stop("min(locs) = max(locs)")
-    }
-    loc[[1]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n)
-    h[[1]] <- rep(loc[[1]][2] - loc[[1]][1],n)
   } else {
+    n = unlist(meshes$n)
     if(length(n) == 1){
       n = rep(n,length(locs))
     }
-    loc <- list()
     for(i in 1:length(locs)){
-      min_l <- min(locs[[i]])
-      max_l <- max(locs[[i]])
-      loc_len = max_l - min_l
-      loc[[i]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n[i])
-      h[[i]] <- rep(loc[[i]][2] - loc[[i]][1],n[i])
+      MatrixBlock <- spde.basis(meshes$loc[[i]],left.boundary = "dirichlet")
+      #L = MatrixBlock$B - MatrixBlock$G
+      #Q[[i]] = as(MatrixBlock$B - MatrixBlock$G,"dgCMatrix")
+      Q[[i]] = as(-MatrixBlock$G,"dgCMatrix")
+      h[[i]] <- MatrixBlock$h
+      #Q[[i]] = as(t(L)%*%MatrixBlock$Ci%*%L,"dgCMatrix")
     }
   }
-  return(list(loc = loc,h = h))
+  operator_List <- list(type   = 'fd2',
+                        Q      = Q,
+                        h      = h,
+                        loc   = meshes$loc,
+                        right.boundary = 'dirichlet',
+                        left.boundary='neumann',
+                        manifold = "R",
+                        common.grid = common.grid)
+  return(operator_List)
 }

@@ -46,8 +46,8 @@ class operatorMatrix {
     int counter;
 
     operatorMatrix() {Qsolver = NULL;};
+    virtual ~operatorMatrix() = default;
 
-    virtual ~operatorMatrix(){delete Qsolver;};
     virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
     virtual void  clear_gradient() {};
     virtual void initFromList(Rcpp::List const &)=0;
@@ -122,6 +122,7 @@ class constMatrix : public operatorMatrix{
 
     Eigen::VectorXd  get_gradient() { Eigen::VectorXd g(1); g[0] = dtau; return(g);};
     void  clear_gradient() {dtau = 0;};
+    double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int  ) ;
 
 
 };
@@ -129,13 +130,16 @@ class constMatrix : public operatorMatrix{
 class fd2Operator : public constMatrix {
 
 public:
+  //fd2Operator(){};
+  //~fd2Operator();
+
   double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int  ) ;
 };
 
 class MaternOperator : public operatorMatrix{
   protected:
     double ldet;
-
+    int is_initialized = 0;
     std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
     Eigen::VectorXd g,p;
     Eigen::SparseMatrix<double,0,int> *G, *C;
@@ -161,8 +165,10 @@ class MaternOperator : public operatorMatrix{
       names.push_back("kappa_operator");
     };
   	double tau;
+
     MaternOperator(){ counter = 0;};
     ~MaternOperator();
+
     void initFromList(Rcpp::List const &){Rcpp::Rcout << "Supply solver list when using initFromlist";};
     void initFromList(Rcpp::List const &, Rcpp::List const &);
 

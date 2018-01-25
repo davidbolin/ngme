@@ -4,7 +4,16 @@
 #include <Eigen/SparseCholesky>
 #include <Eigen/OrderingMethods>
 
-
+GaussianProcess::~GaussianProcess(){
+  for(int i =0; i < nindv; i++){
+    h[i].resize(0);
+    Xs[i].resize(0);
+    Vs[i].resize(0);
+  }
+  h.resize(0);
+  Xs.resize(0);
+  Vs.resize(0);
+}
 
 double Digamma(double x)
 {
@@ -50,13 +59,15 @@ void GaussianProcess::simulate(const int i,
 			                         const Eigen::SparseMatrix<double,0,int> & A,
                                const Eigen::SparseMatrix<double,0,int> & K,
 			                         Eigen::VectorXd& Y,
-        cholesky_solver       & solver)
+                               cholesky_solver& solver)
 {
+  //Rcpp::Rcout<< "Gaussian process simulate\n";
 	Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
 	iV.setZero(K.rows());
 	iV.array() = h[i].array().inverse();
   Q =  Q * iV.asDiagonal();
   Q =  Q * K;
+  //solver.compute(Q);
   Eigen::VectorXd b;
   b.setZero(K.rows());
   Xs[i] = solver.rMVN(b, Z);
@@ -183,6 +194,7 @@ void GaussianProcess::sample_X(const int i,
   solver.compute(Qi);
   Eigen::VectorXd b = A.transpose()*Y/ sigma2;
   Xs[i] = solver.rMVN(b, Z);
+
 }
 
 
@@ -204,7 +216,7 @@ void GHProcess::sample_X(const int i,
   Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
   for (int j = 0; j < Qi.rows(); j++)
     DQD.coeffRef(j, j) += 1e-12;
-    
+
   solver.compute(DQD);
   Eigen::VectorXd b = A.transpose()*Y / sigma2;
   Eigen::VectorXd temp  =  - h[i];
@@ -404,8 +416,7 @@ void GHProcess::gradient( const int i ,
   grad_nu(i, weight);
 }
 
-
-    Eigen::VectorXd GHProcess::d2Given_cross(  const int i ,
+Eigen::VectorXd GHProcess::d2Given_cross(  const int i ,
                               const Eigen::SparseMatrix<double,0,int> & K,
                               const Eigen::SparseMatrix<double,0,int> & A,
                               const Eigen::VectorXd& res,
@@ -571,7 +582,7 @@ void GHProcess::grad_nu(const int i, const double weight)
         //Rcpp::Rcout << "dnu , Vs.sum() , h.dit(temp) = " << dnu << "," << Vs[i].sum() << "," << h[i].dot(temp) << "\n";
         //Rcpp::Rcout << "nu  = " << nu << "\n";
 
- 
+
       }
 
     	ddnu += weight * ( h_sum[i]/ nu - h_trigamma[i] );

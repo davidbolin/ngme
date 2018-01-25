@@ -12,9 +12,6 @@
 #include "MixedEffect.h"
 #include "measError.h"
 #include "latentprocess.h"
-#ifdef _OPENMP
-  #include<omp.h>
-#endif
 using namespace Rcpp;
 #define max(a,b) (((a)>(b))?(a):(b))
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -33,7 +30,6 @@ List predictLong_cpp(Rcpp::List in_list)
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int silent     = Rcpp::as< int > (in_list["silent"]);
-  int n_threads  = Rcpp::as< int > (in_list["n_threads"]);
   int mix_samp  = Rcpp::as< int > (in_list["mix_samp"]);
   int use_random_effect = Rcpp::as< int > (in_list["use_random_effect"]);
   int use_process = 0;
@@ -53,6 +49,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
 
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
+
   //**********************************
   // mixed effect setup
   //***********************************
@@ -160,24 +157,24 @@ List predictLong_cpp(Rcpp::List in_list)
   //**********************************
   //operator setup
   //***********************************
-  operatorMatrix* Kobj;
-  int common_grid = 1;
+  Rcpp::List operator_list;
+  std::string type_operator;
+
   std::vector<  cholesky_solver >  Solver( nindv);
+  operatorMatrix *Kobj;
+
   if(use_process == 1){
+
     if(silent == 0){
       Rcpp::Rcout << " Setup operator\n";
     }
-    Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
-    std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
+    operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
+    type_operator = Rcpp::as<std::string>(operator_list["type"]);
     operator_list["nIter"] = 1;
 
     operator_select(type_operator, &Kobj);
+
     Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
-
-    if(Kobj->nop>1){
-      common_grid = 0;
-    }
-
 
     Eigen::SparseMatrix<double, 0, int> Q, K;
 
@@ -185,13 +182,9 @@ List predictLong_cpp(Rcpp::List in_list)
     for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
       List obs_tmp = Rcpp::as<Rcpp::List>( *it);
 
-      if(common_grid == 1){
-        Solver[count].init(Kobj->d[0], 0, 0, 0);
-        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-      } else {
-        Solver[count].init(Kobj->d[count], 0, 0, 0);
-        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-      }
+      Solver[count].init(Kobj->d[count], 0, 0, 0);
+      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+
       Q = K.transpose();
       Q = Q * K;
       Q = Q + As[count].transpose()*As[count];
@@ -199,6 +192,7 @@ List predictLong_cpp(Rcpp::List in_list)
       Solver[count].compute(Q);
       count++;
     }
+
   }
 
 
@@ -217,7 +211,6 @@ List predictLong_cpp(Rcpp::List in_list)
     errObj = new NIGMeasurementError;
 
   errObj->initFromList(measurementError_list);
-
 
   //**********************************
   // stochastic processes setup
@@ -240,33 +233,14 @@ List predictLong_cpp(Rcpp::List in_list)
     process->initFromList(processes_list, Kobj->h);
   }
 
-  //**********************************
-  // OpenMP setup
-  //***********************************
-  if(silent == 0){
-    Rcpp::Rcout << " Setup OMP: " << n_threads << "\n";
-  }
-  #ifdef _OPENMP
-    Eigen::initParallel();
-    //Eigen::setNbThreads(0);
-    const int max_nP = omp_get_num_procs();
-    int nPtmp;
-    if(n_threads == 0){
-      nPtmp = max_nP;
-    } else {
-      nPtmp = min(max_nP, max(n_threads,1));
-    }
-    const int nP = nPtmp;
-    omp_set_num_threads(nP);
-  #else
-    const int nP = 1;
-  #endif
+
+
 
 
   /*
   Simulation objects
   */
-
+  const int nP = 1;
   std::normal_distribution<double> normal;
 
   std::vector<std::mt19937> random_engine(nP);
@@ -281,19 +255,10 @@ List predictLong_cpp(Rcpp::List in_list)
     }
   }
 
-  Eigen::VectorXd b, Ysim;
-  if(use_process == 1){
-    Eigen::VectorXd  z;
-    z.setZero(Kobj->d[0]);
-    b.setZero(Kobj->d[0]);
-  }
-
-
   std::vector<int> longInd;
   for (int i=0; i< nindv; i++){
     longInd.push_back(i);
   }
-
 
 
   std::vector< Eigen::MatrixXd > WVec(nindv);
@@ -312,20 +277,13 @@ List predictLong_cpp(Rcpp::List in_list)
   int rank = 0;
   double percent_done = 0;
 
-  #pragma omp parallel for private(K,Q,rank,debug)
   for(int i = 0; i < nindv; i++ ) {
-    #ifdef _OPENMP
-      rank = omp_get_thread_num();
-    #endif
+
     clock_t start = clock();
     percent_done++;
     if(silent == 0){
       std::stringstream stream;
-      if(nP>1){
-        stream << " Prediction " << 100*percent_done/nindv << " % done (" << rank<< ")\n";
-      } else {
-        stream << " Prediction " << 100*percent_done/nindv << " % done\n";
-      }
+      stream << " Prediction " << 100*percent_done/nindv << " % done\n";
       Rcpp::Rcout << stream.str();
     }
     XVec[i].setZero(Bfixed_pred[i].rows(), nSim);
@@ -375,12 +333,10 @@ List predictLong_cpp(Rcpp::List in_list)
             if(type_MeasurementError == "Normal"){
               mixobj->sampleU_par( i, res, 2 * log(errObj->sigma),random_engine[rank]);
             } else {
-              //mixobj->sampleU2( i, res, errObj->Vs[i].cwiseInverse(), 2 * log(errObj->sigma));
               mixobj->sampleU2_par( i, res, errObj->Vs[i].segment(obs_ind[i](ipred,0),obs_ind[i](ipred,1)).cwiseInverse(),
                                     random_engine[rank], 2 * log(errObj->sigma));
             }
           }
-
 
           mixobj->remove_inter(i, res);
 
@@ -397,15 +353,11 @@ List predictLong_cpp(Rcpp::List in_list)
         Eigen::SparseMatrix<double,0,int> Ai;
         if(use_process == 1){
           if(debug){
-            Rcpp::Rcout << "Compute operator (" << rank  << ")\n";
+            Rcpp::Rcout << "Compute operator \n";
           }
 
           Eigen::SparseMatrix<double, 0, int> Qi;
-          if(common_grid){
-            Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
-          } else {
-            Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
-          }
+          Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
 
           Eigen::VectorXd iV(process->Vs[i].size());
           iV.array() = process->Vs[i].array().inverse();
@@ -419,14 +371,10 @@ List predictLong_cpp(Rcpp::List in_list)
           Qi =  Qi * iV.asDiagonal();
           Qi =  Qi * Ki;
           if(debug){
-            Rcpp::Rcout << "Sample normals (" << rank  << ")\n";
+            Rcpp::Rcout << "Sample normals \n";
           }
           int d = 1;
-          if(common_grid == 1){
-            d = Kobj->d[0];
-          } else {
-            d = Kobj->d[i];
-          }
+          d = Kobj->d[i];
 
           Eigen::VectorXd zi;
           zi.setZero(d);
@@ -436,7 +384,7 @@ List predictLong_cpp(Rcpp::List in_list)
             res += A * process->Xs[i];
 
           if(debug){
-            Rcpp::Rcout << "Sample process (" << rank  << ")\n";
+            Rcpp::Rcout << "Sample process \n";
           }
           if(n_obs>0){
             if(type_MeasurementError == "Normal"){
@@ -466,7 +414,7 @@ List predictLong_cpp(Rcpp::List in_list)
         }
 
         if(debug){
-          Rcpp::Rcout << "Sample variances (" << rank  << ")\n";
+          Rcpp::Rcout << "Sample variances \n";
         }
         if(use_process == 1){
           if(n_obs>0){
@@ -490,7 +438,6 @@ List predictLong_cpp(Rcpp::List in_list)
             if(debug){
               Rcpp::Rcout << "Save samples\n";
             }
-            int n_pred = pred_ind[i](ipred,1) - pred_ind[i](ipred,0);
           if(use_process == 1){
             Ai = As_pred[i];
             Ai = Ai.middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
@@ -566,5 +513,14 @@ List predictLong_cpp(Rcpp::List in_list)
     out_list["XVec_deriv"] = XVec_deriv;
     out_list["WVec_deriv"] = WVec_deriv;
   }
+
+  //Free memory
+  delete mixobj;
+  delete errObj;
+  if(use_process == 1){
+    delete process;
+    delete Kobj;
+  }
+
   return(out_list);
 }

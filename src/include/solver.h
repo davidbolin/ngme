@@ -14,6 +14,7 @@ class solver {
 
   public:
     int n;
+    solver ( const solver & ){};
     solver() {};
     virtual ~solver() {};
     virtual void init(int, int, int, double)=0;
@@ -39,6 +40,7 @@ class iterative_solver : public virtual solver
     bool QU_computed;
     Eigen::ConjugateGradient<Eigen::SparseMatrix<double,0,int>,0,Eigen::IncompleteLUT<double> > R;
   public:
+    ~iterative_solver(){};
     void init(int, int, int, double);
     void initFromList(int, Rcpp::List const &);
     inline void analyze(Eigen::SparseMatrix<double,0,int>& M){R.analyzePattern(M);}
@@ -59,6 +61,9 @@ class cholesky_solver : public virtual solver
     Eigen::SparseMatrix<double,0,int> Qi;
     void set_ld();
   public:
+    cholesky_solver ( const cholesky_solver & ){};
+    cholesky_solver ( ){};
+    ~cholesky_solver(){};
     void init(int, int, int, double);
     void initFromList(int, Rcpp::List const &);
     inline void analyze(Eigen::SparseMatrix<double,0,int>& M){R.analyzePattern(M);}

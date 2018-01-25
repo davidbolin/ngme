@@ -16,7 +16,7 @@ class MeasurementError {
   	int vec_counter; // internal parameter counter
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter) = 0; // setups to store the tracjetory
-
+    virtual ~MeasurementError(){};
 	int npars; // number of parameters
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
    	double EV;  // if there the random variance in the Noise E[V]
@@ -52,7 +52,7 @@ class MeasurementError {
     virtual Eigen::MatrixXd d2Given(const int ,
     					  const Eigen::VectorXd& ,
     					  const double){return(Eigen::MatrixXd::Zero(0,0));}; //computes second derivates given, latent data
-                                                                              // fixed variance 
+                                                                              // fixed variance
 
 	void set_covariance(const Eigen::MatrixXd & Cov_in) {Cov_theta = Cov_in;};
 
@@ -74,6 +74,7 @@ class GaussianMeasurementError : public MeasurementError{
 
 	public:
 		GaussianMeasurementError();
+	  ~GaussianMeasurementError(){};
 		void gradient(const int ,
 					  const Eigen::VectorXd&,
 					  const double);
@@ -114,6 +115,7 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 	  int common_V;
 		double nu;
 		NormalVarianceMixtureBaseError();
+		~NormalVarianceMixtureBaseError(){};
 		void gradient(const int ,
 					  const Eigen::VectorXd& ,
 					  const double);
@@ -151,6 +153,7 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 		double dnu;
 		double ddnu;
  		NIGMeasurementError();
+ 		~NIGMeasurementError(){};
  		void printIter();
  		void setupStoreTracj(const int ) ;
  		Rcpp::List toList();
@@ -185,6 +188,7 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
 		double dnu_old;
 		double ddnu;
  		IGMeasurementError();
+ 		~IGMeasurementError(){};
  		void printIter();
  		void setupStoreTracj(const int ) ;
  		Rcpp::List toList();

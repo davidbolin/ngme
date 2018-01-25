@@ -1,24 +1,24 @@
 #' @title Estimate parameters.
-#' 
-#' @description A function that estimates parameters by 
+#'
+#' @description A function that estimates parameters by
 #'    calling the \code{"estimateLong_cpp()"} function.
 #'
-#' @param Y A numeric list that contains outcome values. 
-#' @param locs A numeric list that contains the timings at which the outcomes 
-#'    are collected. 
-#' @param mixedEffect_list A list of inputs for random effects. 
+#' @param Y A numeric list that contains outcome values.
+#' @param locs A numeric list that contains the timings at which the outcomes
+#'    are collected.
+#' @param mixedEffect_list A list of inputs for random effects.
 #'   \itemize{
 #'   \item \code{noise} The distribution of the mixed effects.
-#'   \item \code{B_random} A list that contains the random effect 
+#'   \item \code{B_random} A list that contains the random effect
 #'      covariates (needs to be matrix, can be NULL).
-#'   \item \code{B_fixed} A list that contains the fixed effect 
+#'   \item \code{B_fixed} A list that contains the fixed effect
 #'      covariates (needs to be matrix, can be NULL).
-#'   \item \code{beta_random} Initial values for the parameters of the 
+#'   \item \code{beta_random} Initial values for the parameters of the
 #'      random effects (mean parameter) (if not specified set to zero).
-#'   \item \code{beta_fixed} Initial  values for the parameters of the 
+#'   \item \code{beta_fixed} Initial  values for the parameters of the
 #'      fixed effects (if not specified set to zero).
-#'   \item \code{Sigma} Initial values for the parameters of the 
-#'      variance-covariance matrix of the random effects 
+#'   \item \code{Sigma} Initial values for the parameters of the
+#'      variance-covariance matrix of the random effects
 #'      (if not specified set to I ).
 #'   \item \code{nu} Shape parameter for noise (NIG only)
 #'   \item \code{mu} Shift parameter for noise (NIG only)
@@ -42,16 +42,16 @@
 #' @param learning_rate A numeric value for the parameter of stochastic gradient.
 #' @param nBurnin_learningrate A numeric value until which the learning will
 #'     not be started.
-#' @param nBurnin_base A numerical value for burn-in simulations that are performed  
-#'       for a subject that is sampled for the first time in the estimation method. 
+#' @param nBurnin_base A numerical value for burn-in simulations that are performed
+#'       for a subject that is sampled for the first time in the estimation method.
 #' @param pSubsample A numeric value for the portion of data to be used in each
 #'     gradient iteration.
 #' @param polyak_rate A numeric value for moving average of parameters;
 #'     -1: inactive, 0: pure mean.
 #' @param subsample.type A numeric value for the type of subsampling;
-#'       1: uniform sampling, 
+#'       1: uniform sampling,
 #'       2: sample size weighted,
-#'       3: weighted sampling by gradient size, 
+#'       3: weighted sampling by gradient size,
 #'       4: grouped sub-sampler.
 #' @param nPar_burnin A numeric value; "M-step" updates will be used until this
 #'     iteration.
@@ -70,11 +70,11 @@
 #'     to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
 #' @return A list of fitted results.
 #'
-#' @details This function calls \code{"estimateLong_cpp()"} internally. 
-#'    It is wrapped by \code{"ngme"}, and is not advised to 
-#'    be used alone. 
-#'    
-#' @seealso \code{\link{ngme}} 
+#' @details This function calls \code{"estimateLong_cpp()"} internally.
+#'    It is wrapped by \code{"ngme"}, and is not advised to
+#'    be used alone.
+#'
+#' @seealso \code{\link{ngme}}
 #'
 #' @examples
 #'   \dontrun{
@@ -113,10 +113,6 @@ estimateLong <- function(Y,
     use.process = FALSE
   }
   if(use.process){
-    common.grid = FALSE
-    if(length(operator_list$loc)==1){
-      common.grid = TRUE
-    }
   }
   for(i in 1:length(locs)){
     obs_list[[i]] <- list(Y=Y[[i]], locs = locs[[i]])
@@ -168,7 +164,6 @@ estimateLong <- function(Y,
   if(use.process){
     input$processes_list   = processes_list
     input$operator_list    = operator_list
-    input$common.grid      = common.grid
   }
 
   if(is.null(nBurnin_learningrate) == FALSE)
@@ -176,6 +171,7 @@ estimateLong <- function(Y,
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
 
+  #input <- asS4(input)
   output <- estimateLong_cpp(input)
 
   if(standardize.mixedEffects){
@@ -196,22 +192,22 @@ estimateLong <- function(Y,
 
 
 #' @title STUFF.
-#' 
+#'
 #' @description STUFF
 #' @param input STUFF
 #' @param seed STUFF
-#' 
+#'
 #' @return STUFF
-#' 
+#'
 #' @details STUFF
-#' 
-#' @seealso \code{\link{ngld_est}}, \code{\link{estimateLong}}, \code{\link{estimateME}}    
+#'
+#' @seealso \code{\link{ngld_est}}, \code{\link{estimateLong}}, \code{\link{estimateME}}
 #'
 #' @examples
 #'   \dontrun{
 #'   setseed_ME(...)
 #'   }
-#' 
+#'
 
 setseed_ME <- function(input, seed)
 {
@@ -224,28 +220,28 @@ setseed_ME <- function(input, seed)
 }
 
 
-#' 
+#'
 #' @title Obtain initials for random effects.
-#' 
-#' @description A function to obtain initial values for the random effects. 
-#' 
+#'
+#' @description A function to obtain initial values for the random effects.
+#'
 #' @inheritParams estimateLong
-#' @param mixedEffect_list A list for random effects. 
-#' 
-#' @return Returns a list for the mixed effects. 
+#' @param mixedEffect_list A list for random effects.
+#'
+#' @return Returns a list for the mixed effects.
 #'     See e.g. \code{mixedEffect_list} in the \code{"EstimateLong"} function.
-#' 
-#' @details The function treats random effects as fixed effects to 
+#'
+#' @details The function treats random effects as fixed effects to
 #'    obtain start values using ordinary least squares (OLS).
-#' 
-#' @seealso \code{\link{estimate.wrapper}}    
+#'
+#' @seealso \code{\link{estimate.wrapper}}
 #'
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)
 #'   ME.startvalues(...)
 #'   }
-#' 
+#'
 ME.startvalues <- function(Y, mixedEffect_list)
 {
   n = length(mixedEffect_list$B_fixed)
@@ -302,22 +298,22 @@ ME.startvalues <- function(Y, mixedEffect_list)
 }
 
 #' @title Obtain initial values for the operator.
-#' 
+#'
 #' @description A function to obtain initials for the operator.
-#' 
+#'
 #' @inheritParams estimateLong
-#' @param mixedEffect_list A list for random effects.  
+#' @param mixedEffect_list A list for random effects.
 #' @param operator_list A list for operator.
 #' @param measurement_list A list for measurement error.
-#' 
-#' @return A list for operator. 
+#'
+#' @return A list for operator.
 #'    See e.g. \code{"operator_list"} in \code{"estimateLong"}.
 #'
 #' @examples
 #'   \dontrun{
 #'   operator.startvalues(...)
 #'   }
-#'   
+#'
 operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measurement_list)
 {
   if(operator_list$type == "fd2"){

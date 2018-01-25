@@ -23,6 +23,14 @@ NormalMixedEffect::NormalMixedEffect(){
   //ddlog_sigma2 = 0;
 }
 
+NormalMixedEffect::~NormalMixedEffect(){
+
+  for(int i=0;i<Bf.size();i++) {
+    Bf[i].resize(0,0);
+  }
+  Bf.resize(0);
+}
+
 void NormalMixedEffect::get_param(std::vector<double> & param_in){
 
   MixedEffect::get_param(param_in);
@@ -134,7 +142,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_fixed.setZero(Bf[0].cols());
     if(beta_fixed.size() != Bf[0].cols())
     {
-      Rcpp::Rcout << "\nERROR: \n"; 
+      Rcpp::Rcout << "\nERROR: \n";
       Rcpp::Rcout << "beta_fixed.size = " << beta_fixed.size() << "\n";
       Rcpp::Rcout << "B_fixed.cols    = " << Bf[0].cols() << "\n";
       throw("input error\n");
@@ -170,7 +178,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       beta_random.setZero(Br[0].cols());
     if(beta_random.size() != Br[0].cols())
     {
-      Rcpp::Rcout << "\nERROR:\n "; 
+      Rcpp::Rcout << "\nERROR:\n ";
       Rcpp::Rcout << "beta_random.size = " << beta_random.size() << "\n";
       Rcpp::Rcout << "B_random.cols    = " << Br[0].cols() << "\n";
       throw("input error\n");
@@ -196,13 +204,13 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
     else
       Sigma.setIdentity(Br[0].cols(), Br[0].cols());
-  
+
     D = duplicatematrix(Br[0].cols());
     Dd = D.cast <double> ();
     invSigma  = Sigma.inverse();
     iSkroniS = kroneckerProduct(invSigma, invSigma);
     ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
-  
+
 
     Sigma_vech = vech(Sigma);
     npars += Sigma_vech.size();
@@ -369,7 +377,7 @@ void NormalMixedEffect::gradient2(const int i,
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
                                  const double weight, // = 1
-                                 const int use_EU) 
+                                 const int use_EU)
 {
     counter++;
     Eigen::VectorXd res_  = res;
@@ -423,18 +431,18 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
                                  const Eigen::VectorXd& iV,
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
-                                 const double weight) // = 1) 
+                                 const double weight) // = 1)
 {
 
   Eigen::VectorXd res_  = res;
-  
+
   int n_s  =0;
 
   if(Br.size()>0)
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]); 
+    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
     res_ -= Br[i] * U.col(i);
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
@@ -449,18 +457,18 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
-  
+
   if(Br.size()>0){
-    
+
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
-  
+
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
     d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
   }
-  
+
   return(d2);
 }
 
@@ -472,14 +480,14 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
 {
 
   Eigen::VectorXd res_  = res;
-  
+
   int n_s  =0;
 
   if(Br.size()>0)
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]); 
+    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
     res_ -= Br[i] * U.col(i);
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
@@ -491,13 +499,13 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-  
+
   if(Br.size()>0){
-    
+
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
-  
+
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
     d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
@@ -515,7 +523,7 @@ void NormalMixedEffect::gradient(const int i,
 {
     counter++;
     Eigen::VectorXd res_  = res;
-    
+
     if(Br.size() > 0){
       if(use_EU)
         res_ -= Br[i] * EU.col(i);
@@ -557,7 +565,7 @@ void NormalMixedEffect::gradient(const int i,
       }
 
 
-    
+
      weight_total += weight;
 
 }
@@ -627,7 +635,7 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
       for(int i = 0; i < n_f ; i++)
         constrianed(i + n_r) = beta_fixed_constrainted(i);
 
-      solve_const_x_Ab(step1, 
+      solve_const_x_Ab(step1,
                        constrianed,
                        grad_beta,
                        H_beta);
@@ -639,7 +647,7 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
   if(Bf.size() > 0){
     dbeta_f_old.array() *= learning_rate;
     dbeta_f_old += 0.5 * step1.tail(n_f);
-    solve_const_x_Ab(dbeta_f_old, 
+    solve_const_x_Ab(dbeta_f_old,
                      beta_fixed_constrainted,
                      0.5 * grad_beta.tail( n_f),
                      H_beta.bottomRightCorner(n_f, n_f));
@@ -662,7 +670,7 @@ void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learn
 {
 	dbeta_f_old.array() *= learning_rate;
 
-  solve_const_x_Ab(dbeta_f_old, 
+  solve_const_x_Ab(dbeta_f_old,
                    beta_fixed_constrainted,
                    grad_beta_f,
                    H_beta_fixed);
@@ -673,7 +681,7 @@ void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learn
 void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_r_old.array() *= learning_rate;
-  solve_const_x_Ab(dbeta_r_old, 
+  solve_const_x_Ab(dbeta_r_old,
                    beta_random_constrainted,
                    0.5 * grad_beta_r,
                    H_beta_random);
@@ -715,7 +723,7 @@ void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_r
     invSigma  = Sigma.inverse();
     Sigma_vech = vech(Sigma);
     iSkroniS = kroneckerProduct(invSigma, invSigma);
-    
+
 }
 
 

@@ -25,7 +25,7 @@ class MixedEffect {
   	int vec_counter; // internal parameter counter
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter){}; // setups to store the tracjetory
-
+    virtual ~MixedEffect() {};
 
 
   	int npars; // number of parameters
@@ -88,7 +88,7 @@ class MixedEffect {
                           const Eigen::VectorXd &,
                           std::mt19937 &,
                           const double) = 0;
-    void remove_inter(const int i, Eigen::VectorXd & Y) { if(Br.size()>0){
+    void remove_inter(const int i, Eigen::VectorXd & Y) {if(Br.size()>0){
     													  Y -= Br[i]*U.col(i);}};
     void add_inter(const int i, Eigen::VectorXd & Y)    { if(Br.size()>0){
     													 Y += Br[i]*U.col(i);} };
@@ -126,14 +126,14 @@ class MixedEffect {
                           const Eigen::VectorXd&,
                           const double,
                           const double ){return(Eigen::MatrixXd::Zero(0,0));}; //computes second derivates given, latent data
-                                                                              // fixed variance 
+                                                                              // fixed variance
     virtual Eigen::MatrixXd d2Given2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
                            const double,
                            const double,
-                           const double){return(Eigen::MatrixXd::Zero(0,0));};  //computes second derivates given, latent data 
-                                                                               // variable variance  
+                           const double){return(Eigen::MatrixXd::Zero(0,0));};  //computes second derivates given, latent data
+                                                                               // variable variance
 
 
     // returns the gradient of all the parameters
@@ -194,6 +194,7 @@ class NormalMixedEffect  : public MixedEffect{
     void setupStoreTracj(const int Niter); // setups to store the tracjetory
 
     NormalMixedEffect();
+    ~NormalMixedEffect();
     void initFromList(Rcpp::List const &);
 
     void get_param(std::vector<double> &);
@@ -220,14 +221,14 @@ class NormalMixedEffect  : public MixedEffect{
                           const Eigen::VectorXd&,
                           const double,
                           const double ); //computes second derivates given, latent data
-                                                                              // fixed variance 
+                                                                              // fixed variance
     virtual Eigen::MatrixXd d2Given2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
                            const double,
                            const double,
-                           const double);  //computes second derivates given, latent data 
-    
+                           const double);  //computes second derivates given, latent data
+
 
     void sampleU(const int, const Eigen::VectorXd &, const double ) ;
     void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
@@ -323,6 +324,7 @@ class NIGMixedEffect  : public MixedEffect{
     Eigen::VectorXd V;
 
     NIGMixedEffect();
+    ~NIGMixedEffect(){};
 
     void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & );
@@ -409,7 +411,7 @@ class NIGMixedEffect  : public MixedEffect{
 
 // mixed effect util
 
-//solve constrained 
+//solve constrained
 // solves x[constrained == 1] += A[constrained==1, H_constrained == 1]^{-1} b
 void solve_const_x_Ab(Eigen::VectorXd & , const Eigen::VectorXd & , const Eigen::VectorXd & ,const  Eigen::MatrixXd & );
 
