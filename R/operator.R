@@ -242,7 +242,7 @@ create_operator <- function(locs,
                             name = "matern",
                             right.boundary = 'neumann',
                             left.boundary='neumann',
-                            common.grid = TRUE,
+                            common.grid = FALSE,
                             extend  = NULL,
                             max.dist,
                             cutoff = 1e-10)
@@ -259,7 +259,7 @@ create_operator <- function(locs,
                                   max.dist = max.dist,
                                   cutoff = cutoff))
   }else{
-    return(create_matrices_FD2_fem(locs = locs,
+    return(create_matrices_FD2(locs = locs,
                                common.grid = common.grid,
                                extend = extend,
                                max.dist = max.dist,
@@ -302,7 +302,7 @@ create_matrices_Matern <- function(locs,
                                    n,
                                    right.boundary = 'neumann',
                                    left.boundary ='neumann',
-                                   common.grid = TRUE,
+                                   common.grid = FALSE,
                                    extend = NULL,
                                    max.dist,
                                    cutoff = 1e-10)
@@ -369,59 +369,46 @@ create_matrices_Matern <- function(locs,
 #'
 
 create_matrices_FD2 <- function(locs,
-                                n,
-                                right.boundary = 'neumann',
-                                left.boundary='neumann',
-                                common.grid = TRUE,
+                                common.grid = FALSE,
                                 extend = NULL,
                                 max.dist,
                                 cutoff = 1e-10)
 {
-  if(missing(max.dist) & missing(n))
-    stop("max.dist or n must be supplied")
 
-  if(missing(max.dist)){
-    meshes <- create.meshes.1d(locs,n,common.grid,extend)
-  } else {
-    meshes <- generate.adaptive.meshes.1d(locs,
-                                          max.dist = max.dist,
-                                          cutoff = cutoff,
-                                          common.grid=common.grid,
-                                          extend = extend)
-  }
+  meshes <- generate.adaptive.meshes.1d(locs,
+                                        max.dist = max.dist,
+                                        cutoff = cutoff,
+                                        common.grid=common.grid,
+                                        extend = extend)
+
   Q <- list()
   if(common.grid || length(locs) == 1) {
-    vec_toeplitz <- rep(0, length=meshes$n[[1]])
-    h <- meshes$h[[1]][1]
-    vec_toeplitz[1] <- -1 / h # -1/h
-    vec_toeplitz[2] <- 1  / h  # 1/h
-    Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
-    Operator_1D[upper.tri(Operator_1D)] = 0
-    Operator_2D <- (h*Operator_1D) %*% Operator_1D #mult with h for the first operator is scaled
+    h <- meshes$hs[[1]]
+    Operator_1D <- bandSparse(n=meshes$n[[1]]-1,m=meshes$n[[1]]-1,k=c(-1,0),diagonals=cbind(-1/h,1/h))
+    hOperator_1D <- bandSparse(n=meshes$n[[1]]-1,m=meshes$n[[1]]-1,k=c(-1,0),
+                               diagonals=cbind(-rep(1,length(h)),rep(1,length(h))))
+    Operator_2D <- (hOperator_1D) %*% Operator_1D #mult with h for the first operator is scaled
     # due to W(t+h) - W(t) = N(0,h), not (W(t+h) - W(t))/h = N(0,h)
-    Q[[1]] <-as(Operator_2D, "dgCMatrix")
-  } else {
-    n = unlist(meshes$n)
-    if(length(n) == 1){
-      n = rep(n,length(locs))
-    }
     for(i in 1:length(locs)){
-      vec_toeplitz <- rep(0, length=n[i])
-      h <- meshes$h[[i]][1]
-      vec_toeplitz[1] <- -1 / h
-      vec_toeplitz[2] <- 1  / h
-      Operator_1D <- Matrix(toeplitz(vec_toeplitz), sparse=T)
-      Operator_1D[upper.tri(Operator_1D)] = 0
-      Operator_2D <- (h*Operator_1D) %*% Operator_1D
+      Q[[i]] <-as(Operator_2D, "dgCMatrix")
+    }
+  } else {
+    for(i in 1:length(locs)){
+      h <- meshes$hs[[i]]
+      Operator_1D <- bandSparse(n=meshes$n[[i]]-1,m=meshes$n[[i]]-1,k=c(-1,0),diagonals=cbind(-1/h,1/h))
+      hOperator_1D <- bandSparse(n=meshes$n[[i]]-1,m=meshes$n[[i]]-1,k=c(-1,0),
+                                 diagonals=cbind(-rep(1,length(h)),rep(1,length(h))))
+      Operator_2D <- (hOperator_1D) %*% Operator_1D
+
       Q[[i]] <- as(Operator_2D, "dgCMatrix")
     }
   }
     operator_List <- list(type   = 'fd2',
                           Q      = Q,
-                          h      = meshes$h,
+                          h      = meshes$hs,
                           loc   = meshes$loc,
                           right.boundary = 'neumann',
-                          left.boundary='neumann',
+                          left.boundary='dirichlet',
                           manifold = "R",
                           common.grid = common.grid)
   return(operator_List)

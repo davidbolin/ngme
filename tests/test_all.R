@@ -9,7 +9,7 @@ n.pers <- 200
 n.obs  <- rep(100,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
-operator.type = "matern"
+operator.type = "fd2"
 process.noise = "NIG"
 process.nu = 0.1
 process.mu = 0.1

@@ -149,19 +149,21 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
 
   return(list(loc = s,
               h = h,
+              hs = diff(s),
               n = n.mesh))
 }
 
 
 generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,common.grid=TRUE,extend = NULL)
 {
-  loc <- h <- n <- list()
+  loc <- h <- hs <- n <- list()
   if(common.grid || length(locs)==1){
     locs <- unlist(locs)
     m <- generate.1d.mesh(x = locs,max.dist = max.dist,cutoff = cutoff,extend = extend)
     for(i in 1:length(locs)){
       loc[[i]] <- m$loc
       h[[i]] <- m$h
+      hs[[i]] <- m$hs
       n[[i]] <- m$n
     }
   } else {
@@ -169,8 +171,9 @@ generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,comm
       m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
       loc[[i]] <- m$loc
       h[[i]] <- m$h
+      hs[[i]] <- m$hs
       n[[i]] <- m$n
     }
   }
-  return(list(loc=loc,h=h,n=n))
+  return(list(loc=loc,h=h,hs=hs,n=n))
 }
