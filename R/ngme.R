@@ -100,6 +100,11 @@ ngme <- function(fixed,
                  timeVar = NULL,
                  silent = TRUE,
                  nIter,
+                 mesh = list(max.dist = NULL,
+                             cutoff = NULL,#1e-10,
+                             common.grid = FALSE,
+                             extend = NULL,
+                             n.cores = 1),
                  controls = list(learning.rate = 0,
                                  polyak.rate = 0.1,
                                  nBurnin = 100,
@@ -116,12 +121,7 @@ ngme <- function(fixed,
                                  pSubsample2 = 0.3,
                                  standardize.mixedEffects = FALSE,
                                  estimate.fisher = TRUE,
-                                 individual.sigma = FALSE,
-                                 max.dist = NULL,
-                                 cutoff = 1e-10,
-                                 common.grid=FALSE,
-                                 extend = NULL,
-                                 n.cores = 1),
+                                 individual.sigma = FALSE),
                  controls.init = list(learning.rate.init = 0,
                                       polyak.rate.init = 0.1,
                                       nBurnin.init = 100,
@@ -140,11 +140,12 @@ ngme <- function(fixed,
                  init.fit = NULL
                  )
 {
+  # generate a seed
   gen_seed <- ceiling(10^8 * runif(1))
   controls$seed <- controls.init$seed.init <- gen_seed
 
   # being sure that controls includes everything
-  if(length(controls) < 23){
+  if(length(controls) < 18){
     controls.full <- list(learning.rate = 0,
                           polyak.rate = 0.1,
                           nBurnin = 100,
@@ -161,12 +162,8 @@ ngme <- function(fixed,
                           pSubsample2 = 0.3,
                           standardize.mixedEffects = FALSE,
                           estimate.fisher = TRUE,
-                          individual.sigma = FALSE,
-                          max.dist = NULL,
-                          cutoff = 1e-10,
-                          common.grid=FALSE,
-                          extend = NULL,
-                          n.cores = 1)
+                          individual.sigma = FALSE
+                          )
     for(i in 1:length(controls.full)){
       if(!(names(controls.full)[i] %in% names(controls))){
         controls[names(controls.full)[i]] <- controls.full[i]
@@ -175,6 +172,7 @@ ngme <- function(fixed,
 
   }
 
+  # check for controls.init
   if(is.null(init.fit) == TRUE){
 
     if(length(controls.init) < 16){
@@ -203,20 +201,49 @@ ngme <- function(fixed,
 
   }
 
+  ## check mesh
+  if(length(mesh) < 5){
+    mesh.full = list(max.dist = NULL,
+                     cutoff = NULL,
+                     common.grid = FALSE,
+                     extend = NULL,
+                     n.cores = 1
+                     )
+    for(i in 1:length(mesh.full)){
+      if(!(names(mesh.full)[i] %in% names(mesh))){
+        mesh[names(mesh.full)[i]] <- mesh.full[i]
+      }
+    }
+  }
+  
+  # return an error if max.dist and cutoff not provided
+  if(use.process == TRUE){
+    
+    if((reffects == "Normal" & process[1] == "Normal" & error == "Normal") ||
+       (is.null(init.fit) == TRUE & (reffects != "Normal" & process[1] != "Normal" & error != "Normal"))){
+      
+      if(is.null(mesh$max.dist) == TRUE & is.null(mesh$cutoff) == TRUE){
+        stop("Provide 'max.dist' and 'cutoff' for creating mesh")
+      }
+      
+    }
+    
+  }
+  
   # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
-    stop("Process distribution should be one of the following: NIG, Normal, GAL, CH")
+    stop("Process distribution should be one of the following: 'NIG', 'Normal', 'GAL', 'CH'")
   }
   if(!(reffects %in% c("NIG", "Normal"))){
-    stop("Random-effects distribution should be one of the following: NIG, Normal")
+    stop("Random-effects distribution should be one of the following: 'NIG', 'Normal'")
   }
   if(!(error %in% c("NIG", "Normal", "tdist"))){
-    stop("Measurement error distribution should be one of the following: NIG, Normal, tdist")
+    stop("Measurement error distribution should be one of the following: 'NIG', 'Normal', 'tdist'")
   }
 
   # correct input for timeVar
   if(use.process == TRUE & is.null(timeVar) == TRUE){
-    stop("timeVar should be specified, since the model consists of process")
+    stop("'timeVar' should be specified, since the model consists of process")
   }
 
   # extract id variable
@@ -267,8 +294,8 @@ ngme <- function(fixed,
 
   ## a warning message
 
-  if(is.null(init.fit) == FALSE){
-    warning("'cutoff, max.dist and extend for controls are the same in the init.fit")
+  if(use.process == TRUE & is.null(init.fit) == FALSE){
+    warning("'cutoff', 'max.dist' and 'extend' for 'mesh' are inherited from the 'init.fit'")
   }
 
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
@@ -283,7 +310,9 @@ ngme <- function(fixed,
       cat("Setup lists\n")
     }
 
-    measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
+    measurement_list <- list(Vs = Vin, 
+                             noise = "Normal", 
+                             sigma = 0.1)
 
     mixedEffect_list <- list(B_random = B_random,
                              B_fixed  = B_fixed,
@@ -293,11 +322,11 @@ ngme <- function(fixed,
     if(use.process){
       operator_list <- create_operator(locs,
                                        name = process[2],
-                                       common.grid = controls$common.grid,
-                                       extend  = controls$extend,
-                                       max.dist = controls$max.dist,
-                                       cutoff = controls$cutoff,
-                                       n.cores = controls$n.cores)
+                                       common.grid = mesh$common.grid,
+                                       extend  = mesh$extend,
+                                       max.dist = mesh$max.dist,
+                                       cutoff = mesh$cutoff,
+                                       n.cores = mesh$n.cores)
       #if(is.null(controls$n.process)){
       #  n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
       #  operator_list <- create_operator(locs, n.process, name = process[2])
@@ -307,8 +336,7 @@ ngme <- function(fixed,
 
       process_list = list(noise = "Normal",
                           nu  = 1,
-                          mu  = 0
-      )
+                          mu  = 0)
       process_list$V <- list()
       process_list$X <- list()
 
@@ -389,20 +417,21 @@ ngme <- function(fixed,
 
       fit$mixedEffect_list$noise <- reffects
       if(fit$mixedEffect_list$noise == "Normal"){
-        fit$mixedEffect_list$nu    <- as.matrix(10)
-        fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
+        fit$mixedEffect_list$nu <- as.matrix(10)
+        fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
       }
 
       if(fit$processes_list$noise == "Normal"){
-        fit$processes_list$mu    <- 0
-        fit$processes_list$nu    <- 10
+        fit$processes_list$mu <- 0
+        fit$processes_list$nu <- 10
       }
 
       fit$processes_list$noise <- process[1]
 
-      fit$measurementError_list$noise    <- error
+      fit$measurementError_list$noise <- error
+      
       if(fit$measurementError_list$noise == "Normal"){
-        fit$measurementError_list$nu       <-  10
+        fit$measurementError_list$nu  <-  10
       }
 
       fit$measurementError_list$common_V <- controls$individual.sigma
