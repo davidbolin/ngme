@@ -739,12 +739,17 @@ ngme <- function(fixed,
 
     #operator
     operator_tau     <- fit$operator_list$tau
-    operator_tau_vec <- fit$operator_list$tauVec[-1] #1st element is omitted
+    operator_tau_vec <- fit$operator_list$tauVec
+
+    if(process[2] %in% c("fd2")){
+      operator_tau_vec <- operator_tau_vec[-1] #exclude the first element
+    }
 
     #operator - matern
     if(process[2] %in% c("matern")){
       operator_kappa <- fit$operator_list$kappa
       operator_kappa_vec <- fit$operator_list$kappaVec
+      
     }else{
       operator_kappa <- operator_kappa_vec <- NA
     }
