@@ -322,7 +322,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//      basic parameter
 	//**********************************
 
-	int debug = 1;
+	int debug = 0;
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< int > (in_list["nIter"]);
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
