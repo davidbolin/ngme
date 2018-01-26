@@ -308,14 +308,14 @@ create_matrices_Matern <- function(locs,
                                    cutoff = 1e-10,
                                    n.cores = 1)
 {
-  t1 <- Sys.time()
+
   meshes <- generate.adaptive.meshes.1d(locs,
                                         max.dist = max.dist,
                                         cutoff = cutoff,
                                         common.grid=common.grid,
                                         extend = extend,
                                         n.cores = n.cores)
-  t.mesh <- Sys.time() - t1
+
   operator_List <- list()
   C <- Ci <- G <- Ce <- h <- list()
   if(common.grid || length(locs) == 1){
@@ -354,7 +354,6 @@ create_matrices_Matern <- function(locs,
       h <- h[ind]
 
     } else {
-      t1 <- Sys.time()
       for(i in 1:length(locs))
       {
         MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
@@ -363,8 +362,6 @@ create_matrices_Matern <- function(locs,
         G[[i]] = MatrixBlock$G
         h[[i]] = MatrixBlock$h
       }
-      t.block = Sys.time()-t1
-      cat(t.mesh," ",t.block,"\n")
     }
   }
 

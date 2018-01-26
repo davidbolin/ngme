@@ -322,7 +322,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 	//      basic parameter
 	//**********************************
 
-	int debug = 0;
+	int debug = 1;
 	double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
 	int nIter      = Rcpp::as< int > (in_list["nIter"]);
 	int nSim       = Rcpp::as< int > (in_list["nSim"]);
@@ -790,13 +790,21 @@ List estimateLong_cpp(Rcpp::List in_list)
 	  	burnin_done[i] = 0;
     int count_inner = 0;
     Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
-    z.setZero(Kobj->h[i].size()); //added
+    if(process_active){
+      z.setZero(Kobj->h[i].size());
+    } else {
+      z.setZero(0);
+    }
+
     for(int ii = 0; ii < n_simulations; ii ++)
     {
-      if(debug)
-        Rcpp::Rcout << "simulate z\n";
-      for(int j =0; j < Kobj->h[i].size(); j++)
-    		z[j] =  normal(random_engine);
+      if(process_active){
+        if(debug)
+          Rcpp::Rcout << "simulate z\n";
+        for(int j =0; j < Kobj->h[i].size(); j++)
+          z[j] =  normal(random_engine);
+      }
+
         if(debug)
           Rcpp::Rcout << "Enter Gibbs\n";
      	  Eigen::VectorXd res =  GibbsSampling(i,
