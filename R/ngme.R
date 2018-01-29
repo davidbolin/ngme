@@ -173,7 +173,10 @@ ngme <- function(fixed,
   }
 
   # check for controls.init
-  if(is.null(init.fit) == TRUE){
+  if(is.null(init.fit) == TRUE ||
+     (reffects == "Normal" & (use.process == TRUE & process[1] == "Normal") & error == "Normal") ||
+     (reffects == "Normal" & use.process == FALSE & error == "Normal")
+     ){
 
     if(length(controls.init) < 16){
       controls.init.full <- list(learning.rate.init = 0,
