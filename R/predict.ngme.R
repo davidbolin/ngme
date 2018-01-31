@@ -74,7 +74,7 @@ predict.ngme <- function(object,
                             silent = TRUE,
                             return.preds = TRUE,
                             n.cores = 1,
-                            batch.size = 10
+                            batch.size = 100
                             )
                           )
   {
@@ -93,7 +93,7 @@ predict.ngme <- function(object,
       silent = TRUE,
       return.preds = TRUE,
       n.cores = 1,
-      batch.size = 10
+      batch.size = 100
       )
     for(i in 1:length(controls)){
         controls_full[names(controls)[i]] <- controls[i]
@@ -108,40 +108,52 @@ predict.ngme <- function(object,
   }
   pInd <- which(id_list %in% id)
 
+  #do the prediction in batches
+  # pInd.list <- list()
+  # pInd.tmp <- pInd
+  # 
+  # if(length(pInd.tmp)>=controls$batch.size){
+  #   k = 1
+  #   while(length(pInd.tmp)>=controls$batch.size){
+  #     if(length(pInd.tmp)>=controls$batch.size){
+  #       pInd.list[[k]] <- pInd.tmp[1:controls$batch.size]
+  #       if(controls$batch.size<length(pInd.tmp)){
+  #         pInd.tmp <- pInd.tmp[(controls$batch.size+1):length(pInd.tmp)]
+  #       } else {
+  #         pInd.tmp <- NULL
+  #       }
+  #       k = k+1
+  #     } else {
+  #       pInd.list[[k]] <- pInd.tmp
+  #       pInd.tmp <- NULL
+  #     }
+  #   }
+  # } else {
+  #   pInd.list[[1]] <- pInd
+  # }
+  
+  batch.size <- controls$batch.size
+  iterations <- ceiling(length(pInd)/batch.size)
+  
+  pInd.list <- lapply(1:iterations, function(i) na.omit(pInd[(batch.size*(i - 1) + 1) : (batch.size * i)]))
 
-  #do the prediction in batches of 100 patients
-  pInd.list <- list()
-  pInd.tmp <- pInd
-
-  if(length(pInd.tmp)>=controls$batch.size){
-    k = 1
-    while(length(pInd.tmp)>=controls$batch.size){
-      if(length(pInd.tmp)>=controls$batch.size){
-        pInd.list[[k]] <- pInd.tmp[1:controls$batch.size]
-        if(controls$batch.size<length(pInd.tmp)){
-          pInd.tmp <- pInd.tmp[(controls$batch.size+1):length(pInd.tmp)]
-        } else {
-          pInd.tmp <- NULL
-        }
-        k = k+1
-      } else {
-        pInd.list[[k]] <- pInd.tmp
-        pInd.tmp <- NULL
-      }
-    }
-  } else {
-    pInd.list[[1]] <- pInd
-  }
-
-  iterations <- length(pInd.list)
-  if(controls$n.cores==1){
+  # iterations <- length(pInd.list)
+  
+  if(controls$n.cores == 1){
+    
     preds.list <- list()
-    for(i in 1:iterations)
-    {
+    
+    for(i in 1:iterations){
 
+      if(controls$silent == FALSE){
+        cat("Iteration", i, "out of", iterations, "\n")
+        cat("\n")
+      }
+      
       #cat(object.size(preds.list,units = "MB",standard = "SI"),"\n")
       if(object$use_process == TRUE){
-        preds.list[[i]] <- predictLong( Y                    = object$Y,
+        preds.list[[i]] <- predictLong( 
+                           Y                    = object$Y,
                            locs                 = object$locs,
                            pInd                 = pInd.list[[i]],
                            locs.pred            = object$locs,
@@ -160,11 +172,12 @@ predict.ngme <- function(object,
                            operator_list        = object$operator_list,
                            nSim                 = controls$nSim,
                            nBurnin              = controls$nBurnin,
-                           silent               = TRUE,
+                           silent               = controls$silent,
                            seed                 = controls$seed)
 
       }else{
-        preds.list[[i]] <- predictLong(Y                     = object$Y,
+        preds.list[[i]] <- predictLong(
+                          Y                      = object$Y,
                           locs                   = object$locs,
                           pInd                   = pInd.list[[i]],
                           locs.pred              = object$locs,
@@ -182,18 +195,23 @@ predict.ngme <- function(object,
                           operator_list          = object$operator_list,
                           nSim                   = controls$nSim,
                           nBurnin                = controls$nBurnin,
-                          silent                 = TRUE,
+                          silent                 = controls$silent,
                           seed                   = controls$seed)
       }
     }
   } else {
+    
     cl <- makeCluster(controls$n.cores)
+    
     registerDoSNOW(cl)
 
     pb <- txtProgressBar(max = length(pInd.list), style = 3)
+    
     progress <- function(n) setTxtProgressBar(pb, n)
+    
     opts <- list(progress = progress)
-    clusterExport(cl, list = c('object','pInd.list', 'controls','type','quantiles'),envir=environment())
+    
+    clusterExport(cl, list = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
 
     preds.list <- foreach(i = 1:iterations, .options.snow = opts) %dopar%
     {
@@ -217,7 +235,7 @@ predict.ngme <- function(object,
                            operator_list        = object$operator_list,
                            nSim                 = controls$nSim,
                            nBurnin              = controls$nBurnin,
-                           silent               = TRUE,
+                           silent               = controls$silent,
                            seed                 = controls$seed)
       }else{
         pl <- predictLong(Y                     = object$Y,
@@ -238,7 +256,7 @@ predict.ngme <- function(object,
                           operator_list          = object$operator_list,
                           nSim                   = controls$nSim,
                           nBurnin                = controls$nBurnin,
-                          silent                 = TRUE,
+                          silent                 = controls$silent,
                           seed                   = controls$seed)
       }
       return(pl)
@@ -248,7 +266,7 @@ predict.ngme <- function(object,
   }
 
 
-  preds <- merge.pred.lists(preds.list,pInd)
+  preds <- merge.pred.lists(preds.list, pInd)
 
 
   if(controls$silent == FALSE){
@@ -260,12 +278,14 @@ predict.ngme <- function(object,
   } else {
     p.start = 1
   }
+  
   mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
+  
   for(i in 1:length(pInd)){
     n.obs.i = length(object$Y[[pInd[i]]])
-    if(n.obs.i>=p.start){
-      n.obs <- c(n.obs,length(object$Y[[pInd[i]]])-p.start+1)
-      yi = object$Y[[pInd[i]]][p.start:n.obs.i]
+    if(n.obs.i >= p.start){
+      n.obs <- c(n.obs, length(object$Y[[pInd[i]]]) - p.start + 1)
+      yi <- object$Y[[pInd[i]]][p.start:n.obs.i]
 
       mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
       mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))

@@ -41,8 +41,10 @@ print.predict.ngme <- function(object, ...){
 
   cat("\n")
 
-  cat("MAE (SD) = ", object$mean.mae," (", object$std.mae, ")\n", sep = "")
-  cat("RMSE (SD) = ",  object$mean.rmse," (", object$std.rmse,")\n", sep = "")
+  cat("Mean predictor MAE (SD) = ", object$mean.mae.mean.predictor," (", object$std.mae.mean.predictor, ")\n", sep = "")
+  cat("Median predictor MAE (SD) = ", object$mean.mae.median.predictor," (", object$std.mae.median.predictor, ")\n", sep = "")
+  cat("Mean predictor RMSE (SD) = ",  object$mean.rmse.mean.predictor," (", object$std.rmse.mean.predictor,")\n", sep = "")
+  cat("Median predictor RMSE (SD) = ",  object$mean.rmse.median.predictor," (", object$std.rmse.median.predictor,")\n", sep = "")
   cat("CRPS (SD) = ", object$mean.crps," (", object$std.crps, ")\n", sep = "")
   cat("Interval coverage (SD) = ", object$coverage.mean, " (", object$coverage.std,")\n", sep = "")
   cat("Interval width (SD) = ", object$mean.int.width, " (", object$std.int.width,")\n", sep = "")
