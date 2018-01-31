@@ -298,7 +298,7 @@ ngme <- function(fixed,
   ## a warning message
 
   if(use.process == TRUE & is.null(init.fit) == FALSE){
-    warning("'cutoff', 'max.dist' and 'extend' for 'mesh' are inherited from the 'init.fit'")
+    warning("'cutoff', 'max.dist' and 'extend' for 'mesh' were inherited from the 'init.fit'")
   }
 
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian

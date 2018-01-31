@@ -146,6 +146,7 @@ predict.ngme <- function(object,
     for(i in 1:iterations){
 
       if(controls$silent == FALSE){
+        cat("\n")
         cat("Iteration", i, "out of", iterations, "\n")
         cat("\n")
       }
