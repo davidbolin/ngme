@@ -72,7 +72,6 @@ predict.ngme <- function(object,
                             nSim = 1000,
                             nBurnin = 100,
                             silent = TRUE,
-                            return.preds = TRUE,
                             n.cores = 1,
                             batch.size = 100
                             )
@@ -81,7 +80,7 @@ predict.ngme <- function(object,
 
   controls$seed <- ceiling(10^8 * runif(1))
 
-  if(length(controls) < 12){
+  if(length(controls) < 11){
     controls_full <- list(
       return.samples = FALSE,
       predict.derivaties = NULL,
@@ -91,7 +90,6 @@ predict.ngme <- function(object,
       nSim = 1000,
       nBurnin = 100,
       silent = TRUE,
-      return.preds = TRUE,
       n.cores = 1,
       batch.size = 100
       )
@@ -274,66 +272,86 @@ predict.ngme <- function(object,
     cat("Calculating accuracy measures", "\n")
   }
 
-  if(type=="Filter"){
-    p.start = 2
-  } else {
-    p.start = 1
+  # if(type=="Filter"){
+  #   p.start = 2
+  # } else {
+  #   p.start = 1
+  # }
+  # 
+  # mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
+  # 
+  # for(i in 1:length(pInd)){
+  #   n.obs.i = length(object$Y[[pInd[i]]])
+  #   if(n.obs.i >= p.start){
+  #     n.obs <- c(n.obs, length(object$Y[[pInd[i]]]) - p.start + 1)
+  #     yi <- object$Y[[pInd[i]]][p.start:n.obs.i]
+  # 
+  #     mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
+  #     mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))
+  # 
+  #     rmse.mean <- c(rmse.mean, (preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi)^2)
+  #     rmse.median <- c(rmse.median, (preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi)^2)
+  # 
+  #     covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i] < yi & (preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] > yi)))
+  #     int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] - preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i])
+  # 
+  #     crps <- c(crps, preds$Y.summary[[i]]$crps[p.start:n.obs.i])
+  #   }
+  # }
+  # 
+  # sum.n.obs <- sum(n.obs)
+
+  Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
+
+  pred_data <- data.frame(id       = rep(id, unlist(lapply(Y_for_pred, length))),
+                          time     = unlist(lapply(1:length(pInd), function(i) object$locs[[pInd[i]]])),
+                          observed = unlist(Y_for_pred), 
+                          mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean)),
+                          median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median)),
+                          lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field)),
+                          upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field)),
+                          crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
+                          )
+  
+  if(type == "Filter"){
+    pred_data <- pred_data[duplicated(pred_data$id), ]
   }
   
-  mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
+  abs_diff_mean   <- with(pred_data, abs(observed - mean))
+  abs_diff_median <- with(pred_data, abs(observed - median))
   
-  for(i in 1:length(pInd)){
-    n.obs.i = length(object$Y[[pInd[i]]])
-    if(n.obs.i >= p.start){
-      n.obs <- c(n.obs, length(object$Y[[pInd[i]]]) - p.start + 1)
-      yi <- object$Y[[pInd[i]]][p.start:n.obs.i]
+  sq_diff_mean   <- with(pred_data, (observed - mean)^2)
+  sq_diff_median <- with(pred_data, (observed - median)^2)
+  
+  covered   <- with(pred_data, lower < observed & upper > observed)
+  int.width <- with(pred_data, upper - lower)
+  
+  n_obs <- nrow(pred_data)
+  
+  mean.mae.mean.predictor       <- mean(abs_diff_mean)
+  mean.mae.median.predictor     <- mean(abs_diff_median)
+  std.mae.mean.predictor        <- sqrt(var(abs_diff_mean)/n_obs)
+  std.mae.median.predictor      <- sqrt(var(abs_diff_median)/n_obs)
 
-      mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
-      mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))
-
-      rmse.mean <- c(rmse.mean, (preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi)^2)
-      rmse.median <- c(rmse.median, (preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi)^2)
-
-      covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i] < yi & (preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] > yi)))
-      int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] - preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i])
-
-      crps <- c(crps, preds$Y.summary[[i]]$crps[p.start:n.obs.i])
-    }
-  }
-
-  sum.n.obs <- sum(n.obs)
-
-  mean.mae.mean.predictor       <- mean(mae.mean)
-  mean.mae.median.predictor     <- mean(mae.median)
-  std.mae.mean.predictor        <- sqrt(var(mae.mean)/sum.n.obs)
-  std.mae.median.predictor      <- sqrt(var(mae.median)/sum.n.obs)
-
-  mean.rmse.mean.predictor      <- sqrt(mean(rmse.mean))
-  mean.rmse.median.predictor    <- sqrt(mean(rmse.median))
-  std.rmse.mean.predictor       <- sqrt(var(rmse.mean)/sum.n.obs)
-  std.rmse.median.predictor     <- sqrt(var(rmse.median)/sum.n.obs)
+  mean.rmse.mean.predictor      <- sqrt(mean(sq_diff_mean))
+  mean.rmse.median.predictor    <- sqrt(mean(sq_diff_median))
+  std.rmse.mean.predictor       <- sqrt(var(sq_diff_mean)/n_obs)
+  std.rmse.median.predictor     <- sqrt(var(sq_diff_median)/n_obs)
 
   coverage.mean  <- 100 * mean(covered)
-  coverage.std   <- 100 * sqrt(var(covered)/sum.n.obs)
+  coverage.std   <- 100 * sqrt(var(covered)/n_obs)
 
-  mean.crps      <- mean(crps)
-  std.crps       <- sqrt(var(crps)/sum.n.obs)
+  mean.crps      <- mean(pred_data$crps)
+  std.crps       <- sqrt(var(pred_data$crps)/n_obs)
+  
   mean.int.width <- mean(int.width)
-  std.int.width  <- sqrt(var(int.width)/sum.n.obs)
+  std.int.width  <- sqrt(var(int.width)/n_obs)
 
-  if(controls$return.preds == TRUE){
     out <- list(predictions = preds,
                 id = id,
                 type = type,
                 call = match.call(),
-                mae.mean = mae.mean,
-                mae.median = mae.median,
-                rmse.mean = rmse.mean,
-                rmse.median = rmse.median,
-                n.obs = n.obs,
-                covered = covered,
-                int.width = int.width,
-                crps = crps,
+                pred.data = pred_data,
                 mean.mae.mean.predictor = mean.mae.mean.predictor,
                 mean.mae.median.predictor = mean.mae.median.predictor,
                 std.mae.mean.predictor = std.mae.mean.predictor,
@@ -350,39 +368,15 @@ predict.ngme <- function(object,
                 std.int.width = std.int.width,
                 Y = object$Y,
                 locs = object$locs,
-                id_list = id_list)
-  }else{
-    out <- list(predictions = preds,
-                id = id,
-                type = type,
-                call = match.call(),
-                mae = mae,
-                n.obs = n.obs,
-                covered = covered,
-                int.width = int.width,
-                crps = crps,
-                rmse = rmse,
-                mean.mae = mean.mae,
-                std.mae = std.mae,
-                coverage.mean = coverage.mean,
-                coverage.std = coverage.std,
-                mean.rmse = mean.rmse,
-                std.rmse = std.rmse,
-                mean.crps = mean.crps,
-                std.crps = std.crps,
-                mean.int.width = mean.int.width,
-                std.int.width = std.int.width,
-                Y = object$Y,
-                locs = object$locs,
-                id_list = id_list)
-  }
-
+                id_list = id_list
+                )
+  
   class(out) <- "predict.ngme"
   out
 
 }
 
-merge.pred.lists <- function(preds.list,pInd){
+merge.pred.lists <- function(preds.list, pInd){
   #merge lists
   preds <- preds.list[[1]]
   if(length(preds.list)>1){
