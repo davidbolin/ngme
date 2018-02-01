@@ -2,14 +2,14 @@ graphics.off()
 library(ngme)
 
 test.pred = TRUE
-test.est = TRUE
+test.est = FALSE
 
 #data options
-n.pers <- 200
-n.obs  <- rep(100,n.pers)#10 + (1:n.pers)
+n.pers <- 20
+n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
-operator.type = "fd2"
+operator.type = "matern"
 process.noise = "NIG"
 process.nu = 0.1
 process.mu = 0.1
@@ -22,8 +22,8 @@ pSubsample = 0.5
 subsample.type = 1
 
 #prediction options
-n.pred <- 100
-pred.type <- "Filter"
+n.pred <- 10
+pred.type <- "Nowcast"
 nSim.pred  <- 100 #simulations in prediction
 
 #simulate data
@@ -168,6 +168,7 @@ if(test.pred){
          xlim = c(min(locs[[k]]),max(locs[[k]]))
     )
     lines(res$locs[[k]],res$X.summary[[k]]$Mean)
+    points(res$locs[[k]],res$X.summary[[k]]$Mean,pch=4)
     lines(locs[[k]],sim_res$Y[[k]]-sim_res$E[[k]],col=3)
     lines(res$locs[[k]],res$X.summary[[k]]$quantiles[[1]]$field,col=2)
     lines(res$locs[[k]],res$X.summary[[k]]$quantiles[[2]]$field,col=2)

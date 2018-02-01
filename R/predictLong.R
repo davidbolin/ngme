@@ -80,13 +80,14 @@ predictLong <- function( Y,
                          seed    = NULL
 )
 {
-
-  if(type=='Filter'){
+  if(type == "Nowcast"){
+    pred_type = 2
+  }else if(type=='Filter'){
     pred_type = 1
   } else if(type == 'Smoothing'){
     pred_type = 0
   } else {
-    stop('Type needs to be either Filter or Smoothing.')
+    stop('Type needs to be either Filter, Smoothing, or Nowcast.')
   }
   use.random.effect = TRUE
   if(is.null(mixedEffect_list$B_random)){
@@ -175,11 +176,36 @@ predictLong <- function( Y,
     } else {
       n.pred.i = length(li)
     }
-
-    if(type == "Filter"){
+    if(type== "Nowcast"){
+      pred.ind <- obs.ind <- NULL
+      ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] < li[1]] #all prediction locations before first obs
+      if(length(ind)>0){
+        pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
+        obs.ind <- Matrix::rBind(obs.ind,c(0,0))
+      }
+      # pred.ind shows which values to save for the j:th prediction
+      # obs.ind shows which data to use for the j:th prediction
+      if(n.pred.i>1){
+        for(j in 2:n.pred.i){
+          #indices for prediction locatiocs in  [s_(j-1), s_j), should use data up to and including s_(j-1)
+          ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] >= li[j-1]) & (locs.pred[[i]] < li[j])]
+          if(length(ind)>0){
+            pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
+            obs.ind <- Matrix::rBind(obs.ind,c(0,j-1))
+          }
+        }
+      }
+      #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
+      if(max(locs.pred[[i]])>max(li)){
+        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= max(li)]
+        pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
+        obs.ind <- Matrix::rBind(obs.ind,c(0,length(locs)-1))
+      }
+      n.pred.i = dim(pred.ind)[1]
+    } else if(type == "Filter"){
         pred.ind <- obs.ind <- NULL
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations before first obs
-        if(length(ind)>0){
+        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations up to the first obs
+        if(length(ind)>0){ #If there are values to predict up to the first obs
           pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
           obs.ind <- Matrix::rBind(obs.ind,c(0,0))
         }
