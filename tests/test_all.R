@@ -23,7 +23,7 @@ subsample.type = 1
 
 #prediction options
 n.pred <- n.obs[[1]]#10
-pred.type <- "Nowcast"
+pred.type <- "Filter"
 nSim.pred  <- 100 #simulations in prediction
 
 #simulate data
@@ -40,7 +40,7 @@ for(i in 1:n.pers)
   Y[[i]] <- rep(1,n.obs[i])
   locs[[i]] <- sort(1 + 9*runif(n.obs[i]))
   #locs.pred[[i]] <-c(locs[[i]][1])
-  locs.pred[[i]] <- unique(sort(c(locs[[i]],seq(from = locs[[i]][1], to = locs[[i]][n.obs[i]], length.out = n.pred))))
+  locs.pred[[i]] <- unique(sort(c(locs[[i]],seq(from = 0.8*locs[[i]][1], to = 1.2*locs[[i]][n.obs[i]], length.out = n.pred))))
   #locs.pred[[i]] <- locs[[i]]
   #locs.pred[[i]] <-seq(from = locs[[i]][1], to = locs[[i]][n.obs[i]], length.out = n.pred)
   n.pred <- length(locs.pred[[i]])
@@ -65,7 +65,7 @@ mixedEffect_list  <- list(B_random = B_random,
                           Sigma_epsilon=1)
 
 
-operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.1)
+operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.5)
 if(operator.type == "matern"){
   operator_list$kappa <- 2
 }
@@ -169,7 +169,7 @@ if(test.pred){
   for(k in 1:2){
     plot(locs[[k]],sim_res$Y[[k]],
          ylim=c(min(res$X.summary[[k]]$quantiles[[1]]$field),max(res$X.summary[[k]]$quantiles[[2]]$field)),
-         xlim = c(min(locs[[k]]),max(locs[[k]]))
+         xlim = c(min(min(locs[[k]]),min(res$locs[[k]])),max(max(locs[[k]]),max(res$locs[[k]])))
     )
     lines(res$locs[[k]],res$X.summary[[k]]$Mean)
     points(res$locs[[k]],res$X.summary[[k]]$Mean,pch=4)
