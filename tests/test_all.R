@@ -6,7 +6,7 @@ test.est = FALSE
 
 #data options
 n.pers <- 20
-n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
+n.obs  <- rep(5,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 operator.type = "matern"
@@ -22,7 +22,7 @@ pSubsample = 0.5
 subsample.type = 1
 
 #prediction options
-n.pred <- 10
+n.pred <- n.obs[[1]]#10
 pred.type <- "Nowcast"
 nSim.pred  <- 100 #simulations in prediction
 
@@ -39,7 +39,11 @@ for(i in 1:n.pers)
 {
   Y[[i]] <- rep(1,n.obs[i])
   locs[[i]] <- sort(1 + 9*runif(n.obs[i]))
-  locs.pred[[i]] <- seq(from = locs[[i]][1], to = locs[[i]][n.obs[i]], length.out = n.pred)
+  #locs.pred[[i]] <-c(locs[[i]][1])
+  locs.pred[[i]] <- unique(sort(c(locs[[i]],seq(from = locs[[i]][1], to = locs[[i]][n.obs[i]], length.out = n.pred))))
+  #locs.pred[[i]] <- locs[[i]]
+  #locs.pred[[i]] <-seq(from = locs[[i]][1], to = locs[[i]][n.obs[i]], length.out = n.pred)
+  n.pred <- length(locs.pred[[i]])
   Vin[[i]] <- rep(1, n.obs[i])
 
   #random effects, 1 and t
@@ -61,7 +65,7 @@ mixedEffect_list  <- list(B_random = B_random,
                           Sigma_epsilon=1)
 
 
-operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type)
+operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.1)
 if(operator.type == "matern"){
   operator_list$kappa <- 2
 }

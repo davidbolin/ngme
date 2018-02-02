@@ -195,11 +195,11 @@ predictLong <- function( Y,
           }
         }
       }
-      #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
-      if(max(locs.pred[[i]])>max(li)){
+      #do the prediction for all locations in [s_N,max(loc.pred)]
+      if(max(locs.pred[[i]])>=max(li)){
         ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= max(li)]
-        pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
-        obs.ind <- Matrix::rBind(obs.ind,c(0,length(locs)-1))
+        pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind)))
+        obs.ind <- Matrix::rBind(obs.ind,c(0,length(li)))
       }
       n.pred.i = dim(pred.ind)[1]
     } else if(type == "Filter"){
