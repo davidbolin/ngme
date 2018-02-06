@@ -41,3 +41,4 @@
 - warning nu = 100 atm, not for 99.99
 - get rid of the for loop at the end of predict.ngme
 - ylabs in plot.ngme
+- add forecasting and prediction  by fine interval by locs.pred
