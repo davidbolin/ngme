@@ -335,8 +335,8 @@ predict.ngme <- function(object,
 
   mean.rmse.mean.predictor      <- sqrt(mean(sq_diff_mean))
   mean.rmse.median.predictor    <- sqrt(mean(sq_diff_median))
-  std.rmse.mean.predictor       <- sqrt(var(sq_diff_mean)/n_obs)
-  std.rmse.median.predictor     <- sqrt(var(sq_diff_median)/n_obs)
+  std.rmse.mean.predictor       <- sqrt( (0.5 * (1/mean.rmse.mean.predictor) * var(sq_diff_mean)) / n_obs)
+  std.rmse.median.predictor     <- sqrt( (0.5 * (1/mean.rmse.median.predictor) * var(sq_diff_median)) / n_obs)
 
   coverage.mean  <- 100 * mean(covered)
   coverage.std   <- 100 * sqrt(var(covered)/n_obs)
