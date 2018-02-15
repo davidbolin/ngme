@@ -51,7 +51,7 @@ simulateLongPrior <- function( Y,
 
     output <- simulateLongME_cpp(input)
     }
-
+    output$Ystar <- lapply(1:length(output$Y),function(i) output$Y[[i]]-output$E[[i]])
 
   return(output)
 }

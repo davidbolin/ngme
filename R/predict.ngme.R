@@ -109,7 +109,7 @@ predict.ngme <- function(object,
   #do the prediction in batches
   # pInd.list <- list()
   # pInd.tmp <- pInd
-  # 
+  #
   # if(length(pInd.tmp)>=controls$batch.size){
   #   k = 1
   #   while(length(pInd.tmp)>=controls$batch.size){
@@ -129,18 +129,18 @@ predict.ngme <- function(object,
   # } else {
   #   pInd.list[[1]] <- pInd
   # }
-  
+
   batch.size <- controls$batch.size
   iterations <- ceiling(length(pInd)/batch.size)
-  
+
   pInd.list <- lapply(1:iterations, function(i) na.omit(pInd[(batch.size*(i - 1) + 1) : (batch.size * i)]))
 
   # iterations <- length(pInd.list)
-  
+
   if(controls$n.cores == 1){
-    
+
     preds.list <- list()
-    
+
     for(i in 1:iterations){
 
       if(controls$silent == FALSE){
@@ -148,10 +148,10 @@ predict.ngme <- function(object,
         cat("Iteration", i, "out of", iterations, "\n")
         cat("\n")
       }
-      
+
       #cat(object.size(preds.list,units = "MB",standard = "SI"),"\n")
       if(object$use_process == TRUE){
-        preds.list[[i]] <- predictLong( 
+        preds.list[[i]] <- predictLong(
                            Y                    = object$Y,
                            locs                 = object$locs,
                            pInd                 = pInd.list[[i]],
@@ -199,18 +199,18 @@ predict.ngme <- function(object,
       }
     }
   } else {
-    
+
     cl <- makeCluster(controls$n.cores)
-    
+
     registerDoSNOW(cl)
 
     pb <- txtProgressBar(max = length(pInd.list), style = 3)
-    
+
     progress <- function(n) setTxtProgressBar(pb, n)
-    
+
     opts <- list(progress = progress)
-    
-    clusterExport(cl, list = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
+
+    clusterExport(cl, varlist = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
 
     preds.list <- foreach(i = 1:iterations, .options.snow = opts) %dopar%
     {
@@ -277,57 +277,57 @@ predict.ngme <- function(object,
   # } else {
   #   p.start = 1
   # }
-  # 
+  #
   # mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
-  # 
+  #
   # for(i in 1:length(pInd)){
   #   n.obs.i = length(object$Y[[pInd[i]]])
   #   if(n.obs.i >= p.start){
   #     n.obs <- c(n.obs, length(object$Y[[pInd[i]]]) - p.start + 1)
   #     yi <- object$Y[[pInd[i]]][p.start:n.obs.i]
-  # 
+  #
   #     mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
   #     mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))
-  # 
+  #
   #     rmse.mean <- c(rmse.mean, (preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi)^2)
   #     rmse.median <- c(rmse.median, (preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi)^2)
-  # 
+  #
   #     covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i] < yi & (preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] > yi)))
   #     int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] - preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i])
-  # 
+  #
   #     crps <- c(crps, preds$Y.summary[[i]]$crps[p.start:n.obs.i])
   #   }
   # }
-  # 
+  #
   # sum.n.obs <- sum(n.obs)
 
   Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
 
   pred_data <- data.frame(id       = rep(id, unlist(lapply(Y_for_pred, length))),
                           time     = unlist(lapply(1:length(pInd), function(i) object$locs[[pInd[i]]])),
-                          observed = unlist(Y_for_pred), 
+                          observed = unlist(Y_for_pred),
                           mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean)),
                           median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median)),
                           lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field)),
                           upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field)),
                           crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
                           )
-  
+
   if(type == "Filter"){
     pred_data <- pred_data[duplicated(pred_data$id), ]
   }
-  
+
   abs_diff_mean   <- with(pred_data, abs(observed - mean))
   abs_diff_median <- with(pred_data, abs(observed - median))
-  
+
   sq_diff_mean   <- with(pred_data, (observed - mean)^2)
   sq_diff_median <- with(pred_data, (observed - median)^2)
-  
+
   covered   <- with(pred_data, lower < observed & upper > observed)
   int.width <- with(pred_data, upper - lower)
-  
+
   n_obs <- nrow(pred_data)
-  
+
   mean.mae.mean.predictor       <- mean(abs_diff_mean)
   mean.mae.median.predictor     <- mean(abs_diff_median)
   std.mae.mean.predictor        <- sqrt(var(abs_diff_mean)/n_obs)
@@ -343,7 +343,7 @@ predict.ngme <- function(object,
 
   mean.crps      <- mean(pred_data$crps)
   std.crps       <- sqrt(var(pred_data$crps)/n_obs)
-  
+
   mean.int.width <- mean(int.width)
   std.int.width  <- sqrt(var(int.width)/n_obs)
 
@@ -370,7 +370,7 @@ predict.ngme <- function(object,
                 locs = object$locs,
                 id_list = id_list
                 )
-  
+
   class(out) <- "predict.ngme"
   out
 

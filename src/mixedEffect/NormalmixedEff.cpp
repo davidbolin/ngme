@@ -168,6 +168,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     for( Rcpp::List::iterator it = Br_list.begin(); it != Br_list.end(); ++it ) {
       Br[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
     }
+
     grad_beta_r.setZero(Br[0].cols());
     grad_beta_r2.setZero(Br[0].cols());
 
@@ -218,6 +219,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     dSigma_vech.setZero(Sigma_vech.size());
     dSigma_vech_old.setZero(Sigma_vech.size());
     invSigma  = Sigma.inverse();
+
     if( init_list.containsElementNamed("U" ))
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
     else

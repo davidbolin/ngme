@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 0;
+  int debug = 1;
   //**********************************
   //      basic parameter
   //**********************************
@@ -315,6 +315,9 @@ List predictLong_cpp(Rcpp::List in_list)
         mixobj->Bf[i] = fixed_effect.middleRows(obs_ind[i](ipred,0),obs_ind[i](ipred,1));
       }
       for(int ii = 0; ii < nSim + nBurnin; ii ++){
+        if(debug){
+          Rcpp::Rcout << "Prediction number = " << ipred << ", sample = "<< ii<< "\n";
+        }
         Eigen::VectorXd res = Y;
         if(n_obs>0){
           mixobj->remove_cov(i, res);
@@ -417,6 +420,9 @@ List predictLong_cpp(Rcpp::List in_list)
           Rcpp::Rcout << "Sample variances \n";
         }
         if(use_process == 1){
+          if(debug){
+            Rcpp::Rcout << "nobs = " << n_obs << "\n";
+          }
           if(n_obs>0){
               process->sample_V(i, rgig[rank], Ki);
             } else {

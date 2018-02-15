@@ -1,20 +1,20 @@
-#' 
+#'
 #' @title Standardise covariates.
-#' 
+#'
 #' @description A function to standardise covariates to avoid numerical issues.
 #' @param B.list A numerical list that contains covariate matrices.
-#' 
-#' @details This function is supplementary and internally used. 
-#' 
+#'
+#' @details This function is supplementary and internally used.
+#'
 #' @return A list of standardised covariate matrices.
-#' 
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   standardize.covariates(...)
 #'   }
-#'  
+#'
 
 standardize.covariates <- function(B.list)
 {
@@ -39,21 +39,21 @@ standardize.covariates <- function(B.list)
 
 #' @title Scale fixed effects coefficients.
 #'
-#' @description A function to scale the fixed effects coefficients. 
+#' @description A function to scale the fixed effects coefficients.
 #'
 #' @param beta A numerical matrix of fixed effects estimates (in original scale).
 #' @param B.list A numerical list of re-scaled covariate matrices.
-#' @param inc A logical variable; 
-#'    \code{"TRUE"} indicates the use of inverse re-scaling 
-#'    (meaningful to use if \code{"sigma"} is given in transformed scale), 
-#'    \code{"FALSE"} no use of inverse re-scaling. 
-#'    
-#' @details This function is supplementary and internally used. 
-#' 
+#' @param inc A logical variable;
+#'    \code{"TRUE"} indicates the use of inverse re-scaling
+#'    (meaningful to use if \code{"sigma"} is given in transformed scale),
+#'    \code{"FALSE"} no use of inverse re-scaling.
+#'
+#' @details This function is supplementary and internally used.
+#'
 #' @return A matrix of scaled fixed effects coefficients.
-#' 
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   scale.beta(...)
@@ -80,18 +80,18 @@ scale.beta <- function(beta, B.list, inv = FALSE)
 }
 
 #' @title Scale covariance matrix.
-#' 
+#'
 #' @description A function to scale covariance matrix.
-#' 
+#'
 #' @param sigma A numerical matrix of covariance matrix (in original scale).
 #' @inheritParams scale.beta
-#'    
-#' @details This function is supplementary and internally used. 
-#' 
+#'
+#' @details This function is supplementary and internally used.
+#'
 #' @return A list of scaled covariance matrix.
-#' 
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   scale.sigma(...)
@@ -108,19 +108,19 @@ scale.sigma <- function(sigma, B.list, inv = FALSE)
 }
 
 #' @title Group individuals.
-#' 
+#'
 #' @description A function to group individuals based on fixed effect matrix B.
-#' 
+#'
 #' @param B A numeric list that contains fixed effects covariate matrices
-#' 
+#'
 #' @return Returns a list of groups and a vector free.
-#' 
-#' @details This function is supplementary and internally used. 
+#'
+#' @details This function is supplementary and internally used.
 #' Each element in groups contains a vector of elements sufficient to make t(B)*B full rank.
 #  The elments in free can be sampled freely given that one of the vectors in groups is sampled
-#' 
+#'
 #' @seealso \code{\link{estimateLong}}
-#' 
+#'
 #' @examples
 #'   \dontrun{
 #'   scale.fixed(...)
@@ -185,4 +185,33 @@ group.fixed <- function(B)
   free.samples = which(grouped<=0)
   return(list(groups = groups,
               free = free.samples-1))
+}
+
+#Crop all lists in an ngme object to only those in ind.
+crop.lists <- function(object,ind){
+  object$measurementError_list$Vs <- object$measurementError_list$Vs[ind]
+
+  object$mixedEffect_list$B_random <- object$mixedEffect_list$B_random[ind]
+  object$mixedEffect_list$B_fixed <- object$mixedEffect_list$B_fixed[ind]
+  object$mixedEffect_list$U <- t(as.matrix(object$mixedEffect_list$U[ind]))
+
+  object$operator_list$loc <-  object$operator_list$loc[ind]
+  object$operator_list$h <-  object$operator_list$h[ind]
+  if(object$operator_list$type == "matern"){
+    object$operator_list$C <-  object$operator_list$C[ind]
+    object$operator_list$Ci <-  object$operator_list$Ci[ind]
+    object$operator_list$G <-  object$operator_list$G[ind]
+    object$operator_list$Ce <-  object$operator_list$Ce[ind]
+  } else if(object$operator_list$type == "fd2"){
+    object$operator_list$Q <-  object$operator_list$Q[ind]
+  }
+
+  if(object$use_process){
+    object$processes_list$X <- object$processes_list$X[ind]
+    object$processes_list$V <- object$processes_list$V[ind]
+  }
+
+  object$Y <- object$Y[ind]
+  object$locs <- object$locs[ind]
+  return(object)
 }
