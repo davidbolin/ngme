@@ -295,11 +295,11 @@ void GHProcess::sample_V(const int i ,
 {
 
   Eigen::VectorXd KX = K * Xs[i];
-  Rcpp::Rcout << KX << "\n";
+
 	double nu_in = nu;
 	if( type_process == "NIG")
 		nu_in = sqrt(nu_in);
-	Rcpp::Rcout << "sample V post\n";
+
  	Vs[i] = sampleV_post(rgig,
                  h[i],
                  KX,
@@ -307,7 +307,6 @@ void GHProcess::sample_V(const int i ,
                  mu,
                  nu_in,
                  type_process);
- 	Rcpp::Rcout << "Vs = "<< Vs[i] << "\n";
 
 
   if(useEV)

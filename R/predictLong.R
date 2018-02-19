@@ -287,7 +287,6 @@ predictLong <- function( Y,
     input <- setseed_ME(input, seed)
 
   output <- predictLong_cpp(input)
-  cat("C code done\n")
   out_list <- list()
 
 

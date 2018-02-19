@@ -296,7 +296,7 @@ double lu_solver::trace(Eigen::SparseMatrix<double,0,int>& M)
 }
 double lu_solver::trace2(SparseMatrix<double,0,int>&, SparseMatrix<double,0,int>& g)
 {
-  Rcpp::Rcout << "lu_solver::trace2 not implimented\n";
+  Rcpp::Rcout << "lu_solver::trace2 not implemented\n";
   throw;
 }
  inline double lu_solver::logdet()
