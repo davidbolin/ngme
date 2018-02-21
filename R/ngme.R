@@ -71,8 +71,10 @@
 #'       to be used in each gradient subsampling weighted by gradient.
 #'     \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
 #'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
-#'     \item \code{estimate.fisher} A logical variable for whether Fisher-Information matrix
-#'       to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
+#'     \item \code{estimate.fisher} A logical variable or numeric scalar 
+#'      for whether Fisher-Information matrix
+#'       to be obtained; \code{"FALSE"} indicates do not obtain, \code{1} expected Fisher 
+#'       matrix, \code{2} for observed.
 #'     \item \code{individual.sigma} A logical variable for specifying patient-specific mixture
 #'       random variable for the error-term; \code{"FALSE"} indicates do not obtain,
 #'       \code{"TRUE"} obtain.
@@ -120,7 +122,7 @@ ngme <- function(fixed,
                                  subsample.type = 4,
                                  pSubsample2 = 0.3,
                                  standardize.mixedEffects = FALSE,
-                                 estimate.fisher = TRUE,
+                                 estimate.fisher = 2,
                                  individual.sigma = FALSE),
                  controls.init = list(learning.rate.init = 0,
                                       polyak.rate.init = 0.1,
@@ -161,7 +163,7 @@ ngme <- function(fixed,
                           subsample.type = 4,
                           pSubsample2 = 0.3,
                           standardize.mixedEffects = FALSE,
-                          estimate.fisher = TRUE,
+                          estimate.fisher = 2,
                           individual.sigma = FALSE
                           )
     for(i in 1:length(controls.full)){
@@ -466,7 +468,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(controls$estimate.fisher){
+      if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,
                               fit$mixedEffect_list,
@@ -489,7 +491,7 @@ ngme <- function(fixed,
                               pSubsample2 = controls$pSubsample2,
                               seed = controls$seed,
                               standardize.mixedEffects = controls$standardize.mixedEffects,
-                              estimate_fisher = TRUE
+                              estimate_fisher = controls$estimate.fisher
                               )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
@@ -525,7 +527,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(controls$estimate.fisher){
+      if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,
                               fit$mixedEffect_list,
@@ -548,7 +550,7 @@ ngme <- function(fixed,
                               pSubsample2 = controls$pSubsample2,
                               seed = controls$seed,
                               standardize.mixedEffects = controls$standardize.mixedEffects,
-                              estimate_fisher = TRUE
+                              estimate_fisher = controls$estimate.fisher
                               )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
@@ -633,19 +635,19 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(controls$estimate.fisher){
+      if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,
                               fit$mixedEffect_list,
                               fit$measurementError_list,
                               fit$processes_list,
                               fit$operator_list,
-                              nIter = nIter,
+                              nIter = controls$nIter.fisher,
                               silent = silent,
                               learning_rate = controls$learning.rate,
                               polyak_rate = -1,
                               nBurnin = controls$nBurnin,
-                              nSim = controls$nSim,
+                              nSim = controls$nSim.fisher,
                               pSubsample = controls$pSubsample,
                               nPar_burnin = controls$nPar.burnin,
                               step0 = controls$step0,
@@ -656,7 +658,7 @@ ngme <- function(fixed,
                               pSubsample2 = controls$pSubsample2,
                               seed = controls$seed,
                               standardize.mixedEffects = controls$standardize.mixedEffects,
-                              estimate_fisher = TRUE
+                              estimate_fisher = controls$estimate.fisher
                               )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
@@ -686,17 +688,17 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      if(controls$estimate.fisher){
+      if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,
                               fit$mixedEffect_list,
                               fit$measurementError_list,
                               learning_rate = controls$learning.rate,
-                              nIter = nIter,
+                              nIter = controls$nIter.fisher,
                               silent = silent,
                               polyak_rate = -1,
                               nBurnin = controls$nBurnin,
-                              nSim = controls$nSim,
+                              nSim = controls$nSim.fisher,
                               pSubsample = controls$pSubsample,
                               nPar_burnin = controls$nPar.burnin,
                               step0 = controls$step0,
@@ -707,7 +709,7 @@ ngme <- function(fixed,
                               pSubsample2 = controls$pSubsample2,
                               seed = controls$seed,
                               standardize.mixedEffects = controls$standardize.mixedEffects,
-                              estimate_fisher = TRUE
+                              estimate_fisher = controls$estimate.fisher
                               )
         fit$FisherMatrix <- fit.f$FisherMatrix
       }
@@ -823,7 +825,7 @@ ngme <- function(fixed,
   }
 
   # checking Fisher Matrix is estimated?
-  if(controls$estimate.fisher == TRUE){
+  if(controls$estimate.fisher > 0){
 
     # names for fixed effects in Fisher Matrix
     fisher_est <- fit$FisherMatrix
