@@ -68,7 +68,8 @@ used by the stochastic gradient.}
   \item \code{commond.grid} A logical value for creating same grids for different 
   subjects. \code{"TRUE"} indicates common grid, \code{"FALSE"} uncommon grid. 
   \item \code{extend} A numeric value or two element numeric vector for  
-  extending the meshes beyond the measurement locations. If \code{extend} 
+  extending the meshes beyond the measurement locations with the specified 
+  percentage(s). If \code{extend} 
   is specified by a single value, it indicates extending the mesh towards 
   left and right by the same amount. If specified by a two element vector, 
   whilst the first element is for extending towards the left, the second is 
@@ -173,7 +174,7 @@ This function is a user-friendly wrapper that calls the \code{estimateLong} func
  
   # fit the model with normal assumption for random effects, process and error 
   # covariance function is integrated random walk        
-  seed(123)
+  set.seed(123)
   fit_normal_normal_normal_fd2 <- ngme(fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
                                        random = ~ 1|id,
                                        data = srft_data,
@@ -197,7 +198,7 @@ This function is a user-friendly wrapper that calls the \code{estimateLong} func
                                                        )
                                        )
 # fit the model with NIG assumption for all the random components                                       
-set.seed(seed)
+set.seed(123)
 fit_nig_nig_nig_fd2 <- update(fit_normal_normal_normal_fd2,
                               reffects = "NIG",
                               process = c("NIG", "fd2"),
