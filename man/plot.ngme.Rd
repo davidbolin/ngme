@@ -4,7 +4,8 @@
 \alias{plot.ngme}
 \title{Trace plots.}
 \usage{
-\method{plot}{ngme}(object, param = "fixed", n.exclude = 0, ...)
+\method{plot}{ngme}(object, param = "fixed", n.exclude = 0, index = NULL,
+  ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"ngme"} function.}

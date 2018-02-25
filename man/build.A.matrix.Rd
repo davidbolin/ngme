@@ -11,14 +11,14 @@ build.A.matrix(operator_list, locs, i)
 
 \item{locs}{A list of measurement locations.}
 
-\item{i}{A numerical value for the index in \code{"locs"} for 
+\item{i}{A numerical value for the index in \code{"locs"} for
 which the observation matrix should be computed.}
 }
 \value{
 An observation matrix.
 }
 \description{
-Computes observation matrix linking basis functions to 
+Computes observation matrix linking basis functions to
    measurement locations.
 }
 \details{
@@ -28,7 +28,7 @@ This function is supplementary and internally used.
   \dontrun{
   build.A.matrix(...)
   }
-  
+
 }
 \seealso{
 \code{\link{estimateLong}}

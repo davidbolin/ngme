@@ -14,7 +14,7 @@ predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}
 
-\item{locs}{A numeric list that contains the timings at which the outcomes 
+\item{locs}{A numeric list that contains the timings at which the outcomes
 are collected.}
 
 \item{pInd}{A numeric vector that contains the indices of longitudinal
@@ -60,19 +60,19 @@ calculate, \code{"FALSE"} do not calculate.}
 \item{crps.skip}{A numerical value, say a, that indicates every \emph{a}th
 element of the sample to be used to compute the crps score.}
 
-\item{mixedEffect_list}{A list of inputs for random effects. 
+\item{mixedEffect_list}{A list of inputs for random effects.
 \itemize{
 \item \code{noise} The distribution of the mixed effects.
-\item \code{B_random} A list that contains the random effect 
+\item \code{B_random} A list that contains the random effect
    covariates (needs to be matrix, can be NULL).
-\item \code{B_fixed} A list that contains the fixed effect 
+\item \code{B_fixed} A list that contains the fixed effect
    covariates (needs to be matrix, can be NULL).
-\item \code{beta_random} Initial values for the parameters of the 
+\item \code{beta_random} Initial values for the parameters of the
    random effects (mean parameter) (if not specified set to zero).
-\item \code{beta_fixed} Initial  values for the parameters of the 
+\item \code{beta_fixed} Initial  values for the parameters of the
    fixed effects (if not specified set to zero).
-\item \code{Sigma} Initial values for the parameters of the 
-   variance-covariance matrix of the random effects 
+\item \code{Sigma} Initial values for the parameters of the
+   variance-covariance matrix of the random effects
    (if not specified set to I ).
 \item \code{nu} Shape parameter for noise (NIG only)
 \item \code{mu} Shift parameter for noise (NIG only)

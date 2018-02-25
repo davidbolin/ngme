@@ -22,7 +22,7 @@ This function is supplementary and internally used.
   \dontrun{
   standardize.covariates(...)
   }
- 
+
 }
 \seealso{
 \code{\link{estimateLong}}

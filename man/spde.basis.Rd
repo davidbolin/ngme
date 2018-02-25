@@ -4,19 +4,20 @@
 \alias{spde.basis}
 \title{Compute FEM matrices.}
 \usage{
-spde.basis(x, right.boundary = "neumann", left.boundary = "neumann")
+spde.basis(x, right.boundary = "neumann", left.boundary = "neumann",
+  compute.Ce = FALSE)
 }
 \arguments{
 \item{x}{A numeric vector containing node locations.}
 
-\item{right.boundary}{A character string denoting the 
+\item{right.boundary}{A character string denoting the
 boundary condition for the right boundary.}
 
-\item{left.boundary}{A character string denoting the 
+\item{left.boundary}{A character string denoting the
 boundary condition for the left boundary.}
 }
 \value{
-Returns a list that contains mass matrix, stiffness matrix, 
+Returns a list that contains mass matrix, stiffness matrix,
    and some other related quantities.
 }
 \description{
@@ -29,7 +30,7 @@ This is a supplementary function and internally used.
   \dontrun{
   spde.basis(...)
   }
- 
+
 }
 \seealso{
 \code{\link{create_matrices_Matern}}

@@ -15,22 +15,22 @@ estimateLong(Y, locs, mixedEffect_list, measurment_list, processes_list,
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}
 
-\item{locs}{A numeric list that contains the timings at which the outcomes 
+\item{locs}{A numeric list that contains the timings at which the outcomes
 are collected.}
 
-\item{mixedEffect_list}{A list of inputs for random effects. 
+\item{mixedEffect_list}{A list of inputs for random effects.
 \itemize{
 \item \code{noise} The distribution of the mixed effects.
-\item \code{B_random} A list that contains the random effect 
+\item \code{B_random} A list that contains the random effect
    covariates (needs to be matrix, can be NULL).
-\item \code{B_fixed} A list that contains the fixed effect 
+\item \code{B_fixed} A list that contains the fixed effect
    covariates (needs to be matrix, can be NULL).
-\item \code{beta_random} Initial values for the parameters of the 
+\item \code{beta_random} Initial values for the parameters of the
    random effects (mean parameter) (if not specified set to zero).
-\item \code{beta_fixed} Initial  values for the parameters of the 
+\item \code{beta_fixed} Initial  values for the parameters of the
    fixed effects (if not specified set to zero).
-\item \code{Sigma} Initial values for the parameters of the 
-   variance-covariance matrix of the random effects 
+\item \code{Sigma} Initial values for the parameters of the
+   variance-covariance matrix of the random effects
    (if not specified set to I ).
 \item \code{nu} Shape parameter for noise (NIG only)
 \item \code{mu} Shift parameter for noise (NIG only)
@@ -71,9 +71,9 @@ gradient iteration.}
 -1: inactive, 0: pure mean.}
 
 \item{subsample.type}{A numeric value for the type of subsampling;
-1: uniform sampling, 
+1: uniform sampling,
 2: sample size weighted,
-3: weighted sampling by gradient size, 
+3: weighted sampling by gradient size,
 4: grouped sub-sampler.}
 
 \item{nPar_burnin}{A numeric value; "M-step" updates will be used until this
@@ -103,12 +103,12 @@ to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
 A list of fitted results.
 }
 \description{
-A function that estimates parameters by 
+A function that estimates parameters by
    calling the \code{"estimateLong_cpp()"} function.
 }
 \details{
-This function calls \code{"estimateLong_cpp()"} internally. 
-   It is wrapped by \code{"ngme"}, and is not advised to 
+This function calls \code{"estimateLong_cpp()"} internally.
+   It is wrapped by \code{"ngme"}, and is not advised to
    be used alone.
 }
 \examples{

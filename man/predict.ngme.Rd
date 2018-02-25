@@ -5,15 +5,15 @@
 \title{Prediction.}
 \usage{
 \method{predict}{ngme}(object, id = NULL, type = "Filter",
-  quantiles = c(0.025, 0.975), controls = list(return.samples = TRUE,
+  quantiles = c(0.025, 0.975), controls = list(return.samples = FALSE,
   predict.derivatives = NULL, excursions = NULL, crps = TRUE, crps.skip = 1,
-  nSim = 1000, nBurnin = 100, silent = TRUE))
+  nSim = 1000, nBurnin = 100, silent = TRUE, n.cores = 1, batch.size = 100))
 }
 \arguments{
 \item{object}{A fitted object obtained by calling \code{"ngme"}.}
 
 \item{id}{A numeric vector containing the ID's of the subjects for whom
-predictions are to be obtained. Default is set to \code{"NULL"} 
+predictions are to be obtained. Default is set to \code{"NULL"}
 indicating perform predictions for all the subjects.}
 
 \item{type}{A character string for the type of prediction: \code{"Filter"} for
@@ -24,37 +24,39 @@ of the predictions to be calculated.}
 
 \item{controls}{A list of control variables.
 \itemize{
-\item \code{"return.samples"} A logical variable for returning the 
-  Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates 
+\item \code{"return.samples"} A logical variable for returning the
+  Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates
   return, \code{"FALSE"} do not return.
-\item \code{"predict.derivatives"} A logical variable (????) to obtain 
+\item \code{"predict.derivatives"} A logical variable (????) to obtain
   predictions for the derivatives of the process
-\item \code{"excursions"} A list of excursion probabilities to compute. 
-  Each list should contain: 
+\item \code{"excursions"} A list of excursion probabilities to compute.
+  Each list should contain:
   \itemize{
   \item \code{"type"} - type of excursion '>' or '<',
   \item \code{"level"} - level to compute excursion probability for,
-  \item \code{"process"} - which expression for the model, 
-  \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects, 
-  \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.  
-  \code{'X'} for \eqn{x\alpha + dU + W}, 
-  \code{'W'} for \eqn{W}, 
-  \code{'Y'} for \eqn{x\alpha + dU + W + Z}, 
-  \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W}, 
-  and  
+  \item \code{"process"} - which expression for the model,
+  \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
+  \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
+  \code{'X'} for \eqn{x\alpha + dU + W},
+  \code{'W'} for \eqn{W},
+  \code{'Y'} for \eqn{x\alpha + dU + W + Z},
+  \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W},
+  and
   \code{'Wderivative'} for the first derivariate of \eqn{W}.
-  } 
-\item \code{"crps"} A logical variable for calculating 
-  continuous ranked probability score (CRPS); \code{"TRUE"} indicates 
+  }
+\item \code{"crps"} A logical variable for calculating
+  continuous ranked probability score (CRPS); \code{"TRUE"} indicates
   calculate, \code{"FALSE"} do not calculate.
-\item \code{"crps.skip"} A numerical value, say a, that indicates every \emph{a}th 
+\item \code{"crps.skip"} A numerical value, say a, that indicates every \emph{a}th
   element of the sample to be used to compute the crps score.
-\item \code{"nSim"} A numerical value for the number of samples for the Gibbs sampler 
-  to obtain the predictions. 
-\item \code{"nBurnin"} A numeric value for the number of samples that are 
+\item \code{"nSim"} A numerical value for the number of samples for the Gibbs sampler
+  to obtain the predictions.
+\item \code{"nBurnin"} A numeric value for the number of samples that are
   discarded as burn-in whilst calculating the predictions.
 \item \code{silent} A logical value for printing the details;
     \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
+\item \code{n.cores} Number of cores to use for parallell computations (default =1);
+\item \code{batch.size} Number of patients to include in each parallell batch;
 }}
 }
 \value{
@@ -64,7 +66,7 @@ A list of output.
 Obtains predicted values based on filtering and smoothing distributions.
 }
 \details{
-This function is a wrapper function that calls 
+This function is a wrapper function that calls
    \code{"predictLong"} internally.
 }
 \examples{

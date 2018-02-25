@@ -9,7 +9,7 @@ operator.startvalues(Y, locs, mixedEffect_list, operator_list, measurement_list)
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}
 
-\item{locs}{A numeric list that contains the timings at which the outcomes 
+\item{locs}{A numeric list that contains the timings at which the outcomes
 are collected.}
 
 \item{mixedEffect_list}{A list for random effects.}
@@ -19,7 +19,7 @@ are collected.}
 \item{measurement_list}{A list for measurement error.}
 }
 \value{
-A list for operator. 
+A list for operator.
    See e.g. \code{"operator_list"} in \code{"estimateLong"}.
 }
 \description{
@@ -29,5 +29,5 @@ A function to obtain initials for the operator.
   \dontrun{
   operator.startvalues(...)
   }
-  
+
 }
