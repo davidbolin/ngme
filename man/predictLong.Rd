@@ -119,7 +119,7 @@ A function to obtain predictions based on either filtering
 }
 \details{
 This function calls \code{"predictLong_cpp"} internally.
-   It is wrapped by \code{"nglda_predict"}, and not advised to be used.
+   It is wrapped by \code{"predict.ngme"}, and not advised to be used.
 }
 \examples{
   \dontrun{
@@ -127,5 +127,5 @@ This function calls \code{"predictLong_cpp"} internally.
   }
 }
 \seealso{
-\code{\link{nglda_predict}}
+\code{\link{predict.ngme}}
 }
