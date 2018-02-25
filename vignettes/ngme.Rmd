@@ -103,9 +103,9 @@ $$
 $$
 with 
 
-- bivariate NIG distributed $U_{0i}$ and $U_{1i}$,
-- GAL distributed $W_i(\cdot)$ with Matern covariance family,
-- t distributed $Z_{ij}$.
+- Normally distributed $U_{0i}$,
+- Normally distributed $W_i(\cdot)$ with integrated Random Walk,
+- Normally distributed $Z_{ij}$.
 
 ```{r, echo = TRUE}
    set.seed(123)
@@ -133,11 +133,6 @@ with
                                     alpha = 0.01
                                     )
                     )
-```
-Typing the fitted object's name, `srft_fit`, displays a conscise list of results:
-
-```{r, echo = TRUE}
-srft_fit
 ```
 
 `summary` function provides a more thorough list of results:
