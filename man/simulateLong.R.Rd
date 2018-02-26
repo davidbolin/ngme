@@ -15,6 +15,14 @@ simulateLong.R(loc, theta, n = 100, B = NULL, noise = c("Normal", "NIG",
 
 \item{locs}{list of observation locations}
 }
+\value{
+A list of outputs.
+}
 \description{
-Simulating longitudal model using only R functions
+STUFF
+}
+\examples{
+  \dontrun{
+  simulateLong.R(...)
+  }
 }

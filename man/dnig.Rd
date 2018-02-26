@@ -25,7 +25,7 @@ A function to calculate the value of the probability density
    function of Normal inverse Gaussian distribution.
 }
 \details{
-WE NEED PDF OF NIG(delta, mu, nu, sigma).
+\eqn{f(x|\delta, \mu, \nu, \sigma) =} STUFF
 }
 \examples{
   \dontrun{

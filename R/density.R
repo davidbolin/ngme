@@ -7,7 +7,7 @@
 #' @param mu    A numeric value for the shift parameter.
 #' @param nu    A numeric value for the shape parameter.
 #' @param sigma A numeric value for the scaling parameter.
-#' @details WE NEED PDF OF NIG(delta, mu, nu, sigma).
+#' @details \eqn{f(x|\delta, \mu, \nu, \sigma) =} STUFF 
 #' @return A list of outputs.
 #' @examples
 #'   \dontrun{

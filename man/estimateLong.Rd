@@ -100,7 +100,7 @@ to estimate the gradient.}
 to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.}
 }
 \value{
-A list of fitted results.
+A list of output.
 }
 \description{
 A function that estimates parameters by

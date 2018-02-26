@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{simulateLongPrior}
 \alias{simulateLongPrior}
-\title{simulate data from the prior model}
+\title{Simulates data from the prior model.}
 \usage{
 simulateLongPrior(Y, locs, mixedEffect_list, measurment_list, processes_list,
   operator_list)
@@ -20,6 +20,17 @@ simulateLongPrior(Y, locs, mixedEffect_list, measurment_list, processes_list,
 
 \item{process_list}{process list}
 }
+\value{
+A list of outputs.
+}
 \description{
-simulate data from the prior model
+
+}
+\details{
+STUFF
+}
+\examples{
+  \dontrun{
+  simulateLongPrior(...)
+  }
 }

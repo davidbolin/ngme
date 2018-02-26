@@ -27,5 +27,5 @@ STUFF
 
 }
 \seealso{
-\code{\link{ngld_est}}, \code{\link{estimateLong}}, \code{\link{estimateME}}
+\code{\link{estimateLong}}
 }
