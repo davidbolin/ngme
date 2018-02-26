@@ -15,9 +15,9 @@
 #'   }
 #'
 
-create.meshes.1d <- function(locs,n,common.grid,extend = NULL)
+create.meshes.1d <- function(locs, n, common.grid, extend = NULL)
 {
-  loc <- h <- n.list <-list()
+  loc <- h <- n.list <- list()
   if(missing(extend) | is.null(extend)){
     extend  = c(0,0)
   } else if(length(extend) == 1) {
@@ -153,6 +153,26 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
 }
 
 
+#' @title Create 1d mesh from observation locations adaptively.
+#'
+#' @description A function to create mesh for 1d FEM discretization adaptively.
+#' @param locs A list of measurement locations.
+#' @param max.dist The largest distance between nodes in the mesh
+#' @param cutoff Merge nodes in x that are closer than cutoff
+#' @inheritParams create.meshes.1d
+#' @param n.cores A numeric value for the number of cores to be used.
+#'
+#' @return Returns a list of output.
+#'
+#' @details This is a supplementary function to be used internally by other functions.
+#'
+#' @seealso \code{\link{create.meshes.1d}}
+#'
+#' @examples
+#'   \dontrun{
+#'   generate.adaptive.meshes.1d(...)
+#'   }
+#'
 generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,common.grid=FALSE,extend = NULL,n.cores = 1)
 {
   loc <- h <- hs <- n <- list()

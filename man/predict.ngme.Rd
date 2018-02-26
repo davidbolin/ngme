@@ -16,10 +16,11 @@
 predictions are to be obtained. Default is set to \code{"NULL"}
 indicating perform predictions for all the subjects.}
 
-\item{type}{A character string for the type of prediction: \code{"Filter"} for
-filtering, \code{"Smoothing"} for smoothing.}
+\item{type}{A character string for the type of prediction: \code{"Nowcast"} 
+for nowcasting, \code{"Filter"} for
+one step-ahead forecasting, \code{"Smoothing"} for smoothing.}
 
-\item{quantiles}{A two-elemnent vector that contains the quantiles
+\item{quantiles}{A two-element vector that contains the quantiles
 of the predictions to be calculated.}
 
 \item{controls}{A list of control variables.
@@ -27,22 +28,31 @@ of the predictions to be calculated.}
 \item \code{"return.samples"} A logical variable for returning the
   Monte Carlo samples used to compute the predictions; \code{"TRUE"} indicates
   return, \code{"FALSE"} do not return.
-\item \code{"predict.derivatives"} A logical variable (????) to obtain
-  predictions for the derivatives of the process
-\item \code{"excursions"} A list of excursion probabilities to compute.
-  Each list should contain:
+\item \code{"predict.derivatives"} A list for calculating excursion probabilities
   \itemize{
-  \item \code{"type"} - type of excursion '>' or '<',
-  \item \code{"level"} - level to compute excursion probability for,
-  \item \code{"process"} - which expression for the model,
-  \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
-  \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
-  \code{'X'} for \eqn{x\alpha + dU + W},
-  \code{'W'} for \eqn{W},
-  \code{'Y'} for \eqn{x\alpha + dU + W + Z},
-  \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W},
+  \item \code{Bfixed} A list of fixed effects covariate matrices at \eqn{t_{ij}} + \code{delta}.
+  \item \code{Brandom} A list of random effects covariate matrices at \eqn{t_{ij}}+ \code{delta}.
+  \item \code{delta} A numeric value indicating \eqn{\Delta}t for calculating the derivative numerically.
+  }
+\item \code{"excursions"} A list of excursion probabilities to compute.
+   Each list should contain:
+  \itemize{
+  \item \code{"type"} Type of excursion for indicating calculation of the probabilities, 
+   greater than or less than a threshol. User should specify "greater than" by \code{">"} 
+   "less than" by \code{"<"}.
+  \item \code{"level"} A numeric value for the threshold compute excursion probability for.
+  \item \code{"process"} A character string that for which component of the model 
+   the excursion probabilities to be calculated.
+  \itemize{
+  \item \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
+  \item \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
+  \item \code{'X'} for \eqn{x\alpha + dU + W},
+  \item \code{'W'} for \eqn{W},
+  \item \code{'Y'} for \eqn{x\alpha + dU + W + Z},
+  \item \code{'Xderivative'} for the first derivarive of \eqn{x\alpha + dU + W},
   and
-  \code{'Wderivative'} for the first derivariate of \eqn{W}.
+  \item \code{'Wderivative'} for the first derivariate of \eqn{W}.
+  }
   }
 \item \code{"crps"} A logical variable for calculating
   continuous ranked probability score (CRPS); \code{"TRUE"} indicates
@@ -55,8 +65,8 @@ of the predictions to be calculated.}
   discarded as burn-in whilst calculating the predictions.
 \item \code{silent} A logical value for printing the details;
     \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
-\item \code{n.cores} Number of cores to use for parallell computations (default =1);
-\item \code{batch.size} Number of patients to include in each parallell batch;
+\item \code{n.cores} Number of cores to use for paralell computations, default is set to 1.
+\item \code{batch.size} Number of subjects to include in each paralell batch.
 }}
 }
 \value{
