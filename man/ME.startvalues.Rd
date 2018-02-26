@@ -30,5 +30,5 @@ The function treats random effects as fixed effects to
 
 }
 \seealso{
-\code{\link{estimate.wrapper}}
+\code{\link{ngme}}
 }

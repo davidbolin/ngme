@@ -24,6 +24,7 @@
 - all the params of gig can be estimated - future work
 
 ## NOTES -- OA
+- allow different locs in predict than those from the observed data
 - continue with predict.derivative!!!
 - setseed_ME - explanations to be added
 - put examples

@@ -177,12 +177,8 @@ pred <- predict(srft_fit,
 
 ```
 
-A summary of results including accuracy measures can be viewed by
-
-```{r, echo = TRUE}
-pred
-```
-
+A summary of results including accuracy measures can be viewed by 
+calling the name of the predicted object. 
 Predictions for a selected subject, e.g. the first subject in the 
 `srft_data_sub`, could be plotted using
 
@@ -194,5 +190,57 @@ In this plot, dots are observed data, black lines is the mean
 of the predictive distribution, and red lines are the 95\% 
 prediction intervals. 
 
-MORE STUFF??? MAYBE WITH REGARDS PREDICTIONS, EXCURSIONS, MANIPULATIONS OF PREDICTIONS...
+Exceedence probabilities, for example losing kidney function 
+at least at a relative rate of 5\% in a year, 
+$P(\frac{\partial Y_{ik}^*}{\partial t} < -0.05|Y_{i1}, \ldots, Y_{ik})$,
+could be calculated using the nowcasting distributions. 
+The following script illustrates obtaining exceedence probabilities. 
 
+```{r, echo = TRUE}
+ excursion_ids <- unique(srft_data_sub$id)[1]
+
+ delta <- 0.01
+ 
+ Bf_pred <- Br_pred <- list()
+ 
+ for(i in 1:length(excursion_ids)){
+   
+   data_i <- srft_data[srft_data$id == excursion_ids[i], ]
+   
+   n_i <- nrow(data_i)
+   
+   Br_pred_i <- matrix(1, nrow = n_i, ncol = 1)
+
+   Bf_pred_i <- cbind(data_i$sex,
+                      data_i$bage,
+                      data_i$fu + 0.01, 
+                      pmax(0, data_i$bage + data_i$fu + 0.01 - 56.5)
+                      )
+   
+   Br_pred[[i]] <- Br_pred_i
+   Bf_pred[[i]] <- Bf_pred_i
+   
+ }
+ 
+ derivative_list <- list(Bfixed = Bf_pred,
+                         Brandom = Br_pred,
+                         delta = delta)
+ 
+ set.seed(123)
+ excursions_normal <- 
+   predict(srft_fit,
+           id = excursion_ids,
+           controls = list(nSim = 100,
+                           nBurnin = 100,
+                           predict.derivatives = derivative_list,
+                           excursions = list(list(type = '<', 
+                                                  level = -0.05, 
+                                                  process = 'Xderivative'))
+                           ),
+           type = "Nowcast"
+           )
+plot(excursions_normal, id = excursion_ids[1], plot_excursions = TRUE,
+     type = "o", pch = 19) 
+ 
+```
+ 

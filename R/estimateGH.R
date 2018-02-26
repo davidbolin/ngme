@@ -234,7 +234,7 @@ setseed_ME <- function(input, seed)
 #' @details The function treats random effects as fixed effects to
 #'    obtain start values using ordinary least squares (OLS).
 #'
-#' @seealso \code{\link{estimate.wrapper}}
+#' @seealso \code{\link{ngme}}
 #'
 #' @examples
 #'   \dontrun{
