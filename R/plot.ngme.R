@@ -10,8 +10,10 @@
 #'   \code{"random"} for time-invariant random effects,
 #'   \code{"process"} for stochastic process,
 #'   \code{"error"} for error term.
-#' @param n.exclude A numeric value for excluding a portion of the 
-#'    trajectory (from left) for plotting.   
+#' @param n.exclude A numeric value for excluding a portion of the
+#'    trajectory (from left) for plotting.
+#' @param index When plotting fixed effects, the indices of the effects to plot.
+
 #' @param ... Additional arguments; none used currently.
 #'
 #' @seealso \code{\link{ngme}}
@@ -31,12 +33,12 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
   }
 
   if(param == "fixed"){
-    
+
     if(n.exclude == 0){
       if(is.null(index) == TRUE){
         plot.ts(object$fixed_est_vec, main = "Fixed effects", xlab = "Iteration")
       }else{
-        plot.ts(object$fixed_est_vec[, index], main = "Fixed effects", xlab = "Iteration")  
+        plot.ts(object$fixed_est_vec[, index], main = "Fixed effects", xlab = "Iteration")
         }
     }else{
       if(is.null(index) == TRUE){
@@ -53,8 +55,8 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
     if(ncol_Sigma > 1){
       cols_omit         <- unlist(lapply(1:(ncol_Sigma-1), function(i) (ncol_Sigma * i + 1):(ncol_Sigma * i + i)))
       ranef_results_vec <- object$ranef_Sigma_vec
-      ranef_results_vec <- ranef_results_vec[, -cols_omit]      
-      
+      ranef_results_vec <- ranef_results_vec[, -cols_omit]
+
       colnames_Sigma_est          <- colnames(summary(object)$random_results$Sigma_est)
       #colnames_Sigma_est          <- substr(colnames_Sigma_est, 1, 3)
       colnames_Sigma_est_ext      <- paste(rep(colnames_Sigma_est,each = ncol_Sigma), colnames_Sigma_est, sep = "_")
@@ -66,20 +68,20 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
     }
 
     if(summary(object)$random_distr %in% ("Normal")){
-      
+
       if(n.exclude == 0){
         plot.ts(ranef_results_vec, main = "Random effects", xlab = "Iteration")
       }else{
-        plot.ts(as.matrix(ranef_results_vec)[-c(1:n.exclude), ], 
+        plot.ts(as.matrix(ranef_results_vec)[-c(1:n.exclude), ],
                 main = "Random effects", xlab = "Iteration", ylab = colnames(ranef_results_vec))
       }
-      
+
     }else if(summary(object)$random_distr %in% ("NIG")){
-      
+
       ranef_results_vec <- cbind(ranef_results_vec, object$ranef_mu_vec, object$ranef_nu_vec)
       colnames(ranef_results_vec)[(ncol(ranef_results_vec)-ncol_Sigma ) : (ncol(ranef_results_vec))] <-
         c(paste("mu", colnames(summary(object)$random_results$Sigma_est), sep = "_"), "nu")
-      
+
       if(n.exclude == 0){
         plot.ts(ranef_results_vec, main = "Random effects", xlab = "Iteration")
       }else{
@@ -91,24 +93,24 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
   }else if(param == "process"){
 
     if(object$process_distr %in% c("Normal", "CH")){
-      
+
       if(object$operator_type == "fd2"){
         process_results_vec <- matrix(object$operator_tau_vec, ncol = 1)
         colnames(process_results_vec) <- "tau"
       }else if(object$operator_type == "matern"){
-        process_results_vec <- cbind(object$operator_tau_vec, 
+        process_results_vec <- cbind(object$operator_tau_vec,
                                      object$operator_kappa_vec)
         colnames(process_results_vec) <- c("tau", "kappa")
       }
-      
+
       if(n.exclude == 0){
         plot.ts(process_results_vec, main = "Process", xlab = "Iteration")
       }else{
         plot.ts(process_results_vec[-c(1:n.exclude), ], main = "Process", xlab = "Iteration")
       }
-      
+
     }else if(object$process_distr %in% c("NIG", "GAL")){
-      
+
       if(object$operator_type == "fd2"){
         process_results_vec <- cbind(object$operator_tau_vec,
                                      object$process_mu_vec,
@@ -121,7 +123,7 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
                                      object$process_nu_vec)
         colnames(process_results_vec) <- c("tau", "kappa","mu", "nu")
       }
-      
+
       if(n.exclude == 0){
         plot.ts(process_results_vec, main = "Process", xlab = "Iteration")
       }else{
@@ -132,27 +134,27 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
   }else if(param == "error"){
 
     if(object$error_distr == "Normal"){
-      
+
       if(n.exclude == 0){
         plot(object$meas_error_sigma_vec, main = "Measurement error",
-             xlab = "Iteration", ylab = "sigma", type = "l")        
+             xlab = "Iteration", ylab = "sigma", type = "l")
       }else{
         plot(as.matrix(object$meas_error_sigma_vec)[-c(1:n.exclude), ], main = "Measurement error",
              xlab = "Iteration", ylab = "sigma", type = "l")
       }
-      
+
 
     }else if(object$error_distr %in% c("NIG", "tdist")){
       meas_error_result_vec <- cbind(object$meas_error_sigma_vec,
                                    object$meas_error_nu_vec)
       colnames(meas_error_result_vec) <- c("sigma", "nu")
-      
+
       if(n.exclude == 0){
         plot.ts(meas_error_result_vec, main = "Measurement error", xlab = "Iteration")
       }else{
         plot.ts(as.matrix(meas_error_result_vec)[-c(1:n.exclude), ], main = "Measurement error", xlab = "Iteration")
       }
-      
+
     }
   }
 }

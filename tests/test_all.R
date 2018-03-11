@@ -1,8 +1,9 @@
 graphics.off()
 library(ngme)
 
-test.pred = TRUE
+test.pred = FALSE
 test.est = FALSE
+test.fisher = TRUE
 
 #data options
 n.pers <- 20
@@ -25,6 +26,10 @@ subsample.type = 1
 n.pred <- n.obs[[1]]#10
 pred.type <- "Filter"
 nSim.pred  <- 100 #simulations in prediction
+
+#Fisher options
+nIter.fisher = 1
+nSim.fisher = 1000
 
 #simulate data
 Y <- list()
@@ -177,4 +182,44 @@ if(test.pred){
     lines(res$locs[[k]],res$X.summary[[k]]$quantiles[[1]]$field,col=2)
     lines(res$locs[[k]],res$X.summary[[k]]$quantiles[[2]]$field,col=2)
   }
+}
+
+if(test.fisher){
+
+  res.est <- estimateLong(Y                = sim_res$Y,
+                          nIter            = nIter.fisher,
+                          nSim             = 1000*nSim.fisher,
+                          locs             = locs,
+                          nBurnin           = nBurnin,
+                          mixedEffect_list = mixedEffect_list,
+                          nBurnin_learningrate = 0,
+                          measurment_list  = mError_list,
+                          processes_list   = processes_list,
+                          operator_list    = operator_list,
+                          pSubsample = 1,
+                          subsample.type = 1,
+                          silent = FALSE,
+                          estimate_fisher = 2)
+
+
+  F_random <- F_fixed <- 0
+  for(i in 1:length(locs))
+  {
+    K = 0.5*operator_list$tau*((operator_list$kappa)^(-1.5)*operator_list$G[[i]] + operator_list$C[[i]]*(operator_list$kappa)^(0.5))
+    Sigma.Z = solve(t(K)%*%operator_list$Ci[[i]]%*%K)
+
+    A = spde.A(locs[[i]],operator_list$loc[[i]])
+    Q =  B_random[[i]]%*%mixedEffect_list$Sigma%*%t(B_random[[i]]) + A%*%Sigma.Z%*%t(A) + mError_list$sigma^2*diag(n.obs[i])
+    F_fixed <-  F_fixed  + t(B_fixed[[i]] )%*%solve(Q,B_fixed[[i]])
+    F_random <- F_random + t(B_random[[i]])%*%solve(Q,B_random[[i]])
+  }
+  F_fixed.est <- res.est$FisherMatrix[1:2,1:2]
+  F_random.est <- res.est$FisherMatrix[3:4,3:4]
+
+  cat("random:\n")
+  print(F_random.est/F_random)
+  cat("fixed:\n")
+  print(F_fixed.est/F_fixed)
+
+
 }

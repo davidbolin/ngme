@@ -218,21 +218,21 @@ ngme <- function(fixed,
       }
     }
   }
-  
+
   # return an error if max.dist and cutoff not provided
   if(use.process == TRUE){
-    
+
     if((reffects == "Normal" & process[1] == "Normal" & error == "Normal") ||
        (is.null(init.fit) == TRUE & (reffects != "Normal" & process[1] != "Normal" & error != "Normal"))){
-      
+
       if(is.null(mesh$max.dist) == TRUE & is.null(mesh$cutoff) == TRUE){
         stop("Provide 'max.dist' and 'cutoff' for creating mesh")
       }
-      
+
     }
-    
+
   }
-  
+
   # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
     stop("Process distribution should be one of the following: 'NIG', 'Normal', 'GAL', 'CH'")
@@ -313,8 +313,8 @@ ngme <- function(fixed,
       cat("Setup lists\n")
     }
 
-    measurement_list <- list(Vs = Vin, 
-                             noise = "Normal", 
+    measurement_list <- list(Vs = Vin,
+                             noise = "Normal",
                              sigma = 0.1)
 
     mixedEffect_list <- list(B_random = B_random,
@@ -432,7 +432,7 @@ ngme <- function(fixed,
       fit$processes_list$noise <- process[1]
 
       fit$measurementError_list$noise <- error
-      
+
       if(fit$measurementError_list$noise == "Normal"){
         fit$measurementError_list$nu  <-  10
       }
@@ -781,7 +781,7 @@ ngme <- function(fixed,
     if(process[2] %in% c("matern")){
       operator_kappa <- fit$operator_list$kappa
       operator_kappa_vec <- fit$operator_list$kappaVec
-      
+
     }else{
       operator_kappa <- operator_kappa_vec <- NA
     }
@@ -823,7 +823,7 @@ ngme <- function(fixed,
   }
 
   # checking Fisher Matrix is estimated?
-  if(controls$estimate.fisher == TRUE){
+  if(controls$estimate.fisher>0){
 
     # names for fixed effects in Fisher Matrix
     fisher_est <- fit$FisherMatrix
