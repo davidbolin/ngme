@@ -19,5 +19,5 @@ This is a supplementary function to be used internally by other functions.
   \dontrun{
   create_operator_matern2D(...)
   }
- 
+
 }

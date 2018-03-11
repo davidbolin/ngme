@@ -4,25 +4,17 @@
 \alias{create_matrices_FD2}
 \title{Create matrices for Finite difference.}
 \usage{
-create_matrices_FD2(locs, n, right.boundary = "neumann",
-  left.boundary = "neumann", common.grid = TRUE, extend = NULL)
+create_matrices_FD2(locs, common.grid = FALSE, extend = NULL, max.dist,
+  cutoff = 1e-10)
 }
 \arguments{
 \item{locs}{A numeric list for the meansurement locations.}
 
-\item{n}{A numeric value for the number of FEM basis functions that should be used.}
-
-\item{right.boundary}{A character string denoting the boundary condition 
-for the right boundary.}
-
-\item{left.boundary}{A character string denoting the boundary condition 
-for the left boundary.}
-
-\item{common.grid}{A logical variable for using a common grid for all subjects, 
-\code{"TRUE"} indicates using a common grid, 
+\item{common.grid}{A logical variable for using a common grid for all subjects,
+\code{"TRUE"} indicates using a common grid,
 \code{"FALSE"} uncommon grids.}
 
-\item{extend}{A numeric vector with two elements specifying the amount of extension 
+\item{extend}{A numeric vector with two elements specifying the amount of extension
 of the grid to the left and right beyondthe measurement locations.}
 }
 \value{

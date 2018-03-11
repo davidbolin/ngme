@@ -11,10 +11,10 @@ spde.A(loc, x, right.boundary = "neumann", left.boundary = "neumann")
 
 \item{x}{A numeric vector of node locations for the basis functions.}
 
-\item{right.boundary}{A character string denoting the boundary condition 
+\item{right.boundary}{A character string denoting the boundary condition
 for the right boundary.}
 
-\item{left.boundary}{A character string denoting the boundary condition 
+\item{left.boundary}{A character string denoting the boundary condition
 for the left boundary.}
 }
 \value{
@@ -30,7 +30,7 @@ This is a supplementary function and internally used.
   \dontrun{
   spde.A(...)
   }
- 
+
 }
 \seealso{
 \code{\link{build.A.matrix}}

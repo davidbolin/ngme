@@ -31,6 +31,8 @@ plot.predict.ngme <- function(object,
                               col_p = "black",
                               ...){
 
+  if(length(id) > 1) stop("id should be specified for one subject")
+  
   if(plot_excursions == FALSE){
 
     Y         <- object$Y
@@ -43,7 +45,9 @@ plot.predict.ngme <- function(object,
 
     locs_i <- locs[[pInd]]
 
-    if(length(locs_i) > 1){#if the subject has more than one measurement -- produce a plot
+    if(length(locs_i) == 1){
+      stop("The subject has 1 measurement, no plot is produced")
+    } 
 
       mean_i <- X.summary[[pInd]]$Mean
       llim_i <- X.summary[[pInd]]$quantiles[[1]]$field
@@ -67,23 +71,19 @@ plot.predict.ngme <- function(object,
       lines(locs_i, llim_i, col = col_c)
       lines(locs_i, ulim_i, col = col_c)
 
-    }else{#the subject has one measurement - do not produce a plot
-      print("The subject has 1 measurement, no plot is produced")
-    }
-
   }else{#plot_excursions = TRUE
 
-    if(length(excursions_pred_nig$predictions$locs) > 1)
-      stop("More than one subject")
-
-    Time        <- excursions_pred_nig$predictions$locs
-    Probability <- object$predict$Xderivative.summary[[1]]$excursions$P
-
-    plot(Time, Probability, type = "l")
+    pInd     <- which(names(object$locs) == id)
+    Time        <- object$predictions$locs[[pInd]]
+    Probability <- object$predict$Xderivative.summary[[pInd]]$excursions$P
+    
+    if(length(Time) == 1){
+      stop("The subject has 1 measurement, no plot is produced")
+    }
+    
+    plot(Time, Probability, ...)
 
   }
-
-
 
 }
 

@@ -11,9 +11,9 @@
 
 \item{B.list}{A numerical list of re-scaled covariate matrices.}
 
-\item{inc}{A logical variable; 
-\code{"TRUE"} indicates the use of inverse re-scaling 
-(meaningful to use if \code{"sigma"} is given in transformed scale), 
+\item{inc}{A logical variable;
+\code{"TRUE"} indicates the use of inverse re-scaling
+(meaningful to use if \code{"sigma"} is given in transformed scale),
 \code{"FALSE"} no use of inverse re-scaling.}
 }
 \value{

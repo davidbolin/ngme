@@ -47,9 +47,9 @@
 #' @return A list of output.
 #'
 #' @details This function calls \code{"predictLong_cpp"} internally.
-#'    It is wrapped by \code{"nglda_predict"}, and not advised to be used.
+#'    It is wrapped by \code{"predict.ngme"}, and not advised to be used.
 #'
-#' @seealso \code{\link{nglda_predict}}
+#' @seealso \code{\link{predict.ngme}}
 #' @examples
 #'   \dontrun{
 #'   predictLong(...)

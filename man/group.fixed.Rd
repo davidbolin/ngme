@@ -16,7 +16,7 @@ Returns a list of groups and a vector free.
 A function to group individuals based on fixed effect matrix B.
 }
 \details{
-This function is supplementary and internally used. 
+This function is supplementary and internally used.
 Each element in groups contains a vector of elements sufficient to make t(B)*B full rank.
 }
 \examples{

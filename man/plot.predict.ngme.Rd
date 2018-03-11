@@ -15,7 +15,7 @@ for whom the plot will be generated.}
 
 \item{plot_excursions}{A logical for plotting excursions.}
 
-\item{col_m}{A character value for defining the colour of prediction mean 
+\item{col_m}{A character value for defining the colour of prediction mean
 or median.}
 
 \item{col_c}{A character value for defining the colour of prediction intervals.}

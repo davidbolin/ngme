@@ -12,14 +12,14 @@ ME.startvalues(Y, mixedEffect_list)
 \item{mixedEffect_list}{A list for random effects.}
 }
 \value{
-Returns a list for the mixed effects. 
+Returns a list for the mixed effects.
     See e.g. \code{mixedEffect_list} in the \code{"EstimateLong"} function.
 }
 \description{
 A function to obtain initial values for the random effects.
 }
 \details{
-The function treats random effects as fixed effects to 
+The function treats random effects as fixed effects to
    obtain start values using ordinary least squares (OLS).
 }
 \examples{
@@ -30,5 +30,5 @@ The function treats random effects as fixed effects to
 
 }
 \seealso{
-\code{\link{estimate.wrapper}}
+\code{\link{ngme}}
 }

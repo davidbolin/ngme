@@ -68,7 +68,7 @@
 #'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
 #' @param estimate_fisher A logical variable for whether Fisher-Information matrix
 #'     to be obtained; \code{"FALSE"} indicates do not obtain, \code{"TRUE"} obtain.
-#' @return A list of fitted results.
+#' @return A list of output.
 #'
 #' @details This function calls \code{"estimateLong_cpp()"} internally.
 #'    It is wrapped by \code{"ngme"}, and is not advised to
@@ -201,7 +201,7 @@ estimateLong <- function(Y,
 #'
 #' @details STUFF
 #'
-#' @seealso \code{\link{ngld_est}}, \code{\link{estimateLong}}, \code{\link{estimateME}}
+#' @seealso \code{\link{estimateLong}}
 #'
 #' @examples
 #'   \dontrun{
@@ -234,7 +234,7 @@ setseed_ME <- function(input, seed)
 #' @details The function treats random effects as fixed effects to
 #'    obtain start values using ordinary least squares (OLS).
 #'
-#' @seealso \code{\link{estimate.wrapper}}
+#' @seealso \code{\link{ngme}}
 #'
 #' @examples
 #'   \dontrun{
