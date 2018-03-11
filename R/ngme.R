@@ -963,4 +963,3 @@ ngme <- function(fixed,
   out
 
 }
-
