@@ -634,7 +634,11 @@ List estimateLong_cpp(Rcpp::List in_list)
     npars += process->npars + Kobj->npars;
 
   Eigen::MatrixXd Fisher_information(npars, npars); // If computing the fisher information
+  Eigen::MatrixXd GradientVariance(npars, npars);
+  Eigen::MatrixXd Fisher_information0(npars, npars);
+  GradientVariance.setZero(npars, npars);
   Fisher_information.setZero(npars, npars);
+  Fisher_information0.setZero(npars, npars);
 
   double burnin_rate = 1;
   for(int iter=0; iter < nIter; iter++){
@@ -783,6 +787,12 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(process_active)
         A = As[i];
       Eigen::VectorXd  Y = Ys[i];
+
+      /*
+
+          If estimate_fisher is 1 then one simulate Y
+
+      */
       if(estimate_fisher == 1){
         if(process_active){
           K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
@@ -897,6 +907,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
           Fisher_information -=  Fisher_temp + Fisher_temp.transpose(); //gives -sum g_i*g_i'
+          GradientVariance += Fisher_temp + Fisher_temp.transpose();
           grad_last = grad_last_temp;
           count_inner++;
         }
@@ -911,6 +922,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       grad_outer_unweighted.row(ilong) /= weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
       Fisher_information +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
+      GradientVariance -=  Fisher_add + Fisher_add.transpose();
+      Fisher_information0 += Fisher_add + Fisher_add.transpose();
 
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
@@ -1031,6 +1044,9 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::rownames(F) = param_names;
     Rcpp::colnames(F) = param_names;
     out_list["FisherMatrix"]     = F;
+    out_list["FisherMatrix0"]    = Fisher_information0 / (nIter * nSim);
+
+    out_list["GradientVariance"] = GradientVariance / (nIter * nSim) ;
 
   }
 

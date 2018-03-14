@@ -188,7 +188,7 @@ if(test.fisher){
 
   res.est <- estimateLong(Y                = sim_res$Y,
                           nIter            = nIter.fisher,
-                          nSim             = 1000*nSim.fisher,
+                          nSim             = nSim.fisher,
                           locs             = locs,
                           nBurnin           = nBurnin,
                           mixedEffect_list = mixedEffect_list,
