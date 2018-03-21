@@ -188,7 +188,7 @@ if(test.fisher){
 
   res.est <- estimateLong(Y                = sim_res$Y,
                           nIter            = nIter.fisher,
-                          nSim             = 1000*nSim.fisher,
+                          nSim             = nSim.fisher,
                           locs             = locs,
                           nBurnin           = nBurnin,
                           mixedEffect_list = mixedEffect_list,
@@ -217,8 +217,12 @@ if(test.fisher){
   F_random.est <- res.est$FisherMatrix[3:4,3:4]
 
   cat("random:\n")
-  print(F_random.est/F_random)
+  C.r <- solve(F_random)
+  C.r.est <- solve(F_random.est)
+  print(C.r/C.r.est)
   cat("fixed:\n")
+  C.f <- solve(F_fixed)
+  C.f.est <- solve(F_fixed.est)
   print(F_fixed.est/F_fixed)
 
 
