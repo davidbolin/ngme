@@ -82,7 +82,6 @@ polyak.ngme <- function(object,
     pars.full.smooth <- pars.smooth$x
 
     # process the covariance
-    if(0){
     ncol_Sigma        <- dim(object$ranef_Sigma)[1]
     pars <- object$ranef_Sigma_vec
     colnames(pars) <- rep("Sigma",dim(object$ranef_Sigma_vec)[2])
@@ -97,7 +96,7 @@ polyak.ngme <- function(object,
       pars.full <- cbind(pars.full,pars)
       pars.full.smooth <- cbind(pars.full.smooth,pars.smooth$x)
     }
-}
+
     if(object$random_distr %in% ("NIG")){
       mu <- object$ranef_mu_vec
       mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate)
@@ -265,10 +264,10 @@ plot.trajectories <- function(x,y){
     n = dim(x)[2]
   }
   m <- ceiling(sqrt(n))
-  par(mfcol=c(m,m))
+  par(mfcol=c(m,m),mai = c(0,0.2,0.2,0.1))
   for (i in 1:n) {
-    plot(x[,i],col=1,type="l",main = dimnames(x)[[2]][i],xlab="",ylab="")
-    lines(y[,i],col=2)
+    plot(x[,i],col=1,type="l",main = dimnames(x)[[2]][i],xlab="",ylab="",xaxt="n")
+    lines(y[,i],col=2,,xlab="",ylab="")
   }
 }
 
