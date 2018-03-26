@@ -43,3 +43,4 @@
 - get rid of the for loop at the end of predict.ngme
 - ylabs in plot.ngme
 - add forecasting and prediction  by fine interval by locs.pred
+- rename columns and rows of fisher_est in ngme.fisher 
