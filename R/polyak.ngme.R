@@ -232,7 +232,7 @@ compute.polyak.variance <- function(x,polyak.rate,i.start){
     p0 <- c(log(sqrt(var(x[i.start:n.iter]))), -log(max(r$lag[,1,1])))
     p <- optim(p0,WLS.loss, r = r)
     c <- exp(2*p$par[1])*exp(-exp(p$par[2])*r$lag[,1,1])
-    v[i] <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
+    v <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
     names(v) <- colnames(x)
   }
 
@@ -267,7 +267,7 @@ plot.trajectories <- function(x,y){
   par(mfcol=c(m,m),mai = c(0,0.2,0.2,0.1))
   for (i in 1:n) {
     plot(x[,i],col=1,type="l",main = dimnames(x)[[2]][i],xlab="",ylab="",xaxt="n")
-    lines(y[,i],col=2,,xlab="",ylab="")
+    lines(y[,i],col=2,xlab="",ylab="")
   }
 }
 
