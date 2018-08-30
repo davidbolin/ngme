@@ -5,8 +5,8 @@
 \title{Create operator components.}
 \usage{
 create_operator(locs, n, name = "matern", right.boundary = "neumann",
-  left.boundary = "neumann", common.grid = FALSE, extend = NULL, max.dist,
-  cutoff = 1e-10, n.cores = 1)
+  left.boundary = "neumann", common.grid = FALSE, extend = NULL,
+  max.dist, cutoff = 1e-10, n.cores = 1)
 }
 \arguments{
 \item{locs}{A numeric list of measurement locations.}

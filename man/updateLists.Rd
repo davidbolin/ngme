@@ -4,8 +4,8 @@
 \alias{updateLists}
 \title{STUFF}
 \usage{
-updateLists(mixedEffect_list, processes_list, operator_list, measurement_list,
-  Bfixed, Brandom, locs)
+updateLists(mixedEffect_list, processes_list, operator_list,
+  measurement_list, Bfixed, Brandom, locs)
 }
 \arguments{
 \item{mixedEffect_list}{A list of inputs for the random effects.}

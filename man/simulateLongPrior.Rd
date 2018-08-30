@@ -4,8 +4,8 @@
 \alias{simulateLongPrior}
 \title{Simulates data from the prior model.}
 \usage{
-simulateLongPrior(Y, locs, mixedEffect_list, measurment_list, processes_list,
-  operator_list)
+simulateLongPrior(Y, locs, mixedEffect_list, measurment_list,
+  processes_list, operator_list)
 }
 \arguments{
 \item{Y}{only used to get size of objects}

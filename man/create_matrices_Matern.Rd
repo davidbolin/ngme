@@ -5,8 +5,8 @@
 \title{Create matrices for Matern.}
 \usage{
 create_matrices_Matern(locs, n, right.boundary = "neumann",
-  left.boundary = "neumann", common.grid = FALSE, extend = NULL, max.dist,
-  cutoff = 1e-10, n.cores = 1)
+  left.boundary = "neumann", common.grid = FALSE, extend = NULL,
+  max.dist, cutoff = 1e-10, n.cores = 1)
 }
 \arguments{
 \item{locs}{A numeric list for the meansurement locations.}

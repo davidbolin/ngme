@@ -4,8 +4,8 @@
 \alias{plot.predict.ngme}
 \title{Prediction plots.}
 \usage{
-\method{plot}{predict.ngme}(object, id, plot_excursions = FALSE,
-  col_m = "black", col_c = "red", col_p = "black", ...)
+plot.predict.ngme(object, id, plot_excursions = FALSE, col_m = "black",
+  col_c = "red", col_p = "black", ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"predict.ngme"} function.}

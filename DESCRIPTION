@@ -16,7 +16,7 @@ License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
 Depends: R (>= 3.4.0), Matrix, methods, MASS, doSNOW, pryr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 Suggests: knitr,
     rmarkdown,
     INLA

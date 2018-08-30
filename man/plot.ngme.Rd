@@ -4,8 +4,7 @@
 \alias{plot.ngme}
 \title{Trace plots.}
 \usage{
-\method{plot}{ngme}(object, param = "fixed", n.exclude = 0, index = NULL,
-  ...)
+plot.ngme(object, param = "fixed", n.exclude = 0, index = NULL, ...)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"ngme"} function.}
@@ -17,8 +16,10 @@ are to be plotted;
 \code{"process"} for stochastic process,
 \code{"error"} for error term.}
 
-\item{n.exclude}{A numeric value for excluding a portion of the 
+\item{n.exclude}{A numeric value for excluding a portion of the
 trajectory (from left) for plotting.}
+
+\item{index}{When plotting fixed effects, the indices of the effects to plot.}
 
 \item{...}{Additional arguments; none used currently.}
 }

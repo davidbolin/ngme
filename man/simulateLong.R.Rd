@@ -4,9 +4,9 @@
 \alias{simulateLong.R}
 \title{Simulating longitudal model using only R functions}
 \usage{
-simulateLong.R(loc, theta, n = 100, B = NULL, noise = c("Normal", "NIG",
-  "GAL"), mixedEffect = FALSE, Bmixed = NULL, mixedEffectList = NULL,
-  operatorType = "Matern", boundary = NULL)
+simulateLong.R(loc, theta, n = 100, B = NULL, noise = c("Normal",
+  "NIG", "GAL"), mixedEffect = FALSE, Bmixed = NULL,
+  mixedEffectList = NULL, operatorType = "Matern", boundary = NULL)
 }
 \arguments{
 \item{theta}{list with parameters covariates mu, kappa, sigma_eps, sigma}
