@@ -177,7 +177,7 @@ ngme <- function(fixed,
                  data,
                  timeVar = NULL,
                  silent = TRUE,
-                 nIter,
+                 nIter = 1000,
                  mesh = list(max.dist = NULL,
                              cutoff = NULL,#1e-10,
                              common.grid = FALSE,
@@ -187,7 +187,7 @@ ngme <- function(fixed,
                                  polyak.rate = 0.1,
                                  nBurnin = 100,
                                  nSim = 2,
-                                 pSubsample = 0.1,
+                                 pSubsample = NULL,
                                  nPar.burnin = 0,
                                  nIter.fisher = 1000,
                                  nSim.fisher = 1000,
@@ -228,7 +228,7 @@ ngme <- function(fixed,
                           polyak.rate = 0.1,
                           nBurnin = 100,
                           nSim = 2,
-                          pSubsample = 0.1,
+                          pSubsample = NULL,
                           nPar.burnin = 0,
                           nIter.fisher = 1000,
                           nSim.fisher = 1000,
@@ -262,7 +262,7 @@ ngme <- function(fixed,
                                  nBurnin.init = 100,
                                  nSim.init = 2,
                                  nIter.init = 1000,
-                                 pSubsample.init = 0.1,
+                                 pSubsample.init = NULL,
                                  nPar.burnin.init = 0,
                                  step0.init = 0.3,
                                  alpha.init = 0.3,
@@ -309,6 +309,8 @@ ngme <- function(fixed,
       
     }
     
+  }else{
+    locs = NULL
   }
   
   # correct input for distributions
@@ -368,8 +370,29 @@ ngme <- function(fixed,
   B_random    <- lapply(B_random, function(x) as.matrix(x))
 
   Y    <- tapply(y, id, function(x) x)
-  locs <- tapply(data[, timeVar], id, function(x) x)
+  if(use.process)
+    locs <- tapply(data[, timeVar], id, function(x) x)
 
+  Nobs <- length(Y)
+  # if pSubsampling not set
+  if(is.null(controls.init$pSubsample.init)){
+    if(Nobs < 100){
+      controls.init$pSubsample.init = 1
+    }else if(Nobs < 500){
+      controls.init$pSubsample.init = 0.2
+    }else{
+      controls.init$pSubsample.init = 0.1
+    }  
+  }
+  if(is.null(controls$pSubsample)){
+    if(Nobs < 100){
+      controls$pSubsample = 1
+    }else if(Nobs < 500){
+      controls$pSubsample = 0.2
+    }else{
+      controls$pSubsample = 0.1
+    }  
+  }
   ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 
@@ -647,7 +670,7 @@ ngme <- function(fixed,
                             locs,
                             mixedEffect_list,
                             measurement_list,
-                            nIter = controls.init$nIter.init,
+                            nIter = nIter,
                             silent = silent,
                             learning_rate = controls.init$learning.rate.init,
                             polyak_rate = controls.init$polyak.rate.init,
@@ -711,6 +734,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
+      
       if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,

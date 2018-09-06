@@ -83,7 +83,7 @@
 #'   }
 
 estimateLong <- function(Y,
-                         locs,
+                         locs = NULL,
                          mixedEffect_list,
                          measurment_list,
                          processes_list,
@@ -114,9 +114,10 @@ estimateLong <- function(Y,
   }
   if(use.process){
   }
-  for(i in 1:length(locs)){
-    obs_list[[i]] <- list(Y=Y[[i]], locs = locs[[i]])
+  for(i in 1:length(Y)){
+    obs_list[[i]] <- list(Y=Y[[i]])
     if(use.process){
+      obs_list[[i]]$locs <- locs[[i]]
       obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)
     }
   }

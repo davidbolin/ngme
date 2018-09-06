@@ -394,6 +394,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       sampling_weights[count] = Ysize[count];
     } else if (subsample_type == 3){ //Biased sampling
       sampling_weights[count] = 1.0;
+    } else if (subsample_type == 0){ //Biased sampling
+      sampling_weights[count] = 1.0;
     }
     count++;
   }
@@ -415,6 +417,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
     ngroup = group_list.length();
+    Rcpp::Rcout << "ngroup = " << ngroup << "\n";
     groups.resize(ngroup);
     free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
 
@@ -733,17 +736,17 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     } else if(subsample_type ==4){
       nSubsample_i = nSubsample;
-
       longInd.clear();
       std::fill(longInd.begin(), longInd.end(), 0);
 
       //groupSampling_internal(groups, free, longInd,gammagenerator);
-      //Rcpp::Rcout << "nSubsample_group = (" << nSubsample_group[0] << "," << nSubsample_group[1]<< ")\n";
       groupSampling_sampling(nSubsample_group,
                              groups,
                              free,
                              longInd,
                              gammagenerator);
+      nSubsample_i = longInd.size();
+    }else if(subsample_type == 0){
       nSubsample_i = longInd.size();
     }
 
@@ -766,6 +769,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     double pdone = 0.0;
     double next_disp = 0.00;
+
     for(int ilong = 0; ilong < nSubsample_i; ilong++ )
     {
       if(silent == 0 && estimate_fisher && nIter == 1){
@@ -778,7 +782,6 @@ List estimateLong_cpp(Rcpp::List in_list)
         }
 
       }
-
       int i = longInd[ilong];
       if(debug)
         Rcpp::Rcout << "i = " << i << " "<< weight[i] << "\n";
@@ -943,6 +946,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       for( int id = 0; id < nSubsample_i; id++)
         p_inv[longInd[id]] = W[id];
     }
+   /*
     if(debug){//if(silent == 0){
       subSampleDiag(Vgrad_inner,
                     grad_outer,
@@ -950,7 +954,7 @@ List estimateLong_cpp(Rcpp::List in_list)
                     nSim * nSubsample_i,
                     nSubsample_i / nindv);
     }
-
+    */
 
     if((estimate_fisher == 0) && (silent == 0) && burnin_rate>0){
       Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample_i << "\n";

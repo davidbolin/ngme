@@ -525,7 +525,6 @@ void NormalMixedEffect::gradient(const int i,
 {
     counter++;
     Eigen::VectorXd res_  = res;
-
     if(Br.size() > 0){
       if(use_EU)
         res_ -= Br[i] * EU.col(i);
@@ -554,7 +553,6 @@ void NormalMixedEffect::gradient(const int i,
       grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       //grad_beta_r2         += weight * (invSigma * U.col(i));
       H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
-
       }
       if(Bf.size() > 0){
         grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
@@ -683,6 +681,7 @@ void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learn
 void NormalMixedEffect::step_beta_random(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_r_old.array() *= learning_rate;
+
   solve_const_x_Ab(dbeta_r_old,
                    beta_random_constrainted,
                    0.5 * grad_beta_r,

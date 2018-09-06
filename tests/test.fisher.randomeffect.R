@@ -15,8 +15,8 @@ cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 500
-nSim.fisher = 1000
+nIter.fisher = 50
+nSim.fisher = 100
 nBurnin = 10
 
 #simulate data

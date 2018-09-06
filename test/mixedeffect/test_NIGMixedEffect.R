@@ -8,7 +8,7 @@
 rm(list=ls())
 library(testthat)
 graphics.off()
-library(LDMod)
+library(ngme)
 library(MASS)
 seed <- 2
 
@@ -35,7 +35,7 @@ for(i in 1:n.pers)
 {
   Bf_list[[i]]    <- as.matrix(runif(n = n.obs))
   Br_list[[i]]    <- cbind(rep(1, n.obs), (1:n.obs) / n.obs )
-  V <- LDMod::rGIG(-0.5, nu, nu, sample.int(10^6,1))
+  V <- ngme::rGIG(-0.5, nu, nu, sample.int(10^6,1))
   V_list[[i]] <- V
   betar_list[[i]] <- betar - mu * 1  + V * mu +
                      sqrt(V) * mvrnorm(n = 1, mu  =c(0,0), Sigma = COV_beta)
