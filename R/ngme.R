@@ -346,7 +346,7 @@ ngme <- function(fixed,
   cov_list_random <- cov_list_random[-length(cov_list_random)]
 
   to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
-  x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed)]
+  x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
 
   #random effects design matrix
   random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
