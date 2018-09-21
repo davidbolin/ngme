@@ -1,5 +1,5 @@
 library(testthat)
-library(LDMod)
+library(ngme)
 context("N_GIG")
 lNIG <- function(U, res, B, sigma, iSigma, mu, nu)
 {

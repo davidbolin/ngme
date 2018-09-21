@@ -45,7 +45,7 @@ void solve_const_x_Ab(Eigen::VectorXd & x,
 }
 
 
-void dU_ddU_NIG(
+void dU_ddU_GH(
               Eigen::VectorXd & dU,
               Eigen::MatrixXd & ddU,
         const Eigen::VectorXd & U,

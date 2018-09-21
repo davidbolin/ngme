@@ -1,3 +1,3 @@
 library(testthat)
-library(LDMod)
-test_check("LDMod")
+library(ngme)
+test_check("ngme")

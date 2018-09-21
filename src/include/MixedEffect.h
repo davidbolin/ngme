@@ -44,6 +44,11 @@ class MixedEffect {
     Eigen::VectorXd beta_fixed;
 	Eigen::VectorXd dbeta_r_old;
 	Eigen::VectorXd dbeta_f_old;
+
+    /*
+      HOW to start up the class from the list.
+
+    */
     virtual void initFromList(Rcpp::List const &)=0;
     virtual void get_param( std::vector<double> & param_in)
     {
@@ -114,6 +119,7 @@ class MixedEffect {
     					  const double,
     					  const double,
                           const int = 1) = 0;
+
     // gradient for variable variance noise
     virtual void gradient2(const int ,
     					   const Eigen::VectorXd&,
@@ -122,22 +128,26 @@ class MixedEffect {
     					   const double,
     					   const double,
                            const int = 1) = 0;
+
+    //computes second derivates given, latent data
+    // fixed variance
     virtual Eigen::MatrixXd d2Given(const int ,
                           const Eigen::VectorXd&,
                           const double,
-                          const double ){return(Eigen::MatrixXd::Zero(0,0));}; //computes second derivates given, latent data
-                                                                              // fixed variance
+                          const double ){return(Eigen::MatrixXd::Zero(0,0));}; 
+    //computes second derivates given, latent data
+    // variable variance
     virtual Eigen::MatrixXd d2Given2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
                            const double,
                            const double,
-                           const double){return(Eigen::MatrixXd::Zero(0,0));};  //computes second derivates given, latent data
-                                                                               // variable variance
+                           const double){return(Eigen::MatrixXd::Zero(0,0));}; 
 
 
     // returns the gradient of all the parameters
     virtual Eigen::VectorXd get_gradient() = 0;
+    // step parameters
     virtual void step_theta(const double stepsize,
     						const double  learning_rate = 0,
     						const double polyak_rate = -1,
@@ -270,74 +280,169 @@ class NormalMixedEffect  : public MixedEffect{
 };
 
 
+class GHMixedEffect   : public MixedEffect{
 
-class NIGMixedEffect  : public MixedEffect{
+public:
+
+  int count_MALA;
+  int accept_MALA;
+  int sample_MALA;
+  Eigen::VectorXd mu;
+  Eigen::VectorXd V;
+
+  Eigen::MatrixXd invSigma;
+  Eigen::MatrixXd iSkroniS; // helper matrix
+  int counter;
+  Eigen::VectorXd UUt;
+  Eigen::VectorXd dSigma_vech;
+  Eigen::MatrixXd ddSigma;
+  Eigen::VectorXd Sigma_vech;
+  Eigen::VectorXd dSigma_vech_old;
+
+
+  Eigen::MatrixXd betaf_vec;
+  Eigen::MatrixXd betar_vec;
+  Eigen::MatrixXd mu_vec;
+  Eigen::MatrixXd Sigma_vec;
+  double weight_total;
+
+
+  Eigen::VectorXd gradMu; // gradient for skewness
+  Eigen::VectorXd gradMu_old;
+  Eigen::VectorXd gradMu_2;// second gradient for skewness
+  Eigen::VectorXd grad_beta_r; // gradient for random intercept
+  Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
+  Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
+  Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
+  Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
+  double EV; //  prior expecation  of V, used for the Hessian of random effects
+  double EiV; // prior expectation of 1/V used for the Hessian of random effects
+  double VV; // prior variance of V used for the Hessian of random effects
+  double a_GIG;
+  gig rgig;
+  double term1,term2,term1_mu;
+  Eigen::VectorXd term2_mu;
+  Eigen::MatrixXi D;
+  Eigen::MatrixXd Dd;
+
+
+
+  virtual void get_param_names(Rcpp::StringVector &);
+  virtual void printIter();
+  virtual void initFromList(Rcpp::List const &); 
+  virtual void sampleU(const int, const Eigen::VectorXd &,  const double ) = 0;
+  virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &) = 0;
+  // sampleU2 is sampling with diagonal covariance matrix for the noise
+  virtual void sampleU2(const int,
+                const Eigen::VectorXd &,
+                const Eigen::VectorXd &,
+                const double  ) = 0;
+  virtual void sampleU2_par(const int,
+                        const Eigen::VectorXd &,
+                        const Eigen::VectorXd &,
+                        std::mt19937 &,
+                        const double) = 0;
+
+    // gradient for fixed variance noise
+    virtual void gradient(const int ,
+                const Eigen::VectorXd&,
+                const double,
+                const double,
+                          const int = 1) = 0;
+
+    // gradient for variable variance noise
+    virtual void gradient2(const int ,
+                 const Eigen::VectorXd&,
+                 const Eigen::VectorXd& ,
+                 const double,
+                 const double,
+                 const double,
+                           const int = 1) = 0;
+
+    //computes second derivates given, latent data
+    // fixed variance
+    virtual Eigen::MatrixXd d2Given(const int ,
+                          const Eigen::VectorXd&,
+                          const double,
+                          const double ){return(Eigen::MatrixXd::Zero(0,0));}; 
+    //computes second derivates given, latent data
+    // variable variance
+    virtual Eigen::MatrixXd d2Given2(const int ,
+                           const Eigen::VectorXd&,
+                           const Eigen::VectorXd& ,
+                           const double,
+                           const double,
+                           const double){return(Eigen::MatrixXd::Zero(0,0));}; 
+
+
+    // returns the gradient of all the parameters
+    virtual Eigen::VectorXd get_gradient() = 0;
+    // step parameters
+    virtual void step_theta(const double stepsize,
+                const double  learning_rate = 0,
+                const double polyak_rate = -1,
+                const int burnin = 0) = 0;
+    /*
+      simulates from the prior distribution
+    putting into Y
+    */
+    virtual void simulate()                                 ;
+    virtual void simulate(std::vector< Eigen::VectorXd > &) ;
+    virtual void simulate(Eigen::VectorXd  & ,const int )   ;
+
+    // internal function for mala step
+    void sampleU_MALA_(const int ,
+                       const Eigen::VectorXd & ,
+                       const Eigen::VectorXd & ,
+                      const Eigen::MatrixXd   & );
+    /*
+      clear gradient
+    */
+  virtual void clear_gradient() = 0;
+
+
+  virtual void setupStoreTracj(const int); // setups to store the tracjetory
+  virtual void get_param(std::vector<double> &);
+  void sampleV(const int);
+  virtual Rcpp::List toList();
+
+  virtual double get_a_GIG() = 0;
+  virtual void   set_a_GIG() = 0;     
+  virtual double get_b_GIG() = 0;
+  virtual void   set_b_GIG() = 0;      
+  virtual double get_p_GIG() = 0;
+  virtual void   set_p_GIG() = 0; 
+
+
+  virtual double logdensity(const Eigen::VectorXd & ) = 0; 
+    
+};
+
+
+class NIGMixedEffect  : public GHMixedEffect{
   private:
-    Eigen::MatrixXd invSigma;
-    Eigen::MatrixXd iSkroniS; // helper matrix
-    int counter;
-    Eigen::VectorXd UUt;
-    Eigen::VectorXd dSigma_vech;
-    Eigen::MatrixXd ddSigma;
-    Eigen::VectorXd Sigma_vech;
-    Eigen::VectorXd dSigma_vech_old;
 
-
-    Eigen::MatrixXd betaf_vec;
-    Eigen::MatrixXd betar_vec;
-    Eigen::MatrixXd mu_vec;
+    double b_GIG;
     Eigen::VectorXd nu_vec;
-    Eigen::MatrixXd Sigma_vec;
-    double weight_total;
-
-
-	double dnu_old;
+  	double dnu_old;
     double  grad_nu; // gradient for shape parameter
-    Eigen::VectorXd gradMu; // gradient for skewness
-    Eigen::VectorXd gradMu_old;
-    Eigen::VectorXd gradMu_2;// second gradient for skewness
-    Eigen::VectorXd grad_beta_r; // gradient for random intercept
-    Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
-    Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
-    Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
-    Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
-    double EV; //  prior expecation  of V, used for the Hessian of random effects
-    double EiV; // prior expectation of 1/V used for the Hessian of random effects
-    double VV; // prior variance of V used for the Hessian of random effects
-    double a_GIG;
-    gig rgig;
-
     void step_Sigma(const double, const double,const int);
     void step_mu(const double , const double,const int);
     void step_nu(const double, const double,const int);
-    double term1,term2,term1_mu;
-    Eigen::VectorXd term2_mu;
   public:
 
-    int count_MALA;
-    int accept_MALA;
-    int sample_MALA;
-    Eigen::MatrixXi D;
-    Eigen::MatrixXd Dd;
-    Eigen::VectorXd mu;
     double          nu;
-    Eigen::VectorXd V;
 
     NIGMixedEffect();
     ~NIGMixedEffect(){};
 
     void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & );
-    void sampleV(const int);
     void initFromList(Rcpp::List const &);
     void sampleU(const int, const Eigen::VectorXd &, const double) ;
     void sampleU_MALA(const int, const Eigen::VectorXd &, const double) ;
     void sampleU_Gibbs(const int, const Eigen::VectorXd &, const double) ;
     void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
-    void sampleU_MALA_(const int ,
-                                const Eigen::VectorXd & ,
-                                const Eigen::VectorXd & ,
-                                const Eigen::MatrixXd   & );
     void sampleU2(const int i,
       					const Eigen::VectorXd & res,
       					const Eigen::VectorXd & iV,
@@ -390,14 +495,16 @@ class NIGMixedEffect  : public MixedEffect{
     void step_beta_fixed(const double stepsize, const double,const int);
     void step_beta_random(const double stepsize, const double,const int);
     Rcpp::List toList();
-    void simulate();
-    void simulate(std::vector< Eigen::VectorXd > & );
-    void simulate(Eigen::VectorXd  & ,const int );
-
+    
     virtual void printIter(); //print iteration data
     virtual void setupStoreTracj(const int Niter); // setups to store the tracjetory
 
-
+    double get_a_GIG();
+    void   set_a_GIG();     
+    double get_b_GIG();
+    void   set_b_GIG();      
+    double get_p_GIG();
+    void   set_p_GIG(); 
     /*
     	clear gradient
     */
@@ -406,6 +513,8 @@ class NIGMixedEffect  : public MixedEffect{
 
     // returns the gradient of all the parameters
     Eigen::VectorXd get_gradient();
+
+    double  logdensity(const Eigen::VectorXd & ); 
 
 };
 
@@ -435,7 +544,9 @@ Eigen::VectorXd dU_EiV_NGIG(const Eigen::VectorXd & ,
                 const double ,
                 const double ,
                 const double );
-void dU_ddU_NIG(
+
+// Computes gradient and second derivative for GH 
+void dU_ddU_GH(
               Eigen::VectorXd &,
               Eigen::MatrixXd &,
         const Eigen::VectorXd &,

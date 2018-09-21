@@ -107,7 +107,7 @@ Rcpp::List test_dU_EiV(
   
   Eigen::VectorXd dU;
   Eigen::MatrixXd ddU;
-  dU_ddU_NIG(dU,
+  dU_ddU_GH(dU,
              ddU,
              U,
              Sigma.inverse(),

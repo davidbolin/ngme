@@ -690,9 +690,15 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(iter < nPar_burnin)
       par_burnin = 1;
 
-    if(debug)
+
+    if(debug){
       Rcpp::Rcout << "estimate::subsample \n";
+
+      Rcpp::Rcout << "estimate::subsample_type = " << subsample_type << " \n";
+    }
     int nSubsample_i = nSubsample;
+    Rcpp::Rcout << "nSubsample = " << nSubsample << "\n";
+    Rcpp::Rcout << "subsample_type = " << subsample_type << "\n";
     // subsampling
     if(subsample_type == 1){
       //Uniform sampling without replacement from 1:nrep
@@ -721,7 +727,6 @@ List estimateLong_cpp(Rcpp::List in_list)
         weight.array() += nindv / ((double) nSubsample);
         nSubsample_i = nSubsample;
       }
-
       p = p_N;
       if(iter > 10){
         nSubsample_i += poissonSampling_internal( m,
@@ -1082,7 +1087,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
-
 
   return(out_list);
 }

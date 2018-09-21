@@ -1,5 +1,5 @@
 library(testthat)
-library(LDMod)
+library(ngme)
 context("GIG")
 test_that("EiV_GIG", {
   p <- runif(1) + 1

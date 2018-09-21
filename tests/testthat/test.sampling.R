@@ -11,7 +11,7 @@ chisquare_test <- function(m, Femp, EY)
 
 set.seed(1)
 library(testthat)
-library(LDMod)
+library(ngme)
 n <- 1000
 sim <- 1000
 
