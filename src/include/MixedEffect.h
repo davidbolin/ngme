@@ -326,62 +326,78 @@ public:
   Eigen::MatrixXd Dd;
 
 
+  void step_Sigma(const double, const double,const int);
+  void step_mu(const double , const double,const int);
+  void step_beta_fixed(const double stepsize, const double,const int);
+  void step_beta_random(const double stepsize, const double,const int);
 
   virtual void get_param_names(Rcpp::StringVector &);
   virtual void printIter();
   virtual void initFromList(Rcpp::List const &); 
-  virtual void sampleU(const int, const Eigen::VectorXd &,  const double ) = 0;
-  virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &) = 0;
+  virtual void sampleU(const int, const Eigen::VectorXd &,  const double );
+  virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
+  void sampleU_Gibbs(const int, const Eigen::VectorXd &, const double) ;
+  void sampleU2_Gibbs(  const int i,
+                        const Eigen::VectorXd & res,
+                        const Eigen::VectorXd & iV,
+                        const double log_sigma2_noise = 0);
+
+
+    void sampleU_MALA(const int, const Eigen::VectorXd &, const double) ;
+    void sampleU2_MALA( const int i,
+                        const Eigen::VectorXd & res,
+                        const Eigen::VectorXd & iV,
+                        const double log_sigma2_noise = 0);
   // sampleU2 is sampling with diagonal covariance matrix for the noise
   virtual void sampleU2(const int,
                 const Eigen::VectorXd &,
                 const Eigen::VectorXd &,
-                const double  ) = 0;
+                const double  );
   virtual void sampleU2_par(const int,
                         const Eigen::VectorXd &,
                         const Eigen::VectorXd &,
                         std::mt19937 &,
-                        const double) = 0;
+                        const double);
 
     // gradient for fixed variance noise
     virtual void gradient(const int ,
                 const Eigen::VectorXd&,
                 const double,
                 const double,
-                          const int = 1) = 0;
+                          const int = 1) ;
 
     // gradient for variable variance noise
     virtual void gradient2(const int ,
-                 const Eigen::VectorXd&,
-                 const Eigen::VectorXd& ,
-                 const double,
-                 const double,
-                 const double,
-                           const int = 1) = 0;
-
-    //computes second derivates given, latent data
-    // fixed variance
-    virtual Eigen::MatrixXd d2Given(const int ,
-                          const Eigen::VectorXd&,
-                          const double,
-                          const double ){return(Eigen::MatrixXd::Zero(0,0));}; 
-    //computes second derivates given, latent data
-    // variable variance
-    virtual Eigen::MatrixXd d2Given2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
                            const double,
                            const double,
-                           const double){return(Eigen::MatrixXd::Zero(0,0));}; 
+                           const double,
+                           const int = 1);
+
+    //computes second derivates given, latent data
+    // fixed variance
+    virtual Eigen::MatrixXd d2Given(  const int ,
+                                      const Eigen::VectorXd&,
+                                      const double,
+                                      const double ); 
+    //computes second derivates given, latent data
+    // variable variance
+    virtual Eigen::MatrixXd d2Given2( const int ,
+                                      const Eigen::VectorXd&,
+                                      const Eigen::VectorXd& ,
+                                      const double,
+                                      const double,
+                                      const double); 
 
 
     // returns the gradient of all the parameters
-    virtual Eigen::VectorXd get_gradient() = 0;
+    virtual Eigen::VectorXd get_gradient();
     // step parameters
     virtual void step_theta(const double stepsize,
-                const double  learning_rate = 0,
-                const double polyak_rate = -1,
-                const int burnin = 0) = 0;
+                            const double  learning_rate = 0,
+                            const double polyak_rate = -1,
+                            const int burnin = 0);
     /*
       simulates from the prior distribution
     putting into Y
@@ -398,7 +414,8 @@ public:
     /*
       clear gradient
     */
-  virtual void clear_gradient() = 0;
+  virtual void clear_gradient();
+  virtual void store_param_function(const double );
 
 
   virtual void setupStoreTracj(const int); // setups to store the tracjetory
@@ -415,6 +432,12 @@ public:
 
 
   virtual double logdensity(const Eigen::VectorXd & ) = 0; 
+
+
+  void gradient_sigma(const int ,
+                      Eigen::VectorXd& ,
+                      const double);
+
     
 };
 
@@ -426,8 +449,6 @@ class NIGMixedEffect  : public GHMixedEffect{
     Eigen::VectorXd nu_vec;
   	double dnu_old;
     double  grad_nu; // gradient for shape parameter
-    void step_Sigma(const double, const double,const int);
-    void step_mu(const double , const double,const int);
     void step_nu(const double, const double,const int);
   public:
 
@@ -439,27 +460,6 @@ class NIGMixedEffect  : public GHMixedEffect{
     void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & );
     void initFromList(Rcpp::List const &);
-    void sampleU(const int, const Eigen::VectorXd &, const double) ;
-    void sampleU_MALA(const int, const Eigen::VectorXd &, const double) ;
-    void sampleU_Gibbs(const int, const Eigen::VectorXd &, const double) ;
-    void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &);
-    void sampleU2(const int i,
-      					const Eigen::VectorXd & res,
-      					const Eigen::VectorXd & iV,
-      					const double log_sigma2_noise = 0);
-    void sampleU2_Gibbs( const int i,
-                        const Eigen::VectorXd & res,
-                        const Eigen::VectorXd & iV,
-                        const double log_sigma2_noise = 0);
-    void sampleU2_MALA( const int i,
-                        const Eigen::VectorXd & res,
-                        const Eigen::VectorXd & iV,
-                        const double log_sigma2_noise = 0);
-    void sampleU2_par(const int i,
-                  const Eigen::VectorXd & res,
-                  const Eigen::VectorXd & iV,
-                  std::mt19937 & random_engine,
-                  const double log_sigma2_noise = 0);
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
@@ -468,32 +468,15 @@ class NIGMixedEffect  : public GHMixedEffect{
     			   const double weight = 1.,
                    const int use_EU = 1);
 
-
-    Eigen::MatrixXd d2Given(const int ,
-                  const Eigen::VectorXd& ,
-                  const double ,
-                  const double);
-
-    Eigen::MatrixXd d2Given2(const int ,
-                           const Eigen::VectorXd&,
-                           const Eigen::VectorXd& ,
-                           const double,
-                           const double,
-                           const double);
-    void gradient(const int ,
-    			  const Eigen::VectorXd& ,
-    			  const double ,
-    			  const double,
-                  const int use_EU = 1);
-    void gradient_sigma(const int ,
-    					Eigen::VectorXd& ,
-    					const double);
+    void gradient(  const int ,
+    			          const Eigen::VectorXd& ,
+    			          const double ,
+    			          const double,
+                    const int use_EU = 1);
     void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
     				const double polyak_rate   = -1,
     				const int burnin = 0);
-    void step_beta_fixed(const double stepsize, const double,const int);
-    void step_beta_random(const double stepsize, const double,const int);
     Rcpp::List toList();
     
     virtual void printIter(); //print iteration data
@@ -509,12 +492,28 @@ class NIGMixedEffect  : public GHMixedEffect{
     	clear gradient
     */
 	void clear_gradient();
-
+  void store_param_function(const double );
 
     // returns the gradient of all the parameters
     Eigen::VectorXd get_gradient();
 
     double  logdensity(const Eigen::VectorXd & ); 
+
+
+    //computes second derivates given, latent data
+    // fixed variance
+    Eigen::MatrixXd d2Given(  const int ,
+                              const Eigen::VectorXd&,
+                              const double,
+                              const double ); 
+    //computes second derivates given, latent data
+    // variable variance
+    Eigen::MatrixXd d2Given2( const int ,
+                              const Eigen::VectorXd&,
+                              const Eigen::VectorXd& ,
+                              const double,
+                              const double,
+                              const double); 
 
 };
 
