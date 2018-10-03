@@ -441,6 +441,81 @@ public:
     
 };
 
+class tdMixedEffect : public GHMixedEffect{
+  private:
+
+    double b_GIG;
+    Eigen::VectorXd nu_vec;
+    double dnu_old;
+    double  grad_nu; // gradient for shape parameter
+    void step_nu(const double, const double,const int);
+  public:
+
+    double          nu;
+
+    tdMixedEffect();
+    ~tdMixedEffect(){};
+
+    void get_param(std::vector<double> &);
+    void get_param_names(Rcpp::StringVector & );
+    void initFromList(Rcpp::List const &);
+    void gradient2(const int i,
+                   const Eigen::VectorXd& res,
+                   const Eigen::VectorXd& iV,
+                   const double log_sigma2_noise = 0,
+                   const double EiV = 1.,
+                   const double weight = 1.,
+                   const int use_EU = 1);
+
+    void gradient(  const int ,
+                    const Eigen::VectorXd& ,
+                    const double ,
+                    const double,
+                    const int use_EU = 1);
+    void step_theta(const double stepsize,
+            const double learning_Rate  = 0,
+            const double polyak_rate   = -1,
+            const int burnin = 0);
+    Rcpp::List toList();
+    
+    virtual void printIter(); //print iteration data
+    virtual void setupStoreTracj(const int Niter); // setups to store the tracjetory
+
+    double get_a_GIG();
+    void   set_a_GIG();     
+    double get_b_GIG();
+    void   set_b_GIG();      
+    double get_p_GIG();
+    void   set_p_GIG(); 
+    /*
+      clear gradient
+    */
+  void clear_gradient();
+  void store_param_function(const double );
+
+    // returns the gradient of all the parameters
+    Eigen::VectorXd get_gradient();
+
+    double  logdensity(const Eigen::VectorXd & ); 
+
+
+    //computes second derivates given, latent data
+    // fixed variance
+    Eigen::MatrixXd d2Given(  const int ,
+                              const Eigen::VectorXd&,
+                              const double,
+                              const double ); 
+    //computes second derivates given, latent data
+    // variable variance
+    Eigen::MatrixXd d2Given2( const int ,
+                              const Eigen::VectorXd&,
+                              const Eigen::VectorXd& ,
+                              const double,
+                              const double,
+                              const double); 
+
+};
+
 
 class NIGMixedEffect  : public GHMixedEffect{
   private:

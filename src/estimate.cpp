@@ -505,7 +505,9 @@ List estimateLong_cpp(Rcpp::List in_list)
   //Rcpp::Rcout << "type_mixedEffect = " << type_mixedEffect << "\n";
   if(type_mixedEffect == "Normal"){
     mixobj = new NormalMixedEffect;
-  } else if(type_mixedEffect == "NIG") {
+  }else if(type_mixedEffect == "tdist") {
+    mixobj   = new tdMixedEffect;
+  }else if(type_mixedEffect == "NIG") {
     mixobj   = new NIGMixedEffect;
   } else {
     Rcpp::Rcout << "Wrong mixed effect distribution";

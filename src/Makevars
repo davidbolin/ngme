@@ -9,11 +9,11 @@ R_XTRA_CPPFLAGS =  -I$(R_INCLUDE_DIR)
 ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o
 MIXED = mixedEffect/NormalmixedEff.o mixedEffect/mixedEff_util.o \
-	mixedEffect/NIGmixedEff.o mixedEffect/GHmixedEff.o
+	mixedEffect/NIGmixedEff.o mixedEffect/GHmixedEff.o mixedEffect/tdistmixedEff.o
 OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix.o operator/operator_helper.o
 PROCESS  = latentprocess/latentprocess.o
 UTILS    = util/error_check.o util/rgig.o util/GIG.o util/MatrixAlgebra.o util/solver.o \
-util/sample.o util/subSamplingDiagnostic.o	 util/NGIG.o
+util/sample.o util/subSamplingDiagnostic.o	 util/GHmisc.o
 tests = test_functions.o
 
 OBJECTS = RcppExports.o  estimate.o simulate.o predict.o sample_rGIG.o $(tests) $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)

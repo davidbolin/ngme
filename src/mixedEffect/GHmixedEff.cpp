@@ -254,7 +254,10 @@ void GHMixedEffect::sampleV(const int i)
       Eigen::VectorXd U_ = U.col(i) + mu;
       double b  =  U_.transpose() * invSigma * U_;
       b += get_b_GIG();
-      V(i) = rgig.sample(p, get_a_GIG(), b);
+      double a =  mu.transpose() * (invSigma *  mu);
+      a += get_a_GIG();
+      V(i) = rgig.sample(p, a, b);
+
       
 }
 
@@ -311,6 +314,7 @@ void GHMixedEffect::simulate(Eigen::VectorXd  & Y, const int i )
   V(i)     =   rgig.sample(get_p_GIG(),
                            get_a_GIG(),
                            get_b_GIG());
+
   U.col(i) =   sample_Nc(b, invSigma/V(i));
   U.col(i) += -mu + mu * V(i);
   Y += Br[i] * (U.col(i) + beta_random);
@@ -956,7 +960,6 @@ void GHMixedEffect::clear_gradient()
    }
    if(Bf.size() > 0 )
       n_f = Bf[0].cols();
-  Rcpp::Rcout << "n_s +  2 * n_r +n_f + 1 = " << n_s +  2 * n_r +n_f + 1 <<"\n";
   if(Bf.size() > 0)
     grad_beta_f.setZero(Bf[0].cols());
 
@@ -995,5 +998,26 @@ Eigen::VectorXd GHMixedEffect::get_gradient()
   }
   return(g);
 }
+
+double logGH( const Eigen::VectorXd & U,
+              const Eigen::VectorXd & mu,
+              const Eigen::VectorXd & delta,
+              const Eigen::MatrixXd & iSigma,
+              const double nu,
+              const double )
+{
+  double p = -0.5 * ( 1 + U.size());
+  Eigen::VectorXd U_delta = U - delta;
+  double b = U_delta.dot( iSigma * U_delta) + nu;
+  double a = mu.dot( iSigma * mu) + nu;
+  double logf = U_delta.dot( iSigma * mu);
+  logf -= 0.75 * log(b);
+  double sqrt_ab  = sqrt(a * b);
+
+   double K1 = R::bessel_k(sqrt_ab, p, 2);
+   logf += log(K1) - sqrt_ab;
+   return(logf); 
+}
+
 
 

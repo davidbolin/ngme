@@ -41,6 +41,10 @@ test_logf_NIG <- function(U, mu, delta, iSigma, nu) {
     .Call(`_ngme_test_logf_NIG`, U, mu, delta, iSigma, nu)
 }
 
+test_logf_GH <- function(U, mu, delta, iSigma, p, a, b) {
+    .Call(`_ngme_test_logf_GH`, U, mu, delta, iSigma, p, a, b)
+}
+
 test_dU_EiV <- function(U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B) {
     .Call(`_ngme_test_dU_EiV`, U, Sigma, delta, mu, p_GIG, a_GIG, b_GIG, res, Q_noise, B)
 }

@@ -317,8 +317,8 @@ ngme <- function(fixed,
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
     stop("Process distribution should be one of the following: 'NIG', 'Normal', 'GAL', 'CH'")
   }
-  if(!(reffects %in% c("NIG", "Normal"))){
-    stop("Random-effects distribution should be one of the following: 'NIG', 'Normal'")
+  if(!(reffects %in% c("NIG", "Normal", "tdist"))){
+    stop("Random-effects distribution should be one of the following: 'NIG', 'Normal', 'tdist'")
   }
   if(!(error %in% c("NIG", "Normal", "tdist"))){
     stop("Measurement error distribution should be one of the following: 'NIG', 'Normal', 'tdist'")
@@ -853,14 +853,14 @@ ngme <- function(fixed,
   ranef_Sigma_vec       <- fit$mixedEffect_list$Sigma_vec
   ranef_sigma_epsilon   <- fit$mixedEffect_list$Sigma_epsilon
 
-  if(reffects %in% c("NIG")){
+  if(reffects %in% c("NIG","tdist")){
     ranef_mu     <- fit$mixedEffect_list$mu
     ranef_mu_vec <- fit$mixedEffect_list$mu_vec
 
     ranef_nu <- fit$mixedEffect_list$nu
     ranef_nu_vec <- fit$mixedEffect_list$nu_vec
 
-    if(rev(ranef_nu_vec)[1] == 100){
+    if(reffects %in% c("NIG") && rev(ranef_nu_vec)[1] == 100){
       warning("nu = 100 indicates NIG has converged to Normal")
     }
 

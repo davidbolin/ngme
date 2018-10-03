@@ -3,7 +3,7 @@
 #include "sample.h"
 #include "solver.h"
 #include "GIG.h"
-#include "NGIG.h"
+#include "GHmisc.h"
 #include "MixedEffect.h"
 #include "MatrixAlgebra.h"
 #include "operatorMatrix.h"
@@ -88,6 +88,27 @@ double test_logf_NIG(const Eigen::VectorXd & U,
                 delta,
                 iSigma,
                 nu ));
+  
+  
+}
+
+
+// [[Rcpp::export]]
+double test_logf_GH(const Eigen::VectorXd & U,
+                     const Eigen::VectorXd & mu,
+                     const Eigen::VectorXd & delta,
+                     const Eigen::MatrixXd & iSigma,
+                     const double p,
+                     const double a,
+                     const double b)
+{
+  return(logGH(U,
+                mu,
+                delta,
+                iSigma,
+                p,
+                a,
+                b));
   
   
 }

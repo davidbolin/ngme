@@ -3,9 +3,9 @@
 #include "GHmisc.h"
 #include <chrono>
 
-NIGMixedEffect::NIGMixedEffect(){
+tdMixedEffect::tdMixedEffect(){
   counter = 0;
-  noise = "NIG";
+  noise = "td";
   npars = 0;
   store_param  = 0;
   accept_MALA = 0;
@@ -14,27 +14,24 @@ NIGMixedEffect::NIGMixedEffect(){
   sample_MALA = 0;
 }
 
+double tdMixedEffect::get_p_GIG(){ return(-nu); }
+void   tdMixedEffect::set_p_GIG(){}
 
-double NIGMixedEffect::get_p_GIG(){ return(-0.5); }
-void   NIGMixedEffect::set_p_GIG(){}
-
-double NIGMixedEffect::get_a_GIG(){ return(a_GIG); }
-void   NIGMixedEffect::set_a_GIG(){
-  a_GIG = nu;
+double tdMixedEffect::get_a_GIG(){ return(0); }
+void   tdMixedEffect::set_a_GIG(){
+  
 }
-double NIGMixedEffect::get_b_GIG(){ return(b_GIG); }
-void   NIGMixedEffect::set_b_GIG(){ b_GIG = nu; }
+double tdMixedEffect::get_b_GIG(){ return(b_GIG); }
+void   tdMixedEffect::set_b_GIG(){ b_GIG = nu + 1;}
 
-
-
-void NIGMixedEffect::printIter()
+void tdMixedEffect::printIter()
 {
 
   GHMixedEffect::printIter();
 	if(Br.size() > 0)
 		Rcpp::Rcout << "nu     = " << nu << "\n";
 }
-void NIGMixedEffect::setupStoreTracj(const int Niter)
+void tdMixedEffect::setupStoreTracj(const int Niter)
 {
   GHMixedEffect::setupStoreTracj(Niter);
 
@@ -42,21 +39,20 @@ void NIGMixedEffect::setupStoreTracj(const int Niter)
 		nu_vec.resize(Niter);
 }
 
-void NIGMixedEffect::get_param(std::vector<double> & param_in ){
+void tdMixedEffect::get_param(std::vector<double> & param_in ){
 
   GHMixedEffect::get_param(param_in);
   if(Br.size() > 0 )
     param_in.push_back(nu);
 }
 
-void NIGMixedEffect::get_param_names(Rcpp::StringVector & names){
+void tdMixedEffect::get_param_names(Rcpp::StringVector & names){
 
   GHMixedEffect::get_param_names(names);
   if(Br.size() > 0 )
     names.push_back("nu");
 }
-
-Rcpp::List NIGMixedEffect::toList()
+Rcpp::List tdMixedEffect::toList()
 {
   Rcpp::List out = GHMixedEffect::toList();
   
@@ -71,7 +67,7 @@ Rcpp::List NIGMixedEffect::toList()
   return(out);
 }
 
-void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
+void tdMixedEffect::initFromList(Rcpp::List const &init_list)
 {
 
   GHMixedEffect::initFromList(init_list);
@@ -88,17 +84,13 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 
     if( init_list.containsElementNamed("V" ) == FALSE)
        simulate();
-    
-    
-     Rcpp::Rcout << "in initFromList = \n";
-     Rcpp::Rcout << "V=  " << V << "\n";
 
     npars += 1;
 	  dnu_old = 0;
     grad_nu = 0.;
-    EV  = 1.;
-    EiV = 1. + 1./nu;
-    VV  = 1./nu;
+  	EV  = 1.;  // not true it is the mode that is 1.
+  	EiV = nu / (get_b_GIG()) ;
+    VV  = get_b_GIG() * get_b_GIG() /( (nu - 1) * (nu - 1) * (nu - 2) );
 
 
     set_a_GIG();
@@ -107,18 +99,18 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
 }
 
 
+double tdMixedEffect::logdensity(const Eigen::VectorXd &  U){
 
-double NIGMixedEffect::logdensity(const Eigen::VectorXd &  U){
-
-  return logNIG(U,
+  return logGH(U,
                 mu,
                 -mu,
                 invSigma,
-                nu);
+                get_p_GIG(),
+                get_a_GIG(),
+                get_b_GIG());
 }
 
-
-void NIGMixedEffect::gradient(const int i,
+void tdMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
                               const double weight,
@@ -127,17 +119,13 @@ void NIGMixedEffect::gradient(const int i,
 {
   GHMixedEffect::gradient(i, res, log_sigma2_noise, weight, use_EU);
   if(Br.size() > 0){
+    double lik = log(nu + 1) + nu/( nu + 1) - R::digamma(nu) - log(V(i)) - 1 / V(i);
     // dnu
-    grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
-    term1 += weight * (V(i) + 1. / V(i) - 2.);
-    term2 += weight * 1.;
+    grad_nu += weight * lik;
   }
 }
 
-
-
-
-void NIGMixedEffect::gradient2(const int i,
+void tdMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
                                  const Eigen::VectorXd& iV,
                                  const double log_sigma2_noise,  // = 0
@@ -148,29 +136,29 @@ void NIGMixedEffect::gradient2(const int i,
 {
   GHMixedEffect::gradient2(i, res, iV, log_sigma2_noise, EiV, weight, use_EU);
     if(Br.size() > 0){
+      double lik = log(nu + 1) + nu/( nu + 1) - R::digamma(nu) - log(V(i)) - 1 / V(i);
       // dnu
-      grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
-      term1   += weight * (V(i) + 1. / V(i) - 2.);
-      term2   += weight * 1.;
+      grad_nu += weight * lik;
     }
 }
 
 
-void NIGMixedEffect::step_theta(const double stepsize,
-								const double learning_rate,
-								const double polyak_rate,
-								const int burnin)
+void tdMixedEffect::step_theta( const double stepsize,
+                                const double learning_rate,
+                                const double polyak_rate,
+                                const int burnin)
 {
   GHMixedEffect::step_theta(stepsize, learning_rate, polyak_rate, burnin);
   if(Br.size() > 0){
     step_nu(stepsize, learning_rate,burnin);
     set_a_GIG();
+    set_p_GIG();
   }
   clear_gradient();
   store_param_function(polyak_rate);
 }
 
-void NIGMixedEffect::store_param_function(const double polyak_rate)
+void tdMixedEffect::store_param_function(const double polyak_rate)
 {
   if(Br.size() > 0)
   {
@@ -183,16 +171,16 @@ void NIGMixedEffect::store_param_function(const double polyak_rate)
   GHMixedEffect::store_param_function(polyak_rate);
 }
 
-void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,const int burnin)
+void tdMixedEffect::step_nu(const double stepsize, const double learning_rate,const int burnin)
 {
-   grad_nu  *=  (nu * nu) / (2. * weight_total); //hessian
+   grad_nu  /= ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) ) *  weight_total; //hessian
 
   dnu_old = learning_rate * dnu_old + grad_nu;
   double nu_temp = -1;
   double step_size_temp = stepsize;
 
   while(nu_temp < 0){
-  	nu_temp = nu + stepsize  * grad_nu;
+    nu_temp = nu + stepsize  * grad_nu;
     step_size_temp *= 0.5;
     if(step_size_temp <= 1e-16){
         Rcpp::Rcout << "nu = \n" << nu << "\n";
@@ -201,61 +189,53 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,c
     }
   }
 
-  if(burnin == 1){
-    nu_temp = term1/term2;
-    if(nu_temp < 0){
-      nu_temp = 0.1;
-    }
-  }
+  
 
-  if(nu_temp  > 100){
-  		nu_temp =100;
-      dnu_old = 0;
-  } else if(nu_temp < 5e-06){
+  
+ if(nu_temp < 5e-06){
     nu_temp =5e-06;
     dnu_old = 0;
   }
 
-	nu = nu_temp;
-
-  EiV = 1. + 1./nu;
-  VV = 1./nu;
+  nu = nu_temp;
   set_b_GIG();
   set_a_GIG();
+
+  EV  = 1.;  // not true it is the mode that is 1.
+  EiV = nu / get_b_GIG() ;
+  VV  = get_b_GIG() * get_b_GIG()/( (nu - 1) * (nu - 1) * (nu - 2) );
+
 }
 
 
-
-void NIGMixedEffect::clear_gradient()
+void tdMixedEffect::clear_gradient()
 {
 
   GHMixedEffect::clear_gradient();
-  term1 = 0.;
-  term2 = 0.;
-	if(Br.size() > 0)
-		grad_nu = 0;
+  if(Br.size() > 0)
+    grad_nu = 0;
 }
 
 
-Eigen::VectorXd NIGMixedEffect::get_gradient()
+Eigen::VectorXd tdMixedEffect::get_gradient()
 {
   Eigen::VectorXd g = GHMixedEffect::get_gradient();
-	if(Br.size() > 0)
+  if(Br.size() > 0)
     g[npars - 1] = grad_nu;
-	return(g);
+  return(g);
 }
 
 
-Eigen::MatrixXd NIGMixedEffect::d2Given( const int i,
+Eigen::MatrixXd tdMixedEffect::d2Given( const int i,
                                         const Eigen::VectorXd& res,
                                         const double log_sigma2_noise,
                                         const double weight)
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given(i, res, log_sigma2_noise, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * 0.5 / pow(nu,2);
+  d2(npars - 1 , npars - 1 ) =  weight * ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) );
   return(d2);
 }
-Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
+Eigen::MatrixXd tdMixedEffect::d2Given2(const int i,
                                         const Eigen::VectorXd& res,
                                         const Eigen::VectorXd& iV,
                                         const double log_sigma2_noise,  // = 0
@@ -264,6 +244,6 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
                                        )
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given2(i, res, iV, log_sigma2_noise, EiV, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * 0.5 / pow(nu,2);
+  d2(npars - 1 , npars - 1 ) =  weight * ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) ) ;
   return(d2);
 }

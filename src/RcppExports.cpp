@@ -127,6 +127,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_logf_GH
+double test_logf_GH(const Eigen::VectorXd& U, const Eigen::VectorXd& mu, const Eigen::VectorXd& delta, const Eigen::MatrixXd& iSigma, const double p, const double a, const double b);
+RcppExport SEXP _ngme_test_logf_GH(SEXP USEXP, SEXP muSEXP, SEXP deltaSEXP, SEXP iSigmaSEXP, SEXP pSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type U(USEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type iSigma(iSigmaSEXP);
+    Rcpp::traits::input_parameter< const double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< const double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_logf_GH(U, mu, delta, iSigma, p, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_dU_EiV
 Rcpp::List test_dU_EiV(const Eigen::VectorXd& U, const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& delta, const Eigen::VectorXd& mu, const double p_GIG, const double a_GIG, const double b_GIG, const Eigen::VectorXd& res, const Eigen::MatrixXd& Q_noise, const Eigen::MatrixXd& B);
 RcppExport SEXP _ngme_test_dU_EiV(SEXP USEXP, SEXP SigmaSEXP, SEXP deltaSEXP, SEXP muSEXP, SEXP p_GIGSEXP, SEXP a_GIGSEXP, SEXP b_GIGSEXP, SEXP resSEXP, SEXP Q_noiseSEXP, SEXP BSEXP) {
@@ -239,6 +256,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_test_d2_process", (DL_FUNC) &_ngme_test_d2_process, 3},
     {"_ngme_test_sampling_NIG", (DL_FUNC) &_ngme_test_sampling_NIG, 3},
     {"_ngme_test_logf_NIG", (DL_FUNC) &_ngme_test_logf_NIG, 5},
+    {"_ngme_test_logf_GH", (DL_FUNC) &_ngme_test_logf_GH, 7},
     {"_ngme_test_dU_EiV", (DL_FUNC) &_ngme_test_dU_EiV, 10},
     {"_ngme_test_db_EiV_GIG", (DL_FUNC) &_ngme_test_db_EiV_GIG, 3},
     {"_ngme_test_EiV_NGIG", (DL_FUNC) &_ngme_test_EiV_NGIG, 7},
