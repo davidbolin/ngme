@@ -59,10 +59,17 @@ List predictLong_cpp(Rcpp::List in_list)
   Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
   std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
   MixedEffect *mixobj;
-  if(type_mixedEffect == "Normal")
+  if(type_mixedEffect == "Normal"){
     mixobj = new NormalMixedEffect;
-  else
+  }else if(type_mixedEffect == "tdist") {
+    mixobj   = new tdMixedEffect;
+  }else if(type_mixedEffect == "NIG") {
     mixobj   = new NIGMixedEffect;
+  } else {
+    Rcpp::Rcout << "Wrong mixed effect distribution\n";
+    return(0);
+  }
+
 
   mixobj->initFromList(mixedEffect_list);
 
