@@ -654,7 +654,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     if(silent == 0){
       if(estimate_fisher == 0){
-        if(debug || (burnin_rate>0) || (iter % (int)floor(nIter/1000) == 0)){
+        if(debug || (burnin_rate>0) || (iter % (int)ceil(nIter/1000.) == 0)){
           Rcpp::Rcout << "--------------------------------\n";
           Rcpp::Rcout << "iter = " << iter << " (of " << nIter << "): \n";
           if(process_active){
@@ -688,7 +688,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
       }
     }
-
     if(iter < nPar_burnin)
       par_burnin = 1;
 
@@ -777,8 +776,8 @@ List estimateLong_cpp(Rcpp::List in_list)
     double pdone = 0.0;
     double next_disp = 0.00;
 
-    for(int ilong = 0; ilong < nSubsample_i; ilong++ )
-    {
+    for(int ilong = 0; ilong < nSubsample_i; ilong++ ){
+
       if(silent == 0 && estimate_fisher && nIter == 1){
 
         pdone = (double) ilong / (double) nSubsample_i;
@@ -922,6 +921,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           count_inner++;
         }
       }
+
       // TODO::redo and move the above note i is the same always, and
       // we need both weighted unweighted
       // grad_inner.array() /= weight[i]; // dont use weight here(?)
@@ -943,9 +943,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(process_active)
         Vmean[i] += process->Vs[i];
       count_vec[i] += 1;
-
     }
-
     // update weights given the gradient
     // change here to unweighted gradient!
     if(subsample_type == 3){
@@ -962,7 +960,6 @@ List estimateLong_cpp(Rcpp::List in_list)
                     nSubsample_i / nindv);
     }
     */
-
     if((estimate_fisher == 0) && (silent == 0) && burnin_rate>0){
       Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample_i << "\n";
     }
@@ -985,7 +982,6 @@ List estimateLong_cpp(Rcpp::List in_list)
         learning_rate_temp = 0;
       if(debug)
         Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-
       //mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
       mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
       errObj->step_theta(stepsize,                   0, polyak_rate_temp);
@@ -1028,6 +1024,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     }
 
   }
+
   Rcpp::List out_list;
 
   std::vector<double> parameter;

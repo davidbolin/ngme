@@ -523,6 +523,7 @@ void NormalMixedEffect::gradient(const int i,
                                  const double weight,
                                  const int use_EU)
 {
+
     counter++;
     Eigen::VectorXd res_  = res;
     if(Br.size() > 0){
@@ -530,7 +531,6 @@ void NormalMixedEffect::gradient(const int i,
         res_ -= Br[i] * EU.col(i);
       else
         res_ -= Br[i] * U.col(i);
-
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
       UUt += weight * vec( UUT);
       grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
@@ -547,9 +547,6 @@ void NormalMixedEffect::gradient(const int i,
     }
     if(1){
       if(Br.size() > 0){
-      //res_ -= Br[i] * U.col(i);
-      //Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      //UUt += weight * vec( UUT);
       grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       //grad_beta_r2         += weight * (invSigma * U.col(i));
       H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
@@ -563,9 +560,6 @@ void NormalMixedEffect::gradient(const int i,
           }
       }
       }
-
-
-
      weight_total += weight;
 
 }
@@ -623,6 +617,8 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
 {
   grad_beta.tail( n_f) = grad_beta.tail( n_f).cwiseProduct( beta_fixed_constrainted);
   grad_beta.head( n_r) = grad_beta.head( n_r).cwiseProduct(beta_random_constrainted);
+  
+
   Eigen::VectorXd step1;
   step1.setZero(n_f + n_r);
   int n_unconstrained = beta_fixed_constrainted.sum() + beta_random_constrainted.sum() ;
@@ -663,6 +659,7 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
     beta_random += stepsize * dbeta_r_old;
     grad_beta_r2.setZero(Br[0].cols());
   }
+
   H_beta.setZero(n_f + n_r, n_f + n_r);
 
 }
