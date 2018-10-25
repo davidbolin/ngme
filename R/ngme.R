@@ -1,7 +1,7 @@
 
 #' @title Parameter estimation.
 #'
-#' @description Estimates model parameters using maximum likelihood 
+#' @description Estimates model parameters using maximum likelihood
 #'   implemented by a computationally efficient stochastic gradient algorithm.
 #'
 #' @param fixed A two-sided formula to specify the fixed effects design matrix.
@@ -30,7 +30,7 @@
 #'   \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"tdist"} for t.
 #' @param data A data-frame from which the response and covariates to be extracted.
-#' @param timevar A character string that indicates the column name of the time variable 
+#' @param timevar A character string that indicates the column name of the time variable
 #'   in \code{data}.
 #' @param silent A logical value for printing the details of the iterations;
 #'   \code{"TRUE"} indicates do not print, \code{"FALSE"} print.
@@ -38,21 +38,21 @@
 #'   used by the stochastic gradient.
 #' @param mesh A list of control variables for creating mesh.
 #'  \itemize{
-#'    \item \code{max.dist} 
-#'    \item \code{cutoff} A numeric value. All time points that are separated less 
+#'    \item \code{max.dist}
+#'    \item \code{cutoff} A numeric value. All time points that are separated less
 #'    than \code{cutoff} will be merged to one node.
-#'    \item \code{commond.grid} A logical value for creating same grids for different 
-#'    subjects. \code{"TRUE"} indicates common grid, \code{"FALSE"} uncommon grid. 
-#'    \item \code{extend} A numeric value or two element numeric vector for  
-#'    extending the meshes beyond the measurement locations with the specified 
-#'    percentage(s). If \code{extend} 
-#'    is specified by a single value, it indicates extending the mesh towards 
-#'    left and right by the same amount. If specified by a two element vector, 
-#'    whilst the first element is for extending towards the left, the second is 
-#'    for extending towards the right.   
-#'    \item \code{n.cores} A numeric value for the number of cores to be used to create the 
+#'    \item \code{commond.grid} A logical value for creating same grids for different
+#'    subjects. \code{"TRUE"} indicates common grid, \code{"FALSE"} uncommon grid.
+#'    \item \code{extend} A numeric value or two element numeric vector for
+#'    extending the meshes beyond the measurement locations with the specified
+#'    percentage(s). If \code{extend}
+#'    is specified by a single value, it indicates extending the mesh towards
+#'    left and right by the same amount. If specified by a two element vector,
+#'    whilst the first element is for extending towards the left, the second is
+#'    for extending towards the right.
+#'    \item \code{n.cores} A numeric value for the number of cores to be used to create the
 #'    mesh.
-#'  }     
+#'  }
 #' @param controls A list of control variables for parameter estimation.
 #'  \itemize{
 #'     \item \code{learning.rate} A numeric value for the parameter of stochastic gradient.
@@ -71,7 +71,7 @@
 #'     \item \code{nSim.fisher} A numeric value for the number of samples of the Gibbs sampler
 #'       to obtain the Fisher-Information matrix.
 #'     \item \code{step0} A numeric value for step-size of the optimizer;
-#'       where step-size is defined as step0 / i^alpha, i being the iteration, 
+#'       where step-size is defined as step0 / i^alpha, i being the iteration,
 #'       \code{alpha} is another tuning parameter specified next.
 #'     \item \code{alpha} A numeric value for stepsize of the optimizer; step0 / i^alpha.
 #'     \item \code{nBurnin.learningrate} A numeric value until which the learning will
@@ -87,22 +87,22 @@
 #'       to be used in each gradient subsampling weighted by gradient.
 #'     \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
 #'       \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
-#'     \item \code{estimate.fisher} A logical variable or numeric scalar 
+#'     \item \code{estimate.fisher} A logical variable or numeric scalar
 #'      for whether Fisher-Information matrix
-#'       to be obtained; \code{"FALSE"} indicates do not obtain, \code{1} expected Fisher 
+#'       to be obtained; \code{"FALSE"} indicates do not obtain, \code{1} expected Fisher
 #'       matrix, \code{2} for observed.
 #'     \item \code{individual.sigma} A logical variable for specifying patient-specific mixture
 #'       random variable for the error-term; \code{"FALSE"} indicates do not obtain,
 #'       \code{"TRUE"} obtain.
 #'  }
-#' @param controls.init A list of control variables to be used to fit the normal model 
-#'      to get the initial values for fitting a model with at least one of random effects, 
-#'      process and error being non-Gaussian. 
+#' @param controls.init A list of control variables to be used to fit the normal model
+#'      to get the initial values for fitting a model with at least one of random effects,
+#'      process and error being non-Gaussian.
 #'  \itemize{
-#'  \item \code{learning.rate.init} See \code{learning.rate} in \code{controls}. 
+#'  \item \code{learning.rate.init} See \code{learning.rate} in \code{controls}.
 #'  \item \code{polyak.rate.init} See \code{polyak.rate} in \code{controls}.
-#'  \item \code{nBurnin.init} See \code{nBurnin} in \code{controls}. 
-#'  \item \code{nSim.init} See \code{nSim} in \code{controls}.  
+#'  \item \code{nBurnin.init} See \code{nBurnin} in \code{controls}.
+#'  \item \code{nSim.init} See \code{nSim} in \code{controls}.
 #'  \item \code{nIter.init} See \code{nIter} in \code{controls}.
 #'  \item \code{pSubsample.init} See \code{pSubsample} in \code{controls}.
 #'  \item \code{nPar.burnin.init} See \code{nPar.burnin} in \code{controls}.
@@ -114,9 +114,9 @@
 #'  \item \code{pSubsample2.init} See \code{pSubsample2} in \code{controls}.
 #'  \item \code{standardize.mixedEffects.init} See \code{standardize.mixedEffects} in \code{controls}.
 #'  \item \code{individual.sigma.init = FALSE} See \code{individual.sigma} in \code{controls}.
-#'  } 
-#' @param init.fit A fitted \code{ngme} object with normal distribution for random effects, 
-#'  process and error.   
+#'  }
+#' @param init.fit A fitted \code{ngme} object with normal distribution for random effects,
+#'  process and error.
 #' @details This function is a user-friendly wrapper that calls the \code{estimateLong} function.
 #'     Generic functions \code{summary}, \code{print} and \code{plot} are available for the
 #'     output returned by the function \code{ngme}. For Matern covariance function,
@@ -126,15 +126,15 @@
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)
-#'   
+#'
 #'   # transform pwl to decrese it correlation with bage
-#'   # then center all the covariates for better convergence 
+#'   # then center all the covariates for better convergence
 #'   srft_data$pwl2 <- with(srft_data, pwl - bage/1.5)
-#'   srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <- 
+#'   srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <-
 #'     scale(srft_data[, c("sex", "bage", "fu", "pwl2")], scale = FALSE)
-#'  
-#'   # fit the model with normal assumption for random effects, process and error 
-#'   # covariance function is integrated random walk        
+#'
+#'   # fit the model with normal assumption for random effects, process and error
+#'   # covariance function is integrated random walk
 #'   set.seed(123)
 #'   fit_normal_normal_normal_fd2 <- ngme(fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
 #'                                        random = ~ 1|id,
@@ -158,7 +158,7 @@
 #'                                                        alpha = 0.01
 #'                                                        )
 #'                                        )
-#' # fit the model with NIG assumption for all the random components                                       
+#' # fit the model with NIG assumption for all the random components
 #' set.seed(123)
 #' fit_nig_nig_nig_fd2 <- update(fit_normal_normal_normal_fd2,
 #'                               reffects = "NIG",
@@ -175,7 +175,7 @@ ngme <- function(fixed,
                  process = c("Normal", "fd2"),
                  error = "Normal",
                  data,
-                 timeVar = NULL,
+                 timeVar,
                  silent = TRUE,
                  nIter = 1000,
                  mesh = list(max.dist = NULL,
@@ -296,23 +296,23 @@ ngme <- function(fixed,
       }
     }
   }
-  
+
   # return an error if max.dist and cutoff not provided
   if(use.process == TRUE){
-    
+
     if((reffects == "Normal" & process[1] == "Normal" & error == "Normal") ||
        (is.null(init.fit) == TRUE & (reffects != "Normal" & process[1] != "Normal" & error != "Normal"))){
-      
+
       if(is.null(mesh$max.dist) == TRUE & is.null(mesh$cutoff) == TRUE){
         stop("Provide 'max.dist' and 'cutoff' for creating mesh")
       }
-      
+
     }
-    
-  }else{
-    locs = NULL
-  }
-  
+
+  #}else{
+  #  locs = NULL
+  #}
+
   # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
     stop("Process distribution should be one of the following: 'NIG', 'Normal', 'GAL', 'CH'")
@@ -370,7 +370,7 @@ ngme <- function(fixed,
   B_random    <- lapply(B_random, function(x) as.matrix(x))
 
   Y    <- tapply(y, id, function(x) x)
-  if(use.process)
+  #if(use.process)
     locs <- tapply(data[, timeVar], id, function(x) x)
 
   Nobs <- length(Y)
@@ -382,7 +382,7 @@ ngme <- function(fixed,
       controls.init$pSubsample.init = 0.2
     }else{
       controls.init$pSubsample.init = 0.1
-    }  
+    }
   }
   if(is.null(controls$pSubsample)){
     if(Nobs < 100){
@@ -391,7 +391,7 @@ ngme <- function(fixed,
       controls$pSubsample = 0.2
     }else{
       controls$pSubsample = 0.1
-    }  
+    }
   }
   ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
@@ -414,8 +414,8 @@ ngme <- function(fixed,
       cat("Setup lists\n")
     }
 
-    measurement_list <- list(Vs = Vin, 
-                             noise = "Normal", 
+    measurement_list <- list(Vs = Vin,
+                             noise = "Normal",
                              sigma = 0.1)
 
     mixedEffect_list <- list(B_random = B_random,
@@ -533,7 +533,7 @@ ngme <- function(fixed,
       fit$processes_list$noise <- process[1]
 
       fit$measurementError_list$noise <- error
-      
+
       if(fit$measurementError_list$noise == "Normal"){
         fit$measurementError_list$nu  <-  10
       }
@@ -734,7 +734,7 @@ ngme <- function(fixed,
                           estimate_fisher = FALSE
                           )
       # Obtain Fisher matrix
-      
+
       if(controls$estimate.fisher > 0){
         fit.f <- estimateLong(Y,
                               locs,
@@ -883,7 +883,7 @@ ngme <- function(fixed,
     if(process[2] %in% c("matern")){
       operator_kappa <- fit$operator_list$kappa
       operator_kappa_vec <- fit$operator_list$kappaVec
-      
+
     }else{
       operator_kappa <- operator_kappa_vec <- NA
     }
