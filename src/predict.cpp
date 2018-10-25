@@ -13,6 +13,7 @@
 #include "measError.h"
 #include "latentprocess.h"
 using namespace Rcpp;
+//test
 #define max(a,b) (((a)>(b))?(a):(b))
 #define min(a,b) (((a)<(b))?(a):(b))
 
