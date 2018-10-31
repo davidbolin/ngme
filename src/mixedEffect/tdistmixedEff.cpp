@@ -5,7 +5,7 @@
 
 tdMixedEffect::tdMixedEffect(){
   counter = 0;
-  noise = "td";
+  noise = "tdist";
   npars = 0;
   store_param  = 0;
   accept_MALA = 0;
@@ -19,7 +19,7 @@ void   tdMixedEffect::set_p_GIG(){}
 
 double tdMixedEffect::get_a_GIG(){ return(0); }
 void   tdMixedEffect::set_a_GIG(){
-  
+
 }
 double tdMixedEffect::get_b_GIG(){ return(b_GIG); }
 void   tdMixedEffect::set_b_GIG(){ b_GIG = nu + 1;}
@@ -55,7 +55,7 @@ void tdMixedEffect::get_param_names(Rcpp::StringVector & names){
 Rcpp::List tdMixedEffect::toList()
 {
   Rcpp::List out = GHMixedEffect::toList();
-  
+
   out["nu"]     = nu;
   if(store_param){
 	 if(Br.size() > 0){
@@ -189,9 +189,9 @@ void tdMixedEffect::step_nu(const double stepsize, const double learning_rate,co
     }
   }
 
-  
 
-  
+
+
  if(nu_temp < 5e-06){
     nu_temp =5e-06;
     dnu_old = 0;
