@@ -196,7 +196,10 @@ void tdMixedEffect::step_nu(const double stepsize, const double learning_rate,co
     nu_temp =5e-06;
     dnu_old = 0;
   }
-
+  if(nu_temp  > 100){
+      nu_temp =100;
+      dnu_old = 0;
+  }
   nu = nu_temp;
   set_b_GIG();
   set_a_GIG();
