@@ -76,7 +76,7 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
                 main = "Random effects", xlab = "Iteration", ylab = colnames(ranef_results_vec))
       }
 
-    }else if(summary(object)$random_distr %in% ("NIG")){
+    }else if(summary(object)$random_distr %in% c("NIG", "tdist")){
 
       ranef_results_vec <- cbind(ranef_results_vec, object$ranef_mu_vec, object$ranef_nu_vec)
       colnames(ranef_results_vec)[(ncol(ranef_results_vec)-ncol_Sigma ) : (ncol(ranef_results_vec))] <-

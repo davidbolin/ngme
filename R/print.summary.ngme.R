@@ -34,7 +34,7 @@ print.summary.ngme <- function(object, ...){
     cat("Standard errors for Sigma matrix:\n")
     print(object$random_results$Sigma_est_se)
 
-    if(object$random_distr %in% c("NIG")){
+    if(object$random_distr %in% c("NIG", "tdist")){
       mu_results <-
         matrix(
         c(object$random_results$mu_est,
@@ -87,7 +87,7 @@ print.summary.ngme <- function(object, ...){
     cat("Sigma matrix:\n")
     print(object$random_results$Sigma_est)
 
-    if(object$random_distr %in% c("NIG")){
+    if(object$random_distr %in% c("NIG", "tdist")){
       mu_results <-
         matrix(
           object$random_results$mu_est,

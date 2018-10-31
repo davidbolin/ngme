@@ -27,7 +27,7 @@ print.ngme <- function(object, ...){
   cat("Estimate of random effects Sigma matrix:\n")
   print(object$ranef_Sigma)
 
-  if(object$random_distr %in% c("NIG")){
+  if(object$random_distr %in% c("NIG", "tdist")){
     cat("\n")
     cat("Estimate of random effects mu:", object$ranef_mu, "\n")
     cat("Estimate of random effects nu:", object$ranef_nu, "\n")

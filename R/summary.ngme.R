@@ -32,7 +32,7 @@ summary.ngme <- function(object, ...){
     if(object$random_distr == "Normal"){
       random_results <- list(Sigma_est    = object$ranef_Sigma,
                              Sigma_est_se = se_est[grep("Sigma_random", names(se_est))])
-    }else if(object$random_distr == "NIG"){
+    }else if(object$random_distr %in% c("NIG", "tdist")){
       random_results <- list(mu_est       = as.numeric(object$ranef_mu),
                              mu_est_se    = se_est[grep("mu_random", names(se_est))],
                              Sigma_est    = object$ranef_Sigma,
@@ -101,11 +101,10 @@ summary.ngme <- function(object, ...){
 
     if(object$random_distr == "Normal"){
       random_results <- list(Sigma_est    = object$ranef_Sigma)
-    }else if(object$random_distr == "NIG"){
+    }else if(object$random_distr %in% c("NIG", "tdist")){
       random_results <- list(mu_est    = as.numeric(object$ranef_mu),
                              Sigma_est = object$ranef_Sigma,
-                             nu_est    = object$ranef_nu
-      )
+                             nu_est    = object$ranef_nu)
     }
 
     if(object$use_process){ # if use.process = TRUE
