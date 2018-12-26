@@ -417,7 +417,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
     ngroup = group_list.length();
-    Rcpp::Rcout << "ngroup = " << ngroup << "\n";
     groups.resize(ngroup);
     free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
 
@@ -698,8 +697,6 @@ List estimateLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << "estimate::subsample_type = " << subsample_type << " \n";
     }
     int nSubsample_i = nSubsample;
-    Rcpp::Rcout << "nSubsample = " << nSubsample << "\n";
-    Rcpp::Rcout << "subsample_type = " << subsample_type << "\n";
     // subsampling
     if(subsample_type == 1){
       //Uniform sampling without replacement from 1:nrep

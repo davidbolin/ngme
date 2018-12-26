@@ -8,8 +8,10 @@
 #'   \code{"random"} for time-invariant random effects,
 #'   \code{"process"} for stochastic process,
 #'   \code{"error"} for error term.
-#' @param param plot Plot the results or not?
-#'
+#' @param plot Plot the results or not?
+#' @param polyak.rate - ([0,1]) how much much of moving average should be used
+#'                      (using weighted average where weight is polyak.rate)       
+#' @param burnin.end  - (int) where from start the variance calc and polyak averaging
 #' @seealso \code{\link{ngme}}
 #'
 #' @examples
@@ -21,7 +23,7 @@
 
 polyak.ngme <- function(object,
                         param = "fixed",
-                        polyak.rate = 0,
+                        polyak.rate = 1,
                         plot = TRUE,
                         burnin.end = NULL){
 
@@ -34,7 +36,9 @@ polyak.ngme <- function(object,
     n.random <- dim(object$mixedEffect_list$beta_random)[2]
     n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
     pars <- object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)]
-    pars.smooth <- smooth.trajectory(pars,polyak.rate = polyak.rate)
+    pars.smooth <- smooth.trajectory(pars,
+                                     polyak.rate = polyak.rate, 
+                                     burnin.end = burnin.end)
     object$mixedEffect_list$betaf_vec <- pars.smooth$x
     object$mixedEffect_list$beta_fixed <- pars.smooth$xe
 
@@ -62,7 +66,9 @@ polyak.ngme <- function(object,
 
     pars <- object$mixedEffect_list$betar_vec
     colnames(pars) <- names
-    pars.smooth <- smooth.trajectory(pars,polyak.rate = polyak.rate)
+    pars.smooth <- smooth.trajectory(pars,
+                                     polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
     object$mixedEffect_list$betar_vec <- pars.smooth$x
     object$mixedEffect_list$beta_random <- pars.smooth$xe
 
@@ -86,7 +92,9 @@ polyak.ngme <- function(object,
     pars <- object$ranef_Sigma_vec
     colnames(pars) <- rep("Sigma",dim(object$ranef_Sigma_vec)[2])
 
-    pars.smooth <- smooth.trajectory(pars,polyak.rate = polyak.rate)
+    pars.smooth <- smooth.trajectory(pars,
+                                     polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
     object$ranef_Sigma_vec <- pars.smooth$x
     object$ranef_Sigma <- pars.smooth$xe
     object$mixedEffect_list$Sigma <- pars.smooth$xe
@@ -99,14 +107,16 @@ polyak.ngme <- function(object,
 
     if(object$random_distr %in% ("NIG")){
       mu <- object$ranef_mu_vec
-      mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate)
+      mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
       object$ranef_mu_vec <- mu.smooth$x
       object$ranef_mu <- mu.smooth$xe
       object$processes_list$mu <- mu.smooth$xe
       object$ranef_mu_var <- compute.polyak.variance(mu,polyak.rate,i.start = burnin.end)
 
       nu <- object$ranef_nu_vec
-      nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate)
+      nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
       object$ranef_nu_vec <- nu.smooth$x
       object$ranef_nu <- nu.smooth$xe
       object$processes_list$nu <- nu.smooth$xe
@@ -124,7 +134,8 @@ polyak.ngme <- function(object,
     }
   } else if(param == "process"){
     tau <- object$operator_tau_vec
-    tau.smooth <- smooth.trajectory(tau,polyak.rate = polyak.rate)
+    tau.smooth <- smooth.trajectory(tau,polyak.rate = polyak.rate,
+                                    burnin.end = burnin.end)
     object$operator_tau_vec <-tau.smooth$x
     object$operator_tau <- tau.smooth$xe
     object$operator_list$tau <- tau.smooth$xe
@@ -134,7 +145,9 @@ polyak.ngme <- function(object,
     colnames(pars) <- "tau"
     if(object$operator_type == "matern"){
       kappa <- object$operator_kappa_vec
-      kappa.smooth <- smooth.trajectory(kappa,polyak.rate = polyak.rate)
+      kappa.smooth <- smooth.trajectory(kappa,
+                                        polyak.rate = polyak.rate,
+                                        burnin.end = burnin.end)
       object$operator_kappa_vec <-kappa.smooth$x
       object$operator_kappa <- kappa.smooth$xe
       object$operator_list$kappa <- kappa.smooth$xe
@@ -146,14 +159,16 @@ polyak.ngme <- function(object,
 
     if(object$process_distr %in% c("NIG", "GAL")){
       mu <- object$process_mu_vec
-      mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate)
+      mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
       object$process_mu_vec <-mu.smooth$x
       object$process_mu <- mu.smooth$xe
       object$processes_list$mu <- mu.smooth$xe
       object$process_mu_var <- compute.polyak.variance(mu,polyak.rate,i.start = burnin.end)
 
       nu <- object$process_nu_vec
-      nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate)
+      nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
       object$process_nu_vec <-nu.smooth$x
       object$process_nu <- nu.smooth$xe
       object$processes_list$nu <- nu.smooth$xe
@@ -167,7 +182,8 @@ polyak.ngme <- function(object,
     } else if(param == "error"){
 
       sigma <- object$meas_error_sigma_vec
-      sigma.smooth <- smooth.trajectory(sigma,polyak.rate = polyak.rate)
+      sigma.smooth <- smooth.trajectory(sigma,polyak.rate = polyak.rate,
+                                        burnin.end = burnin.end)
       object$meas_error_sigma_vec <-sigma.smooth$x
       object$meas_error_sigma <- sigma.smooth$xe
       object$measurementError_list$sigma <- sigma.smooth$xe
@@ -178,7 +194,8 @@ polyak.ngme <- function(object,
 
       if(object$error_distr %in% c("NIG", "tdist")){
         nu <- object$meas_error_nu_vec
-        nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate)
+        nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate,
+                                       burnin.end = burnin.end)
         object$meas_error_nu_vec <-nu.smooth$x
         object$meas_error_nu <- nu.smooth$xe
         object$measurementError_list$nu <- nu.smooth$xe
@@ -241,16 +258,18 @@ compute.polyak.variance <- function(x,polyak.rate,i.start){
 
 
 
-smooth.trajectory <- function(x,polyak.rate){
+smooth.trajectory <- function(x,polyak.rate, burnin.end = NULL){
+  if(is.null(burnin.end))
+    burnin.end <- 1
   if(length(dim(x))==2){
     n = dim(x)[1]
-    for(i in 2:n){
+    for(i in burnin.end:n){
       x[i,] <- polyak.rate * x[i,] + (1 - polyak.rate) * x[i-1,];
     }
     xe = matrix(x[n,],1,dim(x)[2])
   } else {
     n = length(x)
-    for(i in 2:n){
+    for(i in burnin.end:n){
       x[i] <- polyak.rate * x[i] + (1 - polyak.rate) * x[i-1];
     }
     xe = matrix(x[n],1,1)
