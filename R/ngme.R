@@ -169,7 +169,7 @@
 #' }
 
 ngme <- function(fixed,
-                 random,
+                 random = NULL,
                  use.process = TRUE,
                  reffects = "Normal",
                  process = c("Normal", "fd2"),
@@ -370,8 +370,9 @@ ngme <- function(fixed,
   B_random    <- lapply(B_random, function(x) as.matrix(x))
 
   Y    <- tapply(y, id, function(x) x)
-  #if(use.process)
-    locs <- tapply(data[, timeVar], id, function(x) x)
+  
+  # extract variables for process
+  locs <- tapply(as.matrix(data[, timeVar]), id, function(x) x)  
 
   Nobs <- length(Y)
   # if pSubsampling not set
@@ -431,12 +432,6 @@ ngme <- function(fixed,
                                        max.dist = mesh$max.dist,
                                        cutoff = mesh$cutoff,
                                        n.cores = mesh$n.cores)
-      #if(is.null(controls$n.process)){
-      #  n.process <- max(round(mean(unlist(lapply(locs, length)))), 1)
-      #  operator_list <- create_operator(locs, n.process, name = process[2])
-      #}else{
-      #  operator_list <- create_operator(locs, controls$n.process, name = process[2])
-      #}
 
       process_list = list(noise = "Normal",
                           nu  = 1,

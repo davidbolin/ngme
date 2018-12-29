@@ -264,12 +264,6 @@ create_operator <- function(locs,
                                extend = extend,
                                max.dist = max.dist,
                                cutoff = cutoff))
-    #return(create_matrices_FD2(locs = locs,
-    #                           n = n,
-    #                           common.grid = common.grid,
-    #                           extend = extend,
-    #                           max.dist = max.dist,
-    #                           cutoff = cutoff))
   }
 
 }

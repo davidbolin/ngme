@@ -1,6 +1,6 @@
 rm(list = ls())
 graphics.off()
-library(LDMod)
+library(ngme)
 library(INLA)
 library(fields)
 #First estimate stationary model:
