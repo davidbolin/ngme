@@ -106,8 +106,8 @@ void subsampler::sample(int iter, std::default_random_engine & subsample_generat
   // subsampling
   if(subsample_type == 1){
     std::shuffle(longInd.begin(), longInd.end(), subsample_generator);
-    Rcpp::Rcout << " longInd:\n";
-    for (int i=0; i< nindv; i++) Rcpp::Rcout << longInd[i] << "\n";
+    //Rcpp::Rcout << " longInd:\n";
+    //for (int i=0; i< nindv; i++) Rcpp::Rcout << longInd[i] << "\n";
     
   } else if(subsample_type == 2){
     std::discrete_distribution<int> distribution(Ysize.begin(), Ysize.end());
