@@ -1,3 +1,5 @@
+
+  
 #' @title Simulates data from the prior model.
 #' 
 #' @description 

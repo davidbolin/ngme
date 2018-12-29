@@ -14,6 +14,7 @@
 #include "latentprocess.h"
 #include "subSampleDiagnostic.h"
 #include "sample.h"
+#include "subsampler.h"
 using namespace Rcpp;
 
 double estDigamma(double x)
@@ -323,7 +324,6 @@ List estimateLong_cpp(Rcpp::List in_list)
   //**********************************
 
   int debug = 0;
-  double pSubsample = Rcpp::as< double > (in_list["pSubsample"]);
   int nIter      = Rcpp::as< int > (in_list["nIter"]);
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
@@ -335,8 +335,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   int silent     = Rcpp::as< int    > (in_list["silent"]);
   double alpha     = Rcpp::as< double    > (in_list["alpha"]);
   double step0     = Rcpp::as< double    > (in_list["step0"]);
-  int subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
-
+  
   unsigned long seed = 0;
   if(in_list.containsElementNamed("seed"))
     seed = Rcpp::as< unsigned long    > (in_list["seed"]);
@@ -373,79 +372,29 @@ List estimateLong_cpp(Rcpp::List in_list)
   }
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
   int nindv = obs_list.length(); //count number of patients
-  int nSubsample = ceil(pSubsample * nindv);
   std::vector< Eigen::SparseMatrix<double,0,int> > As( nindv);
   std::vector< Eigen::VectorXd > Ys( nindv);
-  std::vector< double > Ysize(nindv);
   std::vector< int > burnin_done(nindv);
-  Eigen::VectorXd sampling_weights(nindv);
-
+  
   int count = 0;
   for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>(*it);
     if(process_active)
       As[count] = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
     Ys[count] = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
-    Ysize[count] = (double) Ys[count].size();
     burnin_done[count] = 0;
-    if(subsample_type == 1){
-      sampling_weights[count] = 1.0;
-    } else if(subsample_type == 2){
-      sampling_weights[count] = Ysize[count];
-    } else if (subsample_type == 3){ //Biased sampling
-      sampling_weights[count] = 1.0;
-    } else if (subsample_type == 0){ //Biased sampling
-      sampling_weights[count] = 1.0;
-    }
     count++;
   }
 
-  sampling_weights /= sampling_weights.sum();
-
-  int nSubsample_group[2];
-  double pSubsample2 = 0;
-  Eigen::VectorXd free;
-
-  Rcpp::List group_list;
-  count = 0;
-  int ngroup;
-  std::vector<Eigen::VectorXd> groups;
-  if(subsample_type == 3){
-    pSubsample2 = Rcpp::as< double > (in_list["pSubsample"]); // BUG? should it be pSubsample???
-  } else if(subsample_type == 4){
-
-
-    group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
-    ngroup = group_list.length();
-    Rcpp::Rcout << "ngroup = " << ngroup << "\n";
-    groups.resize(ngroup);
-    free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
-
-    for( List::iterator it = group_list.begin(); it != group_list.end(); ++it ) {
-      groups[count] = Rcpp::as<Eigen::VectorXd>(*it);
-      if(debug){
-        Rcpp::Rcout << "group: "<< groups[count] << "\n";
-      }
-
-      count++;
-    }
-    int gsum = 0;
-    for(int i=0;i<groups.size();i++){
-      int ngroup = groups[i].size();
-      gsum += ngroup;
-    }
-    double gmean = 0;
-    if(groups.size()>0){
-      gmean = gsum/groups.size();
-    }
-    if(debug){
-      int nfree = free.size();
-      for(int i=0;i<nfree;i++){
-        Rcpp::Rcout << "free[i]: "<< free[i] << "\n";
-      }
-    }
-
+  //*********************************
+  //Init subsampler
+  //********************************
+  if(silent == 0){
+    Rcpp::Rcout << " Setup subsampler\n";
   }
+  subsampler* sampler = new subsampler;
+  sampler->initFromList(in_list);
+  
   //***********************************
   //Debug setup
   //***********************************
@@ -574,8 +523,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   }
   std::mt19937 random_engine;
   std::normal_distribution<double> normal;
-  std::default_random_engine subsample_generator;
   std::default_random_engine gammagenerator;
+  std::default_random_engine subsample_generator;
   gig rgig;
   gig *rgig_pointer = &rgig;
   if(in_list.containsElementNamed("seed")){
@@ -590,48 +539,19 @@ List estimateLong_cpp(Rcpp::List in_list)
   gammagenerator.seed(random_engine());
   subsample_generator.seed(random_engine());
 
-  std::vector<int> longInd;
+  
   std::vector<Eigen::VectorXd> Vmean;
-  Eigen::VectorXd count_vec(nindv);
-  Vmean.resize(nindv);
+  Eigen::VectorXd count_vec;
   count_vec.setZero(nindv);
+  Vmean.resize(nindv);
   if(process_active){
     for(int i = 0; i < nindv; i++ ){
       Vmean[i].setZero(Kobj->h[i].size());
     }
   }
 
-  // For sampling we have the following:
-  /*
-  weight   -> the weight each observation has given it is selected
-  (note this not 1/p)
-  p[i]     -> the probability of selecting indvual [i]
-  m        -> expected number of samples we want for weighted sampling
-  selected -> 1, 0 variable keeping track of which individuals being selected
-  */
-  Eigen::VectorXd weight(nindv), p_inv(nindv);
-  p_inv.setZero(nindv);
-  weight.setZero(nindv);
-  weight.array() += nindv / ((double) nSubsample);
-  Eigen::VectorXd p(nindv);
-  p.setZero(nindv);
-  Eigen::VectorXd p_N(nindv);
-  p_N.setZero(nindv);
-  p_N.array() += 1. / nindv;
-  std::vector<int> selected(nindv, 0);
 
   int par_burnin = 0;
-  if(debug)
-    Rcpp::Rcout << "nindv = " << nindv << "\n";
-  for (int i=0; i< nindv; i++) longInd.push_back(i);
-
-  if(subsample_type == 4){
-    groupSampling_weights (nSubsample,
-                           groups,
-                           free,
-                           weight,
-                           nSubsample_group);
-  }
 
 
   int npars =   mixobj->npars + errObj->npars;
@@ -694,68 +614,15 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     if(debug){
       Rcpp::Rcout << "estimate::subsample \n";
-
-      Rcpp::Rcout << "estimate::subsample_type = " << subsample_type << " \n";
+      Rcpp::Rcout << "estimate::subsample_type = " << sampler->subsample_type << " \n";
     }
-    int nSubsample_i = nSubsample;
-    Rcpp::Rcout << "nSubsample = " << nSubsample << "\n";
-    Rcpp::Rcout << "subsample_type = " << subsample_type << "\n";
-    // subsampling
-    if(subsample_type == 1){
-      //Uniform sampling without replacement from 1:nrep
-      std::shuffle(longInd.begin(), longInd.end(), gammagenerator);
-    } else if(subsample_type == 2){
-      //weighted by number of samples
-      std::discrete_distribution<int> distribution(Ysize.begin(), Ysize.end());
-      for (int i=0; i<nSubsample_i; ++i) {
-        longInd[i] = distribution(gammagenerator);
-      }
-      //std::cout << std::endl << "P: ";
-      //for (double x:distribution.probabilities()) std::cout << x << " ";
-    }else if(subsample_type == 3){
-      //longInd
-      longInd.resize(nSubsample, 0);
-      std::fill(longInd.begin(), longInd.end(), 0);
-      std::fill(selected.begin(), selected.end(), 0);
-      int m = int(pSubsample2 * nindv); // expected number of samples from the first part
-      weight.setZero(nindv);
-      if(iter <= 10){
-        ProbSampleNoReplace(m+nSubsample, p_N, longInd, selected);
-        weight.array() += nindv / ((double) (nSubsample + m));
-        nSubsample_i = nSubsample + m;
-      }else{
-        ProbSampleNoReplace(nSubsample, p_N, longInd, selected);
-        weight.array() += nindv / ((double) nSubsample);
-        nSubsample_i = nSubsample;
-      }
-      p = p_N;
-      if(iter > 10){
-        nSubsample_i += poissonSampling_internal( m,
-                                                  p_inv,
-                                                  weight,
-                                                  longInd,
-                                                  selected);
-      }
-      double w_sum = 0;
-      for(int ilong = 0; ilong < nSubsample_i; ilong++ )
-        w_sum += weight[longInd[ilong]];
-
-    } else if(subsample_type ==4){
-      nSubsample_i = nSubsample;
-      longInd.clear();
-      std::fill(longInd.begin(), longInd.end(), 0);
-
-      //groupSampling_internal(groups, free, longInd,gammagenerator);
-      groupSampling_sampling(nSubsample_group,
-                             groups,
-                             free,
-                             longInd,
-                             gammagenerator);
-      nSubsample_i = longInd.size();
-    }else if(subsample_type == 0){
-      nSubsample_i = longInd.size();
-    }
-
+    int nSubsample_i = sampler->nSubsample;
+    
+      
+    sampler->sample(iter,subsample_generator);
+    if(debug)
+      Rcpp::Rcout << "estimate::subsample done \n";
+      
     burnin_rate = 0;
     if(process_active)
       Kobj->gradient_init(nSubsample_i,nSim);
@@ -763,24 +630,24 @@ List estimateLong_cpp(Rcpp::List in_list)
     Eigen::VectorXd  grad_last(npars); // grad_last helper vector
     grad_last.setZero(npars);
 
-    Eigen::MatrixXd grad_outer(nSubsample_i, npars); // outside person variation (subsampling)
-    Eigen::MatrixXd grad_outer_unweighted(nSubsample_i, npars); // outside person variation (subsampling)
+    Eigen::MatrixXd grad_outer(sampler->nSubsample_i, npars); // outside person variation (subsampling)
+    Eigen::MatrixXd grad_outer_unweighted(sampler->nSubsample_i, npars); // outside person variation (subsampling)
 
     Eigen::MatrixXd Vgrad_inner(npars, npars); // outside person variation (subsampling)
     Eigen::VectorXd Ebias_inner(npars);
     Ebias_inner.array() *= 0;
     Vgrad_inner.setZero(npars, npars);
     if(debug)
-      Rcpp::Rcout << "estimate::start patient loop \n";
+      Rcpp::Rcout << "estimate::start patient loop, number of patients:" << sampler->nSubsample_i << " \n";
 
     double pdone = 0.0;
     double next_disp = 0.00;
 
-    for(int ilong = 0; ilong < nSubsample_i; ilong++ ){
+    for(int ilong = 0; ilong < sampler->nSubsample_i; ilong++ ){
 
       if(silent == 0 && estimate_fisher && nIter == 1){
 
-        pdone = (double) ilong / (double) nSubsample_i;
+        pdone = (double) ilong / (double) sampler->nSubsample_i;
         //Rcpp::Rcout << ilong << " " << pdone << " " << next_disp << "\n";
         if(pdone > next_disp){
           Rcpp::Rcout << round(100*pdone) << " % done\n";
@@ -788,9 +655,9 @@ List estimateLong_cpp(Rcpp::List in_list)
         }
 
       }
-      int i = longInd[ilong];
+      int i = sampler->longInd[ilong];
       if(debug)
-        Rcpp::Rcout << "i = " << i << " "<< weight[i] << "\n";
+        Rcpp::Rcout << "i = " << i << " "<< sampler->weight[i] << "\n";
 
       Eigen::SparseMatrix<double,0,int> A;
       if(process_active)
@@ -889,7 +756,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           grad_caculations(i,
                            res,
                            A,
-                           weight[i],
+                           sampler->weight[i],
                                  process_active,
                                  *mixobj,
                                  *Kobj,
@@ -914,7 +781,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           // adjusting so we get last gradient not cumsum
           Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
           grad_inner.col(count_inner).array() -= grad_last.array();
-          Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  weight[i];
+          Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  sampler->weight[i];
           Fisher_information -=  Fisher_temp + Fisher_temp.transpose(); //gives -sum g_i*g_i'
           GradientVariance += Fisher_temp + Fisher_temp.transpose();
           grad_last = grad_last_temp;
@@ -929,8 +796,8 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean(); //gives E(g)
       grad_outer.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) = Mgrad_inner;
-      grad_outer_unweighted.row(ilong) /= weight[i];
-      Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/weight[i]) * Mgrad_inner.transpose();
+      grad_outer_unweighted.row(ilong) /= sampler->weight[i];
+      Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/sampler->weight[i]) * Mgrad_inner.transpose();
       Fisher_information +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
       GradientVariance -=  Fisher_add + Fisher_add.transpose();
       Fisher_information0 += Fisher_add + Fisher_add.transpose();
@@ -938,7 +805,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
       Ebias_inner.array() -= centered.col(0).array();
-      Eigen::MatrixXd cov = (centered * centered.transpose()) /  (weight[i]* double(grad_inner.cols() - 1));
+      Eigen::MatrixXd cov = (centered * centered.transpose()) /  (sampler->weight[i]* double(grad_inner.cols() - 1));
       Vgrad_inner.array() += cov.array();
       if(process_active)
         Vmean[i] += process->Vs[i];
@@ -946,22 +813,14 @@ List estimateLong_cpp(Rcpp::List in_list)
     }
     // update weights given the gradient
     // change here to unweighted gradient!
-    if(subsample_type == 3){
+    if(sampler->subsample_type == 3){
       Eigen::VectorXd W = gradientWeight(grad_outer_unweighted);
-      for( int id = 0; id < nSubsample_i; id++)
-        p_inv[longInd[id]] = W[id];
+      for( int id = 0; id < sampler->nSubsample_i; id++)
+        sampler->p_inv[sampler->longInd[id]] = W[id];
     }
-   /*
-    if(debug){//if(silent == 0){
-      subSampleDiag(Vgrad_inner,
-                    grad_outer,
-                    Ebias_inner,
-                    nSim * nSubsample_i,
-                    nSubsample_i / nindv);
-    }
-    */
+   
     if((estimate_fisher == 0) && (silent == 0) && burnin_rate>0){
-      Rcpp::Rcout << "Burnin percentage " << burnin_rate/nSubsample_i << "\n";
+      Rcpp::Rcout << "Burnin percentage " << burnin_rate/sampler->nSubsample_i << "\n";
     }
 
 
@@ -1058,7 +917,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   }
 
-  out_list["pSubsample"]       = pSubsample;
+  out_list["pSubsample"]       = sampler->pSubsample;
   out_list["nIter"]            = nIter;
   out_list["nSim"]             = nSim;
   out_list["nBurnin"]          = nBurnin;
