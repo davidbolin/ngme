@@ -199,5 +199,81 @@ class MaternOperator : public operatorMatrix{
 
 };
 
+class MaternOperator2D : public operatorMatrix{
+protected:
+  double ldet;
+  int is_initialized = 0;
+  std::vector<double>  h_average,tau1_trace, tau1_trace2, kappa1_trace, kappa1_trace2;
+  std::vector<double>  tau2_trace, tau2_trace2, kappa2_trace, kappa2_trace2;
+  std::vector<double>  rho_trace, rho_trace2, theta_trace, theta_trace2;
+  Eigen::VectorXd g,p;
+  Eigen::SparseMatrix<double,0,int> *G, *C;
+  double kappa1, dkappa1, ddkappa1, dtau1, ddtau1;
+  double kappa2, dkappa2, ddkappa2, dtau2, ddtau2;
+  double rho, drho, ddrho, theta, dtheta, ddtheta;
+  double dtau1_old, dkappa1_old, dtau2_old, dkappa2_old,drho_old, dtheta_old;;
+  bool use_chol;
+  std::vector<int> matrix_set;
+  double counter;
+  int calc_det;
+  solver ** Qepssolver;
+  SparseMatrix<double,0,int> *d2tau1Q, *dtau1Q, *dkappa1Q, *d2kappa1Q;
+  SparseMatrix<double,0,int> *d2tau2Q, *dtau2Q, *dkappa2Q, *d2kappa2Q;
+  SparseMatrix<double,0,int> *d2rhoQ, *drhoQ, *dthetaQ, *d2thetaQ;
+  void set_matrices();
+  void set_matrix(const int);
+public:
+  double tau1, tau2;
+  Eigen::VectorXd kappa1Vec, kappa2Vec, tau1Vec, tau2Vec, rhoVec, thetaVec;
+  
+  void get_param(std::vector<double> & param_in){
+    param_in.push_back(tau1);
+    param_in.push_back(tau2);
+    param_in.push_back(kappa1);
+    param_in.push_back(kappa2);
+    param_in.push_back(rho);
+    param_in.push_back(theta);
+  };
+  void get_param_names(Rcpp::StringVector & names){
+    names.push_back("tau1_operator");
+    names.push_back("tau2_operator");
+    names.push_back("kappa1_operator");
+    names.push_back("kappa2_operator");
+    names.push_back("rho_operator");
+    names.push_back("theta_operator");
+  };
+  
+  MaternOperator2D(){ counter = 0;};
+  ~MaternOperator2D();
+  
+  void initFromList(Rcpp::List const &){Rcpp::Rcout << "Supply solver list when using initFromlist";};
+  void initFromList(Rcpp::List const &, Rcpp::List const &);
+  
+  Rcpp::List output_list();
+  void gradient( const Eigen::VectorXd &, const Eigen::VectorXd & );
+  void gradient_init(const int, const int);
+  void gradient_add( const Eigen::VectorXd & ,
+                     const Eigen::VectorXd & ,
+                     const Eigen::VectorXd & ,
+                     int,
+                     const double);
+  
+  Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
+                           const Eigen::VectorXd & ,
+                           const Eigen::VectorXd & ,
+                           int,
+                           const double);
+  void step_theta(const double stepsize,
+                  const double learning_rate = 0,
+                  const double polyak_rate   = -1,
+                  const int burnin = 0);
+  
+  void print_parameters();
+  double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int );
+  
+  Eigen::VectorXd  get_gradient();
+  void  clear_gradient();
+  
+};
 
 #endif

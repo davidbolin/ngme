@@ -23,6 +23,12 @@ simulateLongPrior <- function( Y,
                                processes_list,
                                operator_list)
 {
+  bivariate <- FALSE
+  if(!missing(processes_list) && !is.null(processes_list)){
+    if(operator_list$type == "matern bivariate")
+      bivariate <- TRUE
+  }
+  
   if(missing(Y)){
     Y <- list()
     for(i in 1:length(locs)){
@@ -31,6 +37,9 @@ simulateLongPrior <- function( Y,
       } else {
         Y[[i]] <- rep(1,length(locs[[i]])[1])
       }
+      if(bivariate){
+        Y[[i]] <- cbind(Y[[i]],Y[[i]])
+      }
     }
   }
 
@@ -38,7 +47,21 @@ simulateLongPrior <- function( Y,
     common.grid = FALSE
     obs_list <- list()
     for(i in 1:length(locs)){
-      obs_list[[i]] <- list(A = build.A.matrix(operator_list,locs,i), Y=Y[[i]], locs = locs[[i]])
+      A <- build.A.matrix(operator_list,locs,i)
+      Yi <- Y[[i]]
+      locsi = locs[[i]]
+      if(bivariate){ #for bivariate fields, stack observations and remove NaN
+        A1 <- A[!is.nan(Y[[i]][,1]),]
+        A2 <- A[!is.nan(Y[[i]][,2]),]
+        A <- bdiag(A1,A2)
+        Yi <- c(Y[[i]])
+        Yi <- Yi[!is.nan(Yi)]
+        locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
+        locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
+        locsi <- cbind(locs1,locs2)
+        
+      }
+      obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)
     }
 
     input <- list( obs_list = obs_list,

@@ -19,7 +19,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simulateLongGH_cpp(Rcpp::List in_list)
 {
-  int debug = 0;
+  int debug = 1;
  	//**********************************
 	//setting up the main data
 	//**********************************
@@ -50,6 +50,11 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	operator_select(type_operator, &Kobj);
 	Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
 
+	if(debug==1){
+	  Kobj->print_parameters();
+	}
+	  
+	  
 	if(debug == 1){
 	  Rcpp::Rcout << " Create solvers\n";
 	}
@@ -165,10 +170,9 @@ List simulateLongGH_cpp(Rcpp::List in_list)
       Rcpp::Rcout << " Simulate mixed effect\n";
     }
     mixobj->simulate();
-    for(int i = 0; i < Ysim.size(); i++)
-    {
- 		mixobj->add_inter(i, Ysim[i]);
-		mixobj->add_cov(i, Ysim[i]);
+    for(int i = 0; i < Ysim.size(); i++){
+ 		  mixobj->add_inter(i, Ysim[i]);
+		  mixobj->add_cov(i, Ysim[i]);
  	  }
     //*********************************************
     //        simulating the processes
@@ -198,14 +202,33 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 
       K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
 
-      if(debug == 1){
-        Rcpp::Rcout << " Chol" << K.rows() << " "<< K.cols() << "\n";
+      if(type_operator == "matern bivariate"){
+        if(debug == 1){
+          Rcpp::Rcout << " LU" << K.rows() << " "<< K.cols() << "\n";
+        }
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > solver;
+        solver.compute(K);    
+        if(debug == 1){
+          Rcpp::Rcout << " Solve\n";
+        }
+      
+        Xs[i] = solver.solve(z);      
+      } else {
+        if(debug == 1){
+          Rcpp::Rcout << " Chol" << K.rows() << " "<< K.cols() << "\n";
+        }
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  
+        if(debug == 1){
+          Rcpp::Rcout << " Solve\n";
+        }
+        Xs[i] = chol.solve(z);   
+        
       }
-      Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  // performs a Cholesky factorization of A
-      if(debug == 1){
-        Rcpp::Rcout << " Solve\n";
-      }
-      Xs[i] = chol.solve(z);         // use the factorization to solve for the given right hand side
+      //
+      
+      
+      
+      
       Zs[i] = z;
       Ysim[i] += As[i] * Xs[i];
   }

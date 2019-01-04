@@ -10,7 +10,7 @@ ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o
 MIXED = mixedEffect/NormalmixedEff.o mixedEffect/mixedEff_util.o \
 	mixedEffect/NIGmixedEff.o mixedEffect/GHmixedEff.o mixedEffect/tdistmixedEff.o
-OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix.o operator/operator_helper.o
+OPERATOR = operator/MaternOperator.o operator/fd2Operator.o operator/constMatrix.o operator/operator_helper.o operator/MaternOperator2D.o
 PROCESS  = latentprocess/latentprocess.o
 UTILS    = util/error_check.o util/rgig.o util/GIG.o util/MatrixAlgebra.o util/solver.o \
 util/sample.o util/subSamplingDiagnostic.o	 util/GHmisc.o subsampler.o

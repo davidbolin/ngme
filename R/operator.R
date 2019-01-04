@@ -207,6 +207,40 @@ create_operator_matern2D <- function(mesh)
               manifold ="R2")
 }
 
+#' @title Compute FEM matrices - 2D bivariate fields.
+#'
+#' @description A function to compute FEM matrices for 2D (spatial) bivariate problems.
+#'
+#' @param mesh An \code{inla.mesh} object.
+#'
+#' @details This is a supplementary function to be used internally by other functions.
+#'
+#' @examples
+#'   \dontrun{
+#'   create_operator_matern2Dbivariate(...)
+#'   }
+#'
+
+create_operator_matern2Dbivariate <- function(mesh)
+{
+  INLA:::inla.require.inherits(mesh, c("inla.mesh", "inla.mesh.1d"), "'mesh'")
+  fem = INLA::inla.fmesher.smorg(mesh$loc, mesh$graph$tv, fem = 2,
+                                 output = list("c0", "c1", "g1", "g2","dx","dy","dz"),
+                                 gradients=TRUE)
+  n = mesh$n
+  h = (fem$c1%*%matrix(rep(1,n)))@x
+  
+  out <- list(type = "matern bivariate",
+              mesh = list(mesh),
+              C = list(as(fem$c1,"CsparseMatrix")),
+              G = list(as(fem$g1,"CsparseMatrix")),
+              Ci = list(Matrix::Diagonal(n,1/h)),
+              h = list(c(h,h)),
+              loc   = list(mesh$loc),
+              common.grid = TRUE,
+              manifold ="R2")
+}
+
 #' @title Create operator components.
 #'
 #' @description A function to compute a list of objects for the operator.
