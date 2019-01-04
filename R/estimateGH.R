@@ -112,13 +112,29 @@ estimateLong <- function(Y,
   if(missing(processes_list) || is.null(processes_list)){
     use.process = FALSE
   }
+  bivariate <- FALSE
   if(use.process){
+    if(operator_list$type == "matern bivariate")
+      bivariate <- TRUE
   }
   for(i in 1:length(Y)){
-    obs_list[[i]] <- list(Y=Y[[i]])
     if(use.process){
-      obs_list[[i]]$locs <- locs[[i]]
-      obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)
+      A <- build.A.matrix(operator_list,locs,i)
+      Yi <- Y[[i]]
+      locsi = locs[[i]]
+      if(bivariate){ #for bivariate fields, stack observations 
+        A1 <- A[!is.nan(Y[[i]][,1]),]
+        A2 <- A[!is.nan(Y[[i]][,2]),]
+        A <- bdiag(A,A)
+        Yi <- c(Y[[i]])
+        Yi <- Yi[!is.nan(Yi)]
+        locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
+        locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
+        locsi <- cbind(locs,locs)
+      }
+      obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)
+    } else {
+      obs_list[[i]] <- list(Y=Y[[i]])  
     }
   }
 

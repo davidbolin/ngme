@@ -50,15 +50,16 @@ simulateLongPrior <- function( Y,
       A <- build.A.matrix(operator_list,locs,i)
       Yi <- Y[[i]]
       locsi = locs[[i]]
-      if(bivariate){ #for bivariate fields, stack observations and remove NaN
-        A1 <- A[!is.nan(Y[[i]][,1]),]
-        A2 <- A[!is.nan(Y[[i]][,2]),]
-        A <- bdiag(A1,A2)
+      if(bivariate){ #for bivariate fields, stack observations 
+        #do not and remove NaN, simulate all locations
+        #A1 <- A[!is.nan(Y[[i]][,1]),]
+        #A2 <- A[!is.nan(Y[[i]][,2]),]
+        A <- bdiag(A,A)
         Yi <- c(Y[[i]])
-        Yi <- Yi[!is.nan(Yi)]
-        locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
-        locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
-        locsi <- cbind(locs1,locs2)
+        #Yi <- Yi[!is.nan(Yi)]
+        #locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
+        #locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
+        locsi <- cbind(locs,locs)
         
       }
       obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)
@@ -86,6 +87,20 @@ simulateLongPrior <- function( Y,
     output <- simulateLongME_cpp(input)
     }
     output$Ystar <- lapply(1:length(output$Y),function(i) output$Y[[i]]-output$E[[i]])
+    if(bivariate){
+      for(i in 1:length(locs)){
+        #reshape Y and remove NaN
+        Yi <- output$Y[[i]] 
+        Yi.star <- output$Ystar[[i]] 
+        n.i <- length(Yi)
+        Yi <- matrix(Yi,n.i/2,2)
+        Yi.star <- matrix(Yi.star,n.i/2,2)
+        Yi[is.nan(Y[[i]])] <- NaN
+        Yi.star[is.nan(Y[[i]])] <- NaN
+        output$Y[[i]] <- Yi
+        output$Y.star[[i]] <- Yi.star
+      }
+    }
 
   return(output)
 }
