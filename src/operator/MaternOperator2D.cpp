@@ -252,10 +252,12 @@ void MaternOperator2D::set_matrix(int i)
     Drho(1,1) = cos(theta)*rho*pow(1+pow(rho,2),-0.5);
     
     MatrixXd Drho2(2,2);
-    Drho(0,0) = 0;
-    Drho(0,1) = -sin(theta)*pow(1+pow(rho,2),-0.5) + sin(theta)*pow(rho,2)*pow(1+pow(rho,2),-1.5);
-    Drho(1,0) = 0;
-    Drho(1,1) = cos(theta)*pow(1+pow(rho,2),-0.5) - cos(theta)*pow(rho,2)*pow(1+pow(rho,2),-1.5);
+    Drho2(0,0) = 0;
+    Drho2(0,1) = -sin(theta)*pow(1+pow(rho,2),-0.5);
+    Drho2(0,1)+= sin(theta)*pow(rho,2)*pow(1+pow(rho,2),-1.5);
+    Drho2(1,0) = 0;
+    Drho2(1,1) = cos(theta)*pow(1+pow(rho,2),-0.5);
+    Drho2(1,1) -= cos(theta)*pow(rho,2)*pow(1+pow(rho,2),-1.5);
     
     MatrixXd Dtheta(2,2);
     MatrixXd Dtheta2(2,2);
@@ -334,17 +336,13 @@ void MaternOperator2D::set_matrix(int i)
     setSparseBlock_update(&dtau2Q[i],0,d[i]/2, B);
 
     //set rho derivative
-    B=(Drho(0,0)*tau1/kappa1)*G[i];
-    B+=Drho(0,0)*tau1*kappa1*C[i];
+    B=Drho(0,0)*K1;
     setSparseBlock_update(&drhoQ[i],0,0, B);
-    B=(Drho(1,1)*tau2/kappa2)*G[i];
-    B+=Drho(1,1)*tau2*kappa2*C[i];
+    B=Drho(1,1)*K2;
     setSparseBlock_update(&drhoQ[i],d[i]/2,d[i]/2, B);
-    B=(Drho(0,1)*tau2/kappa2)*G[i];
-    B+=Drho(0,1)*tau2*kappa2*C[i];
+    B=Drho(0,1)*K2;
     setSparseBlock_update(&drhoQ[i],0,d[i]/2, B);
-    B=(Drho(1,0)*tau1/kappa1)*G[i];
-    B+=Drho(1,0)*tau1*kappa1*C[i];
+    B=Drho(1,0)*K1;
     setSparseBlock_update(&drhoQ[i],d[i]/2,0, B);
     
     //set theta derivative
@@ -376,11 +374,9 @@ void MaternOperator2D::set_matrix(int i)
     setSparseBlock_update(&d2kappa2Q[i],0,d[i]/2, B);
     
     //set rho second derivative
-    B=(Drho2(1,1)*tau2/kappa2)*G[i];
-    B+=Drho2(1,1)*tau2*kappa2*C[i];
+    B=Drho2(1,1)*K2;
     setSparseBlock_update(&d2rhoQ[i],d[i]/2,d[i]/2, B);
-    B=(Drho2(0,1)*tau2/kappa2)*G[i];
-    B+=Drho2(0,1)*tau2*kappa2*C[i];
+    B=Drho2(0,1)*K2;
     setSparseBlock_update(&d2rhoQ[i],0,d[i]/2, B);
     
     //set theta second derivative
@@ -406,7 +402,7 @@ void MaternOperator2D::set_matrix(int i)
     // K = diag(tau1*K1,tau2*K2), dK = diag(K1,0)
     MatrixXd tmp = Drho*D.inverse();
     rho_trace[i] = (d[i]/2)*tmp.trace();
-    MatrixXd tmp2 = tmp*tmp + Drho2*D.inverse();
+    MatrixXd tmp2 = -tmp*tmp + Drho2*D.inverse();
     rho_trace2[i] = (d[i]/2)*tmp2.trace();
     
     if(estimate_theta){
@@ -631,6 +627,7 @@ void MaternOperator2D::step_theta(const double stepsize,
   drho_old = learning_rate * drho_old + drho;
   step   = stepsize * drho_old;
   rho = rho - step;
+  
   if(estimate_theta){
   //step theta
   dtheta  /= ddtheta;

@@ -13,7 +13,7 @@ kappa1 = 3
 kappa2 = 1
 tau1 = 5
 tau2 = 5
-rho = 0.1
+rho = -1
 theta = 0
 sigma.e = 0.001
 beta.fixed = c(1,2)
@@ -69,20 +69,20 @@ image.plot(proj$x,proj$y,inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.pr
 processes_list$X <- sim_res$X
 #operator_list$kappa <- 1
 #operator_list$tau   <- 10
-operator_list$rho   <- 0.5
+operator_list$rho   <- 1.5
 #mixedEffect_list$beta_fixed <- 2
 
 if(test.est){
   cat("Estimate\n")
   res.est <- estimateLong(Y                = sim_res$Y,
                           nIter            = nIter,
-                          nSim             = 2,
+                          nSim             = 10,
                           locs             = list(obs.loc),
                           mixedEffect_list = mixedEffect_list,
                           measurment_list  = mError_list,
                           processes_list   = processes_list,
                           operator_list    = operator_list,
-                          learning_rate = 0.95,
+                          learning_rate = 0.9,
                           nBurnin_learningrate = 50,
                           silent = FALSE)
   
