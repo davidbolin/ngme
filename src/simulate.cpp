@@ -4,7 +4,6 @@
 #include <chrono>
 #include <string>
 #include "operatorMatrix.h"
-#include "solver.h"
 #include "operator_helper.h"
 #include "GIG.h"
 #include "MixedEffect.h"
@@ -55,27 +54,8 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	}
 	  
 	  
-	if(debug == 1){
-	  Rcpp::Rcout << " Create solvers\n";
-	}
-	//Create solvers for each patient
-	std::vector<  cholesky_solver >  Solver( nindv);
 	Eigen::SparseMatrix<double, 0, int> Q,K;
 
-  counter = 0;
-	for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
-    List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-
-    Solver[counter].init(Kobj->d[counter], 0, 0, 0);
-    K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[counter]);
-
-    Q = K.transpose();
-    Q = Q  * K;
-    Q = Q + As[counter].transpose()*As[counter];
-    Solver[counter].analyze(Q);
-    Solver[counter].compute(Q);
-    counter++;
-  }
 
 	//**********************************
 	// mixed effect setup

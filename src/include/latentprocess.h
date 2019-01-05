@@ -96,7 +96,7 @@ public:
                         const Eigen::SparseMatrix<double,0,int> & K,
                         const Eigen::SparseMatrix<double,0,int> & A,
                         const double sigma,
-                        cholesky_solver       & solver){};
+                        solver       & solver){};
   // sampling where the measurement noise is non-normal
   virtual void sample_Xv2(  const int i,
                             Eigen::VectorXd & Z,
@@ -105,7 +105,7 @@ public:
                             const Eigen::SparseMatrix<double,0,int> & K,
                             const Eigen::SparseMatrix<double,0,int> & A,
                             const double sigma,
-                            cholesky_solver       & solver,
+                            solver       & solver,
                             const Eigen::VectorXd & iV_noise ){};
 
 
@@ -134,7 +134,7 @@ public:
                          const Eigen::SparseMatrix<double,0,int> & ,
                          const Eigen::SparseMatrix<double,0,int> & ,
                          Eigen::VectorXd& ,
-                         cholesky_solver  & ) = 0;
+                         solver  & ) = 0;
 
 
   /*
@@ -153,7 +153,7 @@ class GaussianProcess : public Process{
                  const Eigen::SparseMatrix<double,0,int> & K,
                  const Eigen::SparseMatrix<double,0,int> & A,
                  const double sigma,
-                 cholesky_solver       & solver);
+                 solver       & solver);
   void sample_Xv2(  const int i,
                     Eigen::VectorXd & Z,
                     const Eigen::VectorXd & Y,
@@ -161,7 +161,7 @@ class GaussianProcess : public Process{
                     const Eigen::SparseMatrix<double,0,int> & K,
                     const Eigen::SparseMatrix<double,0,int> & A,
                     const double sigma,
-                    cholesky_solver       & solver,
+                    solver       & solver,
                     const Eigen::VectorXd & iV_noise);
 
   Rcpp::List toList();
@@ -173,7 +173,7 @@ class GaussianProcess : public Process{
                  const Eigen::SparseMatrix<double,0,int> & ,
                  const Eigen::SparseMatrix<double,0,int> & ,
                  Eigen::VectorXd&,
-                 cholesky_solver  &  );
+                 solver  &  );
 };
 
 
@@ -222,7 +222,7 @@ public:
                  const Eigen::SparseMatrix<double,0,int> & K,
                  const Eigen::SparseMatrix<double,0,int> & A,
                  const double sigma,
-                 cholesky_solver       & solver);
+                 solver       & solver);
 
   void get_param(std::vector<double> & param_in){
     if( type_process != "CH"){
@@ -248,7 +248,7 @@ public:
                     const Eigen::SparseMatrix<double,0,int> & K,
                     const Eigen::SparseMatrix<double,0,int> & A,
                     const double sigma,
-                    cholesky_solver       & solver,
+                    solver       & solver,
                     const Eigen::VectorXd & iV_noise);
 
   void gradient( const int i ,
@@ -321,7 +321,7 @@ public:
                 const Eigen::SparseMatrix<double,0,int> & ,
                 const Eigen::SparseMatrix<double,0,int> & ,
                 Eigen::VectorXd& ,
-                cholesky_solver  &  );
+                solver  &  );
   void simulate_V(const int,
                   gig &);
 

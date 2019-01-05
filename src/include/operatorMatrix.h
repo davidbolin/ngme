@@ -212,7 +212,7 @@ protected:
   double kappa2, dkappa2, ddkappa2, dtau2, ddtau2;
   double rho, drho, ddrho, theta, dtheta, ddtheta;
   double dtau1_old, dkappa1_old, dtau2_old, dkappa2_old,drho_old, dtheta_old;;
-  bool use_chol;
+  bool use_chol, estimate_theta;
   std::vector<int> matrix_set;
   double counter;
   int calc_det;

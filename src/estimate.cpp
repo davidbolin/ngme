@@ -42,7 +42,7 @@ Eigen::VectorXd GibbsSampling(int i,
                               int debug,
                               Eigen::VectorXd & z,
                               gig & rgig,
-                              std::vector<  cholesky_solver > & Solver)
+                              std::vector<  solver* >  & Solver)
 {
   Eigen::VectorXd b;
   if(process_active){
@@ -94,9 +94,9 @@ Eigen::VectorXd GibbsSampling(int i,
     //Sample X|Y, V, sigma
     if(sampleX){
       if(errObj.noise == "Normal")
-        process.sample_X(i, z, res, Q, K, A, errObj.sigma, Solver[i]);
+        process.sample_X(i, z, res, Q, K, A, errObj.sigma, *Solver[i]);
       else
-        process.sample_Xv2( i, z, res, Q, K, A, errObj.sigma, Solver[i], errObj.Vs[i].cwiseInverse());
+        process.sample_Xv2( i, z, res, Q, K, A, errObj.sigma, *Solver[i], errObj.Vs[i].cwiseInverse());
     }
     res -= A * process.Xs[i];
     if(res.cwiseAbs().sum() > 1e16){
@@ -415,7 +415,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   operatorMatrix* Kobj;
   //Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
   //Create solvers for each patient
-  std::vector<  cholesky_solver >  Solver( nindv);
+  std::vector<  solver* >  Solver;
   Eigen::SparseMatrix<double, 0, int> Q, K;
   Eigen::VectorXd  z;
 
@@ -430,15 +430,20 @@ List estimateLong_cpp(Rcpp::List in_list)
     count = 0;
     for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
       List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-
-      Solver[count].init(Kobj->d[count], 0, 0, 0);
+      if(type_operator == "bivariate matern"){
+        Solver.push_back( new lu_solver );  
+      } else {
+        Solver.push_back( new cholesky_solver );  
+      }
+      
+      Solver[count]->init(Kobj->d[count], 0, 0, 0);
       K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
 
       Q = K.transpose();
       Q = Q * K;
       Q = Q + As[count].transpose()*As[count];
-      Solver[count].analyze(Q);
-      Solver[count].compute(Q);
+      Solver[count]->analyze(Q);
+      Solver[count]->compute(Q);
       count++;
     }
   }
@@ -696,7 +701,7 @@ List estimateLong_cpp(Rcpp::List in_list)
           if(debug)
             Rcpp::Rcout << ", X ";
 
-          process->simulate(i, z, A, K, Y, Solver[i]);
+          process->simulate(i, z, A, K, Y,*Solver[i]);
         }
         if(debug)
           Rcpp::Rcout << ", done \n ";
@@ -940,11 +945,15 @@ List estimateLong_cpp(Rcpp::List in_list)
   out_list["mixedEffect_list"] = mixobj_list;
 
 
-
-
-
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
+  
+  //free solver
+  for( std::vector<solver*>::iterator i = Solver.begin(); i != Solver.end(); ++i )
+  {
+    delete *i;
+  }
+  Solver.clear();
 
   return(out_list);
 }

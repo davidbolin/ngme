@@ -5,21 +5,22 @@ library(INLA)
 library(fields)
 #First estimate stationary model:
 test.pred = FALSE
-test.est = FALSE
-nIter = 10
+test.est = TRUE
+nIter = 1000
 
 noise="Gaussian"
 kappa1 = 3
 kappa2 = 1
-tau1 = 15
-tau2 = 15
-rho = 10
+tau1 = 5
+tau2 = 5
+rho = 0.1
 theta = 0
 sigma.e = 0.001
 beta.fixed = c(1,2)
 
 n.lattice = 40
-n.obs=10
+n.obs=1000 #number of observations per replicate
+n.rep = 1 #number of replicates
 
 #create mesh 
 x=seq(from=0,to=10,length.out=n.lattice)
@@ -52,6 +53,7 @@ operator_list$theta   <- theta
 processes_list = list(noise = "Normal", V <- list())
 processes_list$V[[1]] <- c(operator_list$h,operator_list$h)
 
+cat("Simulate\n")
 sim_res <- simulateLongPrior( locs              = list(obs.loc),
                               mixedEffect_list  = mixedEffect_list,
                               measurment_list   = mError_list,
@@ -67,9 +69,11 @@ image.plot(proj$x,proj$y,inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.pr
 processes_list$X <- sim_res$X
 #operator_list$kappa <- 1
 #operator_list$tau   <- 10
+operator_list$rho   <- 0.5
 #mixedEffect_list$beta_fixed <- 2
 
 if(test.est){
+  cat("Estimate\n")
   res.est <- estimateLong(Y                = sim_res$Y,
                           nIter            = nIter,
                           nSim             = 2,

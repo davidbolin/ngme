@@ -52,6 +52,7 @@ void MaternOperator2D::initFromList(Rcpp::List const & init_list, Rcpp::List con
   }
   rho = Rcpp::as<double>(init_list["rho"]);
   theta = Rcpp::as<double>(init_list["theta"]);
+  estimate_theta = Rcpp::as<int>(init_list["estimate_theta"]);
   
   int nIter = Rcpp::as<double>(init_list["nIter"]);
   tau1Vec.resize(nIter);
@@ -98,8 +99,11 @@ void MaternOperator2D::initFromList(Rcpp::List const & init_list, Rcpp::List con
   
   rho_trace.resize(nop);
   rho_trace2.resize(nop);
+  
   theta_trace.resize(nop);
-  theta_trace2.resize(nop);
+  theta_trace2.resize(nop);  
+  
+  
   
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
   G = new Eigen::SparseMatrix<double,0,int>[nop];
@@ -117,8 +121,10 @@ void MaternOperator2D::initFromList(Rcpp::List const & init_list, Rcpp::List con
   
   d2rhoQ = new Eigen::SparseMatrix<double,0,int>[nop];
   drhoQ = new Eigen::SparseMatrix<double,0,int>[nop];
-  dthetaQ = new Eigen::SparseMatrix<double,0,int>[nop];
-  d2thetaQ = new Eigen::SparseMatrix<double,0,int>[nop];
+  if(estimate_theta){
+    dthetaQ = new Eigen::SparseMatrix<double,0,int>[nop];
+    d2thetaQ = new Eigen::SparseMatrix<double,0,int>[nop];
+  }
   
   Qsolver = new solver*[nop];
   Qepssolver = new solver*[nop];
@@ -169,11 +175,13 @@ void MaternOperator2D::initFromList(Rcpp::List const & init_list, Rcpp::List con
     setSparseBlock(&drhoQ[i],0,d[i]/2, G[i]);
     setSparseBlock(&drhoQ[i],d[i]/2,0, G[i]);
     
-    dthetaQ[i].resize(d[i],d[i]);
-    setSparseBlock(&dthetaQ[i],0,0, G[i]);
-    setSparseBlock(&dthetaQ[i],d[i]/2,d[i]/2, G[i]);
-    setSparseBlock(&dthetaQ[i],0,d[i]/2, G[i]);
-    setSparseBlock(&dthetaQ[i],d[i]/2,0, G[i]);
+    if(estimate_theta){
+      dthetaQ[i].resize(d[i],d[i]);
+      setSparseBlock(&dthetaQ[i],0,0, G[i]);
+      setSparseBlock(&dthetaQ[i],d[i]/2,d[i]/2, G[i]);
+      setSparseBlock(&dthetaQ[i],0,d[i]/2, G[i]);
+      setSparseBlock(&dthetaQ[i],d[i]/2,0, G[i]);
+    }
     
     //initialize second derivatives
     d2tau1Q[i].resize(d[i],d[i]);
@@ -191,11 +199,13 @@ void MaternOperator2D::initFromList(Rcpp::List const & init_list, Rcpp::List con
     setSparseBlock(&d2rhoQ[i],d[i]/2,d[i]/2, G[i]);
     setSparseBlock(&d2rhoQ[i],0,d[i]/2, G[i]);
     
-    d2thetaQ[i].resize(d[i],d[i]);
-    setSparseBlock(&d2thetaQ[i],0,0, G[i]);
-    setSparseBlock(&d2thetaQ[i],d[i]/2,d[i]/2, G[i]);
-    setSparseBlock(&d2thetaQ[i],0,d[i]/2, G[i]);
-    setSparseBlock(&d2thetaQ[i],d[i]/2,0, G[i]);
+    if(estimate_theta){
+      d2thetaQ[i].resize(d[i],d[i]);
+      setSparseBlock(&d2thetaQ[i],0,0, G[i]);
+      setSparseBlock(&d2thetaQ[i],d[i]/2,d[i]/2, G[i]);
+      setSparseBlock(&d2thetaQ[i],0,d[i]/2, G[i]);
+      setSparseBlock(&d2thetaQ[i],d[i]/2,0, G[i]);
+    }
     
     h[i]  = Rcpp::as< Eigen::VectorXd >(h_list[i]);
     
@@ -247,18 +257,19 @@ void MaternOperator2D::set_matrix(int i)
     Drho(1,0) = 0;
     Drho(1,1) = cos(theta)*pow(1+pow(rho,2),-0.5) - cos(theta)*pow(rho,2)*pow(1+pow(rho,2),-1.5);
     
-    
     MatrixXd Dtheta(2,2);
-    Dtheta(0,0) = -sin(theta) + rho*cos(theta);
-    Dtheta(0,1) = -cos(theta)*pow(1+pow(rho,2),0.5);
-    Dtheta(1,0) = cos(theta) + rho*sin(theta);
-    Dtheta(1,1) = -sin(theta)*pow(1+pow(rho,2),0.5);
-    
     MatrixXd Dtheta2(2,2);
-    Dtheta(0,0) = -cos(theta) - rho*sin(theta);
-    Dtheta(0,1) = sin(theta)*pow(1+pow(rho,2),0.5);
-    Dtheta(1,0) = -sin(theta) + rho*cos(theta);
-    Dtheta(1,1) = -cos(theta)*pow(1+pow(rho,2),0.5);
+    if(estimate_theta){
+      Dtheta(0,0) = -sin(theta) + rho*cos(theta);
+      Dtheta(0,1) = -cos(theta)*pow(1+pow(rho,2),0.5);
+      Dtheta(1,0) = cos(theta) + rho*sin(theta);
+      Dtheta(1,1) = -sin(theta)*pow(1+pow(rho,2),0.5);
+      
+      Dtheta(0,0) = -cos(theta) - rho*sin(theta);
+      Dtheta(0,1) = sin(theta)*pow(1+pow(rho,2),0.5);
+      Dtheta(1,0) = -sin(theta) + rho*cos(theta);
+      Dtheta(1,1) = -cos(theta)*pow(1+pow(rho,2),0.5);
+    }
     
     SparseMatrix<double,0,int> B,K1,K2;
     K1 = (tau1/kappa1)*G[i];
@@ -291,7 +302,7 @@ void MaternOperator2D::set_matrix(int i)
     B+=D(1,0)*tau1*C[i];
     setSparseBlock_update(&dkappa1Q[i],d[i]/2,0, B);
     
-    
+    //set kappa2 derivative and trace
     B = (-tau2*pow(kappa2,-2))*G[i];
     B+= tau2*C[i];
     
@@ -306,6 +317,7 @@ void MaternOperator2D::set_matrix(int i)
     B+=D(0,1)*tau2*C[i];
     setSparseBlock_update(&dkappa2Q[i],0,d[i]/2, B);
     
+    //set tau1 derivative
     B = (D(0,0)/kappa1)*G[i];
     B+=D(0,0)*kappa1*C[i];
     setSparseBlock_update(&dtau1Q[i],0,0, B);
@@ -313,6 +325,7 @@ void MaternOperator2D::set_matrix(int i)
     B+=D(1,0)*kappa1*C[i];
     setSparseBlock_update(&dtau1Q[i],d[i]/2,0, B);
     
+    //set tau2 derivative
     B=(D(1,1)/kappa2)*G[i];
     B+=D(1,1)*kappa2*C[i];
     setSparseBlock_update(&dtau2Q[i],d[i]/2,d[i]/2, B);
@@ -320,6 +333,7 @@ void MaternOperator2D::set_matrix(int i)
     B+=D(0,1)*kappa2*C[i];
     setSparseBlock_update(&dtau2Q[i],0,d[i]/2, B);
 
+    //set rho derivative
     B=(Drho(0,0)*tau1/kappa1)*G[i];
     B+=Drho(0,0)*tau1*kappa1*C[i];
     setSparseBlock_update(&drhoQ[i],0,0, B);
@@ -333,29 +347,35 @@ void MaternOperator2D::set_matrix(int i)
     B+=Drho(1,0)*tau1*kappa1*C[i];
     setSparseBlock_update(&drhoQ[i],d[i]/2,0, B);
     
-    B=(Dtheta(0,0)*tau1/kappa1)*G[i];
-    B+=Dtheta(0,0)*tau1*kappa1*C[i];
-    setSparseBlock_update(&dthetaQ[i],0,0, B);
-    B=(Dtheta(1,1)*tau2/kappa2)*G[i];
-    B+=Dtheta(1,1)*tau2*kappa2*C[i];
-    setSparseBlock_update(&dthetaQ[i],d[i]/2,d[i]/2, B);
-    B=(Dtheta(0,1)*tau2/kappa2)*G[i];
-    B+=Dtheta(0,1)*tau2*kappa2*C[i];
-    setSparseBlock_update(&dthetaQ[i],0,d[i]/2, B);
-    B=(Dtheta(1,0)*tau1/kappa1)*G[i];
-    B+=Dtheta(1,0)*tau1*kappa1*C[i];
-    setSparseBlock_update(&dthetaQ[i],d[i]/2,0, B);
+    //set theta derivative
+    if(estimate_theta){
+      B=(Dtheta(0,0)*tau1/kappa1)*G[i];
+      B+=Dtheta(0,0)*tau1*kappa1*C[i];
+      setSparseBlock_update(&dthetaQ[i],0,0, B);
+      B=(Dtheta(1,1)*tau2/kappa2)*G[i];
+      B+=Dtheta(1,1)*tau2*kappa2*C[i];
+      setSparseBlock_update(&dthetaQ[i],d[i]/2,d[i]/2, B);
+      B=(Dtheta(0,1)*tau2/kappa2)*G[i];
+      B+=Dtheta(0,1)*tau2*kappa2*C[i];
+      setSparseBlock_update(&dthetaQ[i],0,d[i]/2, B);
+      B=(Dtheta(1,0)*tau1/kappa1)*G[i];
+      B+=Dtheta(1,0)*tau1*kappa1*C[i];
+      setSparseBlock_update(&dthetaQ[i],d[i]/2,0, B);
+    }
     
+    //set kappa1 second derivative
     B=(2*D(0,0)*tau1*pow(kappa1,-3))*G[i];
     setSparseBlock_update(&d2kappa1Q[i],0,0, B);
     B=(2*D(1,0)*tau1*pow(kappa1,-3))*G[i];
     setSparseBlock_update(&d2kappa1Q[i],d[i]/2,0, B);
     
+    //set kappa2 second derivative
     B=(2*D(1,1)*tau2*pow(kappa2,-3))*G[i];
     setSparseBlock_update(&d2kappa2Q[i],d[i]/2,d[i]/2, B);
     B=(2*D(0,1)*tau2*pow(kappa2,-3))*G[i];
     setSparseBlock_update(&d2kappa2Q[i],0,d[i]/2, B);
     
+    //set rho second derivative
     B=(Drho2(1,1)*tau2/kappa2)*G[i];
     B+=Drho2(1,1)*tau2*kappa2*C[i];
     setSparseBlock_update(&d2rhoQ[i],d[i]/2,d[i]/2, B);
@@ -363,36 +383,43 @@ void MaternOperator2D::set_matrix(int i)
     B+=Drho2(0,1)*tau2*kappa2*C[i];
     setSparseBlock_update(&d2rhoQ[i],0,d[i]/2, B);
     
-    B=(Dtheta2(0,0)*tau1/kappa1)*G[i];
-    B+=Dtheta2(0,0)*tau1*kappa1*C[i];
-    setSparseBlock_update(&d2thetaQ[i],0,0, B);
-    B=(Dtheta2(1,1)*tau2/kappa2)*G[i];
-    B+=Dtheta2(1,1)*tau2*kappa2*C[i];
-    setSparseBlock_update(&d2thetaQ[i],d[i]/2,d[i]/2, B);
-    B=(Dtheta2(0,1)*tau2/kappa2)*G[i];
-    B+=Dtheta2(0,1)*tau2*kappa2*C[i];
-    setSparseBlock_update(&d2thetaQ[i],0,d[i]/2, B);
-    B=(Dtheta2(1,0)*tau1/kappa1)*G[i];
-    B+=Dtheta2(1,0)*tau1*kappa1*C[i];
-    setSparseBlock_update(&d2thetaQ[i],d[i]/2,0, B);
-    
-    
-    
+    //set theta second derivative
+    if(estimate_theta){
+      B=(Dtheta2(0,0)*tau1/kappa1)*G[i];
+      B+=Dtheta2(0,0)*tau1*kappa1*C[i];
+      setSparseBlock_update(&d2thetaQ[i],0,0, B);
+      B=(Dtheta2(1,1)*tau2/kappa2)*G[i];
+      B+=Dtheta2(1,1)*tau2*kappa2*C[i];
+      setSparseBlock_update(&d2thetaQ[i],d[i]/2,d[i]/2, B);
+      B=(Dtheta2(0,1)*tau2/kappa2)*G[i];
+      B+=Dtheta2(0,1)*tau2*kappa2*C[i];
+      setSparseBlock_update(&d2thetaQ[i],0,d[i]/2, B);
+      B=(Dtheta2(1,0)*tau1/kappa1)*G[i];
+      B+=Dtheta2(1,0)*tau1*kappa1*C[i];
+      setSparseBlock_update(&d2thetaQ[i],d[i]/2,0, B);
+    }
+
     // Set other traces: 
     // trace1 = d log|Q| = trace(dQ*Q^-1)
     // trace2 = d2 log|Q| = trace(d2Q*Q^-1 + dQ*Q^-1*dQ*Q^-1)
+    // d log|Q| = d log|DK| = d log|D| +dlog|K|
+    // K = diag(tau1*K1,tau2*K2), dK = diag(K1,0)
     MatrixXd tmp = Drho*D.inverse();
     rho_trace[i] = (d[i]/2)*tmp.trace();
-    MatrixXd tmp2 = tmp*tmp;
+    MatrixXd tmp2 = tmp*tmp + Drho2*D.inverse();
     rho_trace2[i] = (d[i]/2)*tmp2.trace();
-    tmp = Dtheta*D.inverse();
-    theta_trace[i] = (d[i]/2)*tmp.trace();
-    tmp2 = tmp*tmp;
-    theta_trace2[i] = (d[i]/2)*tmp2.trace();
-    tau1_trace[i] = d[i]*tau1;
-    tau2_trace[i] = d[i]*tau2;
-    tau1_trace2[i] = d[i];
-    tau2_trace2[i] = d[i];
+    
+    if(estimate_theta){
+      tmp = Dtheta*D.inverse();
+      theta_trace[i] = (d[i]/2)*tmp.trace();
+      tmp2 = tmp*tmp;
+      theta_trace2[i] = (d[i]/2)*tmp2.trace();
+    }
+    
+    tau1_trace[i] = 0.5*d[i]/tau1;
+    tau2_trace[i] = 0.5*d[i]/tau2;
+    tau1_trace2[i] = -0.5*d[i]/pow(tau1,2);
+    tau2_trace2[i] = -0.5*d[i]/pow(tau2,2);
     
     //Numerical approx of trace2 for kappa1 and kappa2
     SparseMatrix<double,0,int> Qeps, dQeps;
@@ -519,12 +546,13 @@ void MaternOperator2D::gradient_add( const Eigen::VectorXd & X,
   ddrho -= weight * dKX.dot(iV.asDiagonal()*dKX);
   ddrho -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
   
-  dKX      = dthetaQ[i] * X;
-  d2KX     = d2thetaQ[i] * X;
-  dtheta  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
-  ddtheta -= weight * dKX.dot(iV.asDiagonal()*dKX);
-  ddtheta -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
-  
+  if(estimate_theta){
+    dKX      = dthetaQ[i] * X;
+    d2KX     = d2thetaQ[i] * X;
+    dtheta  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
+    ddtheta -= weight * dKX.dot(iV.asDiagonal()*dKX);
+    ddtheta -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
+  }
 }
 
 void MaternOperator2D::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -548,6 +576,7 @@ void MaternOperator2D::step_theta(const double stepsize,
                                   const int burnin)
 {
   
+    
   //step tau1
   dtau1  /= ddtau1;
   dtau1_old = learning_rate * dtau1_old + dtau1;
@@ -571,6 +600,7 @@ void MaternOperator2D::step_theta(const double stepsize,
     par_temp = tau2 - step;
   }
   tau2 = par_temp;
+  
   
   //step kappa1
   dkappa1  /= ddkappa1;
@@ -600,27 +630,14 @@ void MaternOperator2D::step_theta(const double stepsize,
   drho  /= ddrho;
   drho_old = learning_rate * drho_old + drho;
   step   = stepsize * drho_old;
-  par_temp = -1.;
-  while(par_temp < 0)
-  {
-    step *= 0.5;
-    par_temp = rho - step;
-  }
-  rho = par_temp;
-  
+  rho = rho - step;
+  if(estimate_theta){
   //step theta
   dtheta  /= ddtheta;
   dtheta_old = learning_rate * dtheta_old + dtheta;
   step   = stepsize * dtheta_old;
-  par_temp = -1.;
-  while(par_temp < 0)
-  {
-    step *= 0.5;
-    par_temp = theta - step;
+  theta = theta - step;
   }
-  theta = par_temp;
-  
-  
   if(counter == 0 || polyak_rate == -1){
     tau1Vec[counter] = tau1;
     tau2Vec[counter] = tau2;

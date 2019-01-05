@@ -59,7 +59,7 @@ void GaussianProcess::simulate(const int i,
 			                         const Eigen::SparseMatrix<double,0,int> & A,
                                const Eigen::SparseMatrix<double,0,int> & K,
 			                         Eigen::VectorXd& Y,
-                               cholesky_solver& solver)
+                               solver& solver)
 {
   //Rcpp::Rcout<< "Gaussian process simulate\n";
 	Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
@@ -187,7 +187,7 @@ void GaussianProcess::sample_X(const int i,
               const Eigen::SparseMatrix<double,0,int> & K,
               const Eigen::SparseMatrix<double,0,int> & A,
               const double sigma,
-              cholesky_solver       & solver)
+              solver       & solver)
 {
   double sigma2  =pow(sigma, 2);
   Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
@@ -206,7 +206,7 @@ void GHProcess::sample_X(const int i,
               const Eigen::SparseMatrix<double,0,int> & K,
               const Eigen::SparseMatrix<double,0,int> & A,
               const double sigma,
-              cholesky_solver       & solver)
+              solver       & solver)
 {
   Eigen::VectorXd X_prev = Xs[i];
   iV = Vs[i].cwiseInverse();
@@ -234,7 +234,7 @@ void GHProcess::simulate(const int i,
 			  const Eigen::SparseMatrix<double,0,int> & A,
               const Eigen::SparseMatrix<double,0,int> & K,
 			  Eigen::VectorXd& Y,
-			  cholesky_solver  &  solver)
+			  solver  &  solver)
 {
   Z = Z.cwiseProduct(Vs[i].cwiseSqrt());
   for(int ii = 0; ii < Z.size(); ii++)
@@ -253,7 +253,7 @@ void GaussianProcess::sample_Xv2( const int i,
               const Eigen::SparseMatrix<double,0,int> & K,
               const Eigen::SparseMatrix<double,0,int> & A,
               const double sigma,
-              cholesky_solver       & solver,
+              solver       & solver,
               const Eigen::VectorXd & iV_noise)
 {
   double sigma2  =pow(sigma, 2);
@@ -271,7 +271,7 @@ void GHProcess::sample_Xv2(  const int i,
               const Eigen::SparseMatrix<double,0,int> & K,
               const Eigen::SparseMatrix<double,0,int> & A,
               const double sigma,
-              cholesky_solver       & solver,
+              solver       & solver,
               const Eigen::VectorXd & iV_noise )
 {
 	iV = Vs[i].cwiseInverse();

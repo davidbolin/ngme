@@ -116,6 +116,11 @@ estimateLong <- function(Y,
   if(use.process){
     if(operator_list$type == "matern bivariate")
       bivariate <- TRUE
+      if(processes_list$noise == "Normal"){
+        operator_list$estimate_theta = 0 #theta not identifiable if the model is Gaussian
+      } else {
+        operator_list$estimate_theta = 1
+      }
   }
   for(i in 1:length(Y)){
     if(use.process){

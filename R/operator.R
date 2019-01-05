@@ -238,6 +238,7 @@ create_operator_matern2Dbivariate <- function(mesh)
               h = list(c(h,h)),
               loc   = list(mesh$loc),
               common.grid = TRUE,
+              estimate_theta = 1,
               manifold ="R2")
 }
 
