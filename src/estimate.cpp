@@ -323,7 +323,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   //      basic parameter
   //**********************************
 
-  int debug = 0;
+  int debug = 1;
   int nIter      = Rcpp::as< int > (in_list["nIter"]);
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
@@ -492,6 +492,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   std::string type_MeasurementError= Rcpp::as <std::string> (measurementError_list["noise"]);
   if(type_MeasurementError == "Normal")
     errObj = new GaussianMeasurementError;
+  else if(type_MeasurementError == "nsNormal")
+    errObj = new nsGaussianMeasurementError;
   else if(type_MeasurementError == "tdist")
     errObj = new IGMeasurementError;
   else

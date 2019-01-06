@@ -85,6 +85,10 @@ List simulateLongGH_cpp(Rcpp::List in_list)
   std::string MeasureNoise = Rcpp::as <std::string> (MeasureError_list["noise"]);
   if(MeasureNoise == "Normal")
     errObj = new GaussianMeasurementError;
+  else if(MeasureNoise == "nsNormal")
+    errObj = new nsGaussianMeasurementError;
+  else if(MeasureNoise == "tdist")
+    errObj = new IGMeasurementError;
   else
     errObj = new NIGMeasurementError;
 

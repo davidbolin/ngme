@@ -1,12 +1,12 @@
-CC=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang
-CXX=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang++
+#CC=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang
+#CXX=/usr/local/Cellar/clang-omp/2015-04-01/libexec/bin/clang++
 
 PKG_CPPFLAGS = -DDEBUG -Iinclude #-fopenmp
 PKG_CXXFLAGS = -DDEBUG  -std=c++11 #-fopenmp
 #PKG_LIBS= -DNDEBUG #-fopenmp
 R_XTRA_CPPFLAGS =  -I$(R_INCLUDE_DIR)
 
-ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o \
+ERROR = error/NIGMeasurementError.o error/GaussianMeasurementError.o error/nsGaussianMeasurementError.o \
 		error/NormalVarianceError.o error/IGMeasuremenentError.o
 MIXED = mixedEffect/NormalmixedEff.o mixedEffect/mixedEff_util.o \
 	mixedEffect/NIGmixedEff.o mixedEffect/GHmixedEff.o mixedEffect/tdistmixedEff.o

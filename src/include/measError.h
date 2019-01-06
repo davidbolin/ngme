@@ -99,6 +99,44 @@ class GaussianMeasurementError : public MeasurementError{
 
 };
 
+class nsGaussianMeasurementError : public MeasurementError{
+private:
+  Eigen::VectorXd dtheta, theta;
+  Eigen::MatrixXd ddtheta;
+  Eigen::VectorXd dtheta_old, step;
+  std::vector< Eigen::MatrixXd > B;
+  std::vector< Eigen::VectorXd > sigma;
+  double counter;
+  Eigen::MatrixXd theta_vec;
+  int nrep;
+  Rcpp::List out_list;
+public:
+  nsGaussianMeasurementError();
+  ~nsGaussianMeasurementError(){};
+  void gradient(const int ,
+                const Eigen::VectorXd&,
+                const double);
+  void step_theta(const double stepsize,
+                  const double learning_rate = 0,
+                  const double polyak_rate = -1,
+                  const int burnin = 0);
+  void initFromList(Rcpp::List const &);
+  void sampleV(const int i, const Eigen::VectorXd& res, int n_s = -1) {};
+  Rcpp::List toList();
+  std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd >);
+  Eigen::VectorXd  simulate( const Eigen::VectorXd &);
+  Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
+  
+  void clear_gradient();
+  
+  Eigen::VectorXd get_gradient();
+  
+  void printIter(); //print iteration data
+  void setupStoreTracj(const int ); // setups to store the tracjetory
+  
+  
+};
+
 
 class NormalVarianceMixtureBaseError : public MeasurementError{
 

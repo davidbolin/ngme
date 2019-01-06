@@ -9,14 +9,14 @@ test.est = TRUE
 nIter = 1000
 
 noise="Gaussian"
-kappa1 = 3
+kappa1 = 1
 kappa2 = 1
 tau1 = 5
 tau2 = 5
-rho = -1
+rho = 0
 theta = 0
-sigma.e = 0.001
-beta.fixed = c(1,2)
+sigma.e = c(0.01,0.1)
+beta.fixed = c(0,0)
 
 n.lattice = 40
 n.obs=1000 #number of observations per replicate
@@ -35,11 +35,17 @@ obs.loc = cbind(runif(n.obs)*diff(range(x))+min(x),
 #create fixed effects-list with one intercept per field
 Bf <- kronecker(diag(2),matrix(rep(1, n.obs)))
 B_fixed  <- list(Bf)
-
-mError_list <- list(noise = "Normal", sigma = sigma.e)
 mixedEffect_list  <- list(B_fixed  = B_fixed,
                           beta_fixed  = as.matrix(beta.fixed),
                           noise = "Normal")
+
+#create measurement error list, with one sigma per field
+
+B.e <- kronecker(diag(2),matrix(rep(1, n.obs)))
+mError_list <- list(noise = "nsNormal", 
+                    B = list(B.e),
+                    theta = matrix(log(sigma.e)))
+
 
 operator_list <- create_operator_matern2Dbivariate(mesh)
 
