@@ -6,13 +6,13 @@ nIter <- 100
 n.pers <- 2
 nSim  <- 100
 use.random.effect = FALSE
-n.obs  <- 3 + 0*(1:n.pers)
+n.obs  <- 10 + 0*(1:n.pers)
 n.proc = n.obs + 2
 grid.extend = c(0,0.1)
 n <- 10
 n.pred <- 15
 nBurnin = 10
-pred.type <- "Filter"
+pred.type <- "LOOCV"
 pSubsample = 0.99
 #subsample.type = 2
 test.pred = TRUE
@@ -70,7 +70,7 @@ if(use.random.effect){
 
 }
 
-operator_list <- create_operator(locs.proc, n, name = "fd2",extend = grid.extend)
+operator_list <- create_operator(locs.proc, name = "fd2",extend = grid.extend,max,max.dist = 1)
 operator_list$type  <- "fd2"
 operator_list$tau   <- 5
 
@@ -152,7 +152,8 @@ if(use.random.effect){
                             measurement_list = mError_list,
                             Bfixed = B_fixed[prediction.indices],
                             Brandom = B_random[prediction.indices],
-                            locs = locs[prediction.indices])
+                            locs = locs[prediction.indices],
+                            pred.ind = prediction.indices)
 
     res.pre <- predictLong(Y = sim_res$Y[k],
                          locs.pred        = locs.pred,
@@ -177,7 +178,8 @@ if(use.random.effect){
                             operator_list = operator_list,
                             measurement_list = mError_list,
                             Bfixed = B_fixed[prediction.indices],
-                            locs = locs[prediction.indices])
+                            locs = locs[prediction.indices],
+                            pred.ind = prediction.indices)
 
 
   res.pre <- predictLong(Y = sim_res$Y[k],
@@ -219,7 +221,8 @@ if(use.random.effect){
                             measurement_list = mError_list,
                             Bfixed = B_fixed[prediction.indices],
                             Brandom = B_random[prediction.indices],
-                            locs = locs[prediction.indices])
+                            locs = locs[prediction.indices],
+                            pred.ind = prediction.indices)
 
   res.pre2 <- predictLong(Y = sim_res$Y[k],
                          locs.pred        = locs.pred,
@@ -244,7 +247,8 @@ if(use.random.effect){
                             operator_list = operator_list,
                             measurement_list = mError_list,
                             Bfixed = B_fixed[prediction.indices],
-                            locs = locs[prediction.indices])
+                            locs = locs[prediction.indices],
+                            pred.ind = prediction.indices)
 
 
   res.pre2 <- predictLong(Y = sim_res$Y[k],
@@ -269,8 +273,7 @@ if(use.random.effect){
 par(mfrow = c(1,3))
 pr <- c(min(min(res.pre$X.summary[[k]]$quantiles[[1]]$field),min(Y[[prediction.indices[k]]])),
         max(max(res.pre$X.summary[[k]]$quantiles[[2]]$field),max(Y[[prediction.indices[k]]])))
-plot(res.pre$locs[[k]],res.pre$X.summary[[k]]$Mean,type="l",ylim=pr,
-     xlab = "Follow-up time (in years)",ylab="log(eGFR)")
+plot(res.pre$locs[[k]],res.pre$X.summary[[k]]$Mean,type="l",ylim=pr)
 points(res.pre$locs[[k]],res.pre$X.summary[[k]]$Mean,pch = 4)
 #lines(res.pre$locs[[k]],res.pre$X.summary[[k]]$quantiles[[1]]$field,col=2)
 #lines(res.pre$locs[[k]],res.pre$X.summary[[k]]$quantiles[[2]]$field,col=2)

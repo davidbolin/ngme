@@ -3,9 +3,12 @@ graphics.off()
 library(ngme)
 library(INLA)
 library(fields)
+library(ggplot2)
+library(fields)
+library(gridExtra)
 #First estimate stationary model:
-test.pred = FALSE
-test.est = TRUE
+test.pred = TRUE
+test.est = FALSE
 nIter = 1000
 
 noise="Gaussian"
@@ -68,9 +71,18 @@ sim_res <- simulateLongPrior( locs              = list(obs.loc),
 
 n.proc <- length(sim_res$X[[1]])
 proj <- inla.mesh.projector(mesh,dims=c(80,80))
-par(mfrow=c(1,2))
-image.plot(proj$x,proj$y,inla.mesh.project(proj,sim_res$X[[1]][1:(n.proc/2)]),xlab="",ylab="")
-image.plot(proj$x,proj$y,inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.proc]),xlab="",ylab="")
+
+df <- expand.grid(x= proj$x, y = proj$y)
+df$z <- c(inla.mesh.project(proj,sim_res$X[[1]][1:(n.proc/2)]))
+df2 <- expand.grid(x= proj$x, y = proj$y)
+df2$z <- c(inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.proc]))
+p1 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,1])
+df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,2])
+p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p4 <- ggplot(df2) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+grid.arrange(p1,p2,p3,p4,ncol=2)
 
 processes_list$X <- sim_res$X
 #operator_list$kappa <- 1
@@ -105,7 +117,9 @@ if(test.est){
 
 if(test.pred){
   locs.pred <- proj$lattice$loc
-  Bfixed.pred <- list(matrix(rep(1, dim(locs.pred)[1])))
+  Bf <- kronecker(diag(2),matrix(rep(1, dim(locs.pred)[1])))
+  Bfixed.pred  <- list(Bf)
+  
   res <- predictLong( Y                = sim_res$Y,
                       locs.pred        = list(locs.pred),
                       Bfixed.pred      = Bfixed.pred,
@@ -117,8 +131,13 @@ if(test.pred){
                       processes_list   = processes_list,
                       operator_list    = operator_list)
   
-  par(mfrow=c(1,3))
-  image.plot(proj$x,proj$y,inla.mesh.project(proj, sim_res$X[[1]]),xlab="",ylab="")
-  image.plot(proj$x,proj$y,matrix(res$W.summary[[1]]$Mean,80,80),xlab="",ylab="")
-  image.plot(proj$x,proj$y,matrix(res$W.summary[[1]]$Var,80,80),xlab="",ylab="")
+  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y.star[[1]][,1])
+  df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y.star[[1]][,2])
+  p1 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+  p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=res$Y.star[[1]][,1])
+  df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=res$Y.star[[1]][,2])
+  p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+  p4 <- ggplot(df2) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+  grid.arrange(p1,p2,p3,p4,ncol=2)
 }

@@ -1,12 +1,7 @@
-//
-//  MatrixAlgebra.cpp
-//  MatrixAlgebra
-//
-//  Created by Jonas Wallin on 19/04/14.
-//  Copyright (c) 2014 Jonas Wallin. All rights reserved.
-//
-
 #include "MatrixAlgebra.h"
+#include <Rcpp.h>
+#include <RcppEigen.h>
+
 typedef Eigen::Triplet<double> T;
 using namespace Eigen;
 using namespace std;
@@ -22,6 +17,7 @@ MatrixXd communicationMatrix(const int n, const int m)
 	return K;
 }
 
+// Set Msub = M(ind,:) where ind is a 0-1 index vector
 void get_submatrix(const MatrixXd& M, const VectorXi& ind, MatrixXd& Msub)
 {
 	Msub.setZero(ind.sum(),M.cols());
@@ -32,6 +28,7 @@ void get_submatrix(const MatrixXd& M, const VectorXi& ind, MatrixXd& Msub)
 	}
 }
 
+// Return Msub = M(ind,:) where ind is a 0-1 index vector
 MatrixXd get_submatrix(const MatrixXd& M, const VectorXi& ind)
 {
 	MatrixXd Msub(ind.sum(),M.cols());
@@ -42,7 +39,6 @@ MatrixXd get_submatrix(const MatrixXd& M, const VectorXi& ind)
 	}
 	return Msub;
 }
-
 
 MatrixXi get_submatrix(const MatrixXi& M, const VectorXi& ind)
 {
@@ -57,6 +53,39 @@ MatrixXi get_submatrix(const MatrixXi& M, const VectorXi& ind)
 	return Msub;
 }
 
+
+void get_submatrix(SparseMatrix<double,0,int>& M,const VectorXi& ind, SparseMatrix<double,0,int>* Msub)
+{
+  Msub->resize(ind.sum(),M.cols());
+  //create vector with row indices for Msub
+  VectorXi ind2(ind.size());
+  int j = 0;
+  for(int i=0;i<ind.size();i++){
+    j+=ind(i);
+    ind2(i) = j-1.0;
+  }
+  for (int k=0; k<M.outerSize(); ++k) {
+    for (SparseMatrix<double,0,int>::InnerIterator it(M,k); it; ++it) {
+      if(ind(it.row())==1)
+        Msub->insert(ind2(it.row()), it.col()) = it.value();
+    }
+  }
+}
+
+//set Ysub = Y(ind)
+void get_subvector(const VectorXd& Y, const VectorXi& ind, VectorXd& Ysub)
+{
+  Ysub.resize(ind.sum());
+  int k = 0;
+  for(int i=0;i<Y.size();i++){
+    if(ind(i) == 1)
+      Ysub(k++) = Y(i);
+  }
+}
+
+
+
+// Set M(ind,:) = Msub where ind is a 0-1 index vector
 void set_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind)
 {
 	int k = 0;
@@ -78,7 +107,20 @@ void set_submatrix(MatrixXi& M, const MatrixXi& Msub, const VectorXi& ind)
 		}
 	}
 }
+// Set M(ind,r) = v
+void set_subcol(MatrixXd& M, const int r, const VectorXi& ind, const VectorXd& v)
+{
+  int k = 0;
+  for(int i=0;i<ind.size();i++){
+    if(ind(i) == 1){
+      M(i,r) = v(k);
+      k++;
+    }
+  }
+}
 
+
+// Set M(ind,:) += Msub where ind is a 0-1 index vector
 void add_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind)
 {
 	int k = 0;

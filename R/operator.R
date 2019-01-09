@@ -72,7 +72,7 @@ spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann'
 
   n.x  <- length(x)
   n.loc <- length(loc)
-  i <- as.vector(cBind(1:n.loc,1:n.loc))
+  i <- as.vector(cbind(1:n.loc,1:n.loc))
   j <- matrix(0,n.loc,2)
   vals <- matrix(1,n.loc,2)
   for(ii in seq_len(n.loc)){
@@ -129,11 +129,11 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',
   dm1 = c(d[-1],Inf)
   #d1  = c(Inf,d[-n])
 
-  #G = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(-1/dm1, (1/dm1 + 1/d), -1/dm1))
+  #G = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cbind(-1/dm1, (1/dm1 + 1/d), -1/dm1))
   G = as(sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE),"dgCMatrix")
 
   if(compute.Ce){
-    Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cBind(dm1/6, (dm1+d)/3, d/6))
+    Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cbind(dm1/6, (dm1+d)/3, d/6))
     Ce[1,1] <- d[2]/3
     Ce[1,2] <- d[2]/6
     Ce[n,n] <- d[n]/3
@@ -247,7 +247,7 @@ create_operator_matern2Dbivariate <- function(mesh)
 #' @description A function to compute a list of objects for the operator.
 #'
 #' @param locs A numeric list of measurement locations.
-#' @param n A numeric value for the number of FEM basis functions that should be used.
+#' @param max.dist A numeric value for largest distance between nodes in the discretization
 #' @param name A character string for the operator type,
 #'    possible options are \code{"matern"} and \code{"fd2"}.
 #' @param right.boundary A character string denoting the boundary condition
@@ -271,7 +271,6 @@ create_operator_matern2Dbivariate <- function(mesh)
 #'
 
 create_operator <- function(locs,
-                            n,
                             name = "matern",
                             right.boundary = 'neumann',
                             left.boundary='neumann',
@@ -281,24 +280,22 @@ create_operator <- function(locs,
                             cutoff = 1e-10,
                             n.cores = 1)
 {
-  if(!missing(n) & !missing(max.dist)){
-    stop("Supply either n or max.dist")
-  }
   if(tolower(name) == "matern"){
     return(create_matrices_Matern(locs = locs,
-                                  right.boundary = right.boundary,
-                                  left.boundary = left.boundary,
                                   common.grid = common.grid,
                                   extend = extend,
                                   max.dist = max.dist,
                                   cutoff = cutoff,
-                                  n.cores = n.cores))
+                                  n.cores = n.cores,
+                                  right.boundary = right.boundary,
+                                  left.boundary = left.boundary))
   }else{
     return(create_matrices_FD2(locs = locs,
                                common.grid = common.grid,
                                extend = extend,
                                max.dist = max.dist,
-                               cutoff = cutoff))
+                               cutoff = cutoff,
+                               n.cores = n.cores))
   }
 
 }
@@ -427,14 +424,16 @@ create_matrices_FD2 <- function(locs,
                                 common.grid = FALSE,
                                 extend = NULL,
                                 max.dist,
-                                cutoff = 1e-10)
+                                cutoff = 1e-10,
+                                n.cores = 1)
 {
 
   meshes <- generate.adaptive.meshes.1d(locs,
                                         max.dist = max.dist,
                                         cutoff = cutoff,
                                         common.grid=common.grid,
-                                        extend = extend)
+                                        extend = extend,
+                                        n.cores = n.cores)
 
   Q <- list()
   if(common.grid || length(locs) == 1) {

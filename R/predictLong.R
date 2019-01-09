@@ -80,14 +80,18 @@ predictLong <- function( Y,
                          seed    = NULL
 )
 {
-  if(type == "Nowcast"){
+  ind.general = 0
+  if(type == "LOOCV"){
+    pred_type = 3
+    ind.general = 1
+  }else if(type == "Nowcast"){
     pred_type = 2
   }else if(type=='Filter'){
     pred_type = 1
   } else if(type == 'Smoothing'){
     pred_type = 0
   } else {
-    stop('Type needs to be either Filter, Smoothing, or Nowcast.')
+    stop('Type needs to be either LOOCV, Filter, Smoothing, or Nowcast.')
   }
   use.random.effect = TRUE
   if(is.null(mixedEffect_list$B_random)){
@@ -105,9 +109,28 @@ predictLong <- function( Y,
   if(!missing(processes_list) && is.null(processes_list)){
     stop("Operator list missing")
   }
+  
+  bivariate = FALSE
+  if(use.process && operator_list$manifold == "R2"){
+    if(type == "Nowcast" || type == "Filter"){
+      stop("Nowcasting and filtering can only be done for temporal models.")
+    }
+    if(!is.null(predict.derivatives)){
+      stop("Derivatives can only be predicted for temporal models")
+    }
+    if(operator_list$type == "matern bivariate"){
+      bivariate = TRUE
+      ind.general = 1
+    }
+  }
   if(missing(locs.pred)){
     locs.pred <- locs
+  } else {
+    if(pred_type == 3){
+      warning("locs.pred supplied for LOOCV.")
+    }
   }
+  
 
   obs_list <- list()
 
@@ -138,7 +161,7 @@ predictLong <- function( Y,
       operator_list$Q <- operator_list$Q[pInd]
       operator_list$loc <- operator_list$loc[pInd]
       operator_list$h <- operator_list$h[pInd]
-      if(tolower(operator_list$type) == "matern"){
+      if(tolower(operator_list$type) == "matern" ||tolower(operator_list$type) == "matern bivariate"){
         operator_list$C <- operator_list$C[pInd]
         operator_list$G <- operator_list$G[pInd]
       }
@@ -146,10 +169,13 @@ predictLong <- function( Y,
 
     n.patient = length(pInd)
   } else {
+    
     if(is.list(Y)){
       n.patient = length(Y)
+      pInd = 1:length(Y)
     } else {
       n.patient = 1
+      pInd = 1
     }
   }
 
@@ -176,12 +202,23 @@ predictLong <- function( Y,
     } else {
       n.pred.i = length(li)
     }
-    if(type== "Nowcast"){
+    if(type == "LOOCV"){
+      #for CV, pred.ind and obs.ind have to contain the actual incides
+      if(bivariate){
+        pred.ind <- cbind(diag(length(locs.pred[[i]])),diag(length(locs.pred[[i]])))
+        obs.ind <- cbind(1 - diag(length(locs.pred[[i]])),1 - diag(length(locs.pred[[i]])))
+        obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
+      } else {
+        pred.ind <- diag(length(locs.pred[[i]]))
+        obs.ind <- 1 - diag(length(locs.pred[[i]]))  
+      }
+      
+    } else if(type== "Nowcast"){
       pred.ind <- obs.ind <- NULL
       ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] < li[1]] #all prediction locations before first obs
       if(length(ind)>0){
-        pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
-        obs.ind <- Matrix::rBind(obs.ind,c(0,0))
+        pred.ind <- rbind(pred.ind,c(0,length(ind)))
+        obs.ind <- rbind(obs.ind,c(0,0))
       }
       # pred.ind shows which values to save for the j:th prediction
       # obs.ind shows which data to use for the j:th prediction
@@ -190,24 +227,24 @@ predictLong <- function( Y,
           #indices for prediction locatiocs in  [s_(j-1), s_j), should use data up to and including s_(j-1)
           ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] >= li[j-1]) & (locs.pred[[i]] < li[j])]
           if(length(ind)>0){
-            pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
-            obs.ind <- Matrix::rBind(obs.ind,c(0,j-1))
+            pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
+            obs.ind <- rbind(obs.ind,c(0,j-1))
           }
         }
       }
       #do the prediction for all locations in [s_N,max(loc.pred)]
       if(max(locs.pred[[i]])>=max(li)){
         ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= max(li)]
-        pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind)))
-        obs.ind <- Matrix::rBind(obs.ind,c(0,length(li)))
+        pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind)))
+        obs.ind <- rbind(obs.ind,c(0,length(li)))
       }
       n.pred.i = dim(pred.ind)[1]
     } else if(type == "Filter"){
         pred.ind <- obs.ind <- NULL
         ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations up to the first obs
         if(length(ind)>0){ #If there are values to predict up to the first obs
-          pred.ind <- Matrix::rBind(pred.ind,c(0,length(ind)))
-          obs.ind <- Matrix::rBind(obs.ind,c(0,0))
+          pred.ind <- rbind(pred.ind,c(0,length(ind)))
+          obs.ind <- rbind(obs.ind,c(0,0))
         }
         # pred.ind shows which values to save for the j:th prediction
         # obs.ind shows which data to use for the j:th prediction
@@ -215,37 +252,54 @@ predictLong <- function( Y,
           for(j in 2:n.pred.i){
             ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > li[j-1]) & (locs.pred[[i]] <= li[j])]
             if(length(ind)>0){
-              pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
-              obs.ind <- Matrix::rBind(obs.ind,c(0,j-1))
+              pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
+              obs.ind <- rbind(obs.ind,c(0,j-1))
             }
           }
         }
         #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
         if(max(locs.pred[[i]])>max(li)){
           ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] > max(li)]
-          pred.ind <- Matrix::rBind(pred.ind,c(ind[1]-1,length(ind)))
-          obs.ind <- Matrix::rBind(obs.ind,c(0,length(li)))
+          pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind)))
+          obs.ind <- rbind(obs.ind,c(0,length(li)))
         }
         n.pred.i = dim(pred.ind)[1]
-      } else {
+      } else { #Smoothing
         if(is.matrix(locs.pred[[i]])){
           pred.ind <- matrix(c(0,dim(locs.pred[[i]])[1]),nrow = 1,ncol = 2)
         } else {
           pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
         }
-        obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)
+        obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)  
+        if(bivariate){
+          pred.ind <- matrix(rep(1,2*dim(locs.pred[[i]])[1]),nrow=1)
+          obs.ind <- matrix(rep(1,2*n.pred.i),nrow=1)
+          obs.ind <- obs.ind[,!is.nan(c(Y[[i]])),drop=FALSE] #remove missing observations
+        }
       }
-
+  
       obs_list[[i]] <- list(Y=Y[[i]],
                             pred_ind = pred.ind,
                             obs_ind = obs.ind,
                             locs = locs[[i]],
                             Bfixed_pred = Bfixed.pred[[i]])
       if(use.process){
-        obs_list[[i]]$A = build.A.matrix(operator_list,locs,i)
-        obs_list[[i]]$Apred = build.A.matrix(operator_list,locs.pred,i)
+        A <- build.A.matrix(operator_list,locs,i)
+        Ap <- build.A.matrix(operator_list,locs.pred,i)
+        if(bivariate){
+          A1 <- A[!is.nan(Y[[i]][,1]),]
+          A2 <- A[!is.nan(Y[[i]][,2]),]
+          obs_list[[i]]$A = bdiag(A1,A2)
+          obs_list[[i]]$Apred = bdiag(Ap,Ap)
+          Yi <- c(Y[[i]])
+          obs_list[[i]]$Y = Yi[!is.nan(Yi)]
+          obs_list[[i]]$locs = cbind(locs[[i]],locs[[i]])
+        } else {
+          obs_list[[i]]$A = A
+          obs_list[[i]]$Apred = Ap
+        }
       }
-
+      
       if(use.random.effect){
         obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
       }
@@ -278,7 +332,8 @@ predictLong <- function( Y,
                  mix_samp = repeat.mix,
                  use_random_effect = use.random.effect,
                  derivative_scaling = delta,
-                 predict_derivative = predict_derivative)
+                 predict_derivative = predict_derivative,
+                 ind_general = ind.general)
   if(use.process){
     input$processes_list   = processes_list
     input$operator_list    = operator_list
@@ -455,7 +510,8 @@ updateLists <- function(mixedEffect_list,
                         measurement_list,
                         Bfixed,
                         Brandom,
-                        locs)
+                        locs,
+                        pred.ind = NULL)
 {
   n.pred <- length(Bfixed)
 
@@ -471,7 +527,8 @@ updateLists <- function(mixedEffect_list,
       X[[i]] <- rep(0, length(operator_list$h[[1]]))
       V[[i]] <- operator_list$h[[1]]
     } else {
-      error("Not yet implemented")
+      X[[i]] <- rep(0, length(operator_list$h[[pred.ind[i]]]))
+      V[[i]] <- operator_list$h[[pred.ind[i]]]
     }
   }
 

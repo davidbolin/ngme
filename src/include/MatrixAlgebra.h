@@ -33,6 +33,7 @@ MatrixXd communicationMatrix(const int , const int );
 MatrixXd get_submatrix(const MatrixXd&, const VectorXi&);
 void get_submatrix(const MatrixXd&, const VectorXi&,MatrixXd&);
 MatrixXi get_submatrix(const MatrixXi&, const VectorXi&);
+void get_submatrix(SparseMatrix<double,0,int>&,const VectorXi&, SparseMatrix<double,0,int>*);
 
 /*
 	Set M(ind,:) = Msub
@@ -45,7 +46,13 @@ void set_submatrix(MatrixXi&, const MatrixXi&, const VectorXi&);
 */
 void add_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind);
 
-
+//set Ysub = Y(ind)
+void get_subvector(const VectorXd&, const VectorXi&, VectorXd&);
+  
+// Set M(ind,r) = v
+void set_subcol(MatrixXd&, const int, const VectorXi&, const VectorXd&);
+  
+  
 MatrixXi duplicatematrix(int);
 
 VectorXd vec(MatrixXd&);
