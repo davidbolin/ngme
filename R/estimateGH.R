@@ -195,7 +195,10 @@ estimateLong <- function(Y,
 
   #input <- asS4(input)
   output <- estimateLong_cpp(input)
-
+  if(use.process){
+    output$A <- lapply(1:length(obs_list), function(i) obs_list[[i]]$A)
+  }
+    
   if(standardize.mixedEffects){
     if(!is.null(Bf.list)){
       output$mixedEffect_list$beta_fixed <- scale.beta(output$mixedEffect_list$beta_fixed,Bf.list,inv=TRUE)
@@ -282,7 +285,7 @@ ME.startvalues <- function(Y, mixedEffect_list)
 
     for(i in 1:n){
 
-      Bi = cBind(mixedEffect_list$B_fixed[[i]],mixedEffect_list$B_random[[i]])
+      Bi = cbind(mixedEffect_list$B_fixed[[i]],mixedEffect_list$B_random[[i]])
       BB = BB + t(Bi)%*%Bi
       BY = BY + t(Bi)%*%Y[[i]]
     }

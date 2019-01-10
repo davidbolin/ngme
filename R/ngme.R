@@ -862,10 +862,10 @@ ngme <- function(fixed,
   }else{
     ranef_mu <- ranef_mu_vec <- ranef_nu <- ranef_nu_vec <- NA
   }
-
+  A = NULL
   # process and operator
   if(use.process == TRUE){
-
+    A <- fit$A
     #operator
     operator_tau     <- fit$operator_list$tau
     operator_tau_vec <- fit$operator_list$tauVec
@@ -943,6 +943,7 @@ ngme <- function(fixed,
     error_distr = error,
     Y = Y,
     locs = locs,
+    A = A,
     mixedEffect_list = fit$mixedEffect_list,
     measurementError_list = fit$measurementError_list,
     processes_list = fit$processes_list,
@@ -977,7 +978,7 @@ ngme <- function(fixed,
     fisher_est = fisher_est,
     call = match.call()
   )
-
+  
   class(out) <- "ngme"
   out
 

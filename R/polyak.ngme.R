@@ -260,7 +260,7 @@ compute.polyak.variance <- function(x,polyak.rate,i.start){
 
 smooth.trajectory <- function(x,polyak.rate, burnin.end = NULL){
   if(is.null(burnin.end))
-    burnin.end <- 1
+    burnin.end <- 2
   if(length(dim(x))==2){
     n = dim(x)[1]
     for(i in burnin.end:n){
