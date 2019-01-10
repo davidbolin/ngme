@@ -950,7 +950,6 @@ Eigen::MatrixXd GHMixedEffect::d2Given2(const int i,
 
 void GHMixedEffect::clear_gradient()
 {
-  Rcpp::Rcout << "npars = " << npars <<"\n";
   int n_s = 0;
   int n_f = 0;
   int n_r = 0;

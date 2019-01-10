@@ -52,8 +52,8 @@ void subsampler::initFromList(const Rcpp::List & in_list)
   //  Rcpp::Rcout << "nindv = " << nindv << "\n";
   for (int i=0; i< nindv; i++) longInd.push_back(i);
   
-  Rcpp::Rcout << " longInd:\n";
-  for (int i=0; i< nindv; i++) Rcpp::Rcout << longInd[i] << "\n";
+  //Rcpp::Rcout << " longInd:\n";
+  //for (int i=0; i< nindv; i++) Rcpp::Rcout << longInd[i] << "\n";
   
   
   count = 0;
@@ -62,7 +62,7 @@ void subsampler::initFromList(const Rcpp::List & in_list)
   } else if(subsample_type == 4){
     group_list = Rcpp::as<Rcpp::List> (in_list["group_list"]);
     ngroup = group_list.length();
-    Rcpp::Rcout << "ngroup = " << ngroup << "\n";
+    //Rcpp::Rcout << "ngroup = " << ngroup << "\n";
     groups.resize(ngroup);
     free = Rcpp::as<Eigen::VectorXd>(in_list["free_samples"]);
     

@@ -90,9 +90,7 @@ void NIGMixedEffect::initFromList(Rcpp::List const &init_list)
        simulate();
     
     
-     Rcpp::Rcout << "in initFromList = \n";
-     Rcpp::Rcout << "V=  " << V << "\n";
-
+    
     npars += 1;
 	  dnu_old = 0;
     grad_nu = 0.;
