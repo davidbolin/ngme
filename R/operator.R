@@ -121,7 +121,7 @@ spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann'
 #'   }
 #'
 
-spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',compute.Ce = FALSE)
+spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',compute.Ce = FALSE, name = "matern")
 {
   n = length(x)
   dx = diff(x)
@@ -129,40 +129,48 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',
   dm1 = c(d[-1],Inf)
   #d1  = c(Inf,d[-n])
 
-  #G = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cbind(-1/dm1, (1/dm1 + 1/d), -1/dm1))
-  G = as(sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE),"dgCMatrix")
-
-  if(compute.Ce){
-    Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cbind(dm1/6, (dm1+d)/3, d/6))
-    Ce[1,1] <- d[2]/3
-    Ce[1,2] <- d[2]/6
-    Ce[n,n] <- d[n]/3
-    Ce[n,n-1] <- d[n]/6
+  if(name == "matern"){ #Compute stiffness and mass matrix for Galerkin approx
+    G = as(sparseMatrix(i = c(1:n,2:n),j=c(1:n,1:(n-1)),x=c((1/dm1 + 1/d),-1/dm1[-n]),dims=c(n,n),symmetric=TRUE),"dgCMatrix")  
+    if(compute.Ce){
+      Ce = bandSparse(n=n,m=n,k=c(-1,0,1),diagonals=cbind(dm1/6, (dm1+d)/3, d/6))
+      Ce[1,1] <- d[2]/3
+      Ce[1,2] <- d[2]/6
+      Ce[n,n] <- d[n]/3
+      Ce[n,n-1] <- d[n]/6
+    }
+    
+    
+    h = (c(dx,Inf)+d)/2
+    h[1] <- (x[2]-x[1])/2
+    h[n] <- (x[n]-x[n-1])/2
+    C = sparseMatrix(i=1:n,j=1:n,x=h,dims = c(n,n))
+    Ci = sparseMatrix(i=1:n,j=1:n,x=1/h,dims = c(n,n))
+    
+    if(left.boundary=='dirichlet'){
+      C = C[-1,-1]
+      Ci = Ci[-1,-1]
+      G = G[-1,-1]
+      Ce = Ce[-1,-1]
+      n = n-1
+      h = h[-1]
+    }
+    if(right.boundary=='dirichlet'){
+      C = C[-n,-n]
+      Ci = Ci[-n,-n]
+      G = G[-n,-n]
+      Ce = Ce[-n,-n]
+      n = n-1
+      h = h[-n]
+    }
+  } else { #Compute stiffness and mass matrix for Petrov-Galerkin approx
+    h <- diff(x)
+    n <- length(h)
+    G = as(bandSparse(n=n,m=n,k=c(-1,0),diagonals=cbind(-rep(1,n), rep(1,n))),"dgCMatrix")  
+    C <- Ce <- as(bandSparse(n=n,m=n,k=c(-1,0),diagonals=cbind(0.5*h, 0.5*h)),"dgCMatrix")  
+    Ci = sparseMatrix(i=1:n,j=1:n,x=1/h,dims = c(n,n))
   }
-
-
-  h = (c(dx,Inf)+d)/2
-  h[1] <- (x[2]-x[1])/2
-  h[n] <- (x[n]-x[n-1])/2
-  C = sparseMatrix(i=1:n,j=1:n,x=h,dims = c(n,n))
-  Ci = sparseMatrix(i=1:n,j=1:n,x=1/h,dims = c(n,n))
-
-  if(left.boundary=='dirichlet'){
-    C = C[-1,-1]
-    Ci = Ci[-1,-1]
-    G = G[-1,-1]
-    Ce = Ce[-1,-1]
-    n = n-1
-    h = h[-1]
-  }
-  if(right.boundary=='dirichlet'){
-    C = C[-n,-n]
-    Ci = Ci[-n,-n]
-    G = G[-n,-n]
-    Ce = Ce[-n,-n]
-    n = n-1
-    h = h[-n]
-  }
+  
+  
 out.list <- list(G=G,
                  C=C,
                  Ci=Ci,
@@ -249,7 +257,7 @@ create_operator_matern2Dbivariate <- function(mesh)
 #' @param locs A numeric list of measurement locations.
 #' @param max.dist A numeric value for largest distance between nodes in the discretization
 #' @param name A character string for the operator type,
-#'    possible options are \code{"matern"} and \code{"fd2"}.
+#'    possible options are \code{"matern"}, \code{"exponential"} and \code{"fd2"}.
 #' @param right.boundary A character string denoting the boundary condition
 #'    for the right boundary.
 #' @param left.boundary A character string denoting the boundary condition
@@ -280,7 +288,11 @@ create_operator <- function(locs,
                             cutoff = 1e-10,
                             n.cores = 1)
 {
-  if(tolower(name) == "matern"){
+  if(tolower(name) == "matern" || tolower(name) == "exponential"){
+    if(tolower(name) == "exponential"){
+      left.boundary = "dirichlet"
+      right.boundary = "none"
+    }
     return(create_matrices_Matern(locs = locs,
                                   common.grid = common.grid,
                                   extend = extend,
@@ -288,7 +300,8 @@ create_operator <- function(locs,
                                   cutoff = cutoff,
                                   n.cores = n.cores,
                                   right.boundary = right.boundary,
-                                  left.boundary = left.boundary))
+                                  left.boundary = left.boundary,
+                                  name = name))
   }else{
     return(create_matrices_FD2(locs = locs,
                                common.grid = common.grid,
@@ -332,7 +345,8 @@ create_matrices_Matern <- function(locs,
                                    extend = NULL,
                                    max.dist,
                                    cutoff = 1e-10,
-                                   n.cores = 1)
+                                   n.cores = 1,
+                                   name = "matern")
 {
 
   meshes <- generate.adaptive.meshes.1d(locs,
@@ -345,7 +359,7 @@ create_matrices_Matern <- function(locs,
   operator_List <- list()
   C <- Ci <- G <- Ce <- h <- list()
   if(common.grid || length(locs) == 1){
-    MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary)
+    MatrixBlock <- spde.basis(meshes$loc[[1]],right.boundary=right.boundary,left.boundary=left.boundary, name = name)
     for(i in 1:length(locs))
     {
       C[[i]] = MatrixBlock$C
@@ -361,7 +375,7 @@ create_matrices_Matern <- function(locs,
       clusterExport(cl, list = c('locs'),envir=environment())
       b.list <- foreach(i = 1:length(locs)) %dopar%
         {
-          m <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
+          m <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary, name = name)
           m$i = i
           return(m)
         }
@@ -382,7 +396,7 @@ create_matrices_Matern <- function(locs,
     } else {
       for(i in 1:length(locs))
       {
-        MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary)
+        MatrixBlock <- spde.basis(meshes$loc[[i]],right.boundary=right.boundary,left.boundary=left.boundary, name = name)
         C[[i]] = MatrixBlock$C
         Ci[[i]] = MatrixBlock$Ci
         G[[i]] = MatrixBlock$G
@@ -391,7 +405,7 @@ create_matrices_Matern <- function(locs,
     }
   }
 
-  operator_List <- list(type = 'Matern',
+  operator_List <- list(type = name,
                         C = C,
                         Ci = Ci,
                         G = G,

@@ -190,12 +190,13 @@ List predictLong_cpp(Rcpp::List in_list)
     count = 0;
     for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
       List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-      if(type_operator == "bivariate matern"){
-        Solver.push_back( new lu_solver );  
-      } else {
-        Solver.push_back( new cholesky_solver );  
-      }
-
+      //Do not neet LU solver here since we only work with Q. 
+      //if(type_operator == "bivariate matern"){
+      //  Solver.push_back( new lu_solver );  
+      //} else {
+      //  Solver.push_back( new cholesky_solver );  
+      //}
+      Solver.push_back( new cholesky_solver );  
       Solver[count]->init(Kobj->d[count], 0, 0, 0);
       K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
 
@@ -279,9 +280,11 @@ List predictLong_cpp(Rcpp::List in_list)
   }
 
 
-  std::vector< Eigen::MatrixXd > WVec(nindv);
-  std::vector< Eigen::MatrixXd > VVec(nindv);
-  std::vector< Eigen::MatrixXd > XVec(nindv);
+  std::vector< Eigen::MatrixXd > WVec(nindv); //process
+  std::vector< Eigen::MatrixXd > VVec(nindv); //variance of process
+  std::vector< Eigen::MatrixXd > XVec(nindv); //latent field (process + effects)
+  std::vector< Eigen::MatrixXd > WnoiseVec(nindv); //process noise
+  std::vector< Eigen::MatrixXd > UVec(nindv); //random effects
   std::vector< Eigen::MatrixXd > XVec_deriv(nindv);
   std::vector< Eigen::MatrixXd > WVec_deriv(nindv);
   std::vector< Eigen::MatrixXd > YVec(nindv);
@@ -306,6 +309,11 @@ List predictLong_cpp(Rcpp::List in_list)
     }
     XVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     WVec[i].setZero(Bfixed_pred[i].rows(), nSim);
+    if(use_process){
+      WnoiseVec[i].setZero(Kobj->d[i], nSim);  
+    }
+    
+    
     if(predict_derivative == 1){
       XVec_deriv[i].setZero(Bfixed_pred[i].rows(), nSim);
       WVec_deriv[i].setZero(Bfixed_pred[i].rows(), nSim);
@@ -315,6 +323,7 @@ List predictLong_cpp(Rcpp::List in_list)
     Eigen::MatrixXd random_effect;
     if(use_random_effect == 1){
       random_effect = mixobj->Br[i];
+      UVec[i].setZero(Brandom_pred[i].cols(), nSim);
     }
     Eigen::MatrixXd fixed_effect = mixobj->Bf[i];
 
@@ -388,7 +397,6 @@ List predictLong_cpp(Rcpp::List in_list)
                                     random_engine[rank], 2 * log(errObj->sigma));
             }
           }
-
           mixobj->remove_inter(i, res);
 
         } else {
@@ -528,9 +536,13 @@ List predictLong_cpp(Rcpp::List in_list)
           
           Eigen::VectorXd mNoise = errObj->simulate_par(random_effect_c,random_engine[rank]);
           Eigen::VectorXd AX;
+          if(use_random_effect == 1){
+            UVec[i].col(ii-nBurnin) = mixobj->U.col(i); // this only makes sense for smoothing
+          }
 
           if(use_process == 1){
             AX = Ai * process->Xs[i];
+            WnoiseVec[i].col(ii-nBurnin) = process->Ws[i]; // this only makes sense for smoothing
             if(ind_general){
               //Rcpp::Rcout << "WVec pre\n" << WVec[i] << "\n AX \n" << AX << "\n pred_ind = " << pred_ind[i].row(ipred) << "\n";
               set_subcol(WVec[i], ii-nBurnin, pred_ind[i].row(ipred), AX);
@@ -542,7 +554,7 @@ List predictLong_cpp(Rcpp::List in_list)
               WVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX;
               XVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX;
               YVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c + AX + mNoise;
-              VVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = Ai * process->Vs[i];  
+              VVec[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = Ai * process->Vs[i]; 
             }
             
           }  else {
@@ -615,7 +627,11 @@ List predictLong_cpp(Rcpp::List in_list)
   out_list["YVec"] = YVec;
   out_list["XVec"] = XVec;
   out_list["WVec"] = WVec;
+  if(use_process){
+    out_list["WnoiseVec"] = WnoiseVec;
+  }
   out_list["VVec"] = VVec;
+  out_list["UVec"] = UVec;
   if(predict_derivative == 1)
   {
     out_list["XVec_deriv"] = XVec_deriv;

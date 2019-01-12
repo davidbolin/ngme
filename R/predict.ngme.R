@@ -220,7 +220,7 @@ predict.ngme <- function(object,
 
     opts <- list(progress = progress)
 
-    clusterExport(cl, varlist = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
+    parallel::clusterExport(cl, varlist = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
 
     preds.list <- foreach(i = 1:iterations, .options.snow = opts) %dopar%
     {
@@ -281,35 +281,6 @@ predict.ngme <- function(object,
   if(controls$silent == FALSE){
     cat("Calculating accuracy measures", "\n")
   }
-
-  # if(type=="Filter"){
-  #   p.start = 2
-  # } else {
-  #   p.start = 1
-  # }
-  #
-  # mae.mean <- mae.median <- rmse.mean <- rmse.median <- covered <- int.width <- crps <- n.obs <- NULL
-  #
-  # for(i in 1:length(pInd)){
-  #   n.obs.i = length(object$Y[[pInd[i]]])
-  #   if(n.obs.i >= p.start){
-  #     n.obs <- c(n.obs, length(object$Y[[pInd[i]]]) - p.start + 1)
-  #     yi <- object$Y[[pInd[i]]][p.start:n.obs.i]
-  #
-  #     mae.mean <- c(mae.mean, abs(preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi))
-  #     mae.median <- c(mae.median, abs(preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi))
-  #
-  #     rmse.mean <- c(rmse.mean, (preds$X.summary[[i]]$Mean[p.start:n.obs.i] - yi)^2)
-  #     rmse.median <- c(rmse.median, (preds$X.summary[[i]]$Median[p.start:n.obs.i] - yi)^2)
-  #
-  #     covered <- c(covered,(preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i] < yi & (preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] > yi)))
-  #     int.width <- c(int.width, preds$Y.summary[[i]]$quantiles[[2]]$field[p.start:n.obs.i] - preds$Y.summary[[i]]$quantiles[[1]]$field[p.start:n.obs.i])
-  #
-  #     crps <- c(crps, preds$Y.summary[[i]]$crps[p.start:n.obs.i])
-  #   }
-  # }
-  #
-  # sum.n.obs <- sum(n.obs)
 
   Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
 

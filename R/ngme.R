@@ -17,7 +17,8 @@
 #'   second element for the process distribution. Available options for the
 #'   first are:
 #'   \code{"fd2"} for integrated Random-Walk (integrated Brownian Motion),
-#'   \code{"matern"} for Matern family;
+#'   \code{"matern"} for Matern covarince with smoothnes 3/2,
+#'   \code{"exponential"} for exponential covarince (Matern with smoothnes 1/2);
 #'   for the second element are:
 #'   \code{"Normal"} for Normal distribution,
 #'   \code{"NIG"} for Normal-inverse Gaussian,

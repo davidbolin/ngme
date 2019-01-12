@@ -2,16 +2,16 @@ graphics.off()
 library(ngme)
 
 test.pred = FALSE
-test.est = FALSE
-test.fisher = TRUE
+test.est = TRUE
+test.fisher = FALSE
 
 #data options
-n.pers <- 20
-n.obs  <- rep(5,n.pers)#10 + (1:n.pers)
+n.pers <- 100
+n.obs  <- rep(400,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
-operator.type = "matern"
-process.noise = "NIG"
+operator.type = "exponential"
+process.noise = "Normal"
 process.nu = 0.1
 process.mu = 0.1
 
@@ -71,7 +71,7 @@ mixedEffect_list  <- list(B_random = B_random,
 
 
 operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.5)
-if(operator.type == "matern"){
+if(operator.type == "matern" || operator.type == "exponential"){
   operator_list$kappa <- 2
 }
 
@@ -121,7 +121,7 @@ if(test.est){
 
 
   n.plots <- 3
-  if(operator.type == "matern")
+  if(operator.type == "matern" || operator.type == "exponential")
     n.plots = 4
   if(process.noise == "NIG")
     n.plots <- n.plots + 2
@@ -139,7 +139,7 @@ if(test.est){
 
   plot(res.est$operator_list$tauVec,type="l",main="process tau")
   lines(rep(operator_list$tau,nIter),col=2)
-  if(operator.type == "matern"){
+  if(operator.type == "matern" || operator.type == "exponential"){
     plot(res.est$operator_list$kappaVec,type="l",main="process kappa")
     lines(rep(operator_list$kappa,nIter),col=2)
   }

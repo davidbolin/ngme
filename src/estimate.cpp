@@ -87,7 +87,7 @@ Eigen::VectorXd GibbsSampling(int i,
     Q =  Q * iV.asDiagonal();
     Q =  Q * K;
 
-    res += A * process.Xs[i];
+    res += A * process.Xs[i]; //res is now Y - Bfix*beta_fix - Brand*U = A*X + E
     if(debug)
       Rcpp::Rcout << "estimate::sample X\n";
 
@@ -415,7 +415,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   operatorMatrix* Kobj;
   //Eigen::VectorXd h = Rcpp::as<Eigen::VectorXd>( operator_list["h"]);
   //Create solvers for each patient
-  std::vector<  solver* >  Solver;
+  std::vector<  solver* >  Solver; //solvers for Q
   Eigen::SparseMatrix<double, 0, int> Q, K;
   Eigen::VectorXd  z;
 
@@ -430,12 +430,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     count = 0;
     for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
       List obs_tmp = Rcpp::as<Rcpp::List>( *it);
-      if(type_operator == "bivariate matern"){
-        Solver.push_back( new lu_solver );  
-      } else {
-        Solver.push_back( new cholesky_solver );  
-      }
-      
+      Solver.push_back( new cholesky_solver );  
       Solver[count]->init(Kobj->d[count], 0, 0, 0);
       K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
 
@@ -573,6 +568,8 @@ List estimateLong_cpp(Rcpp::List in_list)
   Fisher_information0.setZero(npars, npars);
 
   double burnin_rate = 1;
+  
+  //Start main loop
   for(int iter=0; iter < nIter; iter++){
     /*
     printing output
@@ -650,6 +647,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     double pdone = 0.0;
     double next_disp = 0.00;
 
+    //loop over patients/replicates
     for(int ilong = 0; ilong < sampler->nSubsample_i; ilong++ ){
 
       if(silent == 0 && estimate_fisher && nIter == 1){
@@ -727,7 +725,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       } else {
         z.setZero(0);
       }
-
+      //Gibbs sampling
       for(int ii = 0; ii < n_simulations; ii ++)
       {
         if(process_active){

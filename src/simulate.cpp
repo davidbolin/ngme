@@ -186,7 +186,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 
       K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
 
-      if(type_operator == "matern bivariate"){
+      if(type_operator == "matern bivariate" || type_operator == "exponential"){
         if(debug == 1){
           Rcpp::Rcout << " LU" << K.rows() << " "<< K.cols() << "\n";
         }

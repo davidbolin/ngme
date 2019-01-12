@@ -8,10 +8,12 @@ GaussianProcess::~GaussianProcess(){
   for(int i =0; i < nindv; i++){
     h[i].resize(0);
     Xs[i].resize(0);
+    Ws[i].resize(0);
     Vs[i].resize(0);
   }
   h.resize(0);
   Xs.resize(0);
+  Ws.resize(0);
   Vs.resize(0);
 }
 
@@ -44,9 +46,11 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
   }
 
   Xs.resize(nindv);
+  Ws.resize(nindv);
   Vs.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
     	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      Ws[i] = Xs[i];
     	Vs[i] = h[i];
   	}
 
@@ -61,16 +65,12 @@ void GaussianProcess::simulate(const int i,
 			                         Eigen::VectorXd& Y,
                                solver& solver)
 {
-  //Rcpp::Rcout<< "Gaussian process simulate\n";
-	Eigen::SparseMatrix<double,0,int> Q = Eigen::SparseMatrix<double,0,int>(K.transpose());
-	iV.setZero(K.rows());
-	iV.array() = h[i].array().inverse();
-  Q =  Q * iV.asDiagonal();
-  Q =  Q * K;
-  //solver.compute(Q);
+  Z = Z.cwiseProduct(h[i].cwiseSqrt());
   Eigen::VectorXd b;
   b.setZero(K.rows());
-  Xs[i] = solver.rMVN(b, Z);
+  Ws[i] = Z; //Save noise
+  Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
+  Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
 	Y += A * Xs[i];
 }
 
@@ -82,6 +82,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   nindv = X_list.size();
   Xs.resize(nindv);
+  Ws.resize(nindv);
   Vs.resize(nindv);
   term1 = 0;
   term2 = 0;
@@ -125,8 +126,8 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   for(int i = 0; i < nindv; i++ ){
 
     	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-    	//Vs[i] = h;
-      	Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
+    	Ws[i] = Xs[i];
+      Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
   	}
 
 
@@ -180,6 +181,11 @@ if(type_process == "CH"){
 
 }
 
+
+
+//Sample X|Y when Y = AX + sigma*E
+//X|Y = N(Qpost^-1 AY/sigma^2, Qpost^-1)
+// X = K^-1W -> W = K*X
 void GaussianProcess::sample_X(const int i,
               Eigen::VectorXd & Z,
               const Eigen::VectorXd & Y,
@@ -194,6 +200,7 @@ void GaussianProcess::sample_X(const int i,
   solver.compute(Qi);
   Eigen::VectorXd b = A.transpose()*Y/ sigma2;
   Xs[i] = solver.rMVN(b, Z);
+  Ws[i] = K*Xs[i];
 
 }
 
@@ -226,6 +233,7 @@ void GHProcess::sample_X(const int i,
   b +=  K.transpose() * temp;
   b = b.cwiseProduct(DQ_12);
   Xs[i] = DQ_12.cwiseProduct(solver.rMVN(b, Z));
+  Ws[i] = K*Xs[i];
 }
 
 	//simulate from prior distribution
@@ -234,11 +242,13 @@ void GHProcess::simulate(const int i,
 			  const Eigen::SparseMatrix<double,0,int> & A,
               const Eigen::SparseMatrix<double,0,int> & K,
 			  Eigen::VectorXd& Y,
-			  solver  &  solver)
+			  solver  &  solver) //Solver not used
 {
   Z = Z.cwiseProduct(Vs[i].cwiseSqrt());
   for(int ii = 0; ii < Z.size(); ii++)
   Z[ii] += - mu * h[i][ii] + Vs[i][ii] * mu;
+  
+  Ws[i] = Z; //Save noise
   Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
   Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
   Y += A * Xs[i];
@@ -261,6 +271,7 @@ void GaussianProcess::sample_Xv2( const int i,
   solver.compute(Qi);
   Eigen::VectorXd b = A.transpose()* (iV_noise.cwiseProduct(Y) )/ sigma2;
   Xs[i] = solver.rMVN(b, Z);
+  Ws[i] = K*Xs[i];
 }
 
 
@@ -287,6 +298,7 @@ void GHProcess::sample_Xv2(  const int i,
   temp *= mu;
   b +=  K.transpose() * temp;
    Xs[i] =solver.rMVN(b, Z);
+   Ws[i] = K*Xs[i];
 }
 
 void GHProcess::sample_V(const int i ,

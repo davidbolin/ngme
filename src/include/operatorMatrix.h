@@ -199,6 +199,69 @@ class MaternOperator : public operatorMatrix{
 
 };
 
+class ExponentialOperator : public operatorMatrix{
+protected:
+  double ldet;
+  int is_initialized = 0;
+  std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
+  Eigen::VectorXd g,p;
+  Eigen::SparseMatrix<double,0,int> *G, *C;
+  double kappa, dkappa, ddkappa, dtau, ddtau;
+  double dtau_old, dkappa_old;
+  bool use_chol;
+  std::vector<int> matrix_set;
+  double counter;
+  int calc_det;
+  solver ** Qepssolver;
+  SparseMatrix<double,0,int> *d2tauQ, *dtauQ, *dkappaQ, *d2kappaQ;
+  void set_matrices();
+  void set_matrix(const int);
+public:
+  
+  
+  void get_param(std::vector<double> & param_in){
+    param_in.push_back(tau);
+    param_in.push_back(kappa);
+  };
+  void get_param_names(Rcpp::StringVector & names){
+    names.push_back("tau_operator");
+    names.push_back("kappa_operator");
+  };
+  double tau;
+  
+  ExponentialOperator(){ counter = 0;};
+  ~ExponentialOperator();
+  
+  void initFromList(Rcpp::List const &){Rcpp::Rcout << "Supply solver list when using initFromlist";};
+  void initFromList(Rcpp::List const &, Rcpp::List const &);
+  
+  Rcpp::List output_list();
+  void gradient( const Eigen::VectorXd &, const Eigen::VectorXd & );
+  void gradient_init(const int, const int);
+  void gradient_add( const Eigen::VectorXd & ,
+                     const Eigen::VectorXd & ,
+                     const Eigen::VectorXd & ,
+                     int,
+                     const double);
+  
+  Eigen::MatrixXd d2Given( const Eigen::VectorXd & ,
+                           const Eigen::VectorXd & ,
+                           const Eigen::VectorXd & ,
+                           int,
+                           const double);
+  void step_theta(const double stepsize,
+                  const double learning_rate = 0,
+                  const double polyak_rate   = -1,
+                  const int burnin = 0);
+  Eigen::VectorXd kappaVec;
+  void print_parameters();
+  double trace_variance( const Eigen::SparseMatrix<double,0,int> &, int );
+  
+  Eigen::VectorXd  get_gradient();
+  void  clear_gradient();
+  
+};
+
 class MaternOperator2D : public operatorMatrix{
 protected:
   double ldet;

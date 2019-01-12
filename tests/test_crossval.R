@@ -50,7 +50,7 @@ if(use.random.effect){
   
 }
 
-operator_list <- create_operator(locs.proc, name = "fd2",extend = grid.extend,max,max.dist = 1)
+operator_list <- create_operator(locs.proc, name = "exponential",extend = grid.extend,max.dist = 1)
 operator_list$type  <- "fd2"
 operator_list$tau   <- 5
 

@@ -350,6 +350,13 @@ predictLong <- function( Y,
     out_list$X.samples <- output$XVec
     out_list$W.samples <- output$WVec
     out_list$V.samples <- output$VVec
+    if(type == "Smoothing"){
+      out_list$U.samples <- output$UVec
+      if(use.process){
+        out_list$Wnoise.samples <- output$WnoiseVec
+        out_list$Wnoise.summary <- list()
+      }
+    }
     if(!is.null(predict.derivatives)){
       out_list$Xderivative.samples <- output$XVec_deriv
       out_list$Wderivative.samples <- output$WVec_deriv
@@ -386,6 +393,18 @@ predictLong <- function( Y,
     out_list$X.summary[[i]]$Median <- apply(output$XVec[[i]],1,median)
     out_list$W.summary[[i]]$Median <- apply(output$WVec[[i]],1,median)
     out_list$V.summary[[i]]$Median <- apply(output$VVec[[i]],1,median)
+    if(type == "Smoothing"){
+      out_list$U.summary[[i]] <- list()
+      out_list$U.summary[[i]]$Mean <- apply(output$UVec[[i]],1,mean)
+      out_list$U.summary[[i]]$Var  <- apply(output$UVec[[i]],1,var)
+      out_list$U.summary[[i]]$Median <- apply(output$UVec[[i]],1,median)
+      if(use.process){
+        out_list$Wnoise.summary[[i]] <- list()
+        out_list$Wnoise.summary[[i]]$Mean <- apply(output$WnoiseVec[[i]],1,mean)
+        out_list$Wnoise.summary[[i]]$Var  <- apply(output$WnoiseVec[[i]],1,var)
+        out_list$Wnoise.summary[[i]]$Median <- apply(output$WnoiseVec[[i]],1,median)
+      }
+    }
 
     if(!is.null(predict.derivatives)){
       out_list$Xderivative.summary[[i]] <- list()
@@ -402,7 +421,9 @@ predictLong <- function( Y,
       y.list <- list()
       x.list <- list()
       w.list <- list()
+      wnoise.list <- list()
       v.list <- list()
+      u.list <- list()
       if(!is.null(predict.derivatives)){
         xd.list <- list()
         wd.list <- list()
@@ -418,6 +439,14 @@ predictLong <- function( Y,
         w.list[[c]] = c.i
         c.i$field <- apply(output$VVec[[i]],1,quantile,probs=c(quantiles[c]))
         v.list[[c]] = c.i
+        if(type=="Smoothing"){
+          c.i$field <- apply(output$UVec[[i]],1,quantile,probs=c(quantiles[c]))
+          u.list[[c]] = c.i
+          if(use.process){
+            c.i$field <- apply(output$WnoiseVec[[i]],1,quantile,probs=c(quantiles[c]))
+            wnoise.list[[c]] = c.i
+          }
+        }
         if(!is.null(predict.derivatives)){
           c.i$field <- apply(output$XVec_deriv[[i]],1,quantile,probs=c(quantiles[c]))
           xd.list[[c]] = c.i
@@ -429,6 +458,12 @@ predictLong <- function( Y,
       out_list$X.summary[[i]]$quantiles <- x.list
       out_list$W.summary[[i]]$quantiles <- w.list
       out_list$V.summary[[i]]$quantiles <- v.list
+      if(type=="Smoothing"){
+        out_list$U.summary[[i]]$quantiles <- u.list
+        if(use.process){
+          out_list$Wnoise.summary[[i]]$quantiles <- wnoise.list
+        }
+      }
     }
     if(!is.null(excursions)){
       for(c in 1:length(excursions)){

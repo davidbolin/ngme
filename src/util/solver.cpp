@@ -209,6 +209,7 @@ double cholesky_solver::trace2(SparseMatrix<double,0,int>& M1,SparseMatrix<doubl
   return tmp1.diagonal().sum();
 }
 
+//Sample Q^-1mu + chol(Q)Z = N(Q^-1mu,Q^-1)
 Eigen::VectorXd cholesky_solver::rMVN(Eigen::VectorXd& mu, Eigen::VectorXd& z)
 {
 

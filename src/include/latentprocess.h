@@ -23,6 +23,7 @@ public:
   std::vector< Eigen::VectorXd > EV_post;
   std::vector< Eigen::VectorXd > EV;
   std::vector< Eigen::VectorXd > Xs;
+  std::vector< Eigen::VectorXd > Ws;
   std::vector< Eigen::VectorXd >  Vs;
   Eigen::SparseMatrix<double,0,int>  Q;
   std::vector < Eigen::VectorXd > h;

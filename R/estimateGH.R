@@ -343,7 +343,7 @@ operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measu
 {
   if(operator_list$type == "fd2"){
     operator_list$tau = 1/measurement_list$sigma
-  } else if(operator_list$type == "matern"){
+  } else if(operator_list$type == "matern" || operator_list$type == "exponential"){
     operator_list$tau = 1/measurement_list$sigma
     m = min(unlist(lapply(lapply(locs,range),min)))
     M = max(unlist(lapply(lapply(locs,range),max)))
