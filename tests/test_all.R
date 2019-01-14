@@ -7,7 +7,7 @@ test.fisher = FALSE
 
 #data options
 n.pers <- 100
-n.obs  <- rep(400,n.pers)#10 + (1:n.pers)
+n.obs  <- rep(100,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 operator.type = "exponential"
@@ -16,7 +16,7 @@ process.nu = 0.1
 process.mu = 0.1
 
 #estimation options
-nIter <- 1000
+nIter <- 2000
 nSim <- 5
 nBurnin = 10
 pSubsample = 0.5
@@ -72,7 +72,7 @@ mixedEffect_list  <- list(B_random = B_random,
 
 operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.5)
 if(operator.type == "matern" || operator.type == "exponential"){
-  operator_list$kappa <- 2
+  operator_list$kappa <- 10
 }
 
 operator_list$tau   <- 1
@@ -93,12 +93,17 @@ for(i in 1:length(locs))
 ###
 mixedEffect_list_in = mixedEffect_list
 
+operator_list_m <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = "matern",extend=0.5)
+operator_list_m$kappa <- 5
+operator_list_m$tau   <- 1
+
+
 sim_res <- simulateLongPrior( Y                 = Y,
                               locs              = locs,
                               mixedEffect_list  = mixedEffect_list_in,
                               measurment_list   = mError_list,
                               processes_list    = processes_list,
-                              operator_list     = operator_list)
+                              operator_list     = operator_list_m)
 
 
 

@@ -248,7 +248,7 @@ void ExponentialOperator::step_theta(const double stepsize,
                                      const double polyak_rate,
                                      const int burnin)
 {
-  Rcpp::Rcout << "step operator\n";
+  
   dtau  /= ddtau;
   dtau_old = learning_rate * dtau_old + dtau;
   double step = stepsize * dtau_old;
@@ -287,7 +287,7 @@ void ExponentialOperator::step_theta(const double stepsize,
   for(int i=0;i<nop;i++){
     matrix_set[i] = 0;
   }
-  Rcpp::Rcout << "step operator done\n";
+  
   //this->set_matrices();
 }
 

@@ -166,7 +166,7 @@ spde.basis <- function(x, right.boundary = 'neumann', left.boundary = 'neumann',
     h <- diff(x)
     n <- length(h)
     G = as(bandSparse(n=n,m=n,k=c(-1,0),diagonals=cbind(-rep(1,n), rep(1,n))),"dgCMatrix")  
-    C <- Ce <- as(bandSparse(n=n,m=n,k=c(-1,0),diagonals=cbind(0.5*h, 0.5*h)),"dgCMatrix")  
+    C <- Ce <- as(bandSparse(n=n,m=n,k=c(-1,0),diagonals=cbind(0.5*c(h[-1],0), 0.5*h)),"dgCMatrix")  
     Ci = sparseMatrix(i=1:n,j=1:n,x=1/h,dims = c(n,n))
   }
   
