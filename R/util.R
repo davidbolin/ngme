@@ -129,60 +129,89 @@ scale.sigma <- function(sigma, B.list, inv = FALSE)
 
 group.fixed <- function(B)
 {
-  ncov = dim(B[[1]])[2]
-  nper = length(B)
+  debug = 0
+  ncov = dim(B[[1]])[2] #number of covariates
+  if(debug)
+    cat("Desired rank = ",ncov, "\n")
+  nper = length(B) #number of subjects
   BB = list()
-  grouped = rep(0,nper)
+  grouped = rep(0,nper) #indicator of which subjects who have been assined to groups, will contain the group number for each subject
+  
+  #compute matrices for each subject
   for(i in 1:nper){
     BB[[i]] = t(B[[i]])%*%B[[i]]
-    if(rankMatrix(BB[[i]])[1] == ncov)
-      grouped[i] = -1
   }
+  
   groups <- Bgroup <- list()
+  
+  #start creating the groups
   groupnumber = 1
-  while(sum(abs(grouped)>0)<nper)
+  while(sum(abs(grouped)>0)<nper) #while there are subjects left ungrouped
   {
-    ng = which(grouped==0)
-    gi = ng[1]
+    ng = which(grouped==0) #subjects not grouped (and not having full ranks)
+    gi = ng[1] #the first ungrouped subject
+    
     Bi = BB[[ng[1]]]
-    crank = rankMatrix(Bi)[1]
-
-    grouped[ng[1]] = groupnumber
-
-    if(length(ng)==1){
+    crank = rankMatrix(Bi)[1] #rank of the subject
+    if(debug)
+      cat("adding subject ",ng[1], "to group", groupnumber, "rank = ", crank,"\n")
+    grouped[ng[1]] = groupnumber #create new group for the subject
+    
+    if(length(ng)==1){ #if there are no further subjects leave the current ungrouped and stop
       if(crank < ncov)
         grouped[ng[1]] = 0
       break
-    } else {
-      ng = ng[2:length(ng)]
+    } else { #otherwise remove the patient from the ungrouped
+      ng = ng[2:length(ng)] 
     }
-
-    while(crank<ncov)
+    
+    while(crank<ncov) #while the rank of the group is too small
     {
-      Bp = Bi + BB[[ng[1]]]
+      Bp = Bi + BB[[ng[1]]] #check the rank if the first ungrouped subject is added to the group
       prank = rankMatrix(Bp)[1]
-      if(prank>crank){
+      if(prank>crank){ #if it is larger than the current rank, add the subject to the group
         gi = c(gi, ng[1])
         grouped[ng[1]] = groupnumber
         Bi = Bp
         crank = prank
+        if(debug)
+          cat("adding subject ",ng[1], "to group", groupnumber, "rank = ", crank,"\n")
       }
-      if(length(ng)==1){
+      if(length(ng)==1){ #if there are no further subjects, stop
         break
       } else {
-        ng = ng[2:length(ng)]
+        ng = ng[2:length(ng)] #otherwise remove the subject from the ungrouped and continue
       }
     }
-    if(length(ng)==1){
-      if(crank < ncov)
-        grouped[grouped==groupnumber] = 0
-      break
+    #at this point, the procedure has stopped because there are no further subjects or because the group is complete.
+    
+    #if the procedure stopped because there are no further subjects stop the group formation.
+    #if the group does not have full rank, ungroup all subjects in the group first
+    if(length(ng)==1 && crank < ncov){ 
+      if(debug)
+        cat("ungrouping group ", groupnumber, "rank = ", crank,"\n")
+      grouped[grouped==groupnumber] = 0
+      break 
     }
-    groups[[groupnumber]] = gi-1
-    Bgroup[[groupnumber]] = Bi
-    groupnumber = groupnumber +1
+    #if we are here, there are further subjects to group and the group is complete
+    if(debug){
+      cat("creating group ", groupnumber,"rank =",crank, "\n")
+      cat("subjects ", gi, "\n")  
+    }
+    groups[[groupnumber]] = gi-1 #create the group 
+    Bgroup[[groupnumber]] = Bi #save the matrix of the group
+    groupnumber = groupnumber +1 #increate group number and start the next group
   }
-  free.samples = which(grouped<=0)
+  free.samples = which(grouped<=0) #create the group G0 out of all ungrouped subjects.
+  if(debug)
+    cat("creating G0 with samples", free.samples, "\n")
+  if(groupnumber == 1){
+    Bi = 0
+    for(i in 1:nper){
+      Bi = Bi + BB[[i]]
+    }
+    stop("Could not create one group with full rank, must add further subjects to fit the model.")
+  }
   return(list(groups = groups,
               free = free.samples-1))
 }

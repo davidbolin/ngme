@@ -352,7 +352,7 @@ operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measu
     if(operator_list$type == "matern"){
       operator_list$kappa = sqrt(8*3/2)/range  
     } else {
-      operator_list$kappa = sqrt(8*1/2)/range  
+      operator_list$kappa = sqrt(8*1/2)/(2*range)
     }
     
   }

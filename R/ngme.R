@@ -876,7 +876,7 @@ ngme <- function(fixed,
     }
 
     #operator - matern
-    if(process[2] %in% c("matern")){
+    if(process[2] %in% c("matern", "exponential")){
       operator_kappa <- fit$operator_list$kappa
       operator_kappa_vec <- fit$operator_list$kappaVec
 

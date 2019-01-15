@@ -143,7 +143,7 @@ polyak.ngme <- function(object,
     pars <- matrix(tau, ncol = 1)
     pars.smooth <- matrix(tau.smooth$x, ncol = 1)
     colnames(pars) <- "tau"
-    if(object$operator_type == "matern"){
+    if(object$operator_type == "matern" || object$operator_type == "exponential"){
       kappa <- object$operator_kappa_vec
       kappa.smooth <- smooth.trajectory(kappa,
                                         polyak.rate = polyak.rate,
