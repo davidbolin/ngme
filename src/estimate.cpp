@@ -13,7 +13,6 @@
 #include "measError.h"
 #include "latentprocess.h"
 #include "subSampleDiagnostic.h"
-#include "sample.h"
 #include "subsampler.h"
 using namespace Rcpp;
 

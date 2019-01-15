@@ -14,7 +14,7 @@ OPERATOR = operator/MaternOperator.o operator/ExponentialOperator.o operator/fd2
 		operator/operator_helper.o operator/MaternOperator2D.o
 PROCESS  = latentprocess/latentprocess.o
 UTILS    = util/error_check.o util/rgig.o util/GIG.o util/MatrixAlgebra.o util/solver.o \
- util/subSamplingDiagnostic.o	 util/GHmisc.o util/subsampler.o
+ util/subSamplingDiagnostic.o	 util/GHmisc.o util/subsampler.o util/sample.o
 tests = test_functions.o
 
 OBJECTS = RcppExports.o  estimate.o simulate.o predict.o sample_rGIG.o $(tests) $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
