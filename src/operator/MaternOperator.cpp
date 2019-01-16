@@ -140,6 +140,14 @@ void MaternOperator::set_matrix(int i)
       (*Qepssolver[i]).compute(Qeps);
       trje = (*Qepssolver[i]).trace(dQeps);
       kappa_trace2[i] = (trje - kappa_trace_i)/eps;
+      /*
+      Qeps = c*tau*(pow(kappa_eps-2*eps,-1.5)*G[i] + pow(kappa_eps-2*eps,0.5)*C[i]);
+      dQeps = c*tau*(-1.5*pow(kappa_eps-2*eps,-2.5)*G[i] + 0.5*pow(kappa_eps-2*eps,-0.5)*C[i]);
+      (*Qepssolver[i]).compute(Qeps);
+      double trje2 = (*Qepssolver[i]).trace(dQeps);
+      kappa_trace2[i] = (trje - trje2)/(2*eps);
+       */
+      
     } else {
       //tr(d(Q^-1*dQ) = tr(Q^-1*dQ*Q^-1*dQ) + tr(Q^-1*d2Q)
       kappa_trace2[i] =(*Qsolver[i]).trace2(dkappaQ[i],dkappaQ[i]);
@@ -174,6 +182,7 @@ void MaternOperator::gradient_init(int nsim, int nrep)
   ddtau = 0;
   dkappa = 0;
   ddkappa = 0;
+  ddtaukappa = 0;
 }
 Eigen::MatrixXd MaternOperator::d2Given( const Eigen::VectorXd & X,
                    const Eigen::VectorXd & iV,
@@ -239,6 +248,7 @@ void MaternOperator::gradient_add( const Eigen::VectorXd & X,
   dkappa  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
   ddkappa -= weight * dKX.dot(iV.asDiagonal()*dKX);
   ddkappa -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
+  ddtaukappa -= weight * dKX.dot(iV.asDiagonal()*(2*KX - mean_KX))/tau;
 }
 
 void MaternOperator::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -258,27 +268,66 @@ void MaternOperator::step_theta(const double stepsize,
                                 const int burnin)
 {
 
-  dtau  /= ddtau;
-  dtau_old = learning_rate * dtau_old + dtau;
-  double step = stepsize * dtau_old;
-  double tau_temp = -1.;
+  if(0){ //independent steps
+    dtau  /= ddtau;
+    dtau_old = learning_rate * dtau_old + dtau;
+    double step = stepsize * dtau_old;
+    double tau_temp = -1.;
     while(tau_temp < 0)
     {
-    	step *= 0.5;
-        tau_temp = tau - step;
+      step *= 0.5;
+      tau_temp = tau - step;
     }
-	tau = tau_temp;
-
-	dkappa  /= ddkappa;
-	dkappa_old = learning_rate * dkappa_old + dkappa;
-	step   = stepsize * dkappa_old;
-	double kappa_temp = -1.;
-	while(kappa_temp < 0)
-	{
-	  step *= 0.5;
-	  kappa_temp = kappa - step;
-	}
-	kappa = kappa_temp;
+    tau = tau_temp;
+    
+    dkappa  /= ddkappa;
+    dkappa_old = learning_rate * dkappa_old + dkappa;
+    step   = stepsize * dkappa_old;
+    double kappa_temp = -1.;
+    while(kappa_temp < 0)
+    {
+      step *= 0.5;
+      kappa_temp = kappa - step;
+    }
+    kappa = kappa_temp;  
+  } else { //better correlated step
+    Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(2, 2);
+    Eigen::VectorXd step_v, dtheta_v, dtheta_old_v, theta_v, theta_v_tmp;
+    
+    dtheta_v.setZero(2);
+    dtheta_old_v.setZero(2);
+    theta_v.setZero(2);
+    theta_v_tmp.setZero(2);
+    
+    theta_v(0) = tau;
+    theta_v(1) = kappa;
+    
+    dtheta_v(0) = dtau;
+    dtheta_v(1) = dkappa;
+    
+    dtheta_old_v(0) = dtau_old;
+    dtheta_old_v(1) = dkappa_old;
+    
+    d2(0, 0)  = ddtau;
+    d2(1, 0) = ddtaukappa;
+    d2(0,1) = ddtaukappa;
+    d2(1,1) = ddkappa;
+    
+    step_v  = d2.ldlt().solve(dtheta_v);
+    
+    theta_v_tmp(0) = -1;
+    theta_v_tmp(1) = -1;
+    
+    while(theta_v_tmp(0) < 0 || theta_v_tmp(1) < 0)
+    {
+      step_v *= 0.5;
+      theta_v_tmp = theta_v - step_v;
+    }
+    theta_v = theta_v_tmp;
+    tau = theta_v(0);
+    kappa = theta_v(1);
+  }
+  
 
 	if(counter == 0 || polyak_rate == -1)
 		tauVec[counter] = tau;

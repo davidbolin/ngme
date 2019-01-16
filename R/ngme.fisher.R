@@ -3,28 +3,20 @@
 #'
 #' @description Estimates Fisher information matrix for ngme result.
 #'
-#' @param nIter A numeric value for the number of iterations to be used to
-#'       obtain the Fisher-Information matrix.
+#' @param fit An ngme object. 
+#' @param std.threshold A threshold for the MC standard deviation of the estimates. The estimation is run until
+#' all diagonal elements F.i of the inverse Fisher information matrix satisfy var(F.i) < F.i*std.threshold^2
+#' @param only.effects If TRUE, the criteria for std.threshold is only applied to the fixed effect estimates.
 #' @param observed If TRUE, the observed Fisher information matrix is estimated. Otherwise the ordinary Fisher-Information matrix is estimated.
-#' @param controls A list of control variables.
-#'  \itemize{
-#'     \item \code{nSim} A numeric value for the number of samples of the Gibbs sampler
-#'       to estimate the gradient.
-#'     \item \code{pSubsample} A numeric value for the portion of data to be used in each
-#'       gradient iteration. \code{pSubsample = 1} indicates use of all subjects' data.
-#'     \item \code{nSim.fisher} A numeric value for the number of samples of the Gibbs sampler
-#'       to obtain the Fisher-Information matrix.
-#'     \item \code{nBurnin.base} A numerical value for burn-in simulations that are performed
-#'       for a subject that is sampled for the first time in the estimation method.
-#'     \item \code{subsample.type} A numeric value for the type of subsampling;
-#'       1: uniform sampling,
-#'       2: sample size weighted,
-#'       3: weighted sampling by gradient size,
-#'       4: grouped sub-sampler.
-#'     \item \code{pSubsample2} A numeric value for the portion of the data
-#'       to be used in each gradient subsampling weighted by gradient.
-
-#'  }
+#' @param nIter A numeric value for the number of iterations to be used to obtain the Fisher-Information matrix. If the observed Fisher information matrix
+#' is estimate, nIter should be 1 since no new data has to be simulated. 
+#' @param silent If TRUE, some diagnostic information is shown during estimation.
+#' @param nSim A numeric value for the number of samples of the Gibbs sampler that is used internally.
+#' @param n.rep A numeric value for the numer of MC estimates the initial estimate should be based on. If std.threshold is used
+#' further estimates are computed until the criteria are satisfied.
+#' @param n.cores The number of cores to use for the estimation. n.cores estimates are compued in parallel. 
+#' @param nBurnin The number of samples to discard as burnin in the Gibbs sampler.
+#' 
 #' @return The ngme result object with the Fisher information added.
 #' @examples
 #'   \dontrun{

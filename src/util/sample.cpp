@@ -210,18 +210,13 @@ void groupSampling_weights (double pSubsample,
   int nindv = n_indv_in_group + nfree; //total number of subjects
   int nSubsample = ceil(pSubsample * nindv); //number of subject to subsample
   n_average = n_indv_in_group / ((double) ngroup); //average number of subjects per group
-
-  double prop_group = ((double) n_indv_in_group) / ((double) nfree);
-
-  int n_sample_group = ceil(pSubsample*ngroup); 
-  n_sample_group = std::min(n_sample_group, ngroup);//number of groups to sample
-  if(n_indv_in_group < nSubsample)
-    n_sample_group = ngroup;
-  nSubsample_group[0] = n_sample_group;
+  nSubsample_group[0] = ceil(pSubsample*ngroup); 
   if(nfree == 0){
     nSubsample_group[1] = 0;
   } else {
-    int temp = round(pSubsample*nindv - nSubsample_group[0]*n_average);
+    double tmp = (double) pSubsample*nindv;
+    tmp -= (double) nSubsample_group[0]*n_average;
+    int temp = round(tmp);
     temp = std::max(temp,1);
     nSubsample_group[1] = std::min(temp, nfree); //number of free subjects to sample: min(max(round(p*n - gs*ga),1),nf)
   }
@@ -229,7 +224,7 @@ void groupSampling_weights (double pSubsample,
 
   for (int   i  = 0; i < ngroup; i++) {
     for (int ii = 0; ii < groups[i].size(); ii++)
-      weight[groups[i][ii]] = ngroup / ((double) n_sample_group);
+      weight[groups[i][ii]] = ngroup / ((double) nSubsample_group[0]);
   }
   for(int i = 0; i < free.size(); i++)
     weight[free[i]] = free.size() / ( (double) nSubsample_group[1]);
@@ -271,34 +266,3 @@ void groupSampling_sampling(int * nSubsample_group,
 
 }
 
-
-void groupSampling_internal(std::vector<Eigen::VectorXd> & groups,
-                            Eigen::VectorXd & free,
-                            std::vector<int> & ans,
-                            std::default_random_engine & sampler)
-{
-  int ngroup = groups.size();
-  int nfree = free.size();
-  int k = 0;
-  //Sample group
-  if(ngroup>0){
-    double U = unif_rand();
-    int groupnumber = floor(ngroup*U);
-    k = groups[groupnumber].size();
-    for (int i=0; i< k; i++){
-      ans[i] = groups[groupnumber][i];
-    }
-  }
-
-  //Sample remaining free elements
-  int nrem = ans.size() - k;
-  if(nrem>0){
-    std::vector<int> freeInd;
-    for (int i=0; i< nfree; i++) freeInd.push_back(i);
-    std::shuffle(freeInd.begin(), freeInd.end(), sampler);
-    for (int i=0; i< nrem; i++){
-      ans[k+i] = free[freeInd[i]];
-    }
-  }
-
-}

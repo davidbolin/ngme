@@ -9,6 +9,19 @@ void subsampler::initFromList(const Rcpp::List & in_list)
 {
   pSubsample = Rcpp::as< double > (in_list["pSubsample"]); 
   subsample_type = Rcpp::as< int    > (in_list["subsample_type"]);
+  int silent     = Rcpp::as< int    > (in_list["silent"]);
+  if(silent == 0){
+    Rcpp::Rcout << "Susample type: ";
+    if(subsample_type == 4)
+      Rcpp::Rcout << "grouped sampler, ";
+    else if(subsample_type == 3)
+      Rcpp::Rcout << "Poisson sampler, ";
+    else if(subsample_type == 1)
+      Rcpp::Rcout << "Uniform, ";
+    else if(subsample_type == 2)
+      Rcpp::Rcout << "Weighted, ";
+    Rcpp::Rcout << "procent subsampled: " << pSubsample << "\n";
+  }
   Rcpp::List obs_list  = Rcpp::as<Rcpp::List> (in_list["obs_list"]);
   nindv = obs_list.length(); 
   Eigen::VectorXd sampling_weights(nindv);
@@ -84,16 +97,19 @@ void subsampler::initFromList(const Rcpp::List & in_list)
       gmean = gsum/groups.size();
     }
     //compute weights and decide how many groups to subsample
-    groupSampling_weights (nSubsample,
+    groupSampling_weights (pSubsample,
                            groups,
                            free,
                            weight,
                            nSubsample_group);
+    if(silent == 0){
+      Rcpp::Rcout << "Groups to sample:" <<  nSubsample_group[0] << ", free to sample: "<< nSubsample_group[1] << "\n";
+    }
   }
   
-
-    
-
+  
+  
+  
 }
 
 

@@ -6,7 +6,7 @@ test.est = TRUE
 test.fisher = FALSE
 
 #data options
-n.pers <- 100
+n.pers <- 200
 n.obs  <- rep(100,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
@@ -16,7 +16,7 @@ process.nu = 0.1
 process.mu = 0.1
 
 #estimation options
-nIter <- 2000
+nIter <- 10000
 nSim <- 5
 nBurnin = 10
 pSubsample = 0.5
@@ -72,10 +72,10 @@ mixedEffect_list  <- list(B_random = B_random,
 
 operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.5)
 if(operator.type == "matern" || operator.type == "exponential"){
-  operator_list$kappa <- 10
+  operator_list$kappa <- 5
 }
 
-operator_list$tau   <- 1
+operator_list$tau   <- 5
 
 
 
@@ -93,9 +93,6 @@ for(i in 1:length(locs))
 ###
 mixedEffect_list_in = mixedEffect_list
 
-operator_list_m <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = "matern",extend=0.5)
-operator_list_m$kappa <- 5
-operator_list_m$tau   <- 1
 
 
 sim_res <- simulateLongPrior( Y                 = Y,
@@ -103,10 +100,11 @@ sim_res <- simulateLongPrior( Y                 = Y,
                               mixedEffect_list  = mixedEffect_list_in,
                               measurment_list   = mError_list,
                               processes_list    = processes_list,
-                              operator_list     = operator_list_m)
+                              operator_list     = operator_list)
 
 
-
+operator_list$kappa <- 10
+operator_list$tau <- 1
 processes_list$X <- sim_res$X
 
 if(test.est){
@@ -117,6 +115,7 @@ if(test.est){
                           nBurnin           = nBurnin,
                           mixedEffect_list = mixedEffect_list,
                           nBurnin_learningrate = 0,
+                          step0 = 0.1,
                           measurment_list  = mError_list,
                           processes_list   = processes_list,
                           operator_list    = operator_list,
@@ -125,6 +124,8 @@ if(test.est){
                           silent = FALSE)
 
 
+  operator_list$kappa <- 10
+  operator_list$tau <- 0.5
   n.plots <- 3
   if(operator.type == "matern" || operator.type == "exponential")
     n.plots = 4

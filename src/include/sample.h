@@ -35,10 +35,6 @@ int poissonSampling_internal( int nans,
 					  std::vector<int> &
 					  );
 
-void groupSampling_internal(std::vector<Eigen::VectorXd> &,
-                            Eigen::VectorXd &,
-                            std::vector<int> &,
-                            std::default_random_engine &);
 //
 /*
 	computing the weights from the group sampling scheme

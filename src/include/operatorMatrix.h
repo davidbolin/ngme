@@ -143,7 +143,7 @@ class MaternOperator : public operatorMatrix{
     std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
     Eigen::VectorXd g,p;
     Eigen::SparseMatrix<double,0,int> *G, *C;
-    double kappa, dkappa, ddkappa, dtau, ddtau;
+    double kappa, dkappa, ddkappa, dtau, ddtau, ddtaukappa;
     double dtau_old, dkappa_old;
     bool use_chol;
     std::vector<int> matrix_set;
@@ -206,7 +206,7 @@ protected:
   std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
   Eigen::VectorXd g,p;
   Eigen::SparseMatrix<double,0,int> *G, *C;
-  double kappa, dkappa, ddkappa, dtau, ddtau;
+  double kappa, dkappa, ddkappa, dtau, ddtau, ddtaukappa;
   double dtau_old, dkappa_old;
   bool use_chol;
   std::vector<int> matrix_set;
