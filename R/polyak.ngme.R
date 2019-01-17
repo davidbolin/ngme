@@ -41,7 +41,7 @@ polyak.ngme <- function(object,
                                      burnin.end = burnin.end)
     object$mixedEffect_list$betaf_vec <- pars.smooth$x
     object$mixedEffect_list$beta_fixed <- pars.smooth$xe
-
+    
     #update summaries (which also contain the random effects)
     object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)] <- pars.smooth$x
     object$fixed_est[(n.random+1):(n.random+n.fixed)] <- pars.smooth$xe
@@ -62,7 +62,7 @@ polyak.ngme <- function(object,
   } else if(param == "random"){
     n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
     n.random <- dim(object$mixedEffect_list$beta_random)[2]
-    names <- names(object$fixed_est)[1:n.random]
+    names <- colnames(object$ranef_Sigma)
 
     pars <- object$mixedEffect_list$betar_vec
     colnames(pars) <- names
@@ -97,7 +97,7 @@ polyak.ngme <- function(object,
                                      burnin.end = burnin.end)
     object$ranef_Sigma_vec <- pars.smooth$x
     object$ranef_Sigma <- pars.smooth$xe
-    object$mixedEffect_list$Sigma <- pars.smooth$xe
+    object$mixedEffect_list$Sigma <- matrix(pars.smooth$xe,n.random,n.random)
     object$ranef_Sigma_var <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
 
     if(plot){

@@ -268,7 +268,7 @@ void MaternOperator::step_theta(const double stepsize,
                                 const int burnin)
 {
 
-  if(0){ //independent steps
+  if(1){ //independent steps
     dtau  /= ddtau;
     dtau_old = learning_rate * dtau_old + dtau;
     double step = stepsize * dtau_old;

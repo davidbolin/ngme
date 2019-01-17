@@ -348,11 +348,11 @@ operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measu
     m = min(unlist(lapply(lapply(locs,range),min)))
     M = max(unlist(lapply(lapply(locs,range),max)))
     h.min = min(unlist(lapply(operator_list$h,min)))
-    range = max(4*h.min,0.2*(M-m))
+    range = max(4*h.min,0.1*(M-m))
     if(operator_list$type == "matern"){
       operator_list$kappa = sqrt(8*3/2)/range  
     } else {
-      operator_list$kappa = sqrt(8*1/2)/(2*range)
+      operator_list$kappa = sqrt(8*1/2)/range
     }
     
   }

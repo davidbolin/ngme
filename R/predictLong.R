@@ -161,7 +161,7 @@ predictLong <- function( Y,
       operator_list$Q <- operator_list$Q[pInd]
       operator_list$loc <- operator_list$loc[pInd]
       operator_list$h <- operator_list$h[pInd]
-      if(tolower(operator_list$type) == "matern" ||tolower(operator_list$type) == "matern bivariate"){
+      if(tolower(operator_list$type) %in% c("matern","exponential","matern bivariate")){
         operator_list$C <- operator_list$C[pInd]
         operator_list$G <- operator_list$G[pInd]
       }

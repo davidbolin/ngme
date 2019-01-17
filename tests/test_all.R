@@ -63,8 +63,8 @@ for(i in 1:n.pers)
 mError_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1, nu = 1)
 mixedEffect_list  <- list(B_random = B_random,
                           B_fixed  = B_fixed,
-                          beta_random = as.matrix(c(0.1,0.2)),
-                          beta_fixed  = as.matrix(c(0.1,0.2)),
+                          beta_random = as.matrix(c(1,2)),
+                          beta_fixed  = as.matrix(c(1,2)),
                           Sigma = diag(c(0.1, 0.2)),
                           noise = "Normal",
                           Sigma_epsilon=1)
@@ -72,10 +72,10 @@ mixedEffect_list  <- list(B_random = B_random,
 
 operator_list <- create_operator(locs, max.dist=max.dist,cutoff = cutoff, name = operator.type,extend=0.5)
 if(operator.type == "matern" || operator.type == "exponential"){
-  operator_list$kappa <- 5
+  operator_list$kappa <- 1
 }
 
-operator_list$tau   <- 5
+operator_list$tau   <- 1
 
 
 
@@ -103,8 +103,8 @@ sim_res <- simulateLongPrior( Y                 = Y,
                               operator_list     = operator_list)
 
 
-operator_list$kappa <- 10
-operator_list$tau <- 1
+operator_list$kappa <- 5
+operator_list$tau <- 5
 processes_list$X <- sim_res$X
 
 if(test.est){
@@ -124,8 +124,8 @@ if(test.est){
                           silent = FALSE)
 
 
-  operator_list$kappa <- 10
-  operator_list$tau <- 0.5
+  operator_list$kappa <- 1
+  operator_list$tau <- 1
   n.plots <- 3
   if(operator.type == "matern" || operator.type == "exponential")
     n.plots = 4
