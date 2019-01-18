@@ -97,7 +97,7 @@ plot.ngme <- function(object, param = "fixed", n.exclude = 0, index = NULL, ...)
       if(object$operator_type == "fd2"){
         process_results_vec <- matrix(object$operator_tau_vec, ncol = 1)
         colnames(process_results_vec) <- "tau"
-      }else if(object$operator_type == "matern"){
+      }else if(object$operator_type == "matern" || object$operator_type == "exponential"){
         process_results_vec <- cbind(object$operator_tau_vec,
                                      object$operator_kappa_vec)
         colnames(process_results_vec) <- c("tau", "kappa")
