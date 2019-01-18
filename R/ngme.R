@@ -338,6 +338,7 @@ ngme <- function(fixed,
     stop("alpha.init should be in (0, 1]")
   }
   
+  
   # extract id variable
   idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
   id <- data[, idname]
