@@ -391,19 +391,25 @@ ngme <- function(fixed,
   if(is.null(controls.init$pSubsample.init)){
     if(nsubj < 100){
       controls.init$pSubsample.init = 1
+      warning("pSubsample.init not provided. Since there are <100 subjects, p for subsampling is set to 1")
     }else if(nsubj < 500){
       controls.init$pSubsample.init = 0.2
+      warning("pSubsample.init not provided. Since there are >=100 and <500 subjects, p for subsampling is set to 0.2")
     }else{
       controls.init$pSubsample.init = 0.1
+      warning("pSubsample.init not provided. Since there >=500 subjects, p for subsampling is set to 0.1")
     }
   }
   if(is.null(controls$pSubsample)){
     if(nsubj < 100){
       controls$pSubsample = 1
+      warning("pSubsample not provided. Since there are <100 subjects, p for subsampling is set to 1")
     }else if(nsubj < 500){
       controls$pSubsample = 0.2
+      warning("pSubsample not provided. Since there are >=100 and <500 subjects, p for subsampling is set to 0.2")
     }else{
       controls$pSubsample = 0.1
+      warning("pSubsample not provided. Since there >=500 subjects, p for subsampling is set to 0.1")
     }
   }
   
@@ -411,7 +417,6 @@ ngme <- function(fixed,
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 
   ## a warning message
-
   if(use.process == TRUE & is.null(init.fit) == FALSE){
     warning("'cutoff', 'max.dist' and 'extend' for 'mesh' were inherited from the 'init.fit'")
   }
