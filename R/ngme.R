@@ -330,6 +330,14 @@ ngme <- function(fixed,
     stop("'timeVar' should be specified, since the model consists of process")
   }
 
+  # alpha values are in the correct interval??
+  if(controls$alpha < 0 | controls$alpha > 1){
+    stop("alpha should be in (0, 1]")
+  }
+  if(controls.init$alpha.init | controls.init$alpha.init > 1){
+    stop("alpha.init should be in (0, 1]")
+  }
+  
   # extract id variable
   idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
   id <- data[, idname]
