@@ -176,7 +176,7 @@ ngme <- function(fixed,
                  process = c("Normal", "fd2"),
                  error = "Normal",
                  data,
-                 timeVar,
+                 timeVar = NULL,
                  silent = TRUE,
                  nIter = 1000,
                  mesh = list(max.dist = NULL,
@@ -330,7 +330,7 @@ ngme <- function(fixed,
     stop("'timeVar' should be specified, since the model consists of process")
   }
 
-  # alpha values are in the correct interval??
+  # alpha and alpha.init are in the correct interval?
   if(controls$alpha < 0 | controls$alpha > 1){
     stop("alpha should be in (0, 1]")
   }
@@ -378,31 +378,35 @@ ngme <- function(fixed,
   B_random    <- split(data_random[, -1], data_random[,1])
   B_random    <- lapply(B_random, function(x) as.matrix(x))
 
-  Y    <- tapply(y, id, function(x) x)
+  Y <- tapply(y, id, function(x) x)
   
   # extract variables for process
-  locs <- tapply(as.matrix(data[, timeVar]), id, function(x) x)  
+  if(use.process == TRUE){
+    locs <- tapply(as.matrix(data[, timeVar]), id, function(x) x)  
+  }
 
-  Nobs <- length(Y)
+  nsubj <- length(Y)
+  
   # if pSubsampling not set
   if(is.null(controls.init$pSubsample.init)){
-    if(Nobs < 100){
+    if(nsubj < 100){
       controls.init$pSubsample.init = 1
-    }else if(Nobs < 500){
+    }else if(nsubj < 500){
       controls.init$pSubsample.init = 0.2
     }else{
       controls.init$pSubsample.init = 0.1
     }
   }
   if(is.null(controls$pSubsample)){
-    if(Nobs < 100){
+    if(nsubj < 100){
       controls$pSubsample = 1
-    }else if(Nobs < 500){
+    }else if(nsubj < 500){
       controls$pSubsample = 0.2
     }else{
       controls$pSubsample = 0.1
     }
   }
+  
   ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 
