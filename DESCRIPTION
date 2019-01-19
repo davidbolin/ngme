@@ -15,7 +15,7 @@ Description: Inference and prediction for linear mixed effects (random effects) 
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
-Depends: R (>= 3.4.0), Matrix, methods, MASS, doSNOW, pryr
+Depends: R (>= 3.4.0), Matrix, methods, MASS, doSNOW, pryr, ggplot2
 RoxygenNote: 6.1.0
 Suggests: knitr,
     rmarkdown,
