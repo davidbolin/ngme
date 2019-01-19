@@ -334,7 +334,7 @@ ngme <- function(fixed,
   if(controls$alpha < 0 | controls$alpha > 1){
     stop("alpha should be in (0, 1]")
   }
-  if(controls.init$alpha.init | controls.init$alpha.init > 1){
+  if(controls.init$alpha.init < 0 | controls.init$alpha.init > 1){
     stop("alpha.init should be in (0, 1]")
   }
   
@@ -848,8 +848,12 @@ ngme <- function(fixed,
   names(fixed_est2) <- to_del_x_fixed
   fixed_est <- rep(NA, ncol(x_fixed_f))
   names(fixed_est) <- colnames(x_fixed_f)
-  fixed_est[names(fixed_est) %in% names(fixed_est1)] <- fixed_est1
-  fixed_est[names(fixed_est) %in% names(fixed_est2)] <- fixed_est2
+  
+  index_fixed  <- which(names(fixed_est) %in% names(fixed_est1))
+  index_random <- which(names(fixed_est) %in% names(fixed_est2))
+  
+  fixed_est[index_fixed]  <- fixed_est1
+  fixed_est[index_random] <- fixed_est2
 
   fixed_est1_vec <- fit$mixedEffect_list$betaf_vec
   fixed_est2_vec <- fit$mixedEffect_list$betar_vec
@@ -857,8 +861,8 @@ ngme <- function(fixed,
   colnames(fixed_est2_vec) <- to_del_x_fixed
   fixed_est_vec <- matrix(NA, ncol = ncol(x_fixed_f), nrow = nIter)
   colnames(fixed_est_vec) <- colnames(x_fixed_f)
-  fixed_est_vec[, colnames(fixed_est_vec) %in% names(fixed_est1)] <- fixed_est1_vec
-  fixed_est_vec[, colnames(fixed_est_vec) %in% names(fixed_est2)] <- fixed_est2_vec
+  fixed_est_vec[, index_fixed]  <- fixed_est1_vec
+  fixed_est_vec[, index_random] <- fixed_est2_vec
 
   # random effects
   ranef_Sigma           <- fit$mixedEffect_list$Sigma
@@ -994,7 +998,9 @@ ngme <- function(fixed,
     meas_error_nu = meas_error_nu,
     meas_error_nu_vec = meas_error_nu_vec,
     fisher_est = fisher_est,
-    call = match.call()
+    call = match.call(),
+    index_fixed = index_fixed,
+    index_random = index_random
   )
   
   class(out) <- "ngme"

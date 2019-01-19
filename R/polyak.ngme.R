@@ -33,59 +33,73 @@ polyak.ngme <- function(object,
   }
 
   if(param == "fixed"){
-    n.random <- dim(object$mixedEffect_list$beta_random)[2]
-    n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
-    pars <- object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)]
+    
+    index_fixed  <- object$index_fixed
+    index_random <- object$index_random
+    
+    #n.random <- dim(object$mixedEffect_list$beta_random)[2]
+    #n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
+    #pars <- object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)]
+    pars <- object$fixed_est_vec
     pars.smooth <- smooth.trajectory(pars,
                                      polyak.rate = polyak.rate, 
                                      burnin.end = burnin.end)
-    object$mixedEffect_list$betaf_vec <- pars.smooth$x
-    object$mixedEffect_list$beta_fixed <- pars.smooth$xe
+    colnames(pars.smooth$x) <- colnames(pars.smooth$xe) <- colnames(object$fixed_est_vec)
+
+    object$mixedEffect_list$betaf_vec  <- pars.smooth$x[, index_fixed]
+    object$mixedEffect_list$beta_fixed <- pars.smooth$xe[, index_fixed]
+    
+    object$mixedEffect_list$betar_vec   <- pars.smooth$x[, index_random]
+    object$mixedEffect_list$beta_random <- pars.smooth$xe[, index_random]
     
     #update summaries (which also contain the random effects)
-    object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)] <- pars.smooth$x
-    object$fixed_est[(n.random+1):(n.random+n.fixed)] <- pars.smooth$xe
+    #object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)] <- pars.smooth$x
+    #object$fixed_est[(n.random+1):(n.random+n.fixed)] <- pars.smooth$xe
 
+    object$fixed_est_vec <- pars.smooth$x
+    object$fixed_est     <- pars.smooth$xe
+    
     #add estimate of variance
     if(is.null(object$fixed_est_var)){
-      object$fixed_est_var <- rep(NA,n.random+n.fixed)
-      names(object$fixed_est_var) <- names(object$fixed_est)
+      object$fixed_est_var <- rep(NA, ncol(object$fixed_est_vec))
+      names(object$fixed_est_var) <- colnames(object$fixed_est_vec)
     }
 
-    object$fixed_est_var[(n.random+1):(n.random+n.fixed)] <- compute.polyak.variance(pars,
-                                                                                     polyak.rate,
-                                                                                     i.start = burnin.end)
+    object$fixed_est_var <- compute.polyak.variance(pars,
+                                                    polyak.rate,
+                                                    i.start = burnin.end)
 
     if(plot){
-      plot.trajectories(pars,pars.smooth$x)
+      plot.trajectories2(x = pars, y = pars.smooth$x)
     }
+    
   } else if(param == "random"){
-    n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
-    n.random <- dim(object$mixedEffect_list$beta_random)[2]
-    names <- colnames(object$ranef_Sigma)
-
-    pars <- object$mixedEffect_list$betar_vec
-    colnames(pars) <- names
-    pars.smooth <- smooth.trajectory(pars,
-                                     polyak.rate = polyak.rate,
-                                     burnin.end = burnin.end)
-    object$mixedEffect_list$betar_vec <- pars.smooth$x
-    object$mixedEffect_list$beta_random <- pars.smooth$xe
-
-    #add to summaries (with fixed effects)
-    object$fixed_est_vec[,1:n.random] <- pars.smooth$x
-    object$fixed_est[1:n.random] <- pars.smooth$xe
-
-    #add estimate of variance
-    if(is.null(object$fixed_est_var)){
-      n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
-      object$fixed_est_var <- rep(NA,n.random+n.fixed)
-      names(object$fixed_est_var) <- names(object$fixed_est)
-    }
-
-    object$fixed_est_var[1:n.random] <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
-    pars.full <- pars
-    pars.full.smooth <- pars.smooth$x
+    # n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
+    # n.random <- dim(object$mixedEffect_list$beta_random)[2]
+    # names <- colnames(object$ranef_Sigma)
+    # 
+    # pars <- object$mixedEffect_list$betar_vec
+    # colnames(pars) <- names
+    # pars.smooth <- smooth.trajectory(pars,
+    #                                  polyak.rate = polyak.rate,
+    #                                  burnin.end = burnin.end)
+    # object$mixedEffect_list$betar_vec <- pars.smooth$x
+    # object$mixedEffect_list$beta_random <- pars.smooth$xe
+    # 
+    # #add to summaries (with fixed effects)
+    # object$fixed_est_vec[,1:n.random] <- pars.smooth$x
+    # object$fixed_est[1:n.random] <- pars.smooth$xe
+    # 
+    # #add estimate of variance
+    # if(is.null(object$fixed_est_var)){
+    #   n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
+    #   object$fixed_est_var <- rep(NA,n.random+n.fixed)
+    #   names(object$fixed_est_var) <- names(object$fixed_est)
+    # }
+    # 
+    # object$fixed_est_var[1:n.random] <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
+    # pars.full <- pars
+    # pars.full.smooth <- pars.smooth$x
 
     # process the covariance
     ncol_Sigma        <- dim(object$ranef_Sigma)[1]
@@ -277,16 +291,30 @@ smooth.trajectory <- function(x,polyak.rate, burnin.end = NULL){
   return(list(x=x,xe = xe))
 }
 
-plot.trajectories <- function(x,y){
-  n = 1
-  if(length(dim(x))==2){
-    n = dim(x)[2]
+plot.trajectories <- function(x, y){
+  n <- 1
+  if(length(dim(x)) == 2){
+    n <- dim(x)[2]
   }
   m <- ceiling(sqrt(n))
-  par(mfcol=c(m,m),mai = c(0,0.2,0.2,0.1))
-  for (i in 1:n) {
-    plot(x[,i],col=1,type="l",main = dimnames(x)[[2]][i],xlab="",ylab="",xaxt="n")
-    lines(y[,i],col=2,xlab="",ylab="")
+  par(mfcol = c(m, m), mai = c(0, 0.2, 0.2, 0.1))
+  for (i in 1:n){
+    plot(x[, i], col = 1, type="l", main = dimnames(x)[[2]][i], xlab = "", ylab = "", xaxt = "n")
+    lines(y[, i], col = 2, xlab = "", ylab = "")
   }
 }
 
+plot.trajectories2 <- function(x, y){
+
+  df <- data.frame(value = c(as.numeric(x), as.numeric(y)), 
+                   var_name = rep(rep(colnames(x), each = nrow(x)), 2), 
+                   series_name = rep(c("original", "polyak"), each = nrow(x)),
+                   iteration = rep(1:nrow(x), 2))
+  
+  ggplot(df, aes(x = iteration, y = value, group = series_name)) + 
+    geom_line(aes(color = series_name)) + 
+    facet_wrap(var_name ~ ., scales = "free", ncol = floor(ncol(x)/5) + 1) + 
+    xlab("Iteration") + ylab("Value") + 
+    theme(legend.title=element_blank())
+  
+}
