@@ -102,50 +102,99 @@ polyak.ngme <- function(object,
     # pars.full.smooth <- pars.smooth$x
 
     # process the covariance
-    ncol_Sigma        <- dim(object$ranef_Sigma)[1]
+    
+    n.random <- length(object$mixedEffect_list$beta_random)
+
+    ncol_Sigma <- dim(object$ranef_Sigma)[1]
+    
     pars <- object$ranef_Sigma_vec
-    colnames(pars) <- rep("Sigma",dim(object$ranef_Sigma_vec)[2])
+    #colnames(pars) <- rep("Sigma", dim(object$ranef_Sigma_vec)[2])
 
     pars.smooth <- smooth.trajectory(pars,
                                      polyak.rate = polyak.rate,
                                      burnin.end = burnin.end)
+    
     object$ranef_Sigma_vec <- pars.smooth$x
-    object$ranef_Sigma <- pars.smooth$xe
-    object$mixedEffect_list$Sigma <- matrix(pars.smooth$xe,n.random,n.random)
-    object$ranef_Sigma_var <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
+    object$ranef_Sigma <- matrix(pars.smooth$xe, n.random, n.random, 
+                                 dimnames = list(rownames(object$ranef_Sigma), 
+                                                 colnames(object$ranef_Sigma)))
 
+    object$mixedEffect_list$Sigma_vec <- pars.smooth$x
+    object$mixedEffect_list$Sigma <- matrix(pars.smooth$xe, n.random, n.random,
+                                            dimnames = list(rownames(object$ranef_Sigma), 
+                                                            colnames(object$ranef_Sigma)))
+    
+    object$ranef_Sigma_var <- compute.polyak.variance(pars,
+                                                      polyak.rate, 
+                                                      i.start = burnin.end)
+    
     if(plot){
-      pars.full <- cbind(pars.full,pars)
-      pars.full.smooth <- cbind(pars.full.smooth,pars.smooth$x)
+      pars.full <- pars #cbind(pars.full, pars)
+      pars.full.smooth <- pars.smooth$x #cbind(pars.full.smooth, pars.smooth$x)
+      
+      if(ncol_Sigma > 1){
+        cols_omit         <- unlist(lapply(1:(ncol_Sigma - 1), 
+                                           function(i) (ncol_Sigma * i + 1):(ncol_Sigma * i + i)))
+        pars.full <- pars[, -cols_omit]
+        pars.full.smooth <- pars.smooth$x[, -cols_omit]
+        
+        colnames <- colnames(summary(object)$random_results$Sigma_est)
+        colnames_ext <- paste(rep(colnames, each = ncol_Sigma), colnames, sep = "_")
+        colnames(pars.full) <- colnames(pars.full.smooth) <- colnames_ext[-cols_omit]
+      }else{
+        pars.full <- pars
+        pars.full.smooth <- pars.smooth$x
+        colnames(pars.full) <- colnames(pars.full.smooth) <- colnames(summary(object)$random_results$Sigma_est)
+      }
+      
     }
 
     if(object$random_distr %in% ("NIG")){
+      
       mu <- object$ranef_mu_vec
-      mu.smooth <- smooth.trajectory(mu,polyak.rate = polyak.rate,
+      mu.smooth <- smooth.trajectory(mu, 
+                                     polyak.rate = polyak.rate,
                                      burnin.end = burnin.end)
+      
       object$ranef_mu_vec <- mu.smooth$x
       object$ranef_mu <- mu.smooth$xe
-      object$processes_list$mu <- mu.smooth$xe
-      object$ranef_mu_var <- compute.polyak.variance(mu,polyak.rate,i.start = burnin.end)
+      
+      object$mixedEffect_list$mu_vec <- mu.smooth$x
+      object$mixedEffect_list$mu <- mu.smooth$xe
+      
+      object$ranef_mu_var <- compute.polyak.variance(mu, 
+                                                     polyak.rate, 
+                                                     i.start = burnin.end)
 
       nu <- object$ranef_nu_vec
-      nu.smooth <- smooth.trajectory(nu,polyak.rate = polyak.rate,
+      nu.smooth <- smooth.trajectory(nu,
+                                     polyak.rate = polyak.rate,
                                      burnin.end = burnin.end)
+      
       object$ranef_nu_vec <- nu.smooth$x
       object$ranef_nu <- nu.smooth$xe
-      object$processes_list$nu <- nu.smooth$xe
-      object$ranef_nu_var <- compute.polyak.variance(nu,polyak.rate,i.start = burnin.end)
+      
+      object$mixedEffect_list$nu_vec <- nu.smooth$x
+      object$mixedEffect_list$nu <- nu.smooth$xe
+      
+      object$ranef_nu_var <- compute.polyak.variance(nu, 
+                                                     polyak.rate, 
+                                                     i.start = burnin.end)
 
       if(plot){
         pars.full <- cbind(pars.full, mu, nu)
-        pars.full.smooth <- cbind(pars.full.smooth,mu.smooth$x, nu.smooth$x)
-        colnames(pars.full)[(ncol(pars.full)-ncol_Sigma ) : (ncol(pars.full))] <-
+        pars.full.smooth <- cbind(pars.full.smooth, mu.smooth$x, nu.smooth$x)
+        
+        name_index <- (ncol(pars.full) - ncol_Sigma ) : (ncol(pars.full))
+        
+        colnames(pars.full)[name_index] <- colnames(pars.full.smooth)[name_index] <- 
           c(paste("mu", colnames(object$ranef_Sigma), sep = "_"), "nu")
       }
     }
     if(plot){
-      plot.trajectories(pars.full,pars.full.smooth)
+      plot.trajectories2(pars.full, pars.full.smooth)
     }
+    
   } else if(param == "process"){
     tau <- object$operator_tau_vec
     tau.smooth <- smooth.trajectory(tau,polyak.rate = polyak.rate,
@@ -308,8 +357,8 @@ plot.trajectories2 <- function(x, y){
 
   df <- data.frame(value = c(as.numeric(x), as.numeric(y)), 
                    var_name = rep(rep(colnames(x), each = nrow(x)), 2), 
-                   series_name = rep(c("original", "polyak"), each = nrow(x)),
-                   iteration = rep(1:nrow(x), 2))
+                   series_name = rep(c("original", "polyak"), each = nrow(x) * ncol(x)),
+                   iteration = rep(1:(nrow(x) * ncol(x)), 2))
   
   ggplot(df, aes(x = iteration, y = value, group = series_name)) + 
     geom_line(aes(color = series_name)) + 
