@@ -57,7 +57,8 @@ polyak.ngme <- function(object,
     #object$fixed_est[(n.random+1):(n.random+n.fixed)] <- pars.smooth$xe
 
     object$fixed_est_vec <- pars.smooth$x
-    object$fixed_est     <- pars.smooth$xe
+    object$fixed_est     <- as.numeric(pars.smooth$xe)
+    names(object$fixed_est) <- colnames(pars.smooth$xe)
     
     #add estimate of variance
     if(is.null(object$fixed_est_var)){

@@ -24,6 +24,7 @@
 - all the params of gig can be estimated - future work
 
 ## NOTES -- OA
+- add tdistr for random effects
 - make model specifications flexible, e.g. Normal, normal, Gaussian are all acceptable
 - allow different locs in predict than those from the observed data
 - continue with predict.derivative!!!
