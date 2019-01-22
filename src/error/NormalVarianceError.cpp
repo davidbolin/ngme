@@ -17,7 +17,7 @@ void NormalVarianceMixtureBaseError::setupStoreTracj(const int Niter) // setups 
 
 
 
-NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError(){
+NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError() : MeasurementError(){
 
   store_param = 0;
   counter   = 0;
@@ -27,6 +27,7 @@ NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError(){
   dsigma_old = 0;
   common_V  = 0;
   npars     = 0;
+  nsSigma = 0;
   rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 }
 Rcpp::List NormalVarianceMixtureBaseError::toList()

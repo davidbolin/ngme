@@ -11,6 +11,7 @@ IGMeasurementError::IGMeasurementError() : NormalVarianceMixtureBaseError(){
   ddnu      = 0;
   dnu_old = 0;
   noise = "IG";
+  nsSigma = 0;
 
 }
 

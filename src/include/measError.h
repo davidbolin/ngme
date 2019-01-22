@@ -17,11 +17,17 @@ class MeasurementError {
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter) = 0; // setups to store the tracjetory
     virtual ~MeasurementError(){};
+    MeasurementError() {sigmas.resize(1);};
 	int npars; // number of parameters
   	Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
    	double EV;  // if there the random variance in the Noise E[V]
     double EiV; // if there is random varoance in the noise E[V^-1]
   	double sigma;
+
+  	int nsSigma; // non stationary sigma
+
+  	std::vector< Eigen::VectorXd > sigmas; // if sigma is non stationary stored in sigmas
+
   	std::vector< Eigen::VectorXd > Vs;
     std::string noise;
     virtual void get_param(std::vector<double> & param_in){param_in.push_back(sigma); };
@@ -105,7 +111,6 @@ private:
   Eigen::MatrixXd ddtheta;
   Eigen::VectorXd dtheta_old, step;
   std::vector< Eigen::MatrixXd > B;
-  std::vector< Eigen::VectorXd > sigma;
   double counter;
   Eigen::MatrixXd theta_vec;
   int nrep;

@@ -73,3 +73,7 @@ sample_internalR <- function(n, p_in, selected_in, w_in) {
     .Call(`_ngme_sample_internalR`, n, p_in, selected_in, w_in)
 }
 
+test_mixed <- function(niter, Y, mixed_list, error_list) {
+    .Call(`_ngme_test_mixed`, niter, Y, mixed_list, error_list)
+}
+

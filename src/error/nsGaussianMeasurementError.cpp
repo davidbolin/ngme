@@ -16,7 +16,9 @@ void nsGaussianMeasurementError::setupStoreTracj(const int Niter) // setups to s
 }
 
 
-nsGaussianMeasurementError::nsGaussianMeasurementError(){
+nsGaussianMeasurementError::nsGaussianMeasurementError(): MeasurementError(){
+  nsSigma = 1;
+  sigma   = 1;
   counter = 0;
   EV  = 1.;  // if there the random variance in the Noise E[V]
   EiV = 1.;
@@ -28,7 +30,7 @@ nsGaussianMeasurementError::nsGaussianMeasurementError(){
 Rcpp::List nsGaussianMeasurementError::toList()
 {
   out_list["theta"]  = theta;
-  out_list["gsd"]     = sigma;
+  out_list["gsd"]     = sigmas;
   out_list["noise"]       = noise;
   if(store_param){
     out_list["theta_vec"] = theta_vec;
@@ -52,34 +54,41 @@ void nsGaussianMeasurementError::initFromList(Rcpp::List const &init_list)
   if(init_list.containsElementNamed("theta"))
     theta = Rcpp::as < Eigen::VectorXd >( init_list["theta"]);
   else
-    theta.resize(npars);
+    theta.setZero(npars);
   
-  sigma.resize(nrep);
+  sigmas.resize(nrep);
+  Vs.resize(nrep);
   for(int i=0;i<nrep;i++){
-    sigma[i] = B[i]*theta;
-    sigma[i] = sigma[i].array().exp();
+    sigmas[i] = B[i]*theta;
+    sigmas[i] = sigmas[i].array().exp();
+    Vs[i]     = sigmas[i].array().pow(2);
   }
-  
+  clear_gradient();
+  dtheta_old.setZero(npars);
 }
 
 void nsGaussianMeasurementError::gradient(const int i,
-                                        const Eigen::VectorXd& res,
-                                        const double weight)
+                                          const Eigen::VectorXd& res,
+                                          const double weight)
 {
   counter++;
   VectorXd sigma_res, sigma_res2,sigma2;
+
   for(int j =0; j < npars; j++){
-    sigma2 = sigma[i].array().pow(2);
+
+  
+    sigma2 = sigmas[i].array().pow(2);
     sigma_res = res.cwiseQuotient(sigma2); 
     sigma_res = sigma_res.cwiseProduct(res);
     sigma_res = sigma_res.cwiseProduct(B[i].col(j));
-    dtheta[j] += 0.5*weight *(-B[i].col(j).sum() + sigma_res.sum());  
+    dtheta[j] += weight * (-B[i].col(j).sum() + sigma_res.sum()); 
     for(int k =j; k < npars; k++){
-      sigma_res2 = sigma_res.cwiseProduct(B[i].col(k));
-      ddtheta(j,k) +=  -weight * sigma_res2.sum();  
-      if(k>j){
+      //sigma_res2 = sigma_res.cwiseProduct(B[i].col(k));
+      sigma_res2 = B[i].col(j).cwiseProduct(B[i].col(k));
+      ddtheta(j,k) +=  -2. * weight * sigma_res2.sum();  
+      if(k>j)
         ddtheta(k,j) = ddtheta(j,k);
-      }
+      
     }
   }
 }
@@ -90,25 +99,24 @@ void nsGaussianMeasurementError::step_theta(const double stepsize,
                                           const int burnin)
 {
   
-  
   step  = ddtheta.ldlt().solve(dtheta);
   dtheta_old.array() *= learning_rate;
   dtheta_old += step;
-  theta  += stepsize * dtheta_old;
+  theta  -= stepsize * dtheta_old;
   
   for(int i=0;i<nrep;i++){
-    sigma[i] = B[i]*theta;
-    sigma[i] = sigma[i].array().exp();
+    sigmas[i] = B[i]*theta;
+    sigmas[i] = sigmas[i].array().exp();
+    Vs[i]     = sigmas[i].array().pow(2);
   }
   
   clear_gradient();
   counter = 0;
-  ddtheta.setZero(npars,npars);
   if(store_param){
     if(vec_counter == 0 || polyak_rate == -1){
-      theta_vec.col(vec_counter) = theta;
+      theta_vec.row(vec_counter) = theta;
     } else{
-      theta_vec.col(vec_counter) = polyak_rate * theta;
+      theta_vec.row(vec_counter) = polyak_rate * theta;
       step = theta_vec.col(vec_counter-1);
       step *= (1 - polyak_rate);
       theta_vec.col(vec_counter) += step;
@@ -122,7 +130,7 @@ std::vector< Eigen::VectorXd > nsGaussianMeasurementError::simulate(std::vector<
 {
   std::vector< Eigen::VectorXd > residual( Y.size());
   for(int i = 0; i < Y.size(); i++){
-    residual[i] =  sigma[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y[i].size()) ));
+    residual[i] =  sigmas[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y[i].size()) ));
   }
   return(residual);
 }
@@ -148,6 +156,7 @@ Eigen::VectorXd  nsGaussianMeasurementError::simulate_par(const Eigen::VectorXd 
 void nsGaussianMeasurementError::clear_gradient()
 {
   dtheta.setZero(npars);
+  ddtheta.setZero(npars, npars);
 }
 
 Eigen::VectorXd nsGaussianMeasurementError::get_gradient()

@@ -581,15 +581,14 @@ void GHMixedEffect::gradient( const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
                               const double weight,
-                              const int use_EU // =1
+                              const int use_EU
                               )
 {
     Eigen::VectorXd res_  = res;
+    Eigen::VectorXd U_;
     if(Br.size() > 0){
-
-      Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
+       U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
-
       if(use_EU)
       {
         res_ -= Br[i] * EU;
@@ -597,8 +596,11 @@ void GHMixedEffect::gradient( const int i,
       }else{
         res_ -= Br[i] * U.col(i);
       }
+      
+    }
 
 
+    if(Br.size() > 0){
       grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
@@ -622,13 +624,31 @@ void GHMixedEffect::gradient( const int i,
 void GHMixedEffect::gradient2(  const int i,
                                 const Eigen::VectorXd& res,
                                 const Eigen::VectorXd& iV,
+                                const Eigen::VectorXd& sigmas,  // =0
                                 const double log_sigma2_noise,  // = 0
                                 const double EiV, // = 0
                                 const double weight, //  = 1
-                                const int use_EU // =1
+                                const int use_EU , // =1,
+                                const int nssigma            //  = 0
                               )
 {
    Eigen::VectorXd res_  = res;
+
+    if(Br.size() > 0){
+
+      Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
+      gradient_sigma(i, U_, weight);
+      if(use_EU)
+      {
+        res_ -= Br[i] * EU;
+        U_ = EU - (-1 + V(i)) * mu;
+      }else{
+        res_ -= Br[i] * U.col(i);
+      }
+    }
+    res_ = res_.cwiseProduct(iV);
+
+
     if(Br.size() > 0){
 
       Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
@@ -642,19 +662,18 @@ void GHMixedEffect::gradient2(  const int i,
       }
 
 
-      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  iV.cwiseProduct(res_));
+      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
       grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
-
 
 
       gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
-      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
+      term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose() * res_);
     }
     if(Bf.size() > 0){
-      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  iV.cwiseProduct(res_));
+      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
       H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
     }
     counter++;
@@ -708,8 +727,9 @@ void GHMixedEffect::step_theta(const double stepsize,
                                const int burnin)
 {
   if(Br.size() > 0){
-    step_beta_random(stepsize, 0,burnin);
     step_mu(stepsize, 0,burnin);
+    step_beta_random(stepsize, 0,burnin);
+    
     step_Sigma(stepsize, 0,burnin);
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
   }
@@ -775,9 +795,12 @@ void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,co
 {
   gradMu_old.array() *= learning_rate;
   gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
-  // H_beta_random = H_mu_random
-  gradMu_old += 0.5 * (Sigma * gradMu_2)/ (weight_total * (2*EiV - EV));
-
+  if((2*EiV - 1.) > 0){
+    gradMu_old += 0.5 * (Sigma * gradMu_2) / (weight_total * (2*EiV - 1.));
+    }else{
+    gradMu_old += 0.5 * (Sigma * gradMu_2) / weight_total ;
+    }
+  
   if(burnin == 1){
     mu = (1/term1_mu) * (Sigma*term2_mu);
   } else {

@@ -16,9 +16,10 @@ void GaussianMeasurementError::setupStoreTracj(const int Niter) // setups to sto
 }
 
 
-GaussianMeasurementError::GaussianMeasurementError(){
+GaussianMeasurementError::GaussianMeasurementError(): MeasurementError(){
+  nsSigma = 0;
   counter = 0;
-  sigma   = 0;
+  sigma   = 1;
   dsigma  = 0;
   dsigma_old = 0;
   ddsigma = 0;

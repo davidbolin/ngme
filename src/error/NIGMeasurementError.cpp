@@ -9,6 +9,7 @@ NIGMeasurementError::NIGMeasurementError() : NormalVarianceMixtureBaseError(){
 	term1 = 0;
 	term2 = 0;
   noise = "NIG";
+  nsSigma = 0;
 
 }
 

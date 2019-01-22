@@ -22,12 +22,12 @@ void   tdMixedEffect::set_a_GIG(){
 
 }
 double tdMixedEffect::get_b_GIG(){ return(b_GIG); }
-void   tdMixedEffect::set_b_GIG(){ b_GIG = nu + 1;}
+void   tdMixedEffect::set_b_GIG(){ b_GIG = 2. * (nu + 1);}
 
 void tdMixedEffect::printIter()
 {
 
-  GHMixedEffect::printIter();
+GHMixedEffect::printIter();
 	if(Br.size() > 0)
 		Rcpp::Rcout << "nu     = " << nu << "\n";
 }
@@ -114,12 +114,13 @@ void tdMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
                               const double weight,
-                              const int use_EU // =1
+                              const int use_EU
                               )
 {
   GHMixedEffect::gradient(i, res, log_sigma2_noise, weight, use_EU);
+  //Rcpp::Rcout <<" V(" << i <<") = " << V(i) << " U = " << U(i) << "\n";
   if(Br.size() > 0){
-    double lik = log(nu + 1) + nu/( nu + 1) - R::digamma(nu) - log(V(i)) - 1 / V(i);
+    double lik = log(nu + 1) + nu/( nu + 1.) - R::digamma(nu) - log(V(i)) - 1. / V(i);
     // dnu
     grad_nu += weight * lik;
   }
@@ -128,15 +129,17 @@ void tdMixedEffect::gradient(const int i,
 void tdMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
                                  const Eigen::VectorXd& iV,
+                                 const Eigen::VectorXd& sigmas,  // =0
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
                                  const double weight, //  = 1
-                                 const int use_EU // =1
+                                 const int use_EU , // =1,
+                                 const int nsigma            //  = 0
                                  )
 {
-  GHMixedEffect::gradient2(i, res, iV, log_sigma2_noise, EiV, weight, use_EU);
+  GHMixedEffect::gradient2(i, res, iV, sigmas, log_sigma2_noise, EiV, weight, use_EU, nsigma);
     if(Br.size() > 0){
-      double lik = log(nu + 1) + nu/( nu + 1) - R::digamma(nu) - log(V(i)) - 1 / V(i);
+      double lik = log(nu + 1.) + nu/( nu + 1.) - R::digamma(nu) - log(V(i)) - 1. / V(i);
       // dnu
       grad_nu += weight * lik;
     }
@@ -173,7 +176,7 @@ void tdMixedEffect::store_param_function(const double polyak_rate)
 
 void tdMixedEffect::step_nu(const double stepsize, const double learning_rate,const int burnin)
 {
-   grad_nu  /= ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) ) *  weight_total; //hessian
+   grad_nu  /= -( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) ) *  weight_total; //hessian
 
   dnu_old = learning_rate * dnu_old + grad_nu;
   double nu_temp = -1;

@@ -120,10 +120,10 @@ void NIGMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
                               const double weight,
-                              const int use_EU // =1
+                              const int use_EU
                               )
 {
-  GHMixedEffect::gradient(i, res, log_sigma2_noise, weight, use_EU);
+  GHMixedEffect::gradient(i, res,log_sigma2_noise, weight, use_EU);
   if(Br.size() > 0){
     // dnu
     grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
@@ -138,13 +138,15 @@ void NIGMixedEffect::gradient(const int i,
 void NIGMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
                                  const Eigen::VectorXd& iV,
+                                 const Eigen::VectorXd& sigmas,  // =0
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
                                  const double weight, //  = 1
-                                 const int use_EU // =1
+                                 const int use_EU , // =1,
+                                 const int nsigma            //  = 0
                                  )
 {
-  GHMixedEffect::gradient2(i, res, iV, log_sigma2_noise, EiV, weight, use_EU);
+  GHMixedEffect::gradient2(i, res, iV, sigmas, log_sigma2_noise, EiV, weight, use_EU, nsigma);
     if(Br.size() > 0){
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );

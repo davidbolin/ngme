@@ -118,16 +118,20 @@ class MixedEffect {
     					  const Eigen::VectorXd&,
     					  const double,
     					  const double,
-                          const int = 1) = 0;
+                const int = 1
+                 ) = 0;
 
     // gradient for variable variance noise
     virtual void gradient2(const int ,
     					   const Eigen::VectorXd&,
     					   const Eigen::VectorXd& ,
+                 const Eigen::VectorXd&,      // if non-stationary sigma put it here
     					   const double,
     					   const double,
     					   const double,
-                           const int = 1) = 0;
+                 const int = 1,
+                 const int = 0               // present - non-stationary sigma
+                 ) = 0;
 
     //computes second derivates given, latent data
     // fixed variance
@@ -219,14 +223,18 @@ class NormalMixedEffect  : public MixedEffect{
      			  const Eigen::VectorXd&,
      			  const double,
      			  const double,
-                  const int use_EU = 1);
+     			  const int use_EU = 1
+            );
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
+    			   const Eigen::VectorXd& sigmas, // if non-stationary sigma put it here)
     			   const double log_sigma2_noise = 0,
     			   const double EiV = 1.,
     			   const double weight = 1.,
-             const int use_EU = 1);
+             const int use_EU = 1,
+            const int nssigma = 0              // present - non-stationary sigma
+            );
     Eigen::MatrixXd d2Given(const int ,
                           const Eigen::VectorXd&,
                           const double,
@@ -364,16 +372,20 @@ public:
                 const Eigen::VectorXd&,
                 const double,
                 const double,
-                          const int = 1) ;
+                const int = 1
+    ) = 0;
 
     // gradient for variable variance noise
     virtual void gradient2(const int ,
                            const Eigen::VectorXd&,
                            const Eigen::VectorXd& ,
+                           const Eigen::VectorXd& , // if non-stationary sigma put it here)
                            const double,
                            const double,
                            const double,
-                           const int = 1);
+                           const int = 1,
+                           const int  = 0              // present - non-stationary sigma
+    ) = 0;
 
     //computes second derivates given, latent data
     // fixed variance
@@ -462,16 +474,20 @@ class tdMixedEffect : public GHMixedEffect{
     void gradient2(const int i,
                    const Eigen::VectorXd& res,
                    const Eigen::VectorXd& iV,
+                   const Eigen::VectorXd& sigmas, // if non-stationary sigma put it here)
                    const double log_sigma2_noise = 0,
                    const double EiV = 1.,
                    const double weight = 1.,
-                   const int use_EU = 1);
+                   const int use_EU = 1,
+                   const int nssigma = 0              // present - non-stationary sigma
+                    );
 
     void gradient(  const int ,
                     const Eigen::VectorXd& ,
                     const double ,
                     const double,
-                    const int use_EU = 1);
+                    const int use_EU = 1
+                    );
     void step_theta(const double stepsize,
             const double learning_Rate  = 0,
             const double polyak_rate   = -1,
@@ -538,16 +554,20 @@ class NIGMixedEffect  : public GHMixedEffect{
     void gradient2(const int i,
     			   const Eigen::VectorXd& res,
     			   const Eigen::VectorXd& iV,
+             const Eigen::VectorXd& sigmas, // if non-stationary sigma put it here)
     			   const double log_sigma2_noise = 0,
     			   const double EiV = 1.,
     			   const double weight = 1.,
-                   const int use_EU = 1);
+             const int use_EU = 1,
+             const int nssigma = 0              // present - non-stationary sigma
+             );
 
     void gradient(  const int ,
-    			          const Eigen::VectorXd& ,
+    			          const Eigen::VectorXd&, 
     			          const double ,
     			          const double,
-                    const int use_EU = 1);
+                    const int use_EU = 1
+                    );
     void step_theta(const double stepsize,
     				const double learning_Rate  = 0,
     				const double polyak_rate   = -1,

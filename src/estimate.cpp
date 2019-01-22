@@ -147,12 +147,30 @@ void grad_caculations(int i,
   int use_EU = 1;
   if(estimate_fisher>0)
     use_EU = 0;
+  
+  Eigen::VectorXd sigmas; 
+
+  if(errObj.nsSigma)
+    sigmas = errObj.sigmas[i];
+
   if(errObj.noise != "Normal"){
-    mixobj.gradient2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w, use_EU);
+    mixobj.gradient2(i,
+                     res,
+                     errObj.Vs[i].cwiseInverse(),
+                     sigmas,
+                     2 * log(errObj.sigma),
+                     errObj.EiV,
+                     w, 
+                     use_EU,
+                     errObj.nsSigma);
     if(estimate_fisher)
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given2(i,res,errObj.Vs[i].cwiseInverse(), 2 * log(errObj.sigma),errObj.EiV,w);
   }else{
-    mixobj.gradient(i,res,2 * log(errObj.sigma),w, use_EU);
+    mixobj.gradient(i,
+                    res,
+                    2 * log(errObj.sigma),
+                    w, 
+                    use_EU);
     if(estimate_fisher){
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
     }
@@ -942,8 +960,6 @@ List estimateLong_cpp(Rcpp::List in_list)
 
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
-
-
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
   

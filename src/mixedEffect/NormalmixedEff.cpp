@@ -376,56 +376,86 @@ void NormalMixedEffect::sampleU_par(const int i,
 void NormalMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
                                  const Eigen::VectorXd& iV,
+                                 const Eigen::VectorXd& sigmas,  // =0
                                  const double log_sigma2_noise,  // = 0
                                  const double EiV, // = 0
                                  const double weight, // = 1
-                                 const int use_EU)
+                                 const int use_EU, // =1,
+                                 const int nssigma            //  = 0
+                                 )
 {
     counter++;
     Eigen::VectorXd res_  = res;
+    
+    weight_total += weight;
+
+    /*
+        Hessian part
+    */
+
+    Eigen::VectorXd isigmas2;
+    if(nssigma)
+      isigmas2 = sigmas.array().inverse().pow(2);
+    Eigen::MatrixXd Hbr, Hbf;
+    if(Br.size() > 0){
+        if(nssigma){
+            Hbr = weight * EiV *exp( - log_sigma2_noise) * (Br[i].transpose() * isigmas2.asDiagonal() * Br[i]);
+        }else{
+            Hbr = weight * EiV *exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+        }
+        
+        H_beta_random                   += Hbr;
+        H_beta.topLeftCorner(n_r, n_r)  += Hbr;
+    }
+
+    if(Bf.size() > 0){
+      if(nssigma){
+        Hbf = weight * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * isigmas2.asDiagonal() * Bf[i]);
+      }else{
+        Hbf = weight * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+      }
+        H_beta_fixed                        += Hbf;
+        H_beta.bottomRightCorner(n_f, n_f)  += Hbf;
+        if(Br.size() > 0){
+          if(nssigma){
+            H_beta.topRightCorner(n_r, n_f)   +=  weight * EiV * exp( - log_sigma2_noise) * (Br[i].transpose() * isigmas2.asDiagonal() *  Bf[i]);
+          }else{
+            H_beta.topRightCorner(n_r, n_f)   +=  weight * EiV * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
+          }
+          H_beta.bottomLeftCorner(n_f, n_r) +=  H_beta.topRightCorner(n_r, n_f).transpose();
+        }
+    }
+    /*
+        Gradient part
+
+    */
+    Eigen::VectorXd gf, gr;
     if(Br.size() > 0){
       if(use_EU)
         res_ -= Br[i] * EU.col(i);
       else
         res_ -= Br[i] * U.col(i);
+
       res_ = iV.cwiseProduct(res_);
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
       UUt += weight * vec( UUT);
-      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      gr            = weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+      grad_beta_r         += gr;
+      grad_beta.head(n_r) += gr;
       if(use_EU)
         grad_beta_r2 += weight * (invSigma * EU.col(i));
       else
         grad_beta_r2 += weight * (invSigma * U.col(i));
-      //H_beta_random +=   exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal()* Br[i]);
-      H_beta_random +=  weight * EiV *exp( - log_sigma2_noise) * (Br[i].transpose()* Br[i]);
     }else{
-  res_ = iV.cwiseProduct(res_);
+      res_ = iV.cwiseProduct(res_);
     }
-    if(Bf.size() > 0){
-      grad_beta_f   +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  res_);
-      //H_beta_fixed  +=  exp( - log_sigma2_noise) * (Bf[i].transpose() *iV.asDiagonal()* Bf[i]);
-      H_beta_fixed  +=  weight * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-    }
-    if(1){
-      if(Br.size() > 0){
-      //res_ -= Br[i] * U.col(i);
-      //Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      //UUt += weight * vec( UUT);
-      grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      //grad_beta_r2         += weight * (invSigma * U.col(i));
-      H_beta.topLeftCorner(n_r, n_r)  += weight * EiV *exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
-      }
-      if(Bf.size() > 0){
-        grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-        H_beta.bottomRightCorner(n_f, n_f)  += weight * EiV *exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-        if(Br.size() > 0){
-            H_beta.topRightCorner(n_r, n_f) +=  weight * EiV   * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
-            H_beta.bottomLeftCorner(n_f, n_r) +=  weight * EiV * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
-          }
-      }
-      }
-    weight_total += weight;
+
+    if(Bf.size() > 0){
+      gf                   =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  res_);
+      grad_beta_f         +=  gf;
+      grad_beta.tail(n_f) +=  gf;
+    }
 }
 
 Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
@@ -517,20 +547,30 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
   return(d2);
 }
 
+
+/*
+  Caculating the gradient for measurement error which is Normal
+  two special casses are of importance
+  single measurement error sigma or vector type
+  TODO simple test gradient?
+*/
 void NormalMixedEffect::gradient(const int i,
                                  const Eigen::VectorXd& res,
                                  const double log_sigma2_noise,
                                  const double weight,
-                                 const int use_EU)
+                                 const int use_EU // =1,
+                                 )
 {
 
     counter++;
     Eigen::VectorXd res_  = res;
+    Eigen::VectorXd isigmas2;
     if(Br.size() > 0){
       if(use_EU)
         res_ -= Br[i] * EU.col(i);
       else
         res_ -= Br[i] * U.col(i);
+    
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
       UUt += weight * vec( UUT);
       grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
@@ -538,28 +578,35 @@ void NormalMixedEffect::gradient(const int i,
         grad_beta_r2  += weight * (invSigma * EU.col(i));
       else
         grad_beta_r2  += weight * (invSigma * U.col(i));
+      
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+      
 
     }
-    if(Bf.size() > 0){
+
+  if(Bf.size() > 0){
       grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
       H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-    }
-    if(1){
+        
+  }
+  if(1){
       if(Br.size() > 0){
       grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       //grad_beta_r2         += weight * (invSigma * U.col(i));
       H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+        
       }
       if(Bf.size() > 0){
         grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
         H_beta.bottomRightCorner(n_f, n_f)  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+        
         if(Br.size() > 0){
             H_beta.topRightCorner(n_r, n_f) +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
             H_beta.bottomLeftCorner(n_f, n_r) +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
+           
           }
       }
-      }
+    }
      weight_total += weight;
 
 }
