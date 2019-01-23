@@ -171,7 +171,7 @@
 
 ngme <- function(fixed,
                  random = NULL,
-                 use.process = TRUE,
+                 use.process = FALSE,
                  reffects = "Normal",
                  process = c("Normal", "fd2"),
                  error = "Normal",
@@ -310,9 +310,9 @@ ngme <- function(fixed,
 
     }
 
-  }#else{
-    #locs = NULL
-  #}
+  }else{
+    locs = NULL
+  }
 
   # correct input for distributions
   if(!(process[1] %in% c("NIG", "Normal", "GAL", "CH"))){
