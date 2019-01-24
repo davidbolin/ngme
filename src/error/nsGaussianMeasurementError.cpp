@@ -5,7 +5,7 @@
 
 void nsGaussianMeasurementError::printIter()
 {
-  Rcpp::Rcout << "theta = " << theta;
+  Rcpp::Rcout << "exp(theta) = " << theta.exp();
   
 }
 void nsGaussianMeasurementError::setupStoreTracj(const int Niter) // setups to store the tracjetory
@@ -103,7 +103,6 @@ void nsGaussianMeasurementError::step_theta(const double stepsize,
   dtheta_old.array() *= learning_rate;
   dtheta_old += step;
   theta  -= stepsize * dtheta_old;
-  
   for(int i=0;i<nrep;i++){
     sigmas[i] = B[i]*theta;
     sigmas[i] = sigmas[i].array().exp();

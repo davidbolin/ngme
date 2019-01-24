@@ -40,7 +40,7 @@ class MeasurementError {
     						const int burnin = 0) = 0;
     virtual void initFromList(Rcpp::List const &)=0;
     virtual Rcpp::List toList()=0;
-    virtual void sampleV(const int , const Eigen::VectorXd&, int = -1) = 0;
+    virtual void sampleV(const int , const Eigen::VectorXd&, int = -1) {};
 
     // sampling from the prior model
   	virtual std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd > )  = 0;
@@ -66,6 +66,13 @@ class MeasurementError {
      returns the gradient of all the parameters
       */
     virtual Eigen::VectorXd get_gradient()  =0;
+
+    /*
+		Function active only for varaince-mixture error
+    */
+    
+    virtual void remove_asym(const int i, Eigen::VectorXd & Y) {};
+    virtual void add_asym(const int i, Eigen::VectorXd & Y)    {};
 
 };
 
@@ -154,6 +161,14 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
     	Eigen::VectorXd sigma_vec;
     	Eigen::VectorXd nu_vec;
 
+    	int assymetric;
+    	double mu;
+    	double dmu;
+    	double dmu_old;
+    	double ddmu;
+    	Eigen::VectorXd mu_vec;
+    	double weight_total;
+    	double VV;
 
 	  int common_V;
 		double nu;
@@ -166,7 +181,8 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 						const double learning_rate = 0,
 						const double polyak_rate = -1,
 						const int burnin = 0);
-		void step_sigma(const double , const double,const int);
+		void step_sigma(const double , const double,const int, const double);
+		void step_mu(const double , const double,const int, const double);
 		void initFromList(Rcpp::List const &);
 		void sampleV(const int , const Eigen::VectorXd& , int = -1);
 		Rcpp::List toList();
@@ -181,9 +197,19 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 		void printIter(); //print iteration data
         void setupStoreTracj(const int ); // setups to store the tracjetory
         virtual double simulate_V();
-        virtual double sample_V(const double, const int) {return -1;};
-    	virtual void get_param(std::vector<double> & param_in){ MeasurementError::get_param(param_in); param_in.push_back(nu); };
-        virtual void get_param_names(Rcpp::StringVector & names){MeasurementError::get_param_names(names); names.push_back("nu_error"); };
+        /*
+			sample_V - sampling variance component
+					res2_j        - residual value
+					n_s           - number of samples 
+					mu^2/sigma^2  - assymetric parameter
+        */
+        virtual double sample_V(const double, const int, const double) {return -1;};
+    	virtual void get_param(std::vector<double> & param_in){ MeasurementError::get_param(param_in); };
+        virtual void get_param_names(Rcpp::StringVector & names){MeasurementError::get_param_names(names);  };
+
+
+     	void remove_asym(const int i, Eigen::VectorXd & Y) ;
+    	void add_asym(const int i, Eigen::VectorXd & Y)    ;
 
 };
 
@@ -202,7 +228,7 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
  		Rcpp::List toList();
 		void initFromList(Rcpp::List const &);
 		double simulate_V();
-		double sample_V(const double, const int);
+		double sample_V(const double, const int, const double);
 		void gradient(const int ,
 					  const Eigen::VectorXd& ,
 					  const double );
@@ -217,6 +243,10 @@ class NIGMeasurementError : public NormalVarianceMixtureBaseError{
 		Eigen::MatrixXd d2Given(const int ,
     					  		const Eigen::VectorXd& ,
     					  		const double);
+
+		void get_param(std::vector<double> & param_in){ NormalVarianceMixtureBaseError::get_param(param_in); param_in.push_back(nu); };
+        void get_param_names(Rcpp::StringVector & names){NormalVarianceMixtureBaseError::get_param_names(names); names.push_back("nu_error"); };
+
 
 };
 
@@ -237,7 +267,7 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
  		Rcpp::List toList();
 		void initFromList(Rcpp::List const &);
 		double simulate_V();
-		double sample_V(const double, const int);
+		double sample_V(const double, const int, const double);
 		void gradient(const int ,
 					  const Eigen::VectorXd&,
 					  const double);
@@ -248,6 +278,9 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
 						const int burnin = 0);
 		void clear_gradient();
 		Eigen::VectorXd get_gradient();
+
+    	void get_param(std::vector<double> & param_in){ NormalVarianceMixtureBaseError::get_param(param_in); param_in.push_back(nu); };
+        void get_param_names(Rcpp::StringVector & names){NormalVarianceMixtureBaseError::get_param_names(names); names.push_back("nu_error"); };
 
 };
 

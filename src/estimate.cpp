@@ -56,7 +56,9 @@ Eigen::VectorXd GibbsSampling(int i,
   //***************************************
 
   // removing fixed effect from Y
+  // remove assymetric from errobj
   mixobj.remove_cov(i, res);
+  errObj.remove_asym(i, res);
   if(process_active)
     res -= A * process.Xs[i];
   //***********************************
@@ -116,9 +118,16 @@ Eigen::VectorXd GibbsSampling(int i,
   if(debug)
     Rcpp::Rcout << "estimate::sample err V\n";
   // random variance noise sampling
-  if(errObj.noise != "Normal"){
+
+  // add assym
+  errObj.add_asym(i, res);
+  if(errObj.noise != "Normal")
     errObj.sampleV(i, res);
-  }
+  errObj.remove_asym(i, res);
+
+
+  // rem assym
+  
   return(res);
 }
 
@@ -152,7 +161,7 @@ void grad_caculations(int i,
 
   if(errObj.nsSigma)
     sigmas = errObj.sigmas[i];
-
+  
   if(errObj.noise != "Normal"){
     mixobj.gradient2(i,
                      res,
@@ -175,6 +184,7 @@ void grad_caculations(int i,
       Fisher_information.block(0, 0, mixobj.npars + 1, mixobj.npars + 1) += mixobj.d2Given(i,res,2 * log(errObj.sigma),w);
     }
   }
+  
 
   mixobj.remove_inter(i, res);
 
@@ -182,11 +192,12 @@ void grad_caculations(int i,
     Rcpp::Rcout << "estimate::gradcalc::errObj \n";
   // measurent error  gradient
   //TODO:: ADDD SCALING WITH W FOR ERROR GRADIENT
+  //errObj.add_asym(i, res);
   errObj.gradient(i, res, w);
   if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
     Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
-
-
+  // add ass
+  //errObj.remove_asym(i, res);
   if(process_active){
 
     if(debug)

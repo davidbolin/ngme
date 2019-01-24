@@ -283,12 +283,12 @@ Rcpp::List test_mixed(int niter,
 
       if(errObj->nsSigma)
         sigmas = errObj->sigmas[i];
-
       if(errObj->nsSigma>0){
         mixobj->sampleU2( i, res, sigmas.array().pow(2).cwiseInverse(),2 * log(errObj->sigma));
       }else{
         mixobj->sampleU( i, res, 2 * log(errObj->sigma));
       }
+
       if(type_me == "Normal"){
         mixobj->gradient(i, res, 2 * log(errObj->sigma), 1., 1);
       }else{
@@ -302,10 +302,12 @@ Rcpp::List test_mixed(int niter,
                       1.,
                       errObj->nsSigma);
       }
+
       mixobj->remove_inter(i, res);
       
       errObj->gradient(i, res, 1.);
     }
+
     mixobj->step_theta(0.5, 0, -1);
 
     errObj->step_theta(0.5, 0, -1);
@@ -318,6 +320,63 @@ Rcpp::List test_mixed(int niter,
   out_list["mixedEffect_list"] = mixobj_list;
   Rcpp::List errobj_list            = errObj->toList();
   out_list["measurementError_list"] = errobj_list;
+
   return(out_list);
 }
 
+
+/*
+  simple optimazation of error effect object espically assymetric eerror
+  niter      - number of set in conjuagete gradient
+  Y          - observtions
+  mixed_list - conatins init ofr mixed_list
+
+*/
+// [[Rcpp::export]]
+Rcpp::List test_error(int niter,
+                      Rcpp::List Y,
+                      Rcpp::List error_list)
+{
+ int nindv = Y.size(); 
+  std::vector< Eigen::VectorXd > Ys( nindv);
+  for(int i=0; i < nindv; i++)
+    Ys[i] = Rcpp::as<Eigen::VectorXd>(Y[i]);
+  
+
+  MeasurementError *errObj;
+  std::string type_me = Rcpp::as <std::string> (error_list["name"]);
+  if(type_me == "Normal")
+    errObj = new GaussianMeasurementError;
+  else if(type_me == "nsNormal")
+    errObj = new nsGaussianMeasurementError;
+  else if(type_me == "NIG")
+    errObj = new NIGMeasurementError;
+  
+  errObj->initFromList(error_list);
+  
+  errObj->setupStoreTracj(niter);
+  for(int iter=0; iter < niter; iter++){
+
+    for(int i=0; i < nindv; i++){
+      Eigen::VectorXd  res = Y[i];
+     
+      Eigen::VectorXd sigmas; 
+
+      if(errObj->nsSigma)
+        sigmas = errObj->sigmas[i];
+
+      errObj->sampleV(i, res);
+      errObj->remove_asym(i, res);
+      errObj->gradient(i, res, 1.);
+    }
+    
+    errObj->step_theta(0.5, 0, -1);
+    errObj->clear_gradient();
+  }
+  
+  Rcpp::List out_list;
+  Rcpp::List errobj_list            = errObj->toList();
+  out_list["measurementError_list"] = errobj_list;
+  return(out_list);
+
+}

@@ -40,7 +40,7 @@ Rcpp::List NIGMeasurementError::toList()
 
   if(store_param){
   	out["nu_vec"]    = nu_vec;
-  	out["nu"]          = nu_vec[nu_vec.size() - 1];
+  	out["nu"]          = nu_vec(nu_vec.size() - 1);
   	}
 
   return(out);
@@ -54,11 +54,12 @@ void NIGMeasurementError::initFromList(Rcpp::List const &init_list)
   else
     nu = 1.;
 
-    EV  = 1.;
-    EiV = 1. + 1./nu;
+  EV  = 1.;
+  EiV = 1. + 1./nu;
+  VV  = 1./nu;
 	dnu_old = 0;
-   npars += 1;
- int i = 0;
+  npars += 1;
+  int i = 0;
 
  if( init_list.containsElementNamed("Vs" )){
  	Rcpp::List Vs_list = init_list["Vs"];
@@ -79,12 +80,12 @@ double NIGMeasurementError::simulate_V()
 	return rgig.sample(-0.5, nu, nu);
 }
 
-double NIGMeasurementError::sample_V(const double res2_j, const int n_s)
+double NIGMeasurementError::sample_V(const double res2_j, const int n_s, const double mu2)
 {
 	if(common_V == 0)
-		return rgig.sample(-1., nu, res2_j + nu);
+		return rgig.sample(-1., nu + mu2, res2_j + nu);
 
-	return rgig.sample(-0.5 * (n_s + 1), nu, res2_j + nu);
+	return rgig.sample(-0.5 * (n_s + 1), nu + mu2, res2_j + nu);
 }
 
 
@@ -142,10 +143,12 @@ double nu_temp = -1;
       nu_temp = 0.1;
     }
   }
+
   nu = nu_temp;
   EV  = 1.;
   EiV = 1. + 1./nu;
   ddnu = 0;
+  VV  = 1./nu;
 
 }
 
@@ -161,9 +164,9 @@ void NIGMeasurementError::step_theta(const double stepsize,
 
 	if(store_param){
 		if(vec_counter == 1 || polyak_rate == -1)
-  			nu_vec[vec_counter-1] = nu; // -1 since NormalVarianceMixtureBaseError increase vec_counter
+  			nu_vec(vec_counter-1) = nu; // -1 since NormalVarianceMixtureBaseError increase vec_counter
   		else
-  			nu_vec[vec_counter-1] = polyak_rate * nu + (1 - polyak_rate) * nu_vec[vec_counter - 2];
+  			nu_vec(vec_counter-1) = polyak_rate * nu + (1 - polyak_rate) * nu_vec(vec_counter - 2);
 
   	}
 

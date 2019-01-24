@@ -633,10 +633,10 @@ void GHMixedEffect::gradient2(  const int i,
                               )
 {
    Eigen::VectorXd res_  = res;
-
+    Eigen::VectorXd U_;
     if(Br.size() > 0){
 
-      Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
+      U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
       if(use_EU)
       {
@@ -650,18 +650,6 @@ void GHMixedEffect::gradient2(  const int i,
 
 
     if(Br.size() > 0){
-
-      Eigen::VectorXd U_ = U.col(i) - (-1 + V(i)) * mu;
-      gradient_sigma(i, U_, weight);
-      if(use_EU)
-      {
-        res_ -= Br[i] * EU;
-        U_ = EU - (-1 + V(i)) * mu;
-      }else{
-        res_ -= Br[i] * U.col(i);
-      }
-
-
       grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
       grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);

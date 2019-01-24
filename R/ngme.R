@@ -30,6 +30,7 @@
 #'   \code{"Normal"} for Normal distribution,
 #'   \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"tdist"} for t.
+#' @param error_assymetric if true the non-Gaussian error is assymetric
 #' @param data A data-frame from which the response and covariates to be extracted.
 #' @param timevar A character string that indicates the column name of the time variable
 #'   in \code{data}.
@@ -175,6 +176,7 @@ ngme <- function(fixed,
                  reffects = "Normal",
                  process = c("Normal", "fd2"),
                  error = "Normal",
+                 error_assymetric = FALSE,
                  data,
                  timeVar = NULL,
                  silent = TRUE,
@@ -534,21 +536,22 @@ ngme <- function(fixed,
 
       fit$mixedEffect_list$noise <- reffects
       if(fit$mixedEffect_list$noise == "Normal"){
-        fit$mixedEffect_list$nu <- as.matrix(10)
+        fit$mixedEffect_list$nu <- as.matrix(3.)
         fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
       }
 
-      if(fit$processes_list$noise == "Normal"){
+      if(fit$processes_list$noise != "Normal"){
         fit$processes_list$mu <- 0
         fit$processes_list$nu <- 10
       }
 
       fit$processes_list$noise <- process[1]
 
-      fit$measurementError_list$noise <- error
-
-      if(fit$measurementError_list$noise == "Normal"){
-        fit$measurementError_list$nu  <-  10
+      fit$measurementError_list$noise      <- error
+      fit$measurementError_list$assymetric <- error_assymetric
+      if(fit$measurementError_list$noise != "Normal"){
+        fit$measurementError_list$nu  <-  3.
+        fit$measurementError_list$mu  <-  0
       }
 
       fit$measurementError_list$common_V <- controls$individual.sigma
@@ -717,7 +720,8 @@ ngme <- function(fixed,
       fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
 
       fit$measurementError_list$noise    <- error
-      fit$measurementError_list$nu       <- 10
+      fit$measurementError_list$nu       <- 3.
+      fit$measurementError_list$assymetric <- error_assymetric
       fit$measurementError_list$common_V <- controls$individual.sigma
       fit$measurementError_list$Vs       <- Vin
 

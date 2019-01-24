@@ -127,6 +127,7 @@ void NIGMixedEffect::gradient(const int i,
   if(Br.size() > 0){
     // dnu
     grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+
     term1 += weight * (V(i) + 1. / V(i) - 2.);
     term2 += weight * 1.;
   }
@@ -150,6 +151,7 @@ void NIGMixedEffect::gradient2(const int i,
     if(Br.size() > 0){
       // dnu
       grad_nu += weight * 0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+
       term1   += weight * (V(i) + 1. / V(i) - 2.);
       term2   += weight * 1.;
     }
@@ -215,7 +217,6 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,c
     nu_temp =5e-06;
     dnu_old = 0;
   }
-
 	nu = nu_temp;
 
   EiV = 1. + 1./nu;

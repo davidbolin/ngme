@@ -86,12 +86,12 @@ double IGMeasurementError::simulate_V()
 	return rgig.sample(-nu, 0, 2 * beta );
 }
 
-double IGMeasurementError::sample_V(const double res2_j, const int n_s)
+double IGMeasurementError::sample_V(const double res2_j, const int n_s, const double mu2)
 {
 	if(common_V == 0)
-		return rgig.sample(-(nu + .5), 0 , res2_j + 2 * beta);
+		return rgig.sample(-(nu + .5), mu2, res2_j + 2 * beta);
 
-	return rgig.sample(-  (nu + .5 * n_s), 0, res2_j + 2 * beta );
+	return rgig.sample(-  (nu + .5 * n_s), mu2, res2_j + 2 * beta );
 }
 
 

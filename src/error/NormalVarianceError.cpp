@@ -10,6 +10,7 @@ void NormalVarianceMixtureBaseError::printIter()
 void NormalVarianceMixtureBaseError::setupStoreTracj(const int Niter) // setups to store the tracjetory
 {
 	sigma_vec.resize(Niter);
+  mu_vec.resize(Niter);
 	vec_counter = 0;
 	store_param = 1;
 }
@@ -20,14 +21,17 @@ void NormalVarianceMixtureBaseError::setupStoreTracj(const int Niter) // setups 
 NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError() : MeasurementError(){
 
   store_param = 0;
-  counter   = 0;
-  sigma     = 1;
-  dsigma    = 0;
-  ddsigma   = 0;
-  dsigma_old = 0;
-  common_V  = 0;
-  npars     = 0;
-  nsSigma = 0;
+  counter     = 0;
+  sigma       = 1;
+  dsigma      = 0;
+  ddsigma     = 0;
+  dsigma_old  = 0;
+  common_V    = 0;
+  npars       = 0;
+  nsSigma     = 0;
+  assymetric  = 0;
+  VV          = 1;
+  ddmu        = 0;
   rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 }
 Rcpp::List NormalVarianceMixtureBaseError::toList()
@@ -38,11 +42,18 @@ Rcpp::List NormalVarianceMixtureBaseError::toList()
   out["Vs"]          = Vs;
   out["common_V"]    = common_V;
   out["Cov_theta"]   = Cov_theta;
+  out["assymetric"]  = assymetric;
 
+  if(assymetric)
+    out["mu"] = mu;
   if(store_param){
   	out["sigma_vec"] = sigma_vec;
-	  out["sigma"]       = sigma_vec[sigma_vec.size() - 1];
+	  out["sigma"]       = sigma_vec(sigma_vec.size() - 1);
+    out["mu_vec"]    = mu_vec;
    }
+
+
+
   return(out);
 }
 void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)
@@ -72,7 +83,14 @@ void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)
  	  throw("in NormalVarianceMixtureBaseError::initFromList Vs must be set! \n");
   }
 
+  if( init_list.containsElementNamed("assymetric" ))
+    assymetric = Rcpp::as < int>(init_list["assymetric"]);
+  
+  npars += assymetric;
 
+  mu = 0;
+  if( init_list.containsElementNamed("mu" ))
+      mu = Rcpp::as < double>(init_list["mu"]);
 }
 
 double NormalVarianceMixtureBaseError::simulate_V()
@@ -82,24 +100,32 @@ double NormalVarianceMixtureBaseError::simulate_V()
 Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate(const Eigen::VectorXd & Y)
 {
 	Eigen::VectorXd residual =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y.size()) ));
+  
 	if(common_V == 0){
 		for(int ii = 0; ii < residual.size(); ii++)
 	    {
 	      double V = simulate_V();
 	      residual[ii] *=  sqrt(V);
+        if(assymetric)
+          residual[ii] += (-1 + V) * mu;
+        
 	    }
 
 	}else{
 		  double V = simulate_V();
 	      residual.array() *=  sqrt(V);
+        if(assymetric)
+          residual.array() += (-1 + V) * mu;
 	}
 
+  // 
 	return(residual);
 }
 
 
 Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const Eigen::VectorXd & Y,std::mt19937 & random_engine)
 {
+  
   std::normal_distribution<double> normal;
   Eigen::VectorXd residual;
   residual.setZero(Y.size());
@@ -110,13 +136,17 @@ Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const Eigen::Vecto
   if(common_V == 0){
     for(int ii = 0; ii < residual.size(); ii++)
     {
-      double V = 1;//simulate_V();
+      double V = simulate_V();
       residual[ii] *=  sqrt(V);
+      if(assymetric)
+        residual[ii] += (-1 + V) * mu;
     }
 
   }else{
-    double V = 1;//simulate_V();
+    double V = simulate_V();
     residual.array() *=  sqrt(V);
+    if(assymetric)
+          residual.array() += (-1 + V) * mu;
   }
 
   return(residual);
@@ -124,7 +154,7 @@ Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const Eigen::Vecto
 
 std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vector< Eigen::VectorXd > Y)
 {
-
+  
 	std::vector< Eigen::VectorXd > residual( Y.size());
 	for(int i = 0; i < Y.size(); i++){
 		residual[i] =   sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y[i].size()) ));
@@ -134,6 +164,8 @@ std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vec
 	      double V = simulate_V();
 	      Vs[i][ii] = V;
 	      residual[i][ii] *=  sqrt(V);
+        if(assymetric)
+          residual[i][ii] += (-1 + V) * mu;
 	    }
 	  } else {
 	    double V = simulate_V();
@@ -141,6 +173,9 @@ std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vec
 	    {
 	      Vs[i][ii] = V;
 	      residual[i][ii] *=  sqrt(V);
+
+        if(assymetric)
+          residual[i][ii] += (-1 + V) * mu;
 	    }
 	  }
 
@@ -151,22 +186,49 @@ std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vec
 
 void NormalVarianceMixtureBaseError::sampleV(const int i, const Eigen::VectorXd& res, int n_s )
 {
+  // add assymetric
 	if(n_s == -1)
 		n_s = Vs[i].size();
 	if(common_V == 0){
     	for(int j = 0; j < n_s; j++){
-    		double res2 = pow(res[j]/sigma, 2);
+        double res2 = res[j];
+    	  double mu2  = 0.;
+        if(assymetric){
+          res2 -=  -mu;
+          mu2 = pow(mu/sigma, 2);
+        }
+    		res2 = pow(res2/sigma, 2);
 
-      	Vs[i](j) = sample_V(res2, -1);
+      	Vs[i](j) = sample_V(res2, -1, mu2);
 		}
 
 	} else {
-	  double tmp = res.array().square().sum()/pow(sigma, 2);
-	  double cv = sample_V(tmp, n_s);
+    double tmp; 
+    double mu2 = 0;
+    if(assymetric){
+      tmp = (res.array() + mu).square().sum()/pow(sigma, 2);
+      mu2  = pow(mu/sigma, 2)*res.size();
+    }else
+      tmp = res.array().square().sum()/pow(sigma, 2); 
+
+	  double cv = sample_V(tmp, n_s, mu2);
 	  for(int j = 0; j < n_s; j++)
 	    Vs[i](j) = cv;
   }
 }
+
+
+
+void NormalVarianceMixtureBaseError::remove_asym(const int i, Eigen::VectorXd & Y){
+  if(assymetric)
+    Y.array() -= (-1. + Vs[i].array()) * mu;
+
+}
+void NormalVarianceMixtureBaseError::add_asym(const int i, Eigen::VectorXd & Y) {
+  if(assymetric)
+    Y.array() += (-1. + Vs[i].array()) * mu;
+}
+
 
 void NormalVarianceMixtureBaseError::gradient(const int i,
                                  const Eigen::VectorXd& res,
@@ -180,6 +242,12 @@ void NormalVarianceMixtureBaseError::gradient(const int i,
     // Expected fisher infromation
     // res.size()/pow(sigma, 2) - 3 * E[res.array().square().sum()] /pow(sigma, 4);
     ddsigma += weight * (- 2 * res.size()/pow(sigma, 2));
+
+    // add assymetric
+    if(assymetric)
+      dmu  += weight * (res_.array()  *  (-iV.array() + 1.)).sum()/pow(sigma, 2);
+    ddmu   += - weight * VV * res_.size()/ pow(sigma,2);  
+    weight_total += weight;
 }
 
 void NormalVarianceMixtureBaseError::step_theta(const double stepsize,
@@ -187,22 +255,22 @@ void NormalVarianceMixtureBaseError::step_theta(const double stepsize,
 												const double polyak_rate,
 												const int burnin)
 {
-  step_sigma(stepsize, learning_rate,burnin);
+  step_sigma(stepsize, learning_rate, burnin, polyak_rate);
+  if(assymetric)
+    step_mu(stepsize, learning_rate, burnin, polyak_rate);
+
   NormalVarianceMixtureBaseError::clear_gradient();
 
-  counter = 0;
-	if(store_param){
-		if(vec_counter == 0 || polyak_rate == -1)
-  			sigma_vec[vec_counter] = sigma;
-  		else
-  			sigma_vec[vec_counter] = polyak_rate * sigma + (1 - polyak_rate) * sigma_vec[vec_counter-1];
-      
+	if(store_param)
       vec_counter++;
-  	}
+  	
 
 }
 
-void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, const double learning_rate,const int burnin)
+void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, 
+                                                const double learning_rate,
+                                                const int burnin,
+                                                const double polyak_rate)
 {
 
   double sigma_temp = -1;
@@ -218,18 +286,54 @@ void NormalVarianceMixtureBaseError::step_sigma(const double stepsize, const dou
   }
   sigma = sigma_temp;
   ddsigma = 0;
+  if(store_param){
+  if(vec_counter == 0 || polyak_rate == -1)
+    sigma_vec(vec_counter) = sigma;
+  else
+    sigma_vec(vec_counter) = polyak_rate * sigma + (1 - polyak_rate) * sigma_vec(vec_counter-1);
+    
+  }
+
+
 }
 
+void NormalVarianceMixtureBaseError::step_mu(const double stepsize, 
+                                             const double learning_rate,
+                                             const int burnin,
+                                             const double polyak_rate)
+{
+
+  dmu     /= ddmu;
+  dmu_old = learning_rate * dmu_old + dmu;
+  //Rcpp::Rcout << "mu  = " << mu << "\n";
+  //Rcpp::Rcout << "dmu  = " << dmu << "\n";
+  mu      = mu - stepsize * dmu_old;
+  //Rcpp::Rcout << "mu  = " << mu << "\n";
+  if(store_param){
+    if(vec_counter == 0 || polyak_rate == -1)
+      mu_vec(vec_counter) = mu;
+    else
+      mu_vec(vec_counter) = polyak_rate * mu + (1 - polyak_rate) * mu_vec(vec_counter-1); 
+  }
+
+}
 
 
 void NormalVarianceMixtureBaseError::clear_gradient()
 {
 	dsigma = 0;
+  dmu    = 0;
+  ddmu    = 0;
+  weight_total = 0;
 }
 
 Eigen::VectorXd NormalVarianceMixtureBaseError::get_gradient()
 {
 	Eigen::VectorXd g(npars);
 	g[0] = dsigma;
+  if(assymetric)
+    g[1] = dmu;
 	return(g);
 }
+
+
