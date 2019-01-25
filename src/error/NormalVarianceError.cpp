@@ -5,6 +5,8 @@
 void NormalVarianceMixtureBaseError::printIter()
 {
 	Rcpp::Rcout << "sigma = " << sigma;
+  if(assymetric)
+    Rcpp::Rcout << "\nmu = " << mu;
 
 }
 void NormalVarianceMixtureBaseError::setupStoreTracj(const int Niter) // setups to store the tracjetory
