@@ -528,13 +528,17 @@ List predictLong_cpp(Rcpp::List in_list)
           }
           
           Eigen::VectorXd random_effect_c;
+          Eigen::VectorXd mNoise; 
+          Eigen::VectorXd Noise = errObj->simulate_par(i,random_engine[rank],random_effect.size());
           if(ind_general){
             get_subvector(random_effect,pred_ind[i].row(ipred), random_effect_c);
+            get_subvector(Noise,pred_ind[i].row(ipred), mNoise);
           }else{
             random_effect_c = random_effect.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));  
+            mNoise = Noise.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));  
           }
           
-          Eigen::VectorXd mNoise = errObj->simulate_par(random_effect_c,random_engine[rank]);
+          
           Eigen::VectorXd AX;
           if(use_random_effect == 1){
             UVec[i].col(ii-nBurnin) = mixobj->U.col(i); // this only makes sense for smoothing

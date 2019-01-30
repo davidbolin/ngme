@@ -47,6 +47,10 @@ class MeasurementError {
 
   	virtual Eigen::VectorXd  simulate( const Eigen::VectorXd &)  = 0;
   	virtual Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &)  = 0;
+  	
+  	// Sample the entire noise vector for the i:th subject
+  	//inputs subject number, random number generator, size of vector
+  	virtual Eigen::VectorXd  simulate_par( const int, std::mt19937 &, const int)  = 0;
     /*
     	clear gradient
     */
@@ -101,6 +105,7 @@ class GaussianMeasurementError : public MeasurementError{
 		std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd >);
 		Eigen::VectorXd  simulate( const Eigen::VectorXd &);
 		Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
+		Eigen::VectorXd  simulate_par( const int, std::mt19937 &, const int);
 
 		void clear_gradient();
 
@@ -138,6 +143,7 @@ public:
   std::vector< Eigen::VectorXd > simulate( const std::vector< Eigen::VectorXd >);
   Eigen::VectorXd  simulate( const Eigen::VectorXd &);
   Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
+  Eigen::VectorXd  simulate_par( const int, std::mt19937 &, const int);
   
   void clear_gradient();
   
@@ -190,6 +196,7 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 
 		Eigen::VectorXd  simulate( const Eigen::VectorXd &);
 		Eigen::VectorXd  simulate_par( const Eigen::VectorXd &, std::mt19937 &);
+		Eigen::VectorXd  simulate_par( const int, std::mt19937 &, const int);
 		void clear_gradient();
 
 		Eigen::VectorXd get_gradient();

@@ -459,7 +459,10 @@ Rcpp::List MaternOperator2D::output_list()
   out_list["kappa2"] = kappa2Vec[tau1Vec.size() - 1];
   out_list["tau2Vec"] = tau2Vec;
   out_list["kappa2Vec"] = kappa2Vec;
-  
+  out_list["rho"] = rhoVec[rhoVec.size() - 1];
+  out_list["rhoVec"] = rhoVec;
+  out_list["theta"] = thetaVec[thetaVec.size() - 1];
+  out_list["thetaVec"] = thetaVec;
   
   out_list["nIter"] = tau1Vec.size();
   out_list["use.chol"] = use_chol;
