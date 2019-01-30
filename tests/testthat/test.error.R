@@ -8,9 +8,9 @@ library(testthat)
 library(ngme)
 set.seed(4)
 
-n_iter <- 1000
+n_iter <- 1200
 
-nindv <- 10
+nindv <- 20
 n     <- 110
 nu      <- 0.6
 mu      <- 1.

@@ -246,9 +246,10 @@ void NormalVarianceMixtureBaseError::gradient(const int i,
     ddsigma += weight * (- 2 * res.size()/pow(sigma, 2));
 
     // add assymetric
-    if(assymetric)
-      dmu  += weight * (res_.array()  *  (-iV.array() + 1.)).sum()/pow(sigma, 2);
-    ddmu   += - weight * VV * res_.size()/ pow(sigma,2);  
+    if(assymetric){
+      dmu    +=  weight * (res_.array()  *  (-iV.array() + 1.)).sum()/pow(sigma, 2);
+      ddmu   +=  weight * VV * res_.size()/ pow(sigma,2);  
+    }
     weight_total += weight;
 }
 
@@ -309,7 +310,7 @@ void NormalVarianceMixtureBaseError::step_mu(const double stepsize,
   dmu_old = learning_rate * dmu_old + dmu;
   //Rcpp::Rcout << "mu  = " << mu << "\n";
   //Rcpp::Rcout << "dmu  = " << dmu << "\n";
-  mu      = mu - stepsize * dmu_old;
+  mu      = mu + stepsize * dmu_old;
   //Rcpp::Rcout << "mu  = " << mu << "\n";
   if(store_param){
     if(vec_counter == 0 || polyak_rate == -1)
@@ -332,10 +333,36 @@ void NormalVarianceMixtureBaseError::clear_gradient()
 Eigen::VectorXd NormalVarianceMixtureBaseError::get_gradient()
 {
 	Eigen::VectorXd g(npars);
-	g[0] = dsigma;
+	g(0) = dsigma;
   if(assymetric)
-    g[1] = dmu;
+    g(1) = dmu;
 	return(g);
+}
+Eigen::MatrixXd NormalVarianceMixtureBaseError::d2Given(const int i ,
+                    const Eigen::VectorXd& res,
+                    const double weight){
+  Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(npars - 1, npars - 1);
+
+  
+  if(assymetric){
+    Eigen::VectorXd B_mu =  (-1 + Vs[i].array());
+    Eigen::VectorXd iV = Vs[i].cwiseInverse();
+    d2(0, 0) =   B_mu.transpose()  * (iV.asDiagonal() * B_mu);  
+    d2(0, 0) *= weight/pow(sigma,2);
+  }
+
+  return d2;
 }
 
 
+void NormalVarianceMixtureBaseError::get_param(std::vector<double> & param_in)
+{
+ MeasurementError::get_param(param_in); 
+ if(assymetric)
+    param_in.push_back(mu);
+};
+void NormalVarianceMixtureBaseError::get_param_names(Rcpp::StringVector & names){
+  MeasurementError::get_param_names(names); 
+  if(assymetric)
+    names.push_back("mu_error");
+};

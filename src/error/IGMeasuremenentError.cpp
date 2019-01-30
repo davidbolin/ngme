@@ -168,6 +168,21 @@ void IGMeasurementError::clear_gradient()
 Eigen::VectorXd IGMeasurementError::get_gradient()
 {
 	Eigen::VectorXd g = NormalVarianceMixtureBaseError::get_gradient();
-	g[1] = dnu;
+	g[npars-1] = dnu;
 	return(g);
+}
+
+
+Eigen::MatrixXd IGMeasurementError::d2Given(const int i,
+                                            const Eigen::VectorXd& res,
+                                            const double weight)
+{
+
+
+  Eigen::MatrixXd d2 =   NormalVarianceMixtureBaseError::d2Given(i, res, weight);
+  if(common_V == 0)
+    d2(npars-2, npars-2) = weight *  (res.size() * ( 2./ beta - nu/(beta * beta) - trigamma_nu) );
+  else
+    d2(npars-2, npars-2) = weight *  (2./ beta - nu/(beta * beta) - trigamma_nu);
+  return(d2);
 }

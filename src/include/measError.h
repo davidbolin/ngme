@@ -204,12 +204,15 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
 					mu^2/sigma^2  - assymetric parameter
         */
         virtual double sample_V(const double, const int, const double) {return -1;};
-    	virtual void get_param(std::vector<double> & param_in){ MeasurementError::get_param(param_in); };
-        virtual void get_param_names(Rcpp::StringVector & names){MeasurementError::get_param_names(names);  };
+    	virtual void get_param(std::vector<double> & param_in);
+        virtual void get_param_names(Rcpp::StringVector & names);
 
 
      	void remove_asym(const int i, Eigen::VectorXd & Y) ;
     	void add_asym(const int i, Eigen::VectorXd & Y)    ;
+      virtual Eigen::MatrixXd d2Given(const int ,
+                    const Eigen::VectorXd& ,
+                    const double);
 
 };
 
@@ -282,6 +285,10 @@ class IGMeasurementError : public NormalVarianceMixtureBaseError{
     	void get_param(std::vector<double> & param_in){ NormalVarianceMixtureBaseError::get_param(param_in); param_in.push_back(nu); };
         void get_param_names(Rcpp::StringVector & names){NormalVarianceMixtureBaseError::get_param_names(names); names.push_back("nu_error"); };
 
+        
+    Eigen::MatrixXd d2Given(const int ,
+                    const Eigen::VectorXd& ,
+                    const double);
 };
 
 

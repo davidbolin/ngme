@@ -89,18 +89,6 @@ double NIGMeasurementError::sample_V(const double res2_j, const int n_s, const d
 }
 
 
-Eigen::MatrixXd NIGMeasurementError::d2Given(const int i,
-                    const Eigen::VectorXd& res,
-                    const double weight)
-{
-  Eigen::MatrixXd d2 =  Eigen::MatrixXd::Zero(1, 1);
-  if(common_V == 0)
-    d2(0, 0) = weight *  (0.5 *  res.size() / ( nu * nu));
-  else
-    d2(0, 0) = weight *  (0.5 *   1. / ( nu * nu));
-  return(d2);
-}
-
 
 void NIGMeasurementError::gradient(const int i,
                                  const Eigen::VectorXd& res,
@@ -182,6 +170,20 @@ void NIGMeasurementError::clear_gradient()
 Eigen::VectorXd NIGMeasurementError::get_gradient()
 {
 	Eigen::VectorXd g = NormalVarianceMixtureBaseError::get_gradient();
-	g[1] = dnu;
+	g(npars-1) = dnu;
 	return(g);
+}
+
+
+Eigen::MatrixXd NIGMeasurementError::d2Given(const int i,
+                    const Eigen::VectorXd& res,
+                    const double weight)
+{
+
+  Eigen::MatrixXd d2 =   NormalVarianceMixtureBaseError::d2Given(i, res, weight);
+  if(common_V == 0)
+    d2(npars-2, npars-2) = weight *  (0.5 *  res.size() / ( nu * nu));
+  else
+    d2(npars-2, npars-2) = weight *  (0.5 *   1. / ( nu * nu));
+  return(d2);
 }

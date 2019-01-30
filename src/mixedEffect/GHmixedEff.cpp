@@ -789,12 +789,16 @@ void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,co
     gradMu_old += 0.5 * (Sigma * gradMu_2) / weight_total ;
     }
   
+  Eigen::VectorXd mu_temp;
   if(burnin == 1){
-    mu = (1/term1_mu) * (Sigma*term2_mu);
+    mu_temp = (1/term1_mu) * (Sigma*term2_mu);
   } else {
-    mu += stepsize * gradMu_old;
+    mu_temp = mu + stepsize * gradMu_old;
   }
-
+  for(int i =0; i < mu.size(); i++){
+    if(pow(mu_temp(i),2) < 1e6 * Sigma(i,i) )
+      mu(i) = mu_temp(i);
+  }
   gradMu_2.setZero(Br[0].cols(), 1);
 }
 

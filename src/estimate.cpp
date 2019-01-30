@@ -196,6 +196,7 @@ void grad_caculations(int i,
   errObj.gradient(i, res, w);
   if( (errObj.noise != "Normal") && (estimate_fisher > 0) && (errObj.npars > 1) )
     Fisher_information.block(mixobj.npars + 1, mixobj.npars + 1, errObj.npars - 1, errObj.npars - 1) += errObj.d2Given(i, res, w);
+  
   // add ass
   //errObj.remove_asym(i, res);
   if(process_active){
@@ -902,7 +903,6 @@ List estimateLong_cpp(Rcpp::List in_list)
   Fisher_information.array()  /= (nIter * nSim);
 
   if(estimate_fisher > 0 ){
-
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
     mixobj->set_covariance(cov_est.block(0, 0, mixobj->npars, mixobj->npars));
     errObj->set_covariance(cov_est.block(mixobj->npars, mixobj->npars, errObj->npars, errObj->npars));
@@ -980,7 +980,6 @@ List estimateLong_cpp(Rcpp::List in_list)
     delete *i;
   }
   Solver.clear();
-
   return(out_list);
 }
 
