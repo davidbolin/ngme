@@ -154,6 +154,29 @@ Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const Eigen::Vecto
   return(residual);
 }
 
+Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const int i,std::mt19937 & random_engine, int nsim){
+  std::normal_distribution<double> normal;
+  Eigen::VectorXd residual;
+  residual.setZero(nsim);
+  for(int j =0; j < nsim; j++)
+    residual[j] =  sigma*normal(random_engine);
+  
+  //Eigen::VectorXd residual =  sigma * (Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm( Y.size()) ));
+  if(common_V == 0){
+    for(int ii = 0; ii < residual.size(); ii++)
+    {
+      double V = 1;//simulate_V();
+      residual[ii] *=  sqrt(V);
+    }
+    
+  }else{
+    double V = 1;//simulate_V();
+    residual.array() *=  sqrt(V);
+  }
+  
+  return(residual);
+}
+  
 std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vector< Eigen::VectorXd > Y)
 {
   

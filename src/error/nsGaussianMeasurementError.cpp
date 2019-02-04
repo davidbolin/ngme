@@ -152,6 +152,17 @@ Eigen::VectorXd  nsGaussianMeasurementError::simulate_par(const Eigen::VectorXd 
   return(residual);
 }
 
+Eigen::VectorXd  nsGaussianMeasurementError::simulate_par(const int i,std::mt19937 & random_engine, const int nsim)
+{
+  
+  std::normal_distribution<double> normal;
+  Eigen::VectorXd residual;
+  residual.setZero(nsim);
+  residual =  sigmas[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm(nsim)));
+  return(residual);
+}
+
+
 void nsGaussianMeasurementError::clear_gradient()
 {
   dtheta.setZero(npars);

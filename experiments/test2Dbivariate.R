@@ -7,8 +7,8 @@ library(ggplot2)
 library(fields)
 library(gridExtra)
 #First estimate stationary model:
-test.pred = TRUE
-test.est = FALSE
+test.pred = FALSE
+test.est = TRUE
 nIter = 1000
 
 noise="Gaussian"
@@ -22,8 +22,8 @@ sigma.e = c(0.01,0.1)
 beta.fixed = c(0,0)
 
 n.lattice = 40
-n.obs=1000 #number of observations per replicate
-n.rep = 1 #number of replicates
+n.obs=200 #number of observations per replicate
+n.rep = 10 #number of replicates
 
 #create mesh 
 x=seq(from=0,to=10,length.out=n.lattice)
@@ -31,22 +31,32 @@ lattice=inla.mesh.lattice(x=x,y=x)
 mesh=inla.mesh.create(lattice=lattice, extend=FALSE, refine=FALSE)
 
 #create observation locations, both fields are observed at the same locations
-obs.loc = cbind(runif(n.obs)*diff(range(x))+min(x),
-                runif(n.obs)*diff(range(x))+min(x))
+obs.loc <- list()
+for(i in 1:n.rep){
+  obs.loc[[i]] = cbind(runif(n.obs)*diff(range(x))+min(x),
+                  runif(n.obs)*diff(range(x))+min(x))
+  
+}
 
 
 #create fixed effects-list with one intercept per field
 Bf <- kronecker(diag(2),matrix(rep(1, n.obs)))
-B_fixed  <- list(Bf)
+B_fixed <- list()
+for(i in 1:n.rep){
+  B_fixed[[i]]  <- Bf
+}
 mixedEffect_list  <- list(B_fixed  = B_fixed,
                           beta_fixed  = as.matrix(beta.fixed),
                           noise = "Normal")
 
 #create measurement error list, with one sigma per field
+B.e <- list()
+for(i in 1:n.rep){
+  B.e[[i]] <- kronecker(diag(2),matrix(rep(1, n.obs)))
+}
 
-B.e <- kronecker(diag(2),matrix(rep(1, n.obs)))
 mError_list <- list(noise = "nsNormal", 
-                    B = list(B.e),
+                    B = B.e,
                     theta = matrix(log(sigma.e)))
 
 
@@ -77,7 +87,7 @@ df$z <- c(inla.mesh.project(proj,sim_res$X[[1]][1:(n.proc/2)]))
 df2 <- expand.grid(x= proj$x, y = proj$y)
 df2$z <- c(inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.proc]))
 p1 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df2, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
 df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,1])
 df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,2])
 p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
@@ -104,13 +114,23 @@ if(test.est){
                           nBurnin_learningrate = 50,
                           silent = FALSE)
   
-  par(mfrow = c(1,3))
-  matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1)
-  matplot(t(matrix(rep(matrix(beta.fixed),nIter),length(beta.fixed),nIter)),add=TRUE,lty=2)
-  plot(res.est$operator_list$tauVec,type="l",main="process tau")
-  lines(rep(tau,nIter),col=2)
-  plot(res.est$operator_list$kappaVec,type="l",main="process kappa")
-  lines(rep(kappa,nIter),col=2)
+  par(mfrow = c(2,3))
+  matplot(res.est$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1,xlab="",ylab="")
+  abline(beta.fixed[1],0,col=2)
+  abline(beta.fixed[2],0,col=2)
+  matplot(res.est$measurementError_list$theta_vec,type="l",main="noise",col=1,xlab="",ylab="")
+  abline(log(sigma.e[1]),0,col=2)
+  abline(log(sigma.e[2]),0,col=2)
+  plot(res.est$operator_list$tau1Vec,type="l",main="process tau")
+  lines(res.est$operator_list$tau2Vec)
+  abline(tau1,0,col=2)
+  abline(tau2,0,col=2)
+  plot(res.est$operator_list$kappa1Vec,type="l",main="process kappa")
+  lines(res.est$operator_list$kappa2Vec)
+  abline(kappa1,0,col=2)
+  abline(kappa2,0,col=2)
+  plot(res.est$operator_list$rhoVec,type="l",main="process rho")
+  abline(rho,0,col=2)
   
 }
 
@@ -131,13 +151,13 @@ if(test.pred){
                       processes_list   = processes_list,
                       operator_list    = operator_list)
   
-  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y.star[[1]][,1])
+  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,1])
   df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y.star[[1]][,2])
-  p1 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
-  p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
-  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=res$Y.star[[1]][,1])
-  df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=res$Y.star[[1]][,2])
-  p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
-  p4 <- ggplot(df2) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+  df3 = data.frame(x = locs.pred[,1],y=locs.pred[,2],z=res$X.summary[[1]]$Mean[1:length(locs.pred[,1])])
+  df4 = data.frame(x = locs.pred[,1],y=locs.pred[,2],z=res$X.summary[[1]]$Mean[(length(locs.pred[,1])+1):(2*length(locs.pred[,1]))])
+  p1 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  p2 <- ggplot(df2, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  p3 <- ggplot(df3,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
+  p4 <- ggplot(df4,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
   grid.arrange(p1,p2,p3,p4,ncol=2)
 }
