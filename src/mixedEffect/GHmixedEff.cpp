@@ -751,6 +751,13 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
         Rcpp::Rcout << "pos_def = " << pos_def <<"\n";
         throw("in midexeffect not pos def \n");
     }
+    if(Sigma.size()==1){
+      if(Sigma(0,0) < 1e-10)
+      {
+        Sigma(0,0) = 1e-10;
+        continue;
+      }
+    }
   }
   SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
   pos_def = eig.eigenvalues().minCoeff();
