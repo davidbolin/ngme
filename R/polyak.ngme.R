@@ -26,7 +26,7 @@ polyak.ngme <- function(object,
                         polyak.rate = 1,
                         plot = TRUE,
                         burnin.end = NULL){
-
+  
   if(param == "fixed" & !is.null(object$polyaked_fixed)){
     stop("Fixed effects have already been Polyak averaged")
   }
@@ -44,7 +44,7 @@ polyak.ngme <- function(object,
   if(param == "process" && object$use_process == FALSE){
     stop("No process was included in the model fit")
   }
-
+  
   if(param == "fixed"){
     
     index_fixed  <- object$index_fixed
@@ -58,7 +58,7 @@ polyak.ngme <- function(object,
                                      polyak.rate = polyak.rate, 
                                      burnin.end = burnin.end)
     colnames(pars.smooth$x) <- colnames(pars.smooth$xe) <- colnames(object$fixed_est_vec)
-
+    
     object$mixedEffect_list$betaf_vec  <- pars.smooth$x[, index_fixed]
     object$mixedEffect_list$beta_fixed <- pars.smooth$xe[, index_fixed]
     
@@ -68,7 +68,7 @@ polyak.ngme <- function(object,
     #update summaries (which also contain the random effects)
     #object$fixed_est_vec[,(n.random+1):(n.random+n.fixed)] <- pars.smooth$x
     #object$fixed_est[(n.random+1):(n.random+n.fixed)] <- pars.smooth$xe
-
+    
     object$fixed_est_vec <- pars.smooth$x
     object$fixed_est     <- as.numeric(pars.smooth$xe)
     names(object$fixed_est) <- colnames(pars.smooth$xe)
@@ -78,11 +78,11 @@ polyak.ngme <- function(object,
       object$fixed_est_var <- rep(NA, ncol(object$fixed_est_vec))
       names(object$fixed_est_var) <- colnames(object$fixed_est_vec)
     }
-
+    
     object$fixed_est_var <- compute.polyak.variance(pars,
                                                     polyak.rate,
                                                     i.start = burnin.end)
-
+    
     if(plot){
       plot.trajectories2(x = pars, y = pars.smooth$x)
     }
@@ -114,16 +114,16 @@ polyak.ngme <- function(object,
     # object$fixed_est_var[1:n.random] <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
     # pars.full <- pars
     # pars.full.smooth <- pars.smooth$x
-
+    
     # process the covariance
     
     n.random <- length(object$mixedEffect_list$beta_random)
-
+    
     ncol_Sigma <- dim(object$ranef_Sigma)[1]
     
     pars <- object$ranef_Sigma_vec
     #colnames(pars) <- rep("Sigma", dim(object$ranef_Sigma_vec)[2])
-
+    
     pars.smooth <- smooth.trajectory(pars,
                                      polyak.rate = polyak.rate,
                                      burnin.end = burnin.end)
@@ -132,7 +132,7 @@ polyak.ngme <- function(object,
     object$ranef_Sigma <- matrix(pars.smooth$xe, n.random, n.random, 
                                  dimnames = list(rownames(object$ranef_Sigma), 
                                                  colnames(object$ranef_Sigma)))
-
+    
     object$mixedEffect_list$Sigma_vec <- pars.smooth$x
     object$mixedEffect_list$Sigma <- matrix(pars.smooth$xe, n.random, n.random,
                                             dimnames = list(rownames(object$ranef_Sigma), 
@@ -162,7 +162,7 @@ polyak.ngme <- function(object,
       }
       
     }
-
+    
     if(object$random_distr %in% ("NIG")){
       
       mu <- object$ranef_mu_vec
@@ -179,7 +179,7 @@ polyak.ngme <- function(object,
       object$ranef_mu_var <- compute.polyak.variance(mu, 
                                                      polyak.rate, 
                                                      i.start = burnin.end)
-
+      
       nu <- object$ranef_nu_vec
       nu.smooth <- smooth.trajectory(nu,
                                      polyak.rate = polyak.rate,
@@ -194,7 +194,7 @@ polyak.ngme <- function(object,
       object$ranef_nu_var <- compute.polyak.variance(nu, 
                                                      polyak.rate, 
                                                      i.start = burnin.end)
-
+      
       if(plot){
         pars.full <- cbind(pars.full, mu, nu)
         pars.full.smooth <- cbind(pars.full.smooth, mu.smooth$x, nu.smooth$x)
@@ -257,7 +257,7 @@ polyak.ngme <- function(object,
       colnames(pars)[2] <- colnames(pars.smooth)[2] <- "kappa"
       
     }
-
+    
     if(object$process_distr %in% c("NIG", "GAL")){
       
       mu <- object$process_mu_vec
@@ -277,7 +277,7 @@ polyak.ngme <- function(object,
       object$process_mu_var <- compute.polyak.variance(mu, 
                                                        polyak.rate,
                                                        i.start = burnin.end)
-
+      
       nu <- object$process_nu_vec
       
       nu.smooth <- smooth.trajectory(nu,
@@ -299,67 +299,67 @@ polyak.ngme <- function(object,
       pars <- cbind(pars, mu, nu)
       pars.smooth <- cbind(pars.smooth, mu.smooth$x, nu.smooth$x)
       
-      colnames(pars)[3:4] <- colnames(pars.smooth)[3:4] <- c("mu", "nu")
+      colnames(pars)[(dim(pars)[2]-1):dim(pars)[2]] <- colnames(pars.smooth)[(dim(pars)[2]-1):dim(pars)[2]] <- c("mu", "nu")
       
     }
     if(plot){
       plot.trajectories2(pars, pars.smooth)
     }
     
-    }else if(param == "error"){
-
-      sigma <- object$meas_error_sigma_vec
+  }else if(param == "error"){
+    
+    sigma <- object$meas_error_sigma_vec
+    
+    sigma.smooth <- smooth.trajectory(sigma, 
+                                      polyak.rate = polyak.rate,
+                                      burnin.end = burnin.end)
+    
+    sigma.smooth$xe <- as.numeric(sigma.smooth$xe)
+    
+    object$meas_error_sigma_vec <- sigma.smooth$x
+    object$meas_error_sigma     <- sigma.smooth$xe
+    
+    object$measurementError_list$sigma_vec <- sigma.smooth$x
+    object$measurementError_list$sigma     <- sigma.smooth$xe
+    
+    object$meas_error_sigma_var <- compute.polyak.variance(sigma,
+                                                           polyak.rate,
+                                                           i.start = burnin.end)
+    
+    pars <- matrix(sigma, ncol = 1)
+    pars.smooth <- matrix(sigma.smooth$x, ncol = 1)
+    
+    colnames(pars) <- colnames(pars.smooth) <- "sigma"
+    
+    if(object$error_distr %in% c("NIG", "tdist")){
       
-      sigma.smooth <- smooth.trajectory(sigma, 
-                                        polyak.rate = polyak.rate,
-                                        burnin.end = burnin.end)
+      nu <- object$meas_error_nu_vec
       
-      sigma.smooth$xe <- as.numeric(sigma.smooth$xe)
+      nu.smooth <- smooth.trajectory(nu,
+                                     polyak.rate = polyak.rate,
+                                     burnin.end = burnin.end)
       
-      object$meas_error_sigma_vec <- sigma.smooth$x
-      object$meas_error_sigma     <- sigma.smooth$xe
+      nu.smooth$xe <- as.numeric(nu.smooth$xe)
       
-      object$measurementError_list$sigma_vec <- sigma.smooth$x
-      object$measurementError_list$sigma     <- sigma.smooth$xe
+      object$meas_error_nu_vec <- nu.smooth$x
+      object$meas_error_nu     <- nu.smooth$xe
       
-      object$meas_error_sigma_var <- compute.polyak.variance(sigma,
-                                                             polyak.rate,
-                                                             i.start = burnin.end)
+      object$measurementError_list$nu_vec <- nu.smooth$x
+      object$measurementError_list$nu     <- nu.smooth$xe
       
-      pars <- matrix(sigma, ncol = 1)
-      pars.smooth <- matrix(sigma.smooth$x, ncol = 1)
+      object$meas_error_nu_var <- compute.polyak.variance(nu,
+                                                          polyak.rate,
+                                                          i.start = burnin.end)
       
-      colnames(pars) <- colnames(pars.smooth) <- "sigma"
-
-      if(object$error_distr %in% c("NIG", "tdist")){
+      pars <- cbind(pars, nu)
+      pars.smooth <- cbind(pars.smooth, nu.smooth$x)
       
-        nu <- object$meas_error_nu_vec
-        
-        nu.smooth <- smooth.trajectory(nu,
-                                       polyak.rate = polyak.rate,
-                                       burnin.end = burnin.end)
-        
-        nu.smooth$xe <- as.numeric(nu.smooth$xe)
-        
-        object$meas_error_nu_vec <- nu.smooth$x
-        object$meas_error_nu     <- nu.smooth$xe
-        
-        object$measurementError_list$nu_vec <- nu.smooth$x
-        object$measurementError_list$nu     <- nu.smooth$xe
-        
-        object$meas_error_nu_var <- compute.polyak.variance(nu,
-                                                            polyak.rate,
-                                                            i.start = burnin.end)
-        
-        pars <- cbind(pars, nu)
-        pars.smooth <- cbind(pars.smooth, nu.smooth$x)
-        
-        colnames(pars)[2] <- colnames(pars.smooth)[2] <- "nu"
-      }
-      if(plot){
-        plot.trajectories2(pars, pars.smooth)
-      }
+      colnames(pars)[2] <- colnames(pars.smooth)[2] <- "nu"
     }
+    if(plot){
+      plot.trajectories2(pars, pars.smooth)
+    }
+  }
   
   if(param == "fixed"){
     object$polyaked_fixed <- "yes"
@@ -384,7 +384,7 @@ WLS.loss <- function(p,r){
 }
 
 compute.polyak.variance <- function(x,polyak.rate,i.start){
-
+  
   if(length(dim(x))==2){
     n = dim(x)[2]
     n.iter = dim(x)[1]
@@ -415,7 +415,7 @@ compute.polyak.variance <- function(x,polyak.rate,i.start){
     v <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
     names(v) <- colnames(x)
   }
-
+  
   return(v)
 }
 
@@ -454,7 +454,7 @@ plot.trajectories <- function(x, y){
 }
 
 plot.trajectories2 <- function(x, y){
-
+  
   if(ncol(x) == 1){
     ncol_plot <- 1
   }else if(ncol(x) < 5){

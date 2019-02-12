@@ -5,7 +5,7 @@
 #'
 #' @param fit An ngme object. 
 #' @param std.threshold A threshold for the MC standard deviation of the estimates. The estimation is run until
-#' all diagonal elements F.i of the inverse Fisher information matrix satisfy var(F.i) < F.i*std.threshold^2
+#' all diagonal elements F.i of the inverse Fisher information matrix satisfy std(F.i)*std.threshold < F.i
 #' @param only.effects If TRUE, the criteria for std.threshold is only applied to the fixed effect estimates.
 #' @param observed If TRUE, the observed Fisher information matrix is estimated. Otherwise the ordinary Fisher-Information matrix is estimated.
 #' @param nIter A numeric value for the number of iterations to be used to obtain the Fisher-Information matrix. If the observed Fisher information matrix
@@ -38,28 +38,31 @@ ngme.fisher <- function(fit,
   if(missing(fit) || is.null(fit)){
     stop('No result object supplied.')
   }
-
+  if(class(fit) != "ngme"){
+    stop('The result object is not of class ngme.')
+  }
+  
   if(observed){
     type = 2
   } else {
     type = 1
   }
-
-
-
+  
+  
+  
   if(observed && is.null(nIter)){
     nIter = 1
   } else if(observed == FALSE && is.null(nIter)){
     nIter = nSim
   }
-
+  
   if(only.effects){
     fn <- names(fit$fixed_est)
   }
-
+  
   cl <- makeCluster(n.cores)
   registerDoSNOW(cl)
-
+  
   if(silent == FALSE){
     cat("Compute initial estimate.\n")
   }
@@ -67,123 +70,155 @@ ngme.fisher <- function(fit,
   registerDoSNOW(cl)
   f.list <- foreach(i = 1:n.rep) %dopar%
   {
-    fit.f <- estimateLong(fit$Y,
-                          fit$locs,
-                          fit$mixedEffect_list,
-                          fit$measurementError_list,
-                          fit$processes_list,
-                          fit$operator_list,
-                          nIter = nIter,
-                          silent = 1,
-                          nBurnin = 0,
-                          nSim = nSim,
-                          nBurnin_base = nBurnin,
-                          estimate_fisher = type)
-    #update process samples in fit
     out <- list()
-    out$X <- fit.f$processes_list$X
-    out$V <- fit.f$processes_list$V
+    if(is.null(fit$processes_list)){
+      fit.f <- estimateLong(fit$Y,
+                            fit$locs,
+                            fit$mixedEffect_list,
+                            fit$measurementError_list,
+                            nIter = nIter,
+                            silent = 1,
+                            nBurnin = 0,
+                            nSim = nSim,
+                            nBurnin_base = nBurnin,
+                            estimate_fisher = type)
+    } else {
+      fit.f <- estimateLong(fit$Y,
+                            fit$locs,
+                            fit$mixedEffect_list,
+                            fit$measurementError_list,
+                            fit$processes_list,
+                            fit$operator_list,
+                            nIter = nIter,
+                            silent = 1,
+                            nBurnin = 0,
+                            nSim = nSim,
+                            nBurnin_base = nBurnin,
+                            estimate_fisher = type)  
+      out$X <- fit.f$processes_list$X
+      out$V <- fit.f$processes_list$V
+    }
     out$U <- fit.f$mixedEffect_list$U
-
     out$Fmat <- fit.f$FisherMatrix
-    out$sigma2.elements <- matrix(diag(solve(out$Fmat)),dim(out$Fmat)[1],1)
     return(out)
   }
   stopCluster(cl)
-
+  
   #collect initial estimates
   for(i in 1:n.cores){
     if(i==1){
-      sigma2.elements <- f.list[[i]]$sigma2.elements
+      #sigma2.elements <- f.list[[i]]$sigma2.elements
       F.estimate <- f.list[[i]]$Fmat
+      if(only.effects){
+        ind.effects <- grep("beta_",c(rownames(F.estimate)))
+      } else {
+        ind.effects <- 1:dim(F.estimate)[1]
+      }
+      F.estimate <- F.estimate[ind.effects,ind.effects]
+      sigma2.elements <- matrix(diag(solve(F.estimate)),dim(F.estimate)[1],1)
     } else {
-      sigma2.elements <- cbind(sigma2.elements,f.list[[i]]$sigma2.elements)
-      F.estimate <- F.estimate + f.list[[i]]$Fmat
+      Fi <- f.list[[i]]$Fmat[ind.effects,ind.effects]
+      s2i <- matrix(diag(solve(Fi)),dim(Fi)[1],1)
+      sigma2.elements <- cbind(sigma2.elements,s2i)
+      F.estimate <- F.estimate + Fi
     }
   }
   sigma2.est <- rowMeans(sigma2.elements)
   sigma2.est.var <- rowMeans((sigma2.elements-sigma2.est)^2)/dim(sigma2.elements)[2]
-
-  if(only.effects){
-    ind.effects <- grep("beta_",c(rownames(F.estimate)))
-  } else {
-    ind.effects <- 1:dim(F.estimate)[1]
-  }
+  
+  
   #update process samples in fit
-  fit$processes_list$X <- f.list[[1]]$X
-  fit$processes_list$V <- f.list[[1]]$V
+  if(!is.null(fit$processes_list)){
+    fit$processes_list$X <- f.list[[1]]$X
+    fit$processes_list$V <- f.list[[1]]$V
+  }
   fit$mixedEffect_list$U <- f.list[[1]]$U
-
+  
   cat("\n")
   if(!is.null(std.threshold)){
-    while(min(sigma2.est[ind.effects]/sigma2.est.var[ind.effects]) < 1/std.threshold^2){
-      ratios <- sigma2.est[ind.effects]/sigma2.est.var[ind.effects]
-      ind <- which(ratios<1/std.threshold^2)
+    while(min(sigma2.est/sqrt(sigma2.est.var)) < std.threshold){
+      ratios <- sigma2.est/sqrt(sigma2.est.var)
+      ind <- which(ratios<std.threshold)
       if(silent == FALSE){
         rn <- rownames(F.estimate)[ind.effects]
         cat("Non-converged parameters:\n")
-        df <- data.frame(est = sigma2.est[ind],var = sigma2.est.var[ind],ratio = ratios[ind],row.names = rn[ind])
+        df <- data.frame(est = sigma2.est[ind],std = sqrt(sigma2.est.var[ind]),ratio = ratios[ind],row.names = rn[ind])
         print(t(df))
-
+        
       }
       cl <- makeCluster(n.cores)
       registerDoSNOW(cl)
       f.list <- foreach(i = 1:n.cores) %dopar%
       {
-        fit.f <- estimateLong(fit$Y,
-                              fit$locs,
-                              fit$mixedEffect_list,
-                              fit$measurementError_list,
-                              fit$processes_list,
-                              fit$operator_list,
-                              nIter = nIter,
-                              silent = 1,
-                              nBurnin = 0,
-                              nSim = nSim,
-                              nBurnin_base = nBurnin,
-                              estimate_fisher = type)
-        #update process samples in fit
         out <- list()
-        out$X <- fit.f$processes_list$X
-        out$V <- fit.f$processes_list$V
+        if(is.null(fit$processes_list)){
+          fit.f <- estimateLong(fit$Y,
+                                fit$locs,
+                                fit$mixedEffect_list,
+                                fit$measurementError_list,
+                                fit$operator_list,
+                                nIter = nIter,
+                                silent = 1,
+                                nBurnin = 0,
+                                nSim = nSim,
+                                nBurnin_base = nBurnin,
+                                estimate_fisher = type)
+        } else {
+          fit.f <- estimateLong(fit$Y,
+                                fit$locs,
+                                fit$mixedEffect_list,
+                                fit$measurementError_list,
+                                fit$processes_list,
+                                fit$operator_list,
+                                nIter = nIter,
+                                silent = 1,
+                                nBurnin = 0,
+                                nSim = nSim,
+                                nBurnin_base = nBurnin,
+                                estimate_fisher = type)  
+          out$X <- fit.f$processes_list$X
+          out$V <- fit.f$processes_list$V
+        }
         out$U <- fit.f$mixedEffect_list$U
-
         out$Fmat <- fit.f$FisherMatrix
-        out$sigma2.elements <- matrix(diag(solve(out$Fmat)),dim(out$Fmat)[1],1)
         return(out)
       }
       stopCluster(cl)
       #collect initial estimates
       for(i in 1:n.cores){
-        sigma2.elements <- cbind(sigma2.elements,f.list[[i]]$sigma2.elements)
-        F.estimate <- F.estimate + f.list[[i]]$Fmat
+        Fi <- f.list[[i]]$Fmat[ind.effects,ind.effects]
+        s2i <- matrix(diag(solve(Fi)),dim(Fi)[1],1)
+        sigma2.elements <- cbind(sigma2.elements,s2i)
+        F.estimate <- F.estimate + Fi
       }
       sigma2.est <- rowMeans(sigma2.elements)
       sigma2.est.var <- rowMeans((sigma2.elements-sigma2.est)^2)/dim(sigma2.elements)[2]
-
+      
       #update process samples in fit
-      fit$processes_list$X <- f.list[[1]]$X
-      fit$processes_list$V <- f.list[[1]]$V
+      if(!is.null(fit$processes_list)){
+        fit$processes_list$X <- f.list[[1]]$X
+        fit$processes_list$V <- f.list[[1]]$V
+      }
       fit$mixedEffect_list$U <- f.list[[1]]$U
     }
   }
-
-
-
+  
+  
+  
   if(silent == FALSE){
     cat("All estimates have converged. Saving results. \n")
   }
-
+  
   # names for fixed effects in Fisher Matrix
   fisher_est <- F.estimate/dim(sigma2.elements)[2]
-
+  
   #names <- c(names(fit$fixed_est), colnames(fit$ranef_Sigma))
   #colnames(fisher_est)[1:length(names)] <- rownames(fisher_est)[1:length(names)] <- names
-
+  
   fit$fisher_est <- fisher_est
   fit$estimate_fisher = type
   fit$Fisher.inv.diag.var = sigma2.est.var
   names(fit$Fisher.inv.diag.var) <- colnames(fit$fisher_est)
-
+  
   return(fit)
 }
