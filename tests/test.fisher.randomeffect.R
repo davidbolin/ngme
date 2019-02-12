@@ -5,7 +5,7 @@
 ###
 graphics.off()
 library(ngme)
-
+library(doParallel)
 test.fisher = TRUE
 
 #data options
@@ -15,8 +15,8 @@ cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 50
-nSim.fisher = 100
+nIter.fisher = 100
+nSim.fisher = 200
 nBurnin = 10
 
 #simulate data
@@ -77,7 +77,8 @@ if(test.fisher){
                           pSubsample = 1,
                           subsample.type = 1,
                           silent = FALSE,
-                          estimate_fisher = 1)
+                          estimate_fisher = 0)
+  res.est2   <- ngme.fisher(res.est,  nSim = nSim.fisher, nIter = nIter.fisher)
   
   
   F_random <- F_fixed <- 0
