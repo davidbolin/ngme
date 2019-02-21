@@ -26,7 +26,7 @@ class MixedEffect {
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter){}; // setups to store the tracjetory
     virtual ~MixedEffect() {};
-
+    std::vector< Eigen::VectorXd >  mu0;
 
   	int npars; // number of parameters
 

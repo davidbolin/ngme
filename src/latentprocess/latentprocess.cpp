@@ -48,10 +48,12 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
   Xs.resize(nindv);
   Ws.resize(nindv);
   Vs.resize(nindv);
+  mu0.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
-    	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-      Ws[i] = Xs[i];
-    	Vs[i] = h[i];
+    	Xs[i]  = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      Ws[i]  = Xs[i];
+    	Vs[i]  = h[i];
+      mu0[i].setZero(h[i].size());
   	}
 
 
@@ -178,6 +180,11 @@ if(type_process == "CH"){
       ElogV_post.resize(nindv);
       EV_post.resize(nindv);
     }
+
+
+    mu0.resize(nindv);
+    for(int i =0; i < nindv; i++)
+      mu0[i] = mu * (-h[i] + Vs[i]);
 
 }
 
@@ -321,6 +328,7 @@ void GHProcess::sample_V(const int i ,
                  type_process);
 
 
+  mu0[i] = mu * (-h[i] + Vs[i]);
   if(useEV)
   {
     if(type_process != "GAL"){

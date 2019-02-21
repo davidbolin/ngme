@@ -15,8 +15,8 @@ cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 100
-nSim.fisher = 200
+nIter.fisher = 500
+nSim.fisher = 300
 nBurnin = 10
 
 #simulate data
@@ -37,14 +37,14 @@ for(i in 1:n.pers)
   #fixed effects, sqrt(t) and 1/t
   B_fixed[[i]]  <- cbind(sqrt(locs[[i]]),1/locs[[i]])
 }
-mError_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1, nu = 1)
+mError_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
 mixedEffect_list  <- list(B_random = B_random,
                           B_fixed  = B_fixed,
                           beta_random = as.matrix(c(0.1,0.2)),
                           beta_fixed  = as.matrix(c(0.1,0.2)),
                           Sigma = diag(c(0.1, 0.2)),
                           noise = "Normal",
-                          Sigma_epsilon=1)
+                          Sigma_epsilon=0)
 
 
 
@@ -76,13 +76,23 @@ if(test.fisher){
                           measurment_list  = mError_list,
                           pSubsample = 1,
                           subsample.type = 1,
-                          silent = FALSE,
+                          silent = TRUE,
                           estimate_fisher = 0)
-  res.est2   <- ngme.fisher(res.est,  nSim = nSim.fisher, nIter = nIter.fisher)
-  
-  
+ 
+  res.fisher <- estimateLong(Y                = sim_res$Y,
+                           locs             = locs,
+                           mixedEffect_list = res.est$mixedEffect_list,
+                           measurment_list  = res.est$measurementError_list,
+                            nIter = nIter.fisher,
+                           nSim             = nSim.fisher,
+                            silent = FALSE,
+                            nBurnin_base = nBurnin,
+                            estimate_fisher = 2)
   F_random <- F_fixed <- 0
   Vgrad_F = matrix(0, 
+                   nrow = dim(B_fixed[[1]])[2], 
+                   ncol = dim(B_fixed[[1]])[2])
+  Vgrad_R = matrix(0, 
                    nrow = dim(B_random[[1]])[2], 
                    ncol = dim(B_random[[1]])[2])
   gradFixed <- Vgrad_F
@@ -93,16 +103,17 @@ if(test.fisher){
     Sigma   = mixedEffect_list$Sigma
     SigmaE  = mError_list$sigma^2*diag(n.obs[i])
     SigmaEi = solve(SigmaE)
-    VU      = solve(solve(Sigma) + t(D)%*%SigmaEi%*%D)
-    Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%D%*%VU%*%t(D)%*%SigmaEi%*%B
-    S =  D%*%Sigma%*%t(D)  +  mError_list$sigma^2*diag(n.obs[i])
+    VU      = solve(solve(Sigma) + t(D)%*%SigmaEi%*%D) #V[U|Y]
+    Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%D%*%VU%*%t(D)%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
+    Vgrad_R   = Vgrad_R + t(D)%*%SigmaEi%*%D%*%VU%*%t(D)%*%SigmaEi%*%D #V[\Delta_\beta\log(\pi)|Y]
+    S =  D%*%Sigma%*%t(D)  +  SigmaE
     F_fixed   <- F_fixed   + t(B )%*%solve(S, B)
     F_random  <- F_random  + t(D)%*%solve(S, D)
     gradFixed <- gradFixed +t(B )%*%SigmaEi%*%B
   }
-  F_fixed.est <- res.est$FisherMatrix[1:2,1:2]
-  F_random.est <- res.est$FisherMatrix[3:4,3:4]
-  
+  F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]
+  F_random.est <- res.fisher$FisherMatrix[3:4,3:4]
+  Vgrad_R.est <- res.fisher$GradientVariance[3:4,3:4]
   cat("random:\n")
   print(F_random.est/F_random)
   cat("inverse random:\n")
@@ -112,7 +123,7 @@ if(test.fisher){
   cat("inverse fixed:\n")
   print(solve(F_fixed.est)/solve(F_fixed))
   cat('variance estimate:\n')
-  print(res.est$GradientVariance[1:2,1:2]/Vgrad_F)
-  
-  
+  print(res.fisher$GradientVariance[1:2,1:2]/Vgrad_F)
+  #(F_random-Vgrad_R)/length(locs) 
+  #Vgrad_R/length(locs)
 }

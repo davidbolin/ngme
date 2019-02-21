@@ -199,7 +199,6 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
   	H_beta_random.setZero(Br[0].cols(), Br[0].cols());
 
 
-
   if(Br.size() > 0){
     if(init_list.containsElementNamed("Sigma"))
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
@@ -224,8 +223,13 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
       U = Rcpp::as< Eigen::MatrixXd > (init_list["U"]);
     else
       U.setZero(Br[0].cols(), Br.size());
-
+    mu0.resize(Br.size());
+    for(int i = 0; i < Br.size(); i++){
+      mu0[i].setZero(Br[0].cols());
+    }
     EU.setZero(Br[0].cols(), Br.size());
+  }else{
+    mu0.resize(0);
   }
 
   Sigma_epsilon = 0;

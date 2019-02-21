@@ -25,6 +25,7 @@ public:
   std::vector< Eigen::VectorXd > Xs;
   std::vector< Eigen::VectorXd > Ws;
   std::vector< Eigen::VectorXd >  Vs;
+  std::vector< Eigen::VectorXd >  mu0;
   Eigen::SparseMatrix<double,0,int>  Q;
   std::vector < Eigen::VectorXd > h;
   Eigen::VectorXd  iV;

@@ -225,12 +225,16 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
+    mu0.resize(Br.size());
     Sigma_epsilon = 0;
     if( init_list.containsElementNamed("V" ))
       V = Rcpp::as< Eigen::VectorXd > (init_list["V"]) ;
     else{
-       V.setZero(Br.size());
+       V.setOnes(Br.size());
     }
+
+    for(int i = 0; i < Br.size() ; i++)
+      mu0[i] = -mu + mu * V(i);
 
     SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
     double pos_def = eig.eigenvalues().minCoeff();
@@ -239,7 +243,7 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
     else
       sample_MALA = 0;
 
-  }else{ Br.resize(0);}
+  }else{ Br.resize(0); mu0.resize(0);}
 
 
 
@@ -257,7 +261,7 @@ void GHMixedEffect::sampleV(const int i)
       double a =  mu.transpose() * (invSigma *  mu);
       a += get_a_GIG();
       V(i) = rgig.sample(p, a, b);
-
+      mu0[i] = -mu + mu * V(i);
       
 }
 

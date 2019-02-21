@@ -832,9 +832,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       grad_outer_unweighted.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) /= sampler->weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/sampler->weight[i]) * Mgrad_inner.transpose();
-      Fisher_information +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
-      GradientVariance -=  Fisher_add + Fisher_add.transpose();
-      Fisher_information0 += Fisher_add + Fisher_add.transpose();
+      Fisher_information  +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
+      GradientVariance    -=  Fisher_add + Fisher_add.transpose();
+      Fisher_information0 +=  Fisher_add + Fisher_add.transpose();
 
       Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
       Ebias_inner.array() += centered.col(nSim-1).array();
