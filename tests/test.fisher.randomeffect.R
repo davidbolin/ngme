@@ -6,8 +6,9 @@
 graphics.off()
 library(ngme)
 library(doParallel)
-test.fisher = TRUE
 
+use.process = TRUE
+estimate.parameters = FALSE
 #data options
 n.pers <- 20
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
@@ -15,7 +16,7 @@ cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 500
+nIter.fisher = 50
 nSim.fisher = 300
 nBurnin = 10
 
@@ -46,48 +47,120 @@ mixedEffect_list  <- list(B_random = B_random,
                           noise = "Normal",
                           Sigma_epsilon=0)
 
+mixedEffect_list_in = mixedEffect_list
 
-
-
+if(use.process){
+  operator_list <- create_operator(locs, name = "fd2",extend = 0,max,max.dist = 1)
+  operator_list$type  <- "fd2"
+  operator_list$tau   <- 5
+  processes_list = list(noise = "Normal",
+                        nu  = 0.,
+                        mu  = 0.)
+  processes_list$V <- list()
+  for(i in 1:length(locs))
+  {
+    processes_list$V[[i]] <- operator_list$h[[1]]
+  }
+  
+}
 
 ###
 # simulation
 #
 ###
-mixedEffect_list_in = mixedEffect_list
-
-sim_res <- simulateLongPrior( Y                 = Y,
-                              locs              = locs,
-                              mixedEffect_list  = mixedEffect_list_in,
-                              measurment_list   = mError_list)
-
-
-
-
-if(test.fisher){
+if(use.process){
+  sim_res <- simulateLongPrior( Y                 = Y,
+                                locs              = locs,
+                                mixedEffect_list  = mixedEffect_list,
+                                measurment_list   = mError_list,
+                                processes_list    = processes_list,
+                                operator_list     = operator_list)
+  processes_list$X <- sim_res$X
   
-  res.est <- estimateLong(Y                = sim_res$Y,
-                          nIter            = nIter.fisher,
-                          nSim             = nSim.fisher,
-                          locs             = locs,
-                          nBurnin           = nBurnin,
-                          mixedEffect_list = mixedEffect_list,
-                          nBurnin_learningrate = 0,
-                          measurment_list  = mError_list,
-                          pSubsample = 1,
-                          subsample.type = 1,
-                          silent = TRUE,
-                          estimate_fisher = 0)
- 
-  res.fisher <- estimateLong(Y                = sim_res$Y,
-                           locs             = locs,
-                           mixedEffect_list = res.est$mixedEffect_list,
-                           measurment_list  = res.est$measurementError_list,
-                            nIter = nIter.fisher,
-                           nSim             = nSim.fisher,
-                            silent = FALSE,
-                            nBurnin_base = nBurnin,
-                            estimate_fisher = 2)
+} else {
+  sim_res <- simulateLongPrior( Y                 = Y,
+                                locs              = locs,
+                                mixedEffect_list  = mixedEffect_list_in,
+                                measurment_list   = mError_list)
+}
+
+  
+if(estimate.parameters){
+  if(use.process){
+    res.est <- estimateLong(Y                = sim_res$Y,
+                            nIter            = nIter.fisher,
+                            nSim             = nSim.fisher,
+                            locs             = locs,
+                            nBurnin           = nBurnin,
+                            mixedEffect_list = mixedEffect_list,
+                            processes_list   = processes_list,
+                            operator_list    = operator_list,
+                            nBurnin_learningrate = 0,
+                            measurment_list  = mError_list,
+                            pSubsample = 1,
+                            subsample.type = 1,
+                            silent = TRUE,
+                            estimate_fisher = 0)
+    res.fisher <- estimateLong(Y                = sim_res$Y,
+                               locs             = locs,
+                               mixedEffect_list = res.est$mixedEffect_list,
+                               measurment_list  = res.est$measurementError_list,
+                               processes_list   = res.est$processes_list,
+                               operator_list    = res.est$operator_list,
+                               nIter = nIter.fisher,
+                               nSim             = nSim.fisher,
+                               silent = FALSE,
+                               nBurnin_base = nBurnin,
+                               estimate_fisher = 2)
+  } else {
+    res.est <- estimateLong(Y                = sim_res$Y,
+                            nIter            = nIter.fisher,
+                            nSim             = nSim.fisher,
+                            locs             = locs,
+                            nBurnin           = nBurnin,
+                            mixedEffect_list = mixedEffect_list,
+                            nBurnin_learningrate = 0,
+                            measurment_list  = mError_list,
+                            pSubsample = 1,
+                            subsample.type = 1,
+                            silent = TRUE,
+                            estimate_fisher = 0)  
+    res.fisher <- estimateLong(Y                = sim_res$Y,
+                               locs             = locs,
+                               mixedEffect_list = res.est$mixedEffect_list,
+                               measurment_list  = res.est$measurementError_list,
+                               nIter = nIter.fisher,
+                               nSim             = nSim.fisher,
+                               silent = FALSE,
+                               nBurnin_base = nBurnin,
+                               estimate_fisher = 2)
+  }
+} else {
+  if(use.process){
+    res.fisher <- estimateLong(Y                = sim_res$Y,
+                               locs             = locs,
+                               mixedEffect_list = mixedEffect_list,
+                               measurment_list  = mError_list,
+                               processes_list   = processes_list,
+                               operator_list    = operator_list,
+                               nIter = nIter.fisher,
+                               nSim             = nSim.fisher,
+                               silent = FALSE,
+                               nBurnin_base = nBurnin,
+                               estimate_fisher = 2)  
+  } else {
+    res.fisher <- estimateLong(Y                = sim_res$Y,
+                               locs             = locs,
+                               mixedEffect_list = mixedEffect_list,
+                               measurment_list  = mError_list,
+                               nIter = nIter.fisher,
+                               nSim             = nSim.fisher,
+                               silent = FALSE,
+                               nBurnin_base = nBurnin,
+                               estimate_fisher = 2)  
+  }
+}
+  
   F_random <- F_fixed <- 0
   Vgrad_F = matrix(0, 
                    nrow = dim(B_fixed[[1]])[2], 
@@ -98,15 +171,22 @@ if(test.fisher){
   gradFixed <- Vgrad_F
   for(i in 1:length(locs))
   {
-    D       = B_random[[i]]
-    B       = B_fixed[[i]]
-    Sigma   = mixedEffect_list$Sigma
     SigmaE  = mError_list$sigma^2*diag(n.obs[i])
     SigmaEi = solve(SigmaE)
-    VU      = solve(solve(Sigma) + t(D)%*%SigmaEi%*%D) #V[U|Y]
-    Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%D%*%VU%*%t(D)%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
-    Vgrad_R   = Vgrad_R + t(D)%*%SigmaEi%*%D%*%VU%*%t(D)%*%SigmaEi%*%D #V[\Delta_\beta\log(\pi)|Y]
-    S =  D%*%Sigma%*%t(D)  +  SigmaE
+    if(use.process){
+      Djoint <- cbind(B_random[[i]], res.fisher$A[[i]])
+      D       = B_random[[i]]
+      Sigma <- bdiag(mixedEffect_list$Sigma,solve(t(operator_list$Q[[i]])%*%diag(1/operator_list$h[[i]])%*%operator_list$Q[[i]]))
+    } else {
+      Djoint       = B_random[[i]]
+      D       = B_random[[i]]
+      Sigma   = mixedEffect_list$Sigma
+    }
+    B       = B_fixed[[i]]  
+    VU      = solve(solve(Sigma) + t(Djoint)%*%SigmaEi%*%Djoint) #V[U|Y]
+    Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
+    Vgrad_R   = Vgrad_R + t(D)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%D #V[\Delta_\beta\log(\pi)|Y]
+    S =  Djoint%*%Sigma%*%t(Djoint)  +  SigmaE
     F_fixed   <- F_fixed   + t(B )%*%solve(S, B)
     F_random  <- F_random  + t(D)%*%solve(S, D)
     gradFixed <- gradFixed +t(B )%*%SigmaEi%*%B
@@ -126,4 +206,3 @@ if(test.fisher){
   print(res.fisher$GradientVariance[1:2,1:2]/Vgrad_F)
   #(F_random-Vgrad_R)/length(locs) 
   #Vgrad_R/length(locs)
-}
