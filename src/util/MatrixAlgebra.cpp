@@ -497,3 +497,15 @@ void setSparseBlock_update(SparseMatrix<double,0,int>* A,int i, int j, SparseMat
     }
   }
 }
+
+SparseMatrix<double,0,int> full2sparse(MatrixXd& M){
+  SparseMatrix<double,0,int> A;
+  A.resize(M.rows(),M.cols());
+  for(int i=0;i<M.rows();i++){
+    for(int j=0;j<M.cols();j++){
+      A->insert(i, j) = M(i,j);
+    }
+  }
+  return A;
+}
+  
