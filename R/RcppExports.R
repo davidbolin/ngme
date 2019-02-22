@@ -9,6 +9,10 @@ estimateFisher <- function(in_list) {
     .Call(`_ngme_estimateFisher`, in_list)
 }
 
+fisher_cpp <- function(in_list) {
+    .Call(`_ngme_fisher_cpp`, in_list)
+}
+
 predictLong_cpp <- function(in_list) {
     .Call(`_ngme_predictLong_cpp`, in_list)
 }

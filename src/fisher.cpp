@@ -1,11 +1,71 @@
 #include "estimate_util.h"
 using namespace Rcpp;
 
+/*
+  Caculating the the variance of the gradient conditioning only on the Varaiance components
+
+*/
+Eigen::MatrixXd var_term_calc(
+                                Eigen::VectorXd&  Y,
+                                int i,
+                                Eigen::SparseMatrix<double, 0, int>  A,
+                                MixedEffect& mixobj,
+                                operatorMatrix& Kobj,
+                                MeasurementError& errObj
+                              )
+
+{
+  //TODO what if Br size is zero
 
 
+  //###############################################
+  //#create joint observation matrix Ajoint = [B A]
+  //################################################
+  Eigen::SparseMatrix<double, 0, int> B = Eigen::SparseMatrix<double,0,int>(mixobj.Br[i]);
+
+
+  Eigen::SparseMatrix<double, 0, int> Ajoint;
+  Ajoint.resize(A.rows(),A.cols()+B.cols());
+
+  setSparseBlock(Ajoint,0,0,B);
+  setSparseBlock(Ajoint,0,B.cols(),A);
+
+
+
+  //###########################################################
+  //#create joint operator matrix Kjoint = [sqrt(Sigma_u) K]  #
+  //###########################################################
+  Eigen::SparseMatrix<double, 0, int>  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+  Eigen::MatrixXd Sigma = mixobj.Sigma;
+  Eigen::SparseMatrix<double,0,int> Sigma_root = Eigen::SparseMatrix<double,0,int>(Sigma.llt());
+  Eigen::SparseMatrix<double, 0, int> Kjoint;
+  Kjoint.resize(K.rows()+Sigma.rows(),K.rows()+Sigma.rows());
+  setSparseBlock(Kjoint,0,0,Sigma_root);
+  setSparseBlock(Kjoint,Sigma.rows(),Sigma.rows(),K);
+
+  //################################################
+  //#Compute residual Y - Xbeta - mean
+  //###############################################
+
+  Eigen::VectorXd  r = Y;
+
+  //################################################
+  //#Build b and Q for the joint distribution
+  //###############################################
+/*
+  Eigen::VectorXd Vjoint;
+  Eigen::SparseMatrix<double,0,int> Q_e;
+  Eigen::SparseMatrix<double,0,int> Q_hat = Kjoint.transpose()*Vjoint.asDiagonal()*Kjoint;
+  Q_hat +=  Ajoint.traspose()*Q_e*A_joint:
+  Eigen::VectorXd b_hat = Q_e*r;
+  Eigen::VectorXd mu_hat = Q_hat.llt().solve(b_hat));
+*/
+  Eigen::MatrixXd Results;
+  return Results;
+}
 
 // [[Rcpp::export]]
-List estimateLong_cpp(Rcpp::List in_list)
+List fisher_cpp(Rcpp::List in_list)
 {
   //**********************************
   //      basic parameter
@@ -518,39 +578,16 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 
     //**********************************
-    //  gradient step
+    //  clearing gradient gradient
     //***********************************
 
-    if(estimate_fisher == 0){
-      if(debug)
-        Rcpp::Rcout << "estimate::theta  step\n";
-
-      double stepsize = step0 / pow(iter + 1, alpha);
-      double polyak_rate_temp = polyak_rate;
-      double learning_rate_temp  =learning_rate;
-      if(polyak_rate == 0)
-        polyak_rate_temp = 1./ (iter + 1);
-      if(iter < nBurnin_learningrate)
-        learning_rate_temp = 0;
-      if(debug)
-        Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-      //mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-      mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
-      errObj->step_theta(stepsize,                   0, polyak_rate_temp);
-      if(process_active){
-        Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-        process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
-      }
-      if(debug)
-        Rcpp::Rcout << "estimate::theta step done\n";
-    }else{
       mixobj->clear_gradient();
       errObj->clear_gradient();
       if(process_active){
         process -> clear_gradient();
         Kobj ->  clear_gradient();
       }
-    }
+    
   }
 
   for(int i = 0; i < nindv; i++ )
@@ -639,14 +676,5 @@ List estimateLong_cpp(Rcpp::List in_list)
     delete *i;
   }
   Solver.clear();
-  return(out_list);
-}
-
-// [[Rcpp::export]]
-List estimateFisher(Rcpp::List in_list)
-{
-  Rcpp::Rcout << "estimateFisher is depricated \n";
-  throw("function is depericated");
-  Rcpp::List out_list;
   return(out_list);
 }
