@@ -1,7 +1,126 @@
 #include "estimate_util.h"
 using namespace Rcpp;
 
+/*
+  Caculating the the variance of the gradient conditioning only on the Varaiance components
+  For fixed and random effects
+*/
+Eigen::MatrixXd var_term_calc(
+                                Eigen::VectorXd&  Y,
+                                int i,
+                                Eigen::SparseMatrix<double, 0, int>  A,
+                                MixedEffect& mixobj,
+                                operatorMatrix& Kobj,
+                                MeasurementError& errObj,
+                                Process& process,
+                                int process_active
+                              )
 
+{
+  int n_r =  0;
+  if(mixobj.Br.size() > 0)
+    n_r =  mixobj.Br[i].cols();
+
+  int n_f = 0;
+  if(mixobj.Bf.size() > 0)
+    n_f = mixobj.Br[i].cols();
+  int n_p = 0;
+  if(process_active)
+    n_p = A.cols();
+
+  //###############################################
+  //#create joint observation matrix Ajoint = [B A]
+  //################################################
+  
+  
+  Eigen::SparseMatrix<double, 0, int> Ajoint;
+  Ajoint.resize(Y.size(), n_p + n_r);
+
+  if(n_r>0){
+    Eigen::SparseMatrix<double, 0, int> B = full2sparse(mixobj.Br[i]);
+    setSparseBlock(&Ajoint, 0, 0, B);
+  }
+
+  if(process_active)
+    setSparseBlock(&Ajoint, 0, n_r, A);
+
+  //###########################################################
+  //#create joint operator matrix Kjoint = [sqrt(Sigma_u) K]  #
+  //###########################################################
+
+  Eigen::SparseMatrix<double, 0, int> Kjoint;
+  Kjoint.resize(n_p + n_r,n_p + n_r);
+  if(n_r > 0){
+    Eigen::MatrixXd iSigma = mixobj.Sigma.inverse();
+    Eigen::MatrixXd L = iSigma.llt().matrixL();
+    Eigen::SparseMatrix<double,0,int> Sigma_root = full2sparse(L);
+    setSparseBlock(&Kjoint,0,0,Sigma_root);
+  }
+  
+  if(n_p > 0){
+    Eigen::SparseMatrix<double, 0, int>  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+    setSparseBlock(&Kjoint, n_r, n_r,K);
+  }
+
+  //################################################
+  //#Compute residual Y - Xbeta - mean
+  //###############################################
+
+  Eigen::VectorXd  res = Y;
+  mixobj.remove_cov(i,  res);
+  errObj.remove_asym(i, res);
+
+  //################################################
+  //#Build b and Q for the joint distribution
+  //###############################################
+  
+  Eigen::VectorXd Vinv_joint(n_r + n_p);
+  if(n_r > 0){
+    Eigen::VectorXd V_r;
+    V_r.setOnes(n_r);
+    V_r /=  mixobj.V(i);
+    Vinv_joint.head(n_r) = V_r;
+  }
+
+  if(n_p > 0)
+    Vinv_joint.tail(n_p) = process.Vs[i].cwiseInverse();
+  Eigen::VectorXd Q_e = errObj.getSigma(i, Y.size()).cwiseInverse();
+  Eigen::SparseMatrix<double,0,int> Q_hat = Kjoint.transpose()*Vinv_joint.asDiagonal()*Kjoint;
+  Q_hat +=  Ajoint.transpose()*Q_e.asDiagonal()*Ajoint;
+  Eigen::VectorXd b_hat = Ajoint.transpose()*Q_e.asDiagonal()*res;
+  Eigen::SimplicialLDLT< Eigen::SparseMatrix<double,0,int> > Qsolver;
+  Qsolver.compute(Q_hat);    
+  Eigen::VectorXd mu_hat = Qsolver.solve(b_hat);
+
+//########################################
+//#computation of the variance
+//########################################
+
+ Eigen::MatrixXd X(Y.size(), n_r + n_f);
+  if(n_r == 0){
+    X = mixobj.Bf[i];
+  }else if(n_f == 0){
+    X = mixobj.Br[i];
+  }else{
+    X << mixobj.Bf[i], mixobj.Br[i];
+  }
+
+  X = Q_e.asDiagonal()*X;
+  Eigen::MatrixXd  Xt = X.transpose();
+  Eigen::MatrixXd AtX = Ajoint.transpose()*X;
+  Eigen::MatrixXd XtA = AtX.transpose();
+  Eigen::MatrixXd rtX = res.transpose()*X;
+  Eigen::MatrixXd term1 = rtX.transpose()*rtX;
+  Eigen::MatrixXd tmp = XtA*mu_hat; 
+  Eigen::MatrixXd term2 = -tmp*rtX;
+  Eigen::MatrixXd term3 = -rtX.transpose()*tmp.transpose();
+  Eigen::MatrixXd term4 = tmp*tmp.transpose();
+  tmp = Qsolver.solve(AtX);
+  Eigen::MatrixXd term5 = XtA*tmp;
+  Eigen::MatrixXd Results = term5;
+
+  return Results;
+}
 
 
 // [[Rcpp::export]]
@@ -163,7 +282,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   if(silent == 0){
     Rcpp::Rcout << ", done\n";
   }
-
+  int nfr = mixobj->get_nf() + mixobj->get_nr(); //number of covariates
   //**********************************
   // measurement setup
   //***********************************
@@ -329,6 +448,11 @@ List estimateLong_cpp(Rcpp::List in_list)
     Eigen::VectorXd Ebias_inner(npars);
     Ebias_inner.array() *= 0;
     Vgrad_inner.setZero(npars, npars);
+
+
+    Eigen::MatrixXd Vmf(0,0); // variance of fixed and mixed effect
+    if(mixobj->get_nf() + mixobj->get_nr()>0)
+      Vmf.setZero(mixobj->get_nf() + mixobj->get_nr(), mixobj->get_nf() + mixobj->get_nr());
     if(debug)
       Rcpp::Rcout << "estimate::start patient loop, number of patients:" << sampler->nSubsample_i << " \n";
 
@@ -458,6 +582,20 @@ List estimateLong_cpp(Rcpp::List in_list)
                                  estimate_fisher,
                                  Fisher_information,
                                  debug);
+          if(estimate_fisher && nfr > 0){
+
+              Vmf +=          var_term_calc(Y,
+                                            i,
+                                            A,
+                                            *mixobj,
+                                            *Kobj,
+                                            *errObj,
+                                            *process,
+                                            process_active);
+              //if(i==0)
+              //Rcpp::Rcout << "Vmf = " << Vmf << "\n";
+
+              }
 
           // collects the gradient for computing estimate of variances
           grad_inner.block(0, count_inner,
@@ -476,22 +614,25 @@ List estimateLong_cpp(Rcpp::List in_list)
           grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  sampler->weight[i];
           Fisher_information -=  Fisher_temp + Fisher_temp.transpose(); //gives -sum g_i*g_i'
+          if(nfr> 0)
+            Fisher_information.topLeftCorner(nfr, nfr) +=  Fisher_temp.topLeftCorner(nfr, nfr)+ Fisher_temp.topLeftCorner(nfr, nfr).transpose();   
           GradientVariance += Fisher_temp + Fisher_temp.transpose();
           grad_last = grad_last_temp;
           count_inner++;
         }
       }
 
-      // TODO::redo and move the above note i is the same always, and
-      // we need both weighted unweighted
-      // grad_inner.array() /= weight[i]; // dont use weight here(?)
-      // do grad_outer_unweighted
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean(); //gives E(g)
       grad_outer.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) /= sampler->weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/sampler->weight[i]) * Mgrad_inner.transpose();
       Fisher_information  +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
+      if(nfr> 0){
+            Fisher_information.topLeftCorner(nfr, nfr) -=  Fisher_add.topLeftCorner(nfr, nfr) + Fisher_add.topLeftCorner(nfr, nfr).transpose();  
+            Fisher_information.topLeftCorner(nfr, nfr) -= Vmf * (sampler->weight[i] );
+            Vmf *= 0; 
+        }
       GradientVariance    -=  Fisher_add + Fisher_add.transpose();
       Fisher_information0 +=  Fisher_add + Fisher_add.transpose();
 

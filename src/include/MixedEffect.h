@@ -42,8 +42,11 @@ class MixedEffect {
     Eigen::VectorXd beta_random;
     Eigen::VectorXd beta_fixed_constrainted;
     Eigen::VectorXd beta_fixed;
-	Eigen::VectorXd dbeta_r_old;
-	Eigen::VectorXd dbeta_f_old;
+	  Eigen::VectorXd dbeta_r_old;
+	  Eigen::VectorXd dbeta_f_old;
+
+
+    Eigen::VectorXd V; // scaling vector
 
     /*
       HOW to start up the class from the list.
@@ -112,6 +115,20 @@ class MixedEffect {
   		if(Bf.size() > 0)
     		Y += Bf[i] * beta_fixed;
 	};
+
+  int get_nf(){
+    int n_f = 0;
+    if(Bf.size()>0)
+      n_f = Bf[0].cols();
+    return n_f;
+  };  
+  int get_nr(){
+    int n_r = 0;
+    if(Br.size()>0)
+      n_r = Br[0].cols();
+    return n_r;
+  };
+
 
     // gradient for fixed variance noise
     virtual void gradient(const int ,
@@ -296,7 +313,6 @@ public:
   int accept_MALA;
   int sample_MALA;
   Eigen::VectorXd mu;
-  Eigen::VectorXd V;
 
   Eigen::MatrixXd invSigma;
   Eigen::MatrixXd iSkroniS; // helper matrix

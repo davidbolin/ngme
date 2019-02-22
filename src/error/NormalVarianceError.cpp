@@ -176,7 +176,23 @@ Eigen::VectorXd  NormalVarianceMixtureBaseError::simulate_par(const int i,std::m
   
   return(residual);
 }
-  
+
+Eigen::VectorXd  NormalVarianceMixtureBaseError::getSigma(const int i,  const int n )
+{ 
+  Eigen::VectorXd Result(n);
+  Result.setOnes(n);
+  Result *= pow(sigma,2);
+
+  if(common_V == 0){
+    Result.array() *= Vs[i].array();
+  }else{
+    Result *= Vs[i];
+  }
+
+  return(Result);
+}; 
+
+
 std::vector< Eigen::VectorXd > NormalVarianceMixtureBaseError::simulate(std::vector< Eigen::VectorXd > Y)
 {
   

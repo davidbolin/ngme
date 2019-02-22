@@ -78,6 +78,11 @@ class MeasurementError {
     virtual void remove_asym(const int i, Eigen::VectorXd & Y) {};
     virtual void add_asym(const int i, Eigen::VectorXd & Y)    {};
 
+    /*
+      Get the diagonal of the covaraince matrix of the measrurment error
+
+    */
+    virtual Eigen::VectorXd  getSigma(const int i,  const int n = 0) = 0; 
 };
 
 
@@ -114,7 +119,10 @@ class GaussianMeasurementError : public MeasurementError{
 		void printIter(); //print iteration data
         void setupStoreTracj(const int ); // setups to store the tracjetory
 
-
+    Eigen::VectorXd  getSigma(const int i,  const int n = 0)  { Eigen::VectorXd Res; 
+                                                                Res.setOnes(n);
+                                                                Res *= pow(sigma, 2);
+                                                                return(Res);}; 
 };
 
 class nsGaussianMeasurementError : public MeasurementError{
@@ -152,6 +160,7 @@ public:
   void printIter(); //print iteration data
   void setupStoreTracj(const int ); // setups to store the tracjetory
   
+    Eigen::VectorXd  getSigma(const int i,  const int n = 0)  { return(sigmas[i].array().square());}; 
   
 };
 
@@ -220,6 +229,9 @@ class NormalVarianceMixtureBaseError : public MeasurementError{
       virtual Eigen::MatrixXd d2Given(const int ,
                     const Eigen::VectorXd& ,
                     const double);
+
+
+    Eigen::VectorXd  getSigma(const int i,  const int n = 0); 
 
 };
 

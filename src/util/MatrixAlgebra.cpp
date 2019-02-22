@@ -503,7 +503,7 @@ SparseMatrix<double,0,int> full2sparse(MatrixXd& M){
   A.resize(M.rows(),M.cols());
   for(int i=0;i<M.rows();i++){
     for(int j=0;j<M.cols();j++){
-      A->insert(i, j) = M(i,j);
+      A.insert(i, j) = M(i,j);
     }
   }
   return A;

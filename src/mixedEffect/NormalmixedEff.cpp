@@ -109,7 +109,6 @@ Rcpp::List NormalMixedEffect::toList()
 	}
 
    if(Br.size() > 0){
-
 		  out["betar_vec"]   = betar_vec;
       if(betar_vec.rows() > 1)
 		    out["beta_random"] = betar_vec.row(betar_vec.rows() - 1);
@@ -173,6 +172,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     grad_beta_r2.setZero(Br[0].cols());
 
     n_r = Br[0].cols();
+    V.setOnes(Br.size());
     if(init_list.containsElementNamed("beta_random"))
       beta_random = Rcpp::as < Eigen::VectorXd >( init_list["beta_random"]);
     else

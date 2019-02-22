@@ -10,14 +10,14 @@ library(doParallel)
 use.process = TRUE
 estimate.parameters = FALSE
 #data options
-n.pers <- 20
+n.pers <- 3
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 50
-nSim.fisher = 300
+nIter.fisher = 1
+nSim.fisher = 100
 nBurnin = 10
 
 #simulate data
@@ -176,7 +176,7 @@ if(estimate.parameters){
     if(use.process){
       Djoint <- cbind(B_random[[i]], res.fisher$A[[i]])
       D       = B_random[[i]]
-      Sigma <- bdiag(mixedEffect_list$Sigma,solve(t(operator_list$Q[[i]])%*%diag(1/operator_list$h[[i]])%*%operator_list$Q[[i]]))
+      Sigma <- bdiag(mixedEffect_list$Sigma,solve(operator_list$tau^2*t(operator_list$Q[[i]])%*%diag(1/operator_list$h[[i]])%*%operator_list$Q[[i]]))
     } else {
       Djoint       = B_random[[i]]
       D       = B_random[[i]]
