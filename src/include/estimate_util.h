@@ -18,7 +18,7 @@
 #include "latentprocess.h"
 #include "subSampleDiagnostic.h"
 #include "subsampler.h"
-
+#include "MatrixAlgebra.h"
 
 double estDigamma(double);
 

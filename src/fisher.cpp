@@ -1,5 +1,69 @@
 #include "estimate_util.h"
 using namespace Rcpp;
+
+/*
+  Caculating the the variance of the gradient conditioning only on the Varaiance components
+
+*/
+Eigen::MatrixXd var_term_calc(
+                                Eigen::VectorXd&  Y,
+                                int i,
+                                Eigen::SparseMatrix<double, 0, int>  A,
+                                MixedEffect& mixobj,
+                                operatorMatrix& Kobj,
+                                MeasurementError& errObj
+                              )
+
+{
+  //TODO what if Br size is zero
+
+
+  //###############################################
+  //#create joint observation matrix Ajoint = [B A]
+  //################################################
+  Eigen::SparseMatrix<double, 0, int> B = Eigen::SparseMatrix<double,0,int>(mixobj.Br[i]);
+
+
+  Eigen::SparseMatrix<double, 0, int> Ajoint;
+  Ajoint.resize(A.rows(),A.cols()+B.cols());
+
+  setSparseBlock(Ajoint,0,0,B);
+  setSparseBlock(Ajoint,0,B.cols(),A);
+
+
+
+  //###########################################################
+  //#create joint operator matrix Kjoint = [sqrt(Sigma_u) K]  #
+  //###########################################################
+  Eigen::SparseMatrix<double, 0, int>  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+  Eigen::MatrixXd Sigma = mixobj.Sigma;
+  Eigen::SparseMatrix<double,0,int> Sigma_root = Eigen::SparseMatrix<double,0,int>(Sigma.llt());
+  Eigen::SparseMatrix<double, 0, int> Kjoint;
+  Kjoint.resize(K.rows()+Sigma.rows(),K.rows()+Sigma.rows());
+  setSparseBlock(Kjoint,0,0,Sigma_root);
+  setSparseBlock(Kjoint,Sigma.rows(),Sigma.rows(),K);
+
+  //################################################
+  //#Compute residual Y - Xbeta - mean
+  //###############################################
+
+  Eigen::VectorXd  r = Y;
+
+  //################################################
+  //#Build b and Q for the joint distribution
+  //###############################################
+/*
+  Eigen::VectorXd Vjoint;
+  Eigen::SparseMatrix<double,0,int> Q_e;
+  Eigen::SparseMatrix<double,0,int> Q_hat = Kjoint.transpose()*Vjoint.asDiagonal()*Kjoint;
+  Q_hat +=  Ajoint.traspose()*Q_e*A_joint:
+  Eigen::VectorXd b_hat = Q_e*r;
+  Eigen::VectorXd mu_hat = Q_hat.llt().solve(b_hat));
+*/
+  Eigen::MatrixXd Results;
+  return Results;
+}
+
 // [[Rcpp::export]]
 List fisher_cpp(Rcpp::List in_list)
 {
