@@ -1,8 +1,7 @@
 #include "estimate_util.h"
 using namespace Rcpp;
-
 // [[Rcpp::export]]
-List estimateLong_cpp(Rcpp::List in_list)
+List fisher_cpp(Rcpp::List in_list)
 {
   //**********************************
   //      basic parameter
@@ -515,39 +514,16 @@ List estimateLong_cpp(Rcpp::List in_list)
 
 
     //**********************************
-    //  gradient step
+    //  clearing gradient gradient
     //***********************************
 
-    if(estimate_fisher == 0){
-      if(debug)
-        Rcpp::Rcout << "estimate::theta  step\n";
-
-      double stepsize = step0 / pow(iter + 1, alpha);
-      double polyak_rate_temp = polyak_rate;
-      double learning_rate_temp  =learning_rate;
-      if(polyak_rate == 0)
-        polyak_rate_temp = 1./ (iter + 1);
-      if(iter < nBurnin_learningrate)
-        learning_rate_temp = 0;
-      if(debug)
-        Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-      //mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-      mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
-      errObj->step_theta(stepsize,                   0, polyak_rate_temp);
-      if(process_active){
-        Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-        process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
-      }
-      if(debug)
-        Rcpp::Rcout << "estimate::theta step done\n";
-    }else{
       mixobj->clear_gradient();
       errObj->clear_gradient();
       if(process_active){
         process -> clear_gradient();
         Kobj ->  clear_gradient();
       }
-    }
+    
   }
 
   for(int i = 0; i < nindv; i++ )
@@ -636,14 +612,5 @@ List estimateLong_cpp(Rcpp::List in_list)
     delete *i;
   }
   Solver.clear();
-  return(out_list);
-}
-
-// [[Rcpp::export]]
-List estimateFisher(Rcpp::List in_list)
-{
-  Rcpp::Rcout << "estimateFisher is depricated \n";
-  throw("function is depericated");
-  Rcpp::List out_list;
   return(out_list);
 }
