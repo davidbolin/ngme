@@ -28,6 +28,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fisher_cpp
+List fisher_cpp(Rcpp::List in_list);
+RcppExport SEXP _ngme_fisher_cpp(SEXP in_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type in_list(in_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(fisher_cpp(in_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 // predictLong_cpp
 List predictLong_cpp(Rcpp::List in_list);
 RcppExport SEXP _ngme_predictLong_cpp(SEXP in_listSEXP) {
@@ -275,6 +286,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
     {"_ngme_estimateFisher", (DL_FUNC) &_ngme_estimateFisher, 1},
+    {"_ngme_fisher_cpp", (DL_FUNC) &_ngme_fisher_cpp, 1},
     {"_ngme_predictLong_cpp", (DL_FUNC) &_ngme_predictLong_cpp, 1},
     {"_ngme_rGIG_cpp", (DL_FUNC) &_ngme_rGIG_cpp, 4},
     {"_ngme_simulateLongGH_cpp", (DL_FUNC) &_ngme_simulateLongGH_cpp, 1},
