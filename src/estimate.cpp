@@ -13,7 +13,8 @@ Eigen::MatrixXd var_term_calc(
                                 operatorMatrix& Kobj,
                                 MeasurementError& errObj,
                                 Process& process,
-                                int process_active
+                                int process_active,
+                                int debug
                               )
 
 {
@@ -23,15 +24,20 @@ Eigen::MatrixXd var_term_calc(
 
   int n_f = 0;
   if(mixobj.Bf.size() > 0)
-    n_f = mixobj.Br[i].cols();
+    n_f = mixobj.Bf[i].cols();
   int n_p = 0;
   if(process_active)
     n_p = A.cols();
+  
+  if(debug)
+    Rcpp::Rcout << "n_r = " << n_r << ", n_f = " << n_f << ", n_p = " << n_p << "\n";
 
   //###############################################
   //#create joint observation matrix Ajoint = [B A]
   //################################################
   
+  if(debug)
+    Rcpp::Rcout << "create Ajoint \n";
   
   Eigen::SparseMatrix<double, 0, int> Ajoint;
   Ajoint.resize(Y.size(), n_p + n_r);
@@ -47,7 +53,9 @@ Eigen::MatrixXd var_term_calc(
   //###########################################################
   //#create joint operator matrix Kjoint = [sqrt(Sigma_u) K]  #
   //###########################################################
-
+  if(debug)
+    Rcpp::Rcout << "create Kjoint \n";
+  
   Eigen::SparseMatrix<double, 0, int> Kjoint;
   Kjoint.resize(n_p + n_r,n_p + n_r);
   if(n_r > 0){
@@ -65,7 +73,9 @@ Eigen::MatrixXd var_term_calc(
   //################################################
   //#Compute residual Y - Xbeta - mean
   //###############################################
-
+  if(debug)
+    Rcpp::Rcout << "compute residual \n";
+  
   Eigen::VectorXd  res = Y;
   mixobj.remove_cov(i,  res);
   errObj.remove_asym(i, res);
@@ -73,6 +83,8 @@ Eigen::MatrixXd var_term_calc(
   //################################################
   //#Build b and Q for the joint distribution
   //###############################################
+  if(debug)
+    Rcpp::Rcout << "build b and Q \n";
   
   Eigen::VectorXd Vinv_joint(n_r + n_p);
   if(n_r > 0){
@@ -95,6 +107,8 @@ Eigen::MatrixXd var_term_calc(
 //########################################
 //#computation of the variance
 //########################################
+if(debug)
+  Rcpp::Rcout << "compute variance component \n";
 
  Eigen::MatrixXd X(Y.size(), n_r + n_f);
   if(n_r == 0){
@@ -104,18 +118,18 @@ Eigen::MatrixXd var_term_calc(
   }else{
     X << mixobj.Bf[i], mixobj.Br[i];
   }
-
   X = Q_e.asDiagonal()*X;
+  
   Eigen::MatrixXd  Xt = X.transpose();
   Eigen::MatrixXd AtX = Ajoint.transpose()*X;
   Eigen::MatrixXd XtA = AtX.transpose();
-  Eigen::MatrixXd rtX = res.transpose()*X;
-  Eigen::MatrixXd term1 = rtX.transpose()*rtX;
-  Eigen::MatrixXd tmp = XtA*mu_hat; 
-  Eigen::MatrixXd term2 = -tmp*rtX;
-  Eigen::MatrixXd term3 = -rtX.transpose()*tmp.transpose();
-  Eigen::MatrixXd term4 = tmp*tmp.transpose();
-  tmp = Qsolver.solve(AtX);
+  //Eigen::MatrixXd rtX = res.transpose()*X;
+  //Eigen::MatrixXd term1 = rtX.transpose()*rtX;
+  //Eigen::MatrixXd tmp = XtA*mu_hat; 
+  //Eigen::MatrixXd term2 = -tmp*rtX;
+  //Eigen::MatrixXd term3 = -rtX.transpose()*tmp.transpose();
+  //Eigen::MatrixXd term4 = tmp*tmp.transpose();
+  Eigen::MatrixXd tmp = Qsolver.solve(AtX);
   Eigen::MatrixXd term5 = XtA*tmp;
   Eigen::MatrixXd Results = term5;
 
@@ -583,7 +597,9 @@ List estimateLong_cpp(Rcpp::List in_list)
                                  Fisher_information,
                                  debug);
           if(estimate_fisher && nfr > 0){
-
+            if(debug)
+              Rcpp::Rcout << "enter fisher var_term_calc \n";
+            
               Vmf +=          var_term_calc(Y,
                                             i,
                                             A,
@@ -591,7 +607,11 @@ List estimateLong_cpp(Rcpp::List in_list)
                                             *Kobj,
                                             *errObj,
                                             *process,
-                                            process_active);
+                                            process_active,
+                                            debug);
+              
+              if(debug)
+                Rcpp::Rcout << "var_term_calc done\n";
               //if(i==0)
               //Rcpp::Rcout << "Vmf = " << Vmf << "\n";
 
