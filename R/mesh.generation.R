@@ -89,7 +89,14 @@ create.meshes.1d <- function(locs, n, common.grid, extend = NULL)
 #'  points(m$s,0*m$s,pch=4,col=2)
 #'   }
 #'
-generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
+generate.1d.mesh <- function(x, 
+                             max.dist, 
+                             cutoff = 1e-10, 
+                             extend=NULL,
+                             Y = NULL,
+                             loc.Y = NULL,
+                             max.dY = -1,
+                             nJump  = 3){
   if(missing(x))
     stop('Must supply x')
   refine = TRUE
@@ -142,6 +149,33 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
     }
   }
 
+  if(max.dY> 0){
+    nY = length(Y)
+    dY= diff(Y)
+    index = which( abs(dY)>max.dY)
+    for(i in index){
+      l1 <- loc.Y[i]
+      l2 <- loc.Y[i+1]
+      index2 <- l1 <= s &  s <= l2
+      if(sum(index2) <= nJump){
+        s <- s[!index2]
+        s <- c(s, seq(l1, l2, length.out = nJump))
+      }
+      
+      if(i +2 <= nY   ){
+        l3 <- loc.Y[i+2]
+        index2 <- l2 <= s &  s <= l3
+        if(sum(index2) <= nJump){
+          s <- s[!index2]
+          s <- c(s, seq(l2, l3, length.out = nJump))
+        }
+        
+      }
+    }
+    
+    s <- sort(s)
+    n.mesh = length(s) 
+  }
   h = (c(diff(s),Inf) + c(Inf,diff(s)))/2
   h[1] <- (s[2]-s[1])/2
   h[n.mesh] <- (s[n.mesh]-s[n.mesh-1])/2
@@ -173,13 +207,30 @@ generate.1d.mesh <- function(x,max.dist,cutoff = 1e-10,extend){
 #'   generate.adaptive.meshes.1d(...)
 #'   }
 #'
-generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,common.grid=FALSE,extend = NULL,n.cores = 1)
+generate.adaptive.meshes.1d <- function(locs, 
+                                        max.dist = NULL,
+                                        cutoff = 1e-10,
+                                        common.grid=FALSE,
+                                        extend = NULL,
+                                        n.cores = 1,
+                                        Y = NULL,
+                                        loc.Y = NULL,
+                                        max.dY = -1,
+                                        nJump  = 3)
 {
   loc <- h <- hs <- n <- list()
-  if(common.grid || length(locs)==1){
+  loc.length <- length(locs)
+  if(common.grid || loc.length==1){
     locs <- unlist(locs)
-    m <- generate.1d.mesh(x = locs,max.dist = max.dist,cutoff = cutoff,extend = extend)
-    for(i in 1:length(locs)){
+    m <- generate.1d.mesh(x = locs,
+                          max.dist = max.dist,
+                          cutoff = cutoff,
+                          extend = extend,
+                          Y = Y[[1]],
+                          loc.Y = loc.Y[[1]],
+                          max.dY = max.dY,
+                          nJump  = nJump)
+    for(i in 1:loc.length){
       loc[[i]] <- m$loc
       h[[i]] <- m$h
       hs[[i]] <- m$hs
@@ -192,7 +243,14 @@ generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,comm
       clusterExport(cl, list = c('locs'),envir=environment())
       mesh.list <- foreach(i = 1:length(locs)) %dopar%
       {
-        m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
+        m <- generate.1d.mesh(x = locs[[i]],
+                              max.dist = max.dist,
+                              cutoff = cutoff,
+                              extend = extend,
+                              Y = Y[[i]],
+                              loc.Y = loc.Y[[i]],
+                              max.dY = max.dY,
+                              nJump  = nJump)
         m$i = i
         return(m)
       }
@@ -212,7 +270,14 @@ generate.adaptive.meshes.1d <- function(locs,max.dist = NULL,cutoff = 1e-10,comm
 
     } else {
       for(i in 1:length(locs)){
-        m <- generate.1d.mesh(x = locs[[i]],max.dist = max.dist,cutoff = cutoff,extend = extend)
+        m <- generate.1d.mesh(x = locs[[i]],
+                              max.dist = max.dist,
+                              cutoff = cutoff,
+                              extend = extend,
+                              Y = Y[[i]],
+                              loc.Y = loc.Y[[i]],
+                              max.dY = max.dY,
+                              nJump  = nJump)
         loc[[i]] <- m$loc
         h[[i]] <- m$h
         hs[[i]] <- m$hs
