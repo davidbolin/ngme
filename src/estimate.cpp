@@ -14,10 +14,14 @@ Eigen::MatrixXd var_term_calc(
                                 MeasurementError& errObj,
                                 Process& process,
                                 int process_active,
+                                int calc_mean,
+                                double weight,
                                 int debug
                               )
 
 {
+  if(debug)
+    Rcpp::Rcout << "in var_term_calc\n";
   int n_r =  0;
   if(mixobj.Br.size() > 0)
     n_r =  mixobj.Br[i].cols();
@@ -58,6 +62,7 @@ Eigen::MatrixXd var_term_calc(
   
   Eigen::SparseMatrix<double, 0, int> Kjoint;
   Kjoint.resize(n_p + n_r,n_p + n_r);
+  Eigen::VectorXd mu_prior(n_r + n_p);
   if(n_r > 0){
     Eigen::MatrixXd iSigma = mixobj.Sigma.inverse();
     Eigen::MatrixXd L = iSigma.llt().matrixL();
@@ -68,6 +73,7 @@ Eigen::MatrixXd var_term_calc(
   if(n_p > 0){
     Eigen::SparseMatrix<double, 0, int>  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
     setSparseBlock(&Kjoint, n_r, n_r,K);
+    mu_prior.tail(n_p)   = process.get_mean_prior(i, K);
   }
 
   //################################################
@@ -87,23 +93,26 @@ Eigen::MatrixXd var_term_calc(
     Rcpp::Rcout << "build b and Q \n";
   
   Eigen::VectorXd Vinv_joint(n_r + n_p);
+  
   if(n_r > 0){
     Eigen::VectorXd V_r;
     V_r.setOnes(n_r);
     V_r /=  mixobj.V(i);
     Vinv_joint.head(n_r) = V_r;
+    mu_prior.head(n_r)   = mixobj.get_mean_prior(i);
   }
 
   if(n_p > 0)
     Vinv_joint.tail(n_p) = process.Vs[i].cwiseInverse();
+    
   Eigen::VectorXd Q_e = errObj.getSigma(i, Y.size()).cwiseInverse();
   Eigen::SparseMatrix<double,0,int> Q_hat = Kjoint.transpose()*Vinv_joint.asDiagonal()*Kjoint;
+  Eigen::VectorXd b_hat = Q_hat*mu_prior;
   Q_hat +=  Ajoint.transpose()*Q_e.asDiagonal()*Ajoint;
-  Eigen::VectorXd b_hat = Ajoint.transpose()*Q_e.asDiagonal()*res;
+  b_hat += Ajoint.transpose()*Q_e.asDiagonal()*res;
   Eigen::SimplicialLDLT< Eigen::SparseMatrix<double,0,int> > Qsolver;
   Qsolver.compute(Q_hat);    
   Eigen::VectorXd mu_hat = Qsolver.solve(b_hat);
-
 //########################################
 //#computation of the variance
 //########################################
@@ -123,15 +132,25 @@ if(debug)
   Eigen::MatrixXd  Xt = X.transpose();
   Eigen::MatrixXd AtX = Ajoint.transpose()*X;
   Eigen::MatrixXd XtA = AtX.transpose();
-  //Eigen::MatrixXd rtX = res.transpose()*X;
-  //Eigen::MatrixXd term1 = rtX.transpose()*rtX;
-  //Eigen::MatrixXd tmp = XtA*mu_hat; 
-  //Eigen::MatrixXd term2 = -tmp*rtX;
-  //Eigen::MatrixXd term3 = -rtX.transpose()*tmp.transpose();
-  //Eigen::MatrixXd term4 = tmp*tmp.transpose();
-  Eigen::MatrixXd tmp = Qsolver.solve(AtX);
-  Eigen::MatrixXd term5 = XtA*tmp;
-  Eigen::MatrixXd Results = term5;
+
+  if(calc_mean){
+  // Xt*Q_e*() *(res - A*mu_hat )
+   // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
+    Eigen::VectorXd grad  = Xt * (res - Ajoint * mu_hat);
+    grad *= weight;
+
+  
+
+    mixobj.add_gradient(grad);
+
+     Eigen::MatrixXd Results;
+    return Results;
+  }
+    Eigen::MatrixXd tmp = Qsolver.solve(AtX);
+    Eigen::MatrixXd term5 = XtA*tmp;
+    Eigen::MatrixXd Results = term5;
+  
+  
 
   return Results;
 }
@@ -145,6 +164,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   //**********************************
 
   int debug = 0;
+  int calc_grad=0;
   int nIter      = Rcpp::as< int > (in_list["nIter"]);
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
@@ -282,7 +302,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   } else {
     Rcpp::Rcout << "Wrong mixed effect distribution";
   }
-
+  mixobj->set_calc_grad(calc_grad);
 
 
   if(silent == 0){
@@ -596,6 +616,19 @@ List estimateLong_cpp(Rcpp::List in_list)
                                  estimate_fisher,
                                  Fisher_information,
                                  debug);
+          if(calc_grad == 0 && estimate_fisher == 0){
+            var_term_calc(Y,
+                          i,
+                          A,
+                          *mixobj,
+                          *Kobj,
+                          *errObj,
+                          *process,
+                          process_active,
+                          1,
+                          sampler->weight[i],
+                          debug);
+          }
           if(estimate_fisher && nfr > 0){
             if(debug)
               Rcpp::Rcout << "enter fisher var_term_calc \n";
@@ -608,6 +641,8 @@ List estimateLong_cpp(Rcpp::List in_list)
                                             *errObj,
                                             *process,
                                             process_active,
+                                            0,
+                                            sampler->weight[i],
                                             debug);
               
               if(debug)
@@ -721,7 +756,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::Rcout << "Done, storing results\n";
   // storing the results
   Fisher_information.array()  /= (nIter * nSim);
-
+  Fisher_information.array()  *= Ys.size();
   if(estimate_fisher > 0 ){
     Eigen::MatrixXd cov_est  = Fisher_information.inverse();
     mixobj->set_covariance(cov_est.block(0, 0, mixobj->npars, mixobj->npars));

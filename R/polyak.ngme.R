@@ -393,26 +393,36 @@ compute.polyak.variance <- function(x,polyak.rate,i.start){
     }
     v <- x[1,]
     for(i in 1:n){
-      r <- acf(x[i.start:n.iter,i],type="covariance",
+      x_temp <- x[i.start:n.iter,i]
+      sd_x   <- sd(x_temp)
+      if(sd_x >0){
+      x_temp <- x_temp/sd_x
+      r <- acf(x_temp,type="covariance",
                lag.max <- min(round(length(x[,i])/2),n.iter-i.start-1),
                plot=FALSE)
-      p0 <- c(log(sqrt(var(x[i.start:n.iter,i]))), -log(max(r$lag[,1,1])))
+      p0 <- c(log(sqrt(var(x_temp))), -log(max(r$lag[,1,1])))
       p <- optim(p0,WLS.loss, r = r)
-      c <- exp(2*p$par[1])*exp(-exp(p$par[2])*r$lag[,1,1])
+      c <- exp(log(sd_x)+2*p$par[1])*exp(-exp(p$par[2])*r$lag[,1,1])
       v[i] <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
+      }else{v[i] <- 0}
     }
   } else {
     n.iter = length(x)
     if(is.null(i.start)){
       i.start <- round(n.iter)/2 #base covariance esitmation on second half of the data
     }
-    r <- acf(x[i.start:n.iter],type="covariance",
-             lag.max <- min(round(length(x)/2),n.iter-i.start-1),
-             plot = FALSE)
-    p0 <- c(log(sqrt(var(x[i.start:n.iter]))), -log(max(r$lag[,1,1])))
-    p <- optim(p0,WLS.loss, r = r)
-    c <- exp(2*p$par[1])*exp(-exp(p$par[2])*r$lag[,1,1])
-    v <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
+    x_temp <- x[i.start:n.iter]
+    sd_x   <- sd(x_temp)
+    if(sd_x >0){
+      x_temp <- x_temp/sd_x
+      r <- acf(x_temp,type="covariance",
+               lag.max <- min(round(length(x)/2),n.iter-i.start-1),
+               plot = FALSE)
+      p0 <- c(log(sqrt(var(x_temp))), -log(max(r$lag[,1,1])))
+      p <- optim(p0,WLS.loss, r = r)
+      c <- exp(log(sd_x) + 2*p$par[1])*exp(-exp(p$par[2])*r$lag[,1,1])
+      v <- (polyak.rate/(2-polyak.rate))*(c[1] + 2*sum(c[-1]))
+    }else{v <- 0}
     names(v) <- colnames(x)
   }
   

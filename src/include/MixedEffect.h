@@ -21,6 +21,12 @@ class MixedEffect {
   protected:
 
   public:
+
+    int calc_grad;
+    Eigen::VectorXd grad_beta_r; // gradient for random intercept
+    Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
+    Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
+
   	int store_param; // store the parameter to list
   	int vec_counter; // internal parameter counter
     virtual void printIter(){}; //print iteration data
@@ -100,6 +106,15 @@ class MixedEffect {
     													  Y -= Br[i]*U.col(i);}};
     void add_inter(const int i, Eigen::VectorXd & Y)    { if(Br.size()>0){
     													 Y += Br[i]*U.col(i);} };
+    virtual void add_gradient(Eigen::VectorXd & grad){
+
+      if(Bf.size() > 0)
+        grad_beta_f += grad.head(Bf[0].cols());
+      
+      if(Br.size() > 0 )
+        grad_beta_r += grad.tail(Br[0].cols());
+
+    };
 
 	void remove_cov(const int i, Eigen::VectorXd & Y)
 	{
@@ -128,7 +143,14 @@ class MixedEffect {
       n_r = Br[0].cols();
     return n_r;
   };
-
+  virtual Eigen::VectorXd get_mean_prior(const int i){
+    int n_r = 0;
+    if(Br.size()>0)
+      n_r = Br[0].cols();
+    Eigen::VectorXd res;
+    res.setZero(n_r);
+    return(res);
+  }
 
     // gradient for fixed variance noise
     virtual void gradient(const int ,
@@ -189,6 +211,9 @@ class MixedEffect {
     */
 	void set_covariance(const Eigen::MatrixXd & Cov_in) {Cov_theta = Cov_in;};
 
+
+  void set_calc_grad(const int in_calc_grad){calc_grad = in_calc_grad;}
+
 };
 
 class NormalMixedEffect  : public MixedEffect{
@@ -207,9 +232,6 @@ class NormalMixedEffect  : public MixedEffect{
     Eigen::MatrixXd betar_vec;
     Eigen::MatrixXd Sigma_vec;
 
-    Eigen::VectorXd grad_beta_r; // gradient for random intercept
-    Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
-    Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
     Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
     Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
     Eigen::MatrixXd H_beta;// obsereved fisher infromation for fixed effect
@@ -230,6 +252,8 @@ class NormalMixedEffect  : public MixedEffect{
 
     void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & names);
+
+    void add_gradient(Eigen::VectorXd & grad);
 
     /* computes gradient for the parameters
     	@param index of individual
@@ -331,12 +355,10 @@ public:
   double weight_total;
 
 
+  int fixedV;
   Eigen::VectorXd gradMu; // gradient for skewness
   Eigen::VectorXd gradMu_old;
   Eigen::VectorXd gradMu_2;// second gradient for skewness
-  Eigen::VectorXd grad_beta_r; // gradient for random intercept
-  Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
-  Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
   Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
   Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
   double EV; //  prior expecation  of V, used for the Hessian of random effects
@@ -349,7 +371,7 @@ public:
   Eigen::MatrixXi D;
   Eigen::MatrixXd Dd;
 
-
+  Eigen::VectorXd get_mean_prior(const int );
   void step_Sigma(const double, const double,const int);
   void step_mu(const double , const double,const int);
   void step_beta_fixed(const double stepsize, const double,const int);
@@ -575,7 +597,7 @@ class NIGMixedEffect  : public GHMixedEffect{
     			   const double EiV = 1.,
     			   const double weight = 1.,
              const int use_EU = 1,
-             const int nssigma = 0              // present - non-stationary sigma
+             const int nssigma = 0             // present - non-stationary sigma
              );
 
     void gradient(  const int ,

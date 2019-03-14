@@ -45,7 +45,6 @@ void subsampler::initFromList(const Rcpp::List & in_list)
   
   sampling_weights /= sampling_weights.sum();
   
-  
   // For sampling we have the following:
   /*
   weight   -> the weight each observation has given it is selected
@@ -56,7 +55,8 @@ void subsampler::initFromList(const Rcpp::List & in_list)
   */
   p_inv.setZero(nindv);
   weight.setZero(nindv);
-  weight.array() += nindv / ((double) nSubsample);
+  weight = sampling_weights;
+  //weight.array() += nindv / ((double) nSubsample);
   p.setZero(nindv);
   p_N.setZero(nindv);
   p_N.array() += 1. / nindv;

@@ -12,6 +12,8 @@ NIGMixedEffect::NIGMixedEffect(){
   count_MALA  = 0;
   weight_total = 0;
   sample_MALA = 0;
+  calc_grad  = 1;
+  fixedV  = 0;
 }
 
 

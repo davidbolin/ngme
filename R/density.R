@@ -17,11 +17,101 @@
 dnig <- function(x, delta, mu, nu, sigma)
 {
   c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi
-  f <- exp(nu + mu * (x - delta) /sigma^2)
+  f <- nu + mu * (x - delta) /sigma^2
   coeff <- sqrt( nu * sigma^2 + (x - delta)^2)
-  f <- f * c0/ coeff
-  f <- f * besselK(coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2), 1)
-  return(f)
+  f <- f + log(c0) -  log(coeff)
+  f <- f + log(besselK(coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2), -1,TRUE)) -coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2)
+  return(exp(f))
+}
+
+#dgig <-function(x, p, a, b, log=T){
+#  f <- 0.5 * p * log(a/b) +(p-1)*log(x) - a*x/2 - b*x/2
+#  f <- f - log(2 * besselI
+#}
+
+#' @title  Density for Generalized hyperbolic distribution
+#' 
+#' @description A function for evaluating the GH density.
+#' 
+#' @param x vector of points to be evaluated
+#' @param delta location
+#' @param mu    assymetric
+#' @param sigma sscale
+#' @param a     distribution parameter
+#' @param b     distribution parameter
+#' @param p     distribution parameter
+#'
+#'
+#'
+#'
+dGH <- function(x, delta, mu, sigma, a, b, p, logd = TRUE){
+  
+  x_d <- x - delta
+  x_sd <- x_d/sigma^2
+  c1 <- a + x_sd*x_d
+  c1 <- c1 * (b + mu^2/sigma^2)
+  c1 <- sqrt(c1)
+  
+  loglik = mu*x_sd
+  loglik <- loglik + (p - 0.5) * log(c1)
+  loglik <- loglik + log(besselK(c1, p - 0.5, TRUE)) - c1
+  
+  c0 = p* log(b) + (0.5 -p) * log(b + mu^2/sigma^2)
+  c0 = c0 - (0.5* p ) * log(a*b) - log(sigma) * log(besselK(sqrt(a*b), p, FALSE))
+  loglik <- loglik + c0
+  if(logd)
+    return(loglik)
+  
+  return(exp(loglik))
+}
+#' @title  Density for t-distribution
+#' @description density of t distribution
+dtv2 <- function(x, delta, mu, sigma, nu, logd=TRUE){
+  
+  p = -nu
+  a = 2 * (nu + 1)
+  b = 0
+  x_d <- x - delta
+  x_sd <- x_d/sigma^2
+  c1 <- a + x_sd*x_d
+  c1 <- c1 * (b + mu^2/sigma^2)
+  c1 <- sqrt(c1)
+  c2 <- (a + x_sd*x_d)/(b + mu^2/sigma^2)
+  
+  loglik = mu*x_sd
+  loglik <- loglik + 0.5*(p - 0.5) * log(c2)
+  loglik <- loglik + log(besselK(c1, p - 0.5, TRUE)) - c1 #last term is for expontially scaled bessel
+  c0 =  - lgamma(-p) - 0.5*log(pi) - (-p-0.5) * log(2) - p*log(a)
+  c0 <- c0  - log(sigma) 
+  loglik <- loglik + c0
+  if(logd)
+    return(loglik)
+  
+  return(exp(loglik))
+}
+
+dvgamma <- function(x, delta, mu, sigma, nu, logd=TRUE){
+  
+  p = nu
+  a = 0
+  b = 2*nu
+  x_d <- x - delta
+  x_sd <- x_d/sigma^2
+  c1 <- a + x_sd*x_d
+  c1 <- c1 * (b + mu^2/sigma^2)
+  c1 <- sqrt(c1)
+  c2 <- (a + x_sd*x_d)/(b + mu^2/sigma^2)
+  
+  loglik = mu*x_sd
+  loglik <- loglik + 0.5*(p - 0.5) * log(c2)
+  loglik <- loglik + log(besselK(c1, p - 0.5, TRUE)) - c1 #last term is for expontially scaled bessel
+  c0 =  - lgamma(p) - 0.5*log(pi) + (1-p) * log(2) - 0.5*log(a/2)
+  c0 <- c0  - log(sigma) 
+  loglik <- loglik + c0
+  if(logd)
+    return(loglik)
+  
+  return(exp(loglik))
 }
 
 #' @title Plot for mixed effects model fit.

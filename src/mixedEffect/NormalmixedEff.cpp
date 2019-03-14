@@ -19,6 +19,7 @@ NormalMixedEffect::NormalMixedEffect(){
   npars = 0;
   store_param  = 0;
   weight_total = 0;
+  calc_grad = 1;
   //dlog_sigma2  = 0;
   //ddlog_sigma2 = 0;
 }
@@ -562,7 +563,7 @@ void NormalMixedEffect::gradient(const int i,
                                  const Eigen::VectorXd& res,
                                  const double log_sigma2_noise,
                                  const double weight,
-                                 const int use_EU // =1,
+                                 const int use_EU// =1
                                  )
 {
 
@@ -577,11 +578,13 @@ void NormalMixedEffect::gradient(const int i,
     
       Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
       UUt += weight * vec( UUT);
-      grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      if(use_EU)
-        grad_beta_r2  += weight * (invSigma * EU.col(i));
-      else
-        grad_beta_r2  += weight * (invSigma * U.col(i));
+      if(calc_grad){
+        grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        if(use_EU)
+          grad_beta_r2  += weight * (invSigma * EU.col(i));
+        else
+          grad_beta_r2  += weight * (invSigma * U.col(i));
+      }
       
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
       
@@ -589,19 +592,22 @@ void NormalMixedEffect::gradient(const int i,
     }
 
   if(Bf.size() > 0){
-      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      if(calc_grad)
+        grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
       H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
         
   }
   if(1){
       if(Br.size() > 0){
-      grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        if(calc_grad)
+          grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
       //grad_beta_r2         += weight * (invSigma * U.col(i));
       H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
         
       }
       if(Bf.size() > 0){
-        grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+        if(calc_grad)
+          grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
         H_beta.bottomRightCorner(n_f, n_f)  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
         
         if(Br.size() > 0){
@@ -664,6 +670,24 @@ void NormalMixedEffect::step_theta(const double stepsize,
 
   counter = 0;
 }
+
+ void NormalMixedEffect::add_gradient(Eigen::VectorXd & grad){
+
+      if(Bf.size() > 0){
+        grad_beta_f += grad.head(Bf[0].cols());
+        grad_beta.tail(Bf[0].cols()) += grad.head(Bf[0].cols());
+
+      }
+
+      
+      if(Br.size() > 0 ){
+        grad_beta_r += grad.tail(Br[0].cols());
+        grad_beta.head(Br[0].cols()) += grad.tail(Br[0].cols());
+
+      }
+
+}
+
 void NormalMixedEffect::step_beta(const double stepsize,const double learning_rate,const int burnin)
 {
   grad_beta.tail( n_f) = grad_beta.tail( n_f).cwiseProduct( beta_fixed_constrainted);

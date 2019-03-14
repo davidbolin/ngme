@@ -6,64 +6,81 @@ rm(list=ls())
 graphics.off()
 library(testthat)
 library(ngme)
-set.seed(7)
+set.seed(4)
 
-n_iter <- 400
+n_iter <- 500
 
-nindv <- 200
-n     <- 30
+nindv <-  200
+n     <-  50
 
 beta_random  <- as.vector(0.8)
 beta_fixed   <- c(1.1, 2.2)
 sigma        <- 0.5
 sigma_random <- 0.5
-nu_mixed     <- 1
-mu_mixed     <- 2
+nu           <- 0.6
+
 data <-c()
 for(indv in 1:nindv){
-  B_fixed  <- cbind(as.matrix(1:n), rnorm(n))
-  B_random <- as.matrix(rep(1, n))
-  V_mixed <-rGIG(rep(-0.5,1),
-                 rep( nu_mixed, 1),
-                 rep( nu_mixed, 1),
-                 as.integer(1000 * runif(1) ))
-  E      = sigma_random * rnorm(n)
+  B_fixed  <- cbind(rep(1, n), rnorm(n))
+  B_random <- as.matrix(1:n)
+  V      = 1
+  E      = sigma_random * sqrt(V) * rnorm(n)
   Y         <- B_fixed%*%beta_fixed +
-               B_random%*%(beta_random  + (-1+V_mixed)*mu_mixed+ sqrt(V_mixed)*sigma*rnorm(1)) + E
+               B_random%*%(beta_random  + sigma*rnorm(1)) + E
   Ya <- Y 
   id <- rep(indv, n)
   data <- rbind(data, cbind(B_fixed,
                             B_random,
-                            V_mixed,
+                            V,
                             Y,
                             Ya,
                             id))
 }
 dimnames(data)[[2]] <- c('B1','B2','B3','V','Y','Ya','id')
-
-
+data <- as.data.frame(data)
+beta_f <- c(1.13732, 3.06337)
+beta_r <- 0.959745
+sigma_random = 0.448103
+sigma        = sqrt( 0.00212802)
+grad_sum <- rep(0,3)
+for(i in 1:2){
+  data1 <- data[data$id==i,]
+  res  <- data1$Y - data1$B1*beta_f[1] - data1$B2*beta_f[2] - data1$B3*beta_r
+  
+  Qhat <- (1/sigma_random^2)* t(data1$B3)%*%data1$B3  + 1/sigma^2
+  print(Qhat)
+  mu_hat <- solve(Qhat, t(data1$B3)%*%res/sigma_random^2)
+  print(mu_hat)
+  #cat('res = ',res,'\n')
+  #cat('(res - Ajoint * mu_hat) = ',(res- data1$B3%*%mu_hat),'\n')
+  grad <- t(data1[,c("B1","B2","B3")])%*%(res- data1$B3%*%mu_hat)/sigma_random^2
+  cat('(R) grad= ',grad,'\n')
+  grad_sum <- grad_sum + grad
+}
+cat('graad sum= ',grad_sum,'\n')
 NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
                 random      = ~ -1+B3|id,
                 data        = as.data.frame(data),
-                reffects    = 'NIG',
+                error       = 'Normal',
+                error_assymetric=T,
                 use.process = F,
-                silent      = F,
-                controls.init = list(nIter.init=100),
-                nIter  = n_iter,
+                silent      = T,
+                nIter       = n_iter,
                 controls    = list(estimate.fisher = FALSE,
                                    subsample.type  = 0,
-                                   nSim  =2,
+                                   nSim  =1,
                                    nBurnin = 2,
                                    alpha = 0.1,
-                                   step0 = 0.5))
+                                   step0 = 0.9))
+
+
 x11()
-par(mfrow=c(2,4))
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l',ylab='betaf 1')
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l',ylab='betaf 2')
-plot(NIGMVD_ass$mixedEffect_list$betar_vec,type='l',ylab='betar')
-plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l',ylab='mixed sigma')
-plot(NIGMVD_ass$mixedEffect_list$nu_vec,type='l',ylab='mixed nu')
-plot(NIGMVD_ass$mixedEffect_list$mu_vec,type='l',ylab='mixed mu')
+par(mfrow=c(2,3))
+plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l')
+plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l')
+plot(NIGMVD_ass$mixedEffect_list$betar_vec,type='l')
+plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l')
+plot(NIGMVD_ass$measurementError_list$sigma_vec,type='l')
 if(0){
 if(0){
 NIGMVD <- ngme( fixed       = distance ~ age,

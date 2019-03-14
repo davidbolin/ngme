@@ -439,7 +439,11 @@ create_matrices_FD2 <- function(locs,
                                 extend = NULL,
                                 max.dist,
                                 cutoff = 1e-10,
-                                n.cores = 1)
+                                n.cores = 1,
+                                Y = NULL,
+                                loc.Y = NULL,
+                                max.dY = -1,
+                                nJump  = 3)
 {
 
   meshes <- generate.adaptive.meshes.1d(locs,
@@ -447,7 +451,11 @@ create_matrices_FD2 <- function(locs,
                                         cutoff = cutoff,
                                         common.grid=common.grid,
                                         extend = extend,
-                                        n.cores = n.cores)
+                                        n.cores = n.cores,
+                                        Y = Y,
+                                        loc.Y = loc.Y,
+                                        max.dY = max.dY,
+                                        nJump  = nJump)
 
   Q <- list()
   if(common.grid || length(locs) == 1) {
@@ -487,14 +495,22 @@ create_matrices_FD2_fem <- function(locs,
                                     common.grid = TRUE,
                                     extend = NULL,
                                     max.dist,
-                                    cutoff = 1e-10)
+                                    cutoff = 1e-10,
+                                    Y = NULL,
+                                    loc.Y = NULL,
+                                    max.dY = -1,
+                                    nJump  = 3)
 {
 
   meshes <- generate.adaptive.meshes.1d(locs=locs,
                                         max.dist = max.dist,
                                         cutoff = cutoff,
                                         common.grid=common.grid,
-                                        extend = extend)
+                                        extend = extend,
+                                        Y = Y,
+                                        loc.Y = loc.Y,
+                                        max.dY = max.dY,
+                                        nJump  = nJump)
 
   Q <- h <- list()
   if(common.grid || length(locs) == 1) {

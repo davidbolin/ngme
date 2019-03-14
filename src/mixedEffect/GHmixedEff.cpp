@@ -227,11 +227,16 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
 
     mu0.resize(Br.size());
     Sigma_epsilon = 0;
+
     if( init_list.containsElementNamed("V" ))
       V = Rcpp::as< Eigen::VectorXd > (init_list["V"]) ;
     else{
        V.setOnes(Br.size());
     }
+
+    if( init_list.containsElementNamed("fixedV" ))
+      fixedV = Rcpp::as< int > (init_list["fixedV"]) ;
+
 
     for(int i = 0; i < Br.size() ; i++)
       mu0[i] = -mu + mu * V(i);
@@ -251,6 +256,8 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
 
 void GHMixedEffect::sampleV(const int i)
 {
+  if(fixedV == 1)
+    return;
   if(Br.size() == 0)
       return;
       //  GIG (p, a, b)
@@ -517,6 +524,7 @@ void GHMixedEffect::sampleU2_Gibbs(const int i,
     Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res) );
     Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * iV.asDiagonal() * Br[i];
     Eigen::MatrixXd Qp  = invSigma / V(i);
+
     b += Qp * (- mu + V(i) * mu);
     Q += Qp;
     U.col(i) = sample_Nc(b, Q);
@@ -525,6 +533,10 @@ void GHMixedEffect::sampleU2_Gibbs(const int i,
       Z.array() *= beta_random.array().abs() * 1e-8 + 1e-14;
       U.col(i) += Z;
     }
+}
+
+Eigen::VectorXd GHMixedEffect::get_mean_prior(const int i){
+  return(- mu + V(i) * mu);
 }
 
 void GHMixedEffect::sampleU2_par(const int i,
@@ -538,6 +550,7 @@ void GHMixedEffect::sampleU2_par(const int i,
     return;
 
   Eigen::VectorXd b   = exp( - log_sigma2_noise) * (Br[i].transpose() * iV.cwiseProduct(res) );
+
   Eigen::MatrixXd Q   = exp( - log_sigma2_noise)  * Br[i].transpose() * iV.asDiagonal() * Br[i];
   Eigen::MatrixXd Qp  = invSigma / V(i);
   b += Qp * (- mu + V(i) * mu);
@@ -581,6 +594,7 @@ void GHMixedEffect::sampleU2_MALA(const int i,
 }
 
 
+
 void GHMixedEffect::gradient( const int i,
                               const Eigen::VectorXd& res,
                               const double log_sigma2_noise,
@@ -605,8 +619,10 @@ void GHMixedEffect::gradient( const int i,
 
 
     if(Br.size() > 0){
-      grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+      if(calc_grad){
+        grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+      }
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
 
@@ -614,11 +630,13 @@ void GHMixedEffect::gradient( const int i,
 
       gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
 
+
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
       term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose()*res_);
     }
     if(Bf.size() > 0){
-      grad_beta_f   +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      if(calc_grad)
+        grad_beta_f   +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
       H_beta_fixed  +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
     }
     counter++;
@@ -654,9 +672,11 @@ void GHMixedEffect::gradient2(  const int i,
 
 
     if(Br.size() > 0){
-      grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
-      grad_beta_r2 += weight *  (invSigma * U_)/V(i);
-      H_beta_random +=  exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+      if(calc_grad){
+        grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
+        grad_beta_r2 += weight *  (invSigma * U_)/V(i);
+      }
+      H_beta_random +=  EiV * exp( - log_sigma2_noise) * (Br[i].transpose()  * Br[i]);
 
 
       gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
@@ -665,7 +685,8 @@ void GHMixedEffect::gradient2(  const int i,
       term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose() * res_);
     }
     if(Bf.size() > 0){
-      grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      if(calc_grad)
+        grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
       H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
     }
     counter++;
@@ -718,6 +739,7 @@ void GHMixedEffect::step_theta(const double stepsize,
                                const double polyak_rate,
                                const int burnin)
 {
+  
   if(Br.size() > 0){
     step_mu(stepsize, 0,burnin);
     step_beta_random(stepsize, 0,burnin);
@@ -793,12 +815,13 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
 void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,const int burnin)
 {
   gradMu_old.array() *= learning_rate;
-  gradMu_old += 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
+  gradMu_old -= 0.5 *  H_beta_random.ldlt().solve(gradMu) / VV;
   if((2*EiV - 1.) > 0){
     gradMu_old += 0.5 * (Sigma * gradMu_2) / (weight_total * (2*EiV - 1.));
     }else{
     gradMu_old += 0.5 * (Sigma * gradMu_2) / weight_total ;
     }
+    
   
   Eigen::VectorXd mu_temp;
   if(burnin == 1){

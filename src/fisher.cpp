@@ -10,7 +10,7 @@ List fisher_cpp(Rcpp::List in_list)
   //      basic parameter
   //**********************************
 
-  int debug = 0;
+  int debug = 1;
   int nIter      = Rcpp::as< int > (in_list["nIter"]);
   int nSim       = Rcpp::as< int > (in_list["nSim"]);
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );

@@ -73,3 +73,4 @@ test_that("sigma vs nsigma Normal", {
                exp( res2$measurementError_list$theta), 
                tolerance  = 10^-2)
 })
+

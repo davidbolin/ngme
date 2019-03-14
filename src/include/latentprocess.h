@@ -33,6 +33,11 @@ public:
   Process() {};
   Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
 
+  virtual Eigen::VectorXd get_mean_prior(const int i, const Eigen::SparseMatrix<double,0,int> & K){
+    Eigen::VectorXd res;
+    res.setZero(h[i].size());
+    return(res);
+  };
   virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
   virtual void  clear_gradient() {};
   virtual void get_param(std::vector<double> & param_in){};
@@ -180,10 +185,12 @@ class GaussianProcess : public Process{
 
 
 
-class GHProcess : public Process{
 
 
-private:
+class GHProcessBase : public Process{
+
+
+public:
 
   std::vector< Eigen::VectorXd > h2;
   std::vector< double > h_sum;
@@ -204,6 +211,9 @@ private:
   double  ddmu_1, ddmu_2;
   std::vector< double > H_mu;
   std::vector<double> Vv_mean;
+  std::vector< Eigen::VectorXd > toSampleV;
+
+  Eigen::VectorXd get_mean_prior(const int, const Eigen::SparseMatrix<double,0,int> & );
 
   void update_nu();
   void grad_nu(const int, const double);
@@ -211,12 +221,12 @@ private:
                             const Eigen::SparseMatrix<double,0,int> & ,
                             const double);
 
-public:
+
   double term1,term2;
 
   double mu;
   double nu;
-  void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
+  virtual void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &) = 0;
   void sample_X( const int i,
                  Eigen::VectorXd & Z,
                  const Eigen::VectorXd & Y,
@@ -332,6 +342,25 @@ public:
   Eigen::VectorXd  mean_X(const int );
 };
 
+
+
+class GHProcess : public GHProcessBase{
+
+
+
+public:
+ 
+  void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
+};
+
+class MGHProcess : public GHProcessBase{
+
+
+
+public:
+ 
+  void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
+};
 
 
 #endif

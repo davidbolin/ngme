@@ -398,7 +398,7 @@ List predictLong_cpp(Rcpp::List in_list)
             }
           }
           mixobj->remove_inter(i, res);
-
+          
         } else {
           for(int kkk=0;kkk<mix_samp;kkk++){
             mixobj->simulate(Y, i);

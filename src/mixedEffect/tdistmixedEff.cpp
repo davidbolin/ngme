@@ -12,6 +12,8 @@ tdMixedEffect::tdMixedEffect(){
   count_MALA  = 0;
   weight_total = 0;
   sample_MALA = 0;
+  calc_grad = 1;
+  fixedV =  0;
 }
 
 double tdMixedEffect::get_p_GIG(){ return(-nu); }
@@ -134,7 +136,7 @@ void tdMixedEffect::gradient2(const int i,
                                  const double EiV, // = 0
                                  const double weight, //  = 1
                                  const int use_EU , // =1,
-                                 const int nsigma            //  = 0
+                                 const int nsigma           //  = 0
                                  )
 {
   GHMixedEffect::gradient2(i, res, iV, sigmas, log_sigma2_noise, EiV, weight, use_EU, nsigma);
