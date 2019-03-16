@@ -1,6 +1,6 @@
 ##
 #  test mixed effect p measurement error
-#  D:2019-01-15
+#  D:2019-03-15
 ##
 rm(list=ls())
 graphics.off()
@@ -48,17 +48,14 @@ for(i in 1:2){
   res  <- data1$Y - data1$B1*beta_f[1] - data1$B2*beta_f[2] - data1$B3*beta_r
   
   Qhat <- (1/sigma_random^2)* t(data1$B3)%*%data1$B3  + 1/sigma^2
-  print(Qhat)
   mu_hat <- solve(Qhat, t(data1$B3)%*%res/sigma_random^2)
-  print(mu_hat)
+  #print(mu_hat)
   #cat('res = ',res,'\n')
   #cat('(res - Ajoint * mu_hat) = ',(res- data1$B3%*%mu_hat),'\n')
   grad <- t(data1[,c("B1","B2","B3")])%*%(res- data1$B3%*%mu_hat)/sigma_random^2
-  cat('(R) grad= ',grad,'\n')
   grad_sum <- grad_sum + grad
 }
-cat('graad sum= ',grad_sum,'\n')
-NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
+GAUSMIX <- ngme( fixed       = Ya ~ B1 + B2,
                 random      = ~ -1+B3|id,
                 data        = as.data.frame(data),
                 error       = 'Normal',
@@ -74,46 +71,15 @@ NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
                                    step0 = 0.9))
 
 
-x11()
-par(mfrow=c(2,3))
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l')
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l')
-plot(NIGMVD_ass$mixedEffect_list$betar_vec,type='l')
-plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l')
-plot(NIGMVD_ass$measurementError_list$sigma_vec,type='l')
-if(0){
-if(0){
-NIGMVD <- ngme( fixed       = distance ~ age,
-                random      = ~ 1|id,
-                data        = Orthodont,
-                error       = 'NIG',
-                use.process = F,
-                silent      = T,
-                nIter       = 2000,
-                controls    = list(estimate.fisher = FALSE,
-                                   subsample.type  = 0,
-                                   nSim  =1,
-                                   nBurnin = 2,
-                                   alpha = 0.1,
-                                   step0 = 0.9))
-x11()
-par(mfrow=c(2,2))
-plot(NIGMVD$measurementError_list$nu_vec,type='l')
-plot(NIGMVD$measurementError_list$sigma_vec,type='l')
-plot(NIGMVD$mixedEffect_list$betar_vec,type='l')
-plot(NIGMVD$mixedEffect_list$Sigma_vec,type='l')
-}
-if(0){
 
-theta_est <- c(NIGMVD$measurementError_list$nu,
-               NIGMVD$measurementError_list$sigma,
-               NIGMVD$mixedEffect_list$beta_random,
-               NIGMVD$mixedEffect_list$beta_fixed[,1],
-               NIGMVD$mixedEffect_list$Sigma)
-theta <- c(nu, sigma_E, beta, sigma_U^2)
-cat('theta=', theta - theta_est,'\n')
+test_that("Gaussian mixed effect", {
+theta_est <- c(
+               GAUSMIX$measurementError_list$sigma,
+               GAUSMIX$mixedEffect_list$beta_fixed,
+               GAUSMIX$mixedEffect_list$beta_random,
+               GAUSMIX$mixedEffect_list$Sigma)
+theta <- c( sigma_random, beta_fixed,beta_random, sigma)
 expect_equal(theta,
              theta_est,
              tolerance = 0.1)
-}
-}
+})

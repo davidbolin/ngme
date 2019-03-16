@@ -47,7 +47,7 @@ NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
                 data        = as.data.frame(data),
                 reffects    = 'NIG',
                 use.process = F,
-                silent      = F,
+                silent      = T,
                 controls.init = list(nIter.init=100),
                 nIter  = n_iter,
                 controls    = list(estimate.fisher = FALSE,
@@ -56,47 +56,33 @@ NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
                                    nBurnin = 2,
                                    alpha = 0.1,
                                    step0 = 0.5))
-x11()
-par(mfrow=c(2,4))
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l',ylab='betaf 1')
-plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l',ylab='betaf 2')
-plot(NIGMVD_ass$mixedEffect_list$betar_vec,type='l',ylab='betar')
-plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l',ylab='mixed sigma')
-plot(NIGMVD_ass$mixedEffect_list$nu_vec,type='l',ylab='mixed nu')
-plot(NIGMVD_ass$mixedEffect_list$mu_vec,type='l',ylab='mixed mu')
-if(0){
-if(0){
-NIGMVD <- ngme( fixed       = distance ~ age,
-                random      = ~ 1|id,
-                data        = Orthodont,
-                error       = 'NIG',
-                use.process = F,
-                silent      = T,
-                nIter       = 2000,
-                controls    = list(estimate.fisher = FALSE,
-                                   subsample.type  = 0,
-                                   nSim  =1,
-                                   nBurnin = 2,
-                                   alpha = 0.1,
-                                   step0 = 0.9))
-x11()
-par(mfrow=c(2,2))
-plot(NIGMVD$measurementError_list$nu_vec,type='l')
-plot(NIGMVD$measurementError_list$sigma_vec,type='l')
-plot(NIGMVD$mixedEffect_list$betar_vec,type='l')
-plot(NIGMVD$mixedEffect_list$Sigma_vec,type='l')
-}
-if(0){
 
-theta_est <- c(NIGMVD$measurementError_list$nu,
-               NIGMVD$measurementError_list$sigma,
-               NIGMVD$mixedEffect_list$beta_random,
-               NIGMVD$mixedEffect_list$beta_fixed[,1],
-               NIGMVD$mixedEffect_list$Sigma)
-theta <- c(nu, sigma_E, beta, sigma_U^2)
-cat('theta=', theta - theta_est,'\n')
+
+
+test_that("NIG mixed effect", {
+theta_est <- c(NIGMVD_ass$measurementError_list$sigma,
+               NIGMVD_ass$mixedEffect_list$nu,
+               NIGMVD_ass$mixedEffect_list$mu,
+               NIGMVD_ass$mixedEffect_list$beta_random,
+               NIGMVD_ass$mixedEffect_list$beta_fixed,
+               sqrt(NIGMVD_ass$mixedEffect_list$Sigma))
+theta <- c(sigma_random,nu_mixed, mu_mixed, beta_random,beta_fixed, sigma)
+
 expect_equal(theta,
              theta_est,
              tolerance = 0.1)
-}
+})
+
+###
+# debug plots
+###
+if(0){
+  x11()
+  par(mfrow=c(2,4))
+  plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l',ylab='betaf 1')
+  plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l',ylab='betaf 2')
+  plot(NIGMVD_ass$mixedEffect_list$betar_vec,type='l',ylab='betar')
+  plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l',ylab='mixed sigma')
+  plot(NIGMVD_ass$mixedEffect_list$nu_vec,type='l',ylab='mixed nu')
+  plot(NIGMVD_ass$mixedEffect_list$mu_vec,type='l',ylab='mixed mu')
 }

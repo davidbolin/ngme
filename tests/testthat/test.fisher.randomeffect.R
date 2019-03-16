@@ -1,7 +1,7 @@
 ###
 # testing estimating fisher for Gaussian random effect model
 #
-# D: 2018-03-13
+# D: 2019-03-13
 ###
 graphics.off()
 library(ngme)
@@ -109,7 +109,7 @@ if(estimate.parameters){
                                operator_list    = res.est$operator_list,
                                nIter = nIter.fisher,
                                nSim             = nSim.fisher,
-                               silent = FALSE,
+                               silent = T,
                                nBurnin_base = nBurnin,
                                estimate_fisher = 2)
   } else {
@@ -131,7 +131,7 @@ if(estimate.parameters){
                                measurment_list  = res.est$measurementError_list,
                                nIter = nIter.fisher,
                                nSim             = nSim.fisher,
-                               silent = FALSE,
+                               silent = T,
                                nBurnin_base = nBurnin,
                                estimate_fisher = 2)
   }
@@ -145,7 +145,7 @@ if(estimate.parameters){
                                operator_list    = operator_list,
                                nIter = nIter.fisher,
                                nSim             = nSim.fisher,
-                               silent = FALSE,
+                               silent = T,
                                nBurnin_base = nBurnin,
                                estimate_fisher = 2)  
   } else {
@@ -155,7 +155,7 @@ if(estimate.parameters){
                                measurment_list  = mError_list,
                                nIter = nIter.fisher,
                                nSim             = nSim.fisher,
-                               silent = FALSE,
+                               silent = T,
                                nBurnin_base = nBurnin,
                                estimate_fisher = 2)  
   }
@@ -194,15 +194,17 @@ if(estimate.parameters){
   F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]
   F_random.est <- res.fisher$FisherMatrix[3:4,3:4]
   Vgrad_R.est <- res.fisher$GradientVariance[3:4,3:4]
-  cat("random:\n")
-  print(F_random.est/F_random)
-  cat("inverse random:\n")
-  print(solve(F_random.est)/solve(F_random))
-  cat("fixed:\n")
-  print(F_fixed.est/F_fixed)
-  cat("inverse fixed:\n")
-  print(solve(F_fixed.est)/solve(F_fixed))
-  cat('variance estimate:\n')
-  print(res.fisher$GradientVariance[1:2,1:2]/Vgrad_F)
+  
+test_that("Fisher Gaussian mixed effect", {  
+    expect_equal(as.vector(as.matrix(F_random.est)),
+                 as.vector(as.matrix(F_random)),
+                 tolerance = 10^-4)
+    expect_equal(as.vector(F_fixed.est),
+                 as.vector(F_fixed),
+                 tolerance = 10^-4)
+  #  expect_equal(as.vector(res.fisher$GradientVariance[1:2,1:2]),
+  #               as.vector(Vgrad_F),
+  #               tolerance = 10^-4)
   #(F_random-Vgrad_R)/length(locs) 
   #Vgrad_R/length(locs)
+  })
