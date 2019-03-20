@@ -415,6 +415,10 @@ ngme <- function(fixed,
     }
   }
   
+  
+  ###
+  # TODO add something if init.fit is non Gaussian
+  ###
   ## Vin is needed even if init.fit is not NULL
   Vin <- lapply(Y, function(x) rep(1, length(x)))
 

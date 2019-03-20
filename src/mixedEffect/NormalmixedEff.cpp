@@ -239,6 +239,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
 
   grad_beta.setZero(n_f + n_r);
   H_beta.setZero(n_f + n_r, n_r + n_f);
+  nfr = n_f + n_r;
 }
 
 

@@ -17,7 +17,7 @@ UTILS    =util/estimate_util.o util/error_check.o util/rgig.o util/GIG.o util/Ma
  util/subSamplingDiagnostic.o	 util/GHmisc.o util/subsampler.o util/sample.o
 tests = test_functions.o
 
-OBJECTS = RcppExports.o  fisher.o estimate.o simulate.o predict.o sample_rGIG.o $(tests) $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
+OBJECTS = RcppExports.o  fisher.o estimateSub.o estimate.o simulate.o predict.o sample_rGIG.o $(tests) $(ERROR) $(MIXED) $(OPERATOR) $(PROCESS) $(SOLVER) $(UTILS)
 $(SHLIB): $(OBJECTS)
 
 clean:

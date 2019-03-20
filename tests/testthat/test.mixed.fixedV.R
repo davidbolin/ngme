@@ -9,7 +9,7 @@ rm(list=ls())
 graphics.off()
 set.seed(2)
 
-n_iter <- 1000
+n_iter <- 2000
 
 nindv <- 100
 n     <- 110
@@ -88,7 +88,7 @@ test_that(" V unkknown, NIG", {
   
   expect_equal(as.vector(res_Vunkown$mixedEffect_list$beta_random),
                beta_random, 
-               tolerance  = 10^-1)
+               tolerance  = 5*10^-1)
   
 })
 ###

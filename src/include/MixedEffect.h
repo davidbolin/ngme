@@ -26,7 +26,7 @@ class MixedEffect {
     Eigen::VectorXd grad_beta_r; // gradient for random intercept
     Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
     Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
-
+    int nfr;
   	int store_param; // store the parameter to list
   	int vec_counter; // internal parameter counter
     virtual void printIter(){}; //print iteration data
@@ -361,6 +361,7 @@ public:
   Eigen::VectorXd gradMu_2;// second gradient for skewness
   Eigen::MatrixXd H_beta_random; // obsereved fisher infromation for random effect
   Eigen::MatrixXd H_beta_fixed;// obsereved fisher infromation for fixed effect
+  Eigen::MatrixXd H_rf;
   double EV; //  prior expecation  of V, used for the Hessian of random effects
   double EiV; // prior expectation of 1/V used for the Hessian of random effects
   double VV; // prior variance of V used for the Hessian of random effects
@@ -376,7 +377,9 @@ public:
   void step_mu(const double , const double,const int);
   void step_beta_fixed(const double stepsize, const double,const int);
   void step_beta_random(const double stepsize, const double,const int);
+  void step_beta(const double ,const double ,const int );
 
+  void add_gradient(Eigen::VectorXd & grad);
   virtual void get_param_names(Rcpp::StringVector &);
   virtual void printIter();
   virtual void initFromList(Rcpp::List const &); 

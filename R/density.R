@@ -14,14 +14,17 @@
 #'   dnig(...)
 #'   }
 
-dnig <- function(x, delta, mu, nu, sigma)
+dnig <- function(x, delta, mu, nu, sigma,log=F)
 {
   c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi
   f <- nu + mu * (x - delta) /sigma^2
   coeff <- sqrt( nu * sigma^2 + (x - delta)^2)
   f <- f + log(c0) -  log(coeff)
   f <- f + log(besselK(coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2), -1,TRUE)) -coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2)
-  return(exp(f))
+  if(log==F)
+    return(exp(f))
+  
+  return(f)
 }
 
 #dgig <-function(x, p, a, b, log=T){
@@ -129,9 +132,9 @@ dvgamma <- function(x, delta, mu, sigma, nu, logd=TRUE){
 plot_GH_noise  <- function(res, dRE = c())
 {
   resid <- c()
-  for(i in 1:length(res$obs_list))
+  for(i in 1:length(res$Y))
   {
-    Y <- res$obs_list[[i]]$Y - res$mixedEffect_list$B_fixed[[i]]%*%res$mixedEffect_list$beta_fixed
+    Y <- res$Y[[i]] - res$mixedEffect_list$B_fixed[[i]]%*%as.vector(res$mixedEffect_list$beta_fixed)
     beta <- res$mixedEffect_list$beta_random + res$mixedEffect_list$U[,i]
     resid <- rbind(resid, Y-res$mixedEffect_list$B_random[[i]]%*%beta)
   }

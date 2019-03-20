@@ -9,6 +9,10 @@ estimateFisher <- function(in_list) {
     .Call(`_ngme_estimateFisher`, in_list)
 }
 
+estimateProcesses_cpp <- function(in_list) {
+    .Call(`_ngme_estimateProcesses_cpp`, in_list)
+}
+
 fisher_cpp <- function(in_list) {
     .Call(`_ngme_fisher_cpp`, in_list)
 }

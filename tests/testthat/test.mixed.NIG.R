@@ -8,7 +8,7 @@ library(testthat)
 library(ngme)
 set.seed(7)
 
-n_iter <- 400
+n_iter <- 200
 
 nindv <- 200
 n     <- 30
@@ -59,7 +59,7 @@ NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
 
 
 
-test_that("NIG mixed effect", {
+
 theta_est <- c(NIGMVD_ass$measurementError_list$sigma,
                NIGMVD_ass$mixedEffect_list$nu,
                NIGMVD_ass$mixedEffect_list$mu,
@@ -68,10 +68,7 @@ theta_est <- c(NIGMVD_ass$measurementError_list$sigma,
                sqrt(NIGMVD_ass$mixedEffect_list$Sigma))
 theta <- c(sigma_random,nu_mixed, mu_mixed, beta_random,beta_fixed, sigma)
 
-expect_equal(theta,
-             theta_est,
-             tolerance = 0.1)
-})
+
 
 ###
 # debug plots
@@ -86,3 +83,8 @@ if(0){
   plot(NIGMVD_ass$mixedEffect_list$nu_vec,type='l',ylab='mixed nu')
   plot(NIGMVD_ass$mixedEffect_list$mu_vec,type='l',ylab='mixed mu')
 }
+test_that("NIG mixed effect", {
+expect_equal(theta,
+             theta_est,
+             tolerance = 0.1)
+})

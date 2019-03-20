@@ -119,39 +119,43 @@ Eigen::MatrixXd var_term_calc(
 if(debug)
   Rcpp::Rcout << "compute variance component \n";
 
- Eigen::MatrixXd X(Y.size(), n_r + n_f);
+ Eigen::MatrixXd X(Y.size(), mixobj.nfr);
+ Eigen::MatrixXd Br;
+ if(n_r > 0){
+  if(mixobj.noise == "Normal"){
+      Br = mixobj.Br[i];
+    }else{
+      Br.resize(mixobj.Br[i].rows(), 2*mixobj.Br[i].cols());
+      Eigen::MatrixXd Br_mu = (1.-mixobj.V(i)) * mixobj.Br[i];
+      Br << mixobj.Br[i], Br_mu;
+    }
+ }
+
   if(n_r == 0){
     X = mixobj.Bf[i];
   }else if(n_f == 0){
-    X = mixobj.Br[i];
+      X = Br;
   }else{
-    X << mixobj.Bf[i], mixobj.Br[i];
+    X << mixobj.Bf[i], Br;
   }
   X = Q_e.asDiagonal()*X;
   
   Eigen::MatrixXd  Xt = X.transpose();
   Eigen::MatrixXd AtX = Ajoint.transpose()*X;
   Eigen::MatrixXd XtA = AtX.transpose();
-
+  Eigen::MatrixXd Results;
   if(calc_mean){
   // Xt*Q_e*() *(res - A*mu_hat )
    // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
     Eigen::VectorXd grad  = Xt * (res - Ajoint * mu_hat);
     grad *= weight;
-
-  
-
     mixobj.add_gradient(grad);
-
-     Eigen::MatrixXd Results;
-    return Results;
+    return(Results);
   }
-    Eigen::MatrixXd tmp = Qsolver.solve(AtX);
-    Eigen::MatrixXd term5 = XtA*tmp;
-    Eigen::MatrixXd Results = term5;
-  
-  
 
+  Eigen::MatrixXd tmp = Qsolver.solve(AtX);
+  Results = XtA*tmp;
+  
   return Results;
 }
 
@@ -486,7 +490,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     Eigen::MatrixXd Vmf(0,0); // variance of fixed and mixed effect
     if(mixobj->get_nf() + mixobj->get_nr()>0)
-      Vmf.setZero(mixobj->get_nf() + mixobj->get_nr(), mixobj->get_nf() + mixobj->get_nr());
+      Vmf.setZero( mixobj->nfr, mixobj->nfr);
     if(debug)
       Rcpp::Rcout << "estimate::start patient loop, number of patients:" << sampler->nSubsample_i << " \n";
 
@@ -651,7 +655,6 @@ List estimateLong_cpp(Rcpp::List in_list)
               //Rcpp::Rcout << "Vmf = " << Vmf << "\n";
 
               }
-
           // collects the gradient for computing estimate of variances
           grad_inner.block(0, count_inner,
                            mixobj->npars, 1)  = mixobj->get_gradient();
@@ -674,9 +677,9 @@ List estimateLong_cpp(Rcpp::List in_list)
           GradientVariance += Fisher_temp + Fisher_temp.transpose();
           grad_last = grad_last_temp;
           count_inner++;
+
         }
       }
-
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean(); //gives E(g)
       grad_outer.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) = Mgrad_inner;
@@ -684,8 +687,9 @@ List estimateLong_cpp(Rcpp::List in_list)
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/sampler->weight[i]) * Mgrad_inner.transpose();
       Fisher_information  +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
       if(nfr> 0){
-            Fisher_information.topLeftCorner(nfr, nfr) -=  Fisher_add.topLeftCorner(nfr, nfr) + Fisher_add.topLeftCorner(nfr, nfr).transpose();  
-            Fisher_information.topLeftCorner(nfr, nfr) -= Vmf * (sampler->weight[i] );
+            Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -=  Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr) 
+                                                                         + Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr).transpose();  
+            Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -= Vmf * (sampler->weight[i] );
             Vmf *= 0; 
         }
       GradientVariance    -=  Fisher_add + Fisher_add.transpose();

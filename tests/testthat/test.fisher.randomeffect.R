@@ -5,7 +5,9 @@
 ###
 graphics.off()
 library(ngme)
+library(testthat)
 library(doParallel)
+library(Matrix)
 
 use.process = TRUE
 estimate.parameters = FALSE
@@ -176,6 +178,7 @@ if(estimate.parameters){
     if(use.process){
       Djoint <- cbind(B_random[[i]], res.fisher$A[[i]])
       D       = B_random[[i]]
+      operator_list$Q[[i]] <- as.matrix(operator_list$Q[[i]])
       Sigma <- bdiag(mixedEffect_list$Sigma,solve(operator_list$tau^2*t(operator_list$Q[[i]])%*%diag(1/operator_list$h[[i]])%*%operator_list$Q[[i]]))
     } else {
       Djoint       = B_random[[i]]
@@ -183,6 +186,8 @@ if(estimate.parameters){
       Sigma   = mixedEffect_list$Sigma
     }
     B       = B_fixed[[i]]  
+    Sigma<- as.matrix(Sigma)
+    Djoint <- as.matrix(Djoint)
     VU      = solve(solve(Sigma) + t(Djoint)%*%SigmaEi%*%Djoint) #V[U|Y]
     Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
     Vgrad_R   = Vgrad_R + t(D)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%D #V[\Delta_\beta\log(\pi)|Y]
