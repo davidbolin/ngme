@@ -60,9 +60,6 @@ ngme.fisher <- function(fit,
     fn <- names(fit$fixed_est)
   }
   
-  cl <- makeCluster(n.cores)
-  registerDoSNOW(cl)
-  
   if(silent == FALSE){
     cat("Compute initial estimate.\n")
   }
