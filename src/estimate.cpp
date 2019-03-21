@@ -141,7 +141,7 @@ if(debug)
 
   Eigen::MatrixXd QX = Q_e.asDiagonal()*X;
   Eigen::MatrixXd Results = - X.transpose() * QX; 
-  //Rcpp::Rcout << 'E2 = ' << Results.bottomRightCorner() << "\n";
+  
   Eigen::MatrixXd  XtQ = QX.transpose();
   Eigen::MatrixXd AtQX = Ajoint.transpose()*QX;
   Eigen::MatrixXd XtQA = AtQX.transpose();
@@ -154,8 +154,8 @@ if(debug)
     return(Results);
   }
   Eigen::MatrixXd tmp = Qsolver.solve(AtQX);
-  Results += XtQA*tmp;
   
+  Results += XtQA*tmp;
   return Results;
 }
 
@@ -668,6 +668,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
           }
           // adjusting so we get last gradient not cumsum
+          /*
           Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
           grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  sampler->weight[i];
@@ -676,30 +677,33 @@ List estimateLong_cpp(Rcpp::List in_list)
             Fisher_information.topLeftCorner(nfr, nfr) +=  Fisher_temp.topLeftCorner(nfr, nfr)+ Fisher_temp.topLeftCorner(nfr, nfr).transpose();   
           GradientVariance += Fisher_temp + Fisher_temp.transpose();
           grad_last = grad_last_temp;
+          */
           count_inner++;
 
         }
       }
+      /*
       Eigen::VectorXd Mgrad_inner = grad_inner.rowwise().mean(); //gives E(g)
       grad_outer.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) = Mgrad_inner;
       grad_outer_unweighted.row(ilong) /= sampler->weight[i];
       Eigen::MatrixXd Fisher_add  = 0.5 * nSim  * (Mgrad_inner/sampler->weight[i]) * Mgrad_inner.transpose();
       Fisher_information  +=  Fisher_add + Fisher_add.transpose() ; //add N*E(g)*E(g)'
+      */
       if(nfr> 0){
-            Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -=  Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr) 
-                                                                         + Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr).transpose();  
+            //Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -=  Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr) 
+            //                                                             + Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr).transpose();  
             Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -= Vmf * (sampler->weight[i] );
             Vmf *= 0; 
         }
-      GradientVariance    -=  Fisher_add + Fisher_add.transpose();
-      Fisher_information0 +=  Fisher_add + Fisher_add.transpose();
+      //GradientVariance    -=  Fisher_add + Fisher_add.transpose();
+      //Fisher_information0 +=  Fisher_add + Fisher_add.transpose();
 
-      Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
-      Ebias_inner.array() += centered.col(nSim-1).array();
-      Ebias_inner.array() -= centered.col(0).array();
-      Eigen::MatrixXd cov = (centered * centered.transpose()) /  (sampler->weight[i]* double(grad_inner.cols() - 1));
-      Vgrad_inner.array() += cov.array();
+      //Eigen::MatrixXd centered = grad_inner.colwise() - Mgrad_inner;
+      //Ebias_inner.array() += centered.col(nSim-1).array();
+      //Ebias_inner.array() -= centered.col(0).array();
+      //Eigen::MatrixXd cov = (centered * centered.transpose()) /  (sampler->weight[i]* double(grad_inner.cols() - 1));
+      //Vgrad_inner.array() += cov.array();
       if(process_active)
         Vmean[i] += process->Vs[i];
       count_vec[i] += 1;

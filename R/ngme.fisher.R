@@ -108,10 +108,11 @@ ngme.fisher <- function(fit,
   for(i in 1:n.cores){
     if(i==1){
       #sigma2.elements <- f.list[[i]]$sigma2.elements
-      print(f.list[[i]]$Fmat)
       F.estimate <- f.list[[i]]$Fmat
       if(only.effects){
-        ind.effects <- grep("beta_",c(rownames(F.estimate)))
+        ind.effects <- union(grep("beta_",c(rownames(F.estimate))),
+                             grep("mu_",c(rownames(F.estimate)))
+                             )
       } else {
         ind.effects <- 1:dim(F.estimate)[1]
       }
