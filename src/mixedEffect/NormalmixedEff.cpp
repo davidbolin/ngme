@@ -480,7 +480,7 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
     res_ -= Br[i] * U.col(i);
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
@@ -489,19 +489,20 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) =  3  * weight * exp( - 2   * log_sigma2_noise)  * (res_.array().square() *iV.array()).sum();
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) +=  -1 * weight * res_.size()  * exp( - log_sigma2_noise);
   res_ = iV.cwiseProduct(res_);
+  /*
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
     d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
-
+  */
   if(Br.size()>0){
 
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
-
+  
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
     d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
@@ -525,19 +526,20 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
     res_ -= Br[i] * U.col(i);
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
   }
+  /*
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
     d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-
+  */
   if(Br.size()>0){
 
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);

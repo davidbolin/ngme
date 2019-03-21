@@ -138,23 +138,23 @@ if(debug)
   }else{
     X << mixobj.Bf[i], Br;
   }
-  X = Q_e.asDiagonal()*X;
-  
-  Eigen::MatrixXd  Xt = X.transpose();
-  Eigen::MatrixXd AtX = Ajoint.transpose()*X;
-  Eigen::MatrixXd XtA = AtX.transpose();
-  Eigen::MatrixXd Results;
+
+  Eigen::MatrixXd QX = Q_e.asDiagonal()*X;
+  Eigen::MatrixXd Results = - X.transpose() * QX; 
+  //Rcpp::Rcout << 'E2 = ' << Results.bottomRightCorner() << "\n";
+  Eigen::MatrixXd  XtQ = QX.transpose();
+  Eigen::MatrixXd AtQX = Ajoint.transpose()*QX;
+  Eigen::MatrixXd XtQA = AtQX.transpose();
   if(calc_mean){
   // Xt*Q_e*() *(res - A*mu_hat )
    // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
-    Eigen::VectorXd grad  = Xt * (res - Ajoint * mu_hat);
+    Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
     grad *= weight;
     mixobj.add_gradient(grad);
     return(Results);
   }
-
-  Eigen::MatrixXd tmp = Qsolver.solve(AtX);
-  Results = XtA*tmp;
+  Eigen::MatrixXd tmp = Qsolver.solve(AtQX);
+  Results += XtQA*tmp;
   
   return Results;
 }

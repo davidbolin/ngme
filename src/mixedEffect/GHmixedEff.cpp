@@ -644,12 +644,12 @@ void GHMixedEffect::gradient( const int i,
     if(Br.size() > 0){
       if(calc_grad){
         grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-        grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
         gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-        if(Bf.size() > 0)
-          H_rf +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
-        
       }
+      grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+      if(Bf.size() > 0)
+          H_rf +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
+      
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
 
@@ -701,11 +701,9 @@ void GHMixedEffect::gradient2(  const int i,
     if(Br.size() > 0){
       if(calc_grad){
         grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
-        grad_beta_r2 += weight *  (invSigma * U_)/V(i);
         gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-
-        
       }
+      grad_beta_r2 += weight *  (invSigma * U_)/V(i);
       if(Bf.size() > 0)
           H_rf +=  EiV * weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
       H_beta_random +=  weight * EiV * exp( - log_sigma2_noise) * (Br[i].transpose()  * Br[i]);
@@ -949,7 +947,7 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   }else{
     step1  = H_beta.ldlt().solve(grad_beta);
   }
-  Rcpp::Rcout << "step1 = " << step1 <<"\n";
+
   if(Bf.size() > 0){
     dbeta_f_old.array() *= learning_rate;
     dbeta_f_old += 0.5 * step1.tail(n_f);
@@ -998,10 +996,10 @@ Eigen::MatrixXd GHMixedEffect::d2Given( const int i,
     double B_mu =  (-1 + V(i));
     Eigen::VectorXd U_ = U.col(i) - B_mu * mu;
     //beta_r
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
     //mu
-    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma;
+    //d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  weight * ((B_mu * B_mu ) / V(i) ) * invSigma;
 
     res_ -= Br[i] * U.col(i);
     //Sigma
@@ -1016,13 +1014,14 @@ Eigen::MatrixXd GHMixedEffect::d2Given( const int i,
     d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  *= 0.5* weight * (1 / V(i));
     d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
+  /*
   if(Br.size() * Bf.size()>0){
     d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
     d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
   }
   if(Bf.size() > 0 )
     d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-
+  */
   if(Br.size()>0){
     d2.block(n_f    , npars, n_r , 1 )    =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(npars  , n_f  , 1   , n_r )  = d2.block(n_f , n_s + 2 * n_r +n_f + 1, n_r , 1 ) .transpose();
@@ -1063,14 +1062,14 @@ Eigen::MatrixXd GHMixedEffect::d2Given2(const int i,
     double B_mu =  (-1 + V(i));
     Eigen::VectorXd U_ = U.col(i) - B_mu * mu;
     //beta_r
-    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
 
     //mu
-    d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  pow(-1 + V(i),2) * weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+    //d2.block( n_f  + n_r, n_f   + n_r, n_r, n_r)  =  pow(-1 + V(i),2) * d2.block(  n_f      , n_f       , n_r, n_r);
     res_ -= Br[i] * U.col(i);
     // mu beta_r
-    d2.block(n_f + n_r     , n_f      , n_r, n_r)  =  (-1 + V(i))* d2.block(  n_f      , n_f       , n_r, n_r);
-    d2.block(n_f           , n_f + n_r, n_r, n_r)  =  d2.block(n_f + n_r     , n_f, n_r, n_r);
+    //d2.block(n_f + n_r     , n_f      , n_r, n_r)  =  (-1 + V(i))* d2.block(  n_f      , n_f       , n_r, n_r);
+    //d2.block(n_f           , n_f + n_r, n_r, n_r)  =  d2.block(n_f + n_r     , n_f, n_r, n_r);
     //Sigma
 
     d2.block(2 * n_r +n_f , 2 * n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
@@ -1083,15 +1082,15 @@ Eigen::MatrixXd GHMixedEffect::d2Given2(const int i,
     d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)   *=  0.5* weight * (1 / V(i));
     d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
-  if(Br.size() * Bf.size()>0){
-    d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
-    d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
-    d2.block(n_f + n_r, 0       , n_r, n_f)  =  (-1 + V(i))* weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
-    d2.block(0        ,n_f + n_r, n_f, n_r)  =  d2.block(n_f + n_r, 0       , n_r, n_f).transpose();
+  //if(Br.size() * Bf.size()>0){
+    //d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
+    //d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
+    //d2.block(n_f + n_r, 0       , n_r, n_f)  =  (-1 + V(i))* weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
+    //d2.block(0        ,n_f + n_r, n_f, n_r)  =  d2.block(n_f + n_r, 0       , n_r, n_f).transpose();
 
-  }
-  if(Bf.size() > 0 )
-    d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
+  //}
+  //if(Bf.size() > 0 )
+   // d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
 
   if(Br.size()>0){
     // dbeta_r dsigma
