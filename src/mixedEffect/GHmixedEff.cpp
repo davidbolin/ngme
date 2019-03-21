@@ -277,6 +277,18 @@ void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
 
 
 }
+void GHMixedEffect::add_gradient2(Eigen::VectorXd & grad){
+
+    if(Br.size() > 0 ){
+      int n_r = Br[0].cols();
+        grad_beta_r2 += grad.head(n_r);
+        gradMu       += grad.tail(n_r);
+    }
+
+
+}
+
+
 void GHMixedEffect::sampleV(const int i)
 {
   if(fixedV == 1)
@@ -645,15 +657,17 @@ void GHMixedEffect::gradient( const int i,
       if(calc_grad){
         grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
         gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+        gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
       }
-      grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
+      
       if(Bf.size() > 0)
           H_rf +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
       
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
 
 
-      gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
+      
 
       
 
@@ -702,14 +716,16 @@ void GHMixedEffect::gradient2(  const int i,
       if(calc_grad){
         grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
         gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        grad_beta_r2 += weight *  (invSigma * U_)/V(i);
+        gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
       }
-      grad_beta_r2 += weight *  (invSigma * U_)/V(i);
+      
       if(Bf.size() > 0)
           H_rf +=  EiV * weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
       H_beta_random +=  weight * EiV * exp( - log_sigma2_noise) * (Br[i].transpose()  * Br[i]);
 
 
-      gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
+      
       
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
       term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose() * res_);

@@ -435,33 +435,37 @@ void NormalMixedEffect::gradient2(const int i,
         Gradient part
 
     */
-    Eigen::VectorXd gf, gr;
-    if(Br.size() > 0){
-      if(use_EU)
-        res_ -= Br[i] * EU.col(i);
-      else
-        res_ -= Br[i] * U.col(i);
+          Eigen::VectorXd gf, gr;
+      if(Br.size() > 0){
+        if(use_EU)
+          res_ -= Br[i] * EU.col(i);
+        else
+          res_ -= Br[i] * U.col(i);
 
-      res_ = iV.cwiseProduct(res_);
-      Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      UUt += weight * vec( UUT);
-      gr            = weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      grad_beta_r         += gr;
-      grad_beta.head(n_r) += gr;
-      if(use_EU)
-        grad_beta_r2 += weight * (invSigma * EU.col(i));
-      else
-        grad_beta_r2 += weight * (invSigma * U.col(i));
-    }else{
-      res_ = iV.cwiseProduct(res_);
-    }
+        res_ = iV.cwiseProduct(res_);
+        Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
+        UUt += weight * vec( UUT);
+        if(calc_grad){
+          gr            = weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+          grad_beta_r         += gr;
+          grad_beta.head(n_r) += gr;
+          if(use_EU)
+            grad_beta_r2 += weight * (invSigma * EU.col(i));
+          else
+            grad_beta_r2 += weight * (invSigma * U.col(i));
+        }
+      }else{
+        res_ = iV.cwiseProduct(res_);
+      }
 
+      if(calc_grad){
+        if(Bf.size() > 0){
+          gf                   =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  res_);
+          grad_beta_f         +=  gf;
+          grad_beta.tail(n_f) +=  gf;
+        }
+      }
 
-    if(Bf.size() > 0){
-      gf                   =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() *  res_);
-      grad_beta_f         +=  gf;
-      grad_beta.tail(n_f) +=  gf;
-    }
 }
 
 Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
@@ -732,6 +736,7 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
     dbeta_r_old += 0.5 *  step1.head(n_r);
+    //Rcpp::Rcout << "step  = " << (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total << "\n";
     dbeta_r_old += 0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total;
     dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;

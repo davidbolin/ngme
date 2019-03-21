@@ -63,8 +63,9 @@ Eigen::MatrixXd var_term_calc(
   Eigen::SparseMatrix<double, 0, int> Kjoint;
   Kjoint.resize(n_p + n_r,n_p + n_r);
   Eigen::VectorXd mu_prior(n_r + n_p);
+  Eigen::MatrixXd iSigma;
   if(n_r > 0){
-    Eigen::MatrixXd iSigma = mixobj.Sigma.inverse();
+    iSigma = mixobj.Sigma.inverse();
     Eigen::MatrixXd L = iSigma.llt().matrixL();
     Eigen::SparseMatrix<double,0,int> Sigma_root = full2sparse(L);
     setSparseBlock(&Kjoint,0,0,Sigma_root);
@@ -151,6 +152,24 @@ if(debug)
     Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
     grad *= weight;
     mixobj.add_gradient(grad);
+
+    if(n_r > 0){
+      Eigen::VectorXd grad2;
+      if(mixobj.noise != "Normal"){
+        Eigen::VectorXd grad2_temp = iSigma * mu_hat.head(n_r);
+        grad2.resize(2*n_r);
+        grad2_temp -= (mixobj.V(i)-1)* iSigma * mixobj.mu;
+        grad2_temp /= mixobj.V(i);
+        grad2.head(n_r) = grad2_temp;
+        grad2.tail(n_r) = (mixobj.V(i) -1.)*grad2_temp;
+      }else{
+        grad2.resize(n_r);
+        grad2 = iSigma * mu_hat.head(n_r);
+      }
+      grad2 *= weight;
+      mixobj.add_gradient2(grad2);
+    }
+
     return(Results);
   }
   Eigen::MatrixXd tmp = Qsolver.solve(AtQX);

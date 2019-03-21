@@ -21,7 +21,7 @@ class MixedEffect {
   protected:
 
   public:
-
+    Eigen::VectorXd mu;
     int calc_grad;
     Eigen::VectorXd grad_beta_r; // gradient for random intercept
     Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
@@ -113,6 +113,11 @@ class MixedEffect {
       
       if(Br.size() > 0 )
         grad_beta_r += grad.tail(Br[0].cols());
+
+    };
+    virtual void add_gradient2(Eigen::VectorXd & grad){
+      if(Br.size() > 0 )
+        grad_beta_r2 += grad;
 
     };
 
@@ -336,7 +341,7 @@ public:
   int count_MALA;
   int accept_MALA;
   int sample_MALA;
-  Eigen::VectorXd mu;
+  
 
   Eigen::MatrixXd invSigma;
   Eigen::MatrixXd iSkroniS; // helper matrix
@@ -380,6 +385,7 @@ public:
   void step_beta(const double ,const double ,const int );
 
   void add_gradient(Eigen::VectorXd & grad);
+  void add_gradient2(Eigen::VectorXd & grad);
   virtual void get_param_names(Rcpp::StringVector &);
   virtual void printIter();
   virtual void initFromList(Rcpp::List const &); 
