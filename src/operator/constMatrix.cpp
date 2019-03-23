@@ -61,10 +61,6 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   counter = 0;
   tauVec[counter] = tau;
   counter++;
-  term1 = 0;
-  term2 = 0;
-  term3 = 0;
-
 }
 
 void constMatrix::initFromList(Rcpp::List const & init_List, Rcpp::List const & solver_list)
@@ -76,9 +72,6 @@ void constMatrix::gradient_init(int nsim, int nrep)
 {
   dtau   = 0;
   ddtau  = 0;
-  term1 = 0;
-  term2 = 0;
-  term3 = 0;
 }
 Eigen::MatrixXd constMatrix::d2Given( const Eigen::VectorXd & X,
                    const Eigen::VectorXd & iV,
@@ -92,7 +85,7 @@ Eigen::MatrixXd constMatrix::d2Given( const Eigen::VectorXd & X,
 
   double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
   Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(1,1);
-  d2(0, 0) = weight * (d[ii] + xtQx ) / pow(tau, 2);
+  d2(0, 0) = -weight * (d[ii] + xtQx ) / pow(tau, 2);
 
   return(d2);
 
@@ -105,15 +98,14 @@ void constMatrix::gradient_add( const Eigen::VectorXd & X,
 {
 	if(nop == 1)
 		ii = 0;
-  Eigen::VectorXd vtmp = Q[ii] * X;
 
-  double xtQx =  vtmp.dot( iV.asDiagonal() * vtmp);
-  double xtQmean = - vtmp.dot( iV.asDiagonal() * mean_KX);
-  dtau  -=  weight *  (d[ii] - xtQx - xtQmean)/ tau;
-  ddtau += weight * (d[ii] + xtQx) / pow(tau, 2);
-  term1 += weight * xtQx/pow(tau,2);
-  term2 += weight * xtQmean/tau;
-  term3 -= weight * d[ii];
+  Eigen::VectorXd KX = Q[ii]*X;
+  dtau    += weight * d[ii]/tau;
+  ddtau   += weight * (-d[ii]/pow(tau,2));
+  Eigen::VectorXd dKX = Q[ii] * X/tau;
+  dtau -=  weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX)); 
+  ddtau -= weight * (dKX.dot(iV.asDiagonal() * dKX));
+
 }
 
 void constMatrix::gradient( const Eigen::VectorXd & X, const Eigen::VectorXd & iV)
@@ -140,16 +132,6 @@ void constMatrix::step_theta(const double stepsize,
         tau_temp = tau - step;
     }
 
-    if(burnin == 1){
-      tau_temp = -term2 + pow(term2*term2 - 4*term1*term3,0.5);
-      tau_temp /= 2*term1;
-      if(tau < 0)
-        tau = 1;
-
-      term1 = 0;
-      term2 = 0;
-      term3 = 0;
-    }
   for(int i=0;i<nop;i++){
     Q[i] *= tau_temp/tau;
   }

@@ -87,7 +87,6 @@ class constMatrix : public operatorMatrix{
     std::vector<double>  m_loc;
     std::vector<double>  h_average;
   public:
-  double term1, term2, term3;
 
   void get_param_names(Rcpp::StringVector & names){
     names.push_back("tau_operator");

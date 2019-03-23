@@ -242,7 +242,7 @@ ngme <- function(fixed,
                           subsample.type = 4,
                           pSubsample2 = 0.3,
                           standardize.mixedEffects = FALSE,
-                          estimate.fisher = 2,
+                          estimate.fisher = FALSE,
                           individual.sigma = FALSE
                           )
     for(i in 1:length(controls.full)){
@@ -538,26 +538,27 @@ ngme <- function(fixed,
         cat("Estimate non-Gaussian")
       }
 
-      fit$mixedEffect_list$noise <- reffects
-      if(fit$mixedEffect_list$noise == "Normal"){
+      if(fit$mixedEffect_list$noise == "Normal" && reffects != "Normal"){
         fit$mixedEffect_list$nu <- as.matrix(3.)
         fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
       }
-
-      if(fit$processes_list$noise != "Normal"){
+      fit$mixedEffect_list$noise <- reffects
+      
+      if(fit$processes_list$noise == "Normal" && process[1] != "Normal"){
         fit$processes_list$mu <- 0
         fit$processes_list$nu <- 10
       }
-
       fit$processes_list$noise <- process[1]
+      
 
-      fit$measurementError_list$noise      <- error
-      fit$measurementError_list$assymetric <- error_assymetric
-      if(fit$measurementError_list$noise != "Normal"){
+      
+      if(fit$measurementError_list$noise == "Normal" && error != "Normal"){
         fit$measurementError_list$nu  <-  3.
         fit$measurementError_list$mu  <-  0
       }
-
+      fit$measurementError_list$noise      <- error
+      fit$measurementError_list$assymetric <- error_assymetric
+      
       fit$measurementError_list$common_V <- controls$individual.sigma
       fit$measurementError_list$Vs       <- Vin
 
