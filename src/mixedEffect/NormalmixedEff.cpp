@@ -161,6 +161,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
   }else{ Bf.resize(0);}
   count = 0;
   n_r = 0;
+
   if(init_list.containsElementNamed("B_random"))
   {
     Rcpp::List Br_list = init_list["B_random"];
@@ -192,7 +193,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
         beta_random_constrainted.setOnes(Br[0].cols());;
     }
 
-	dbeta_r_old.setZero(Br[0].cols());
+	   dbeta_r_old.setZero(Br[0].cols());
     npars += Br[0].cols();
   }else{ Br.resize(0);}
 
@@ -240,6 +241,8 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
   grad_beta.setZero(n_f + n_r);
   H_beta.setZero(n_f + n_r, n_r + n_f);
   nfr = n_f + n_r;
+  
+  Hessian.setZero(nfr, nfr);
 }
 
 
@@ -378,6 +381,82 @@ void NormalMixedEffect::sampleU_par(const int i,
     U.col(i) += Z;
   }
 }
+/*
+  Caculating the gradient for measurement error which is Normal
+  two special casses are of importance
+  single measurement error sigma or vector type
+*/
+void NormalMixedEffect::gradient(const int i,
+                                 const Eigen::VectorXd& res,
+                                 const double log_sigma2_noise,
+                                 const double weight,
+                                 const int use_EU// =1
+                                 )
+{
+
+    counter++;
+    Eigen::VectorXd res_  = res;
+    Eigen::VectorXd isigmas2;
+    gradientVec.setZero(npars);
+    if(Br.size() > 0){
+      if(use_EU)
+        res_ -= Br[i] * EU.col(i);
+      else
+        res_ -= Br[i] * U.col(i);
+    
+      Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
+      Eigen::VectorXd  dSigma_ = 0.5 * Dd.transpose() * iSkroniS * (vec( UUT) - vec(Sigma));
+      gradientVec.tail(dSigma_.size()) = dSigma_; 
+      UUt += weight * vec( UUT);//gradient.tail(UUt.length());
+      if(calc_grad){
+        grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        if(use_EU)
+          grad_beta_r2  += weight * (invSigma * EU.col(i));
+        else
+          grad_beta_r2  += weight * (invSigma * U.col(i));
+      }
+      
+      H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+      
+
+    }
+
+  if(Bf.size() > 0){
+      if(calc_grad)
+        grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+        
+  }
+  if(1){
+      if(Br.size() > 0){
+        
+        if(calc_grad){
+          gradientVec.segment(n_f, n_r) = exp( - log_sigma2_noise) * (Br[i].transpose() * res_); 
+          grad_beta.head(n_r)   += weight * gradientVec.segment(n_f, n_r) ;
+          grad_beta_r2         += weight * (invSigma * U.col(i));
+        }
+      //
+      H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+        
+      }
+      if(Bf.size() > 0){
+        
+        if(calc_grad){
+          gradientVec.head(n_f) = exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+          grad_beta.tail(n_f) += weight * gradientVec.head(n_f);
+        }
+        H_beta.bottomRightCorner(n_f, n_f)  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+        
+        if(Br.size() > 0){
+            H_beta.topRightCorner(n_r, n_f) +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
+            H_beta.bottomLeftCorner(n_f, n_r) +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
+           
+          }
+      }
+    }
+     weight_total += weight;
+
+}
 
 void NormalMixedEffect::gradient2(const int i,
                                  const Eigen::VectorXd& res,
@@ -484,7 +563,6 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
     res_ -= Br[i] * U.col(i);
     d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
@@ -493,14 +571,15 @@ Eigen::MatrixXd NormalMixedEffect::d2Given2(const int i,
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) =  3  * weight * exp( - 2   * log_sigma2_noise)  * (res_.array().square() *iV.array()).sum();
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) +=  -1 * weight * res_.size()  * exp( - log_sigma2_noise);
   res_ = iV.cwiseProduct(res_);
-  /*
-  if(Br.size() * Bf.size()>0){
-    d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
-    d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
+  if(calc_grad){
+    d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Br[i]);
+    if(Br.size() * Bf.size()>0){
+      d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Br[i]);
+      d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * iV.asDiagonal() * Bf[i]);
+    }
+    if(Bf.size() > 0 )
+      d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
   }
-  if(Bf.size() > 0 )
-    d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * iV.asDiagonal() * Bf[i]);
-  */
   if(Br.size()>0){
 
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
@@ -525,108 +604,44 @@ Eigen::MatrixXd NormalMixedEffect::d2Given(const int i,
   Eigen::VectorXd res_  = res;
 
   int n_s  =0;
-
   if(Br.size()>0)
      n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd d2            = Eigen::MatrixXd::Zero(n_s + n_f + n_r + 1,n_s + n_f+n_r + 1);
   if(Br.size()>0){
-    //d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
     res_ -= Br[i] * U.col(i);
-    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
+    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  +=  0.5* weight * Dd.transpose() * iSkroniS * Dd;
     Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  += weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
+    d2.block(n_r +n_f , n_r +n_f, n_s, n_s)  -= weight *  Dd.transpose() * kroneckerProduct(invSigma, invSigma * UUT * invSigma ) * Dd;
   }
-  /*
-  if(Br.size() * Bf.size()>0){
-    d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
-    d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
+  
+  if(calc_grad){
+    if(Br.size() * Bf.size()>0){
+      d2.block(  0      , n_f     , n_f, n_r)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
+      d2.block(n_f      , 0       , n_r, n_f)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
+    }
+    if(Br.size()>0){
+      d2.block(  n_f      , n_f       , n_r, n_r)  =  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
+    }
+    if(Bf.size() > 0 )
+      d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
   }
-  if(Bf.size() > 0 )
-    d2.block(0      , 0     , n_f, n_f)  =  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-  */
   if(Br.size()>0){
 
     d2.block(n_f              , n_s + n_r +n_f , n_r , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Br[i].transpose() * res_);
     d2.block(n_s +  n_r + n_f, n_f              , 1   , n_r ) = d2.block(n_f              , n_s + n_r +n_f , n_r , 1 ).transpose();
   }
-
  if(Bf.size() > 0){
     d2.block(0            , n_s + n_r + n_f , n_f , 1 )   =  2 * weight * exp( - 1.5 * log_sigma2_noise)  * (Bf[i].transpose() * res_);
     d2.block(n_s + n_r + n_f, 0             , 1   , n_f ) = d2.block(0            , n_s + n_r + n_f , n_f , 1 ).transpose();
   }
+  
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) =  3  * weight * exp( - 2   * log_sigma2_noise)  * res_.array().square().sum();
   d2(n_s +  n_r +n_f, n_s +  n_r +n_f ) +=  -1 * weight * res_.size()  * exp( - log_sigma2_noise);
   return(d2);
 }
 
 
-/*
-  Caculating the gradient for measurement error which is Normal
-  two special casses are of importance
-  single measurement error sigma or vector type
-  TODO simple test gradient?
-*/
-void NormalMixedEffect::gradient(const int i,
-                                 const Eigen::VectorXd& res,
-                                 const double log_sigma2_noise,
-                                 const double weight,
-                                 const int use_EU// =1
-                                 )
-{
 
-    counter++;
-    Eigen::VectorXd res_  = res;
-    Eigen::VectorXd isigmas2;
-    if(Br.size() > 0){
-      if(use_EU)
-        res_ -= Br[i] * EU.col(i);
-      else
-        res_ -= Br[i] * U.col(i);
-    
-      Eigen::MatrixXd UUT = U.col(i) * U.col(i).transpose();
-      UUt += weight * vec( UUT);
-      if(calc_grad){
-        grad_beta_r   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-        if(use_EU)
-          grad_beta_r2  += weight * (invSigma * EU.col(i));
-        else
-          grad_beta_r2  += weight * (invSigma * U.col(i));
-      }
-      
-      H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
-      
-
-    }
-
-  if(Bf.size() > 0){
-      if(calc_grad)
-        grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-      H_beta_fixed  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-        
-  }
-  if(1){
-      if(Br.size() > 0){
-        if(calc_grad)
-          grad_beta.head(n_r)   += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-      //grad_beta_r2         += weight * (invSigma * U.col(i));
-      H_beta.topLeftCorner(n_r, n_r)  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
-        
-      }
-      if(Bf.size() > 0){
-        if(calc_grad)
-          grad_beta.tail(n_f) += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-        H_beta.bottomRightCorner(n_f, n_f)  += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-        
-        if(Br.size() > 0){
-            H_beta.topRightCorner(n_r, n_f) +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
-            H_beta.bottomLeftCorner(n_f, n_r) +=  weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * Br[i]);
-           
-          }
-      }
-    }
-     weight_total += weight;
-
-}
 void NormalMixedEffect::step_theta(const double stepsize,
 								   const double learning_rate,
 								   const double polyak_rate,
@@ -641,6 +656,20 @@ void NormalMixedEffect::step_theta(const double stepsize,
     step_beta_fixed(stepsize, learning_rate,burnin);
 }else{
     step_beta(stepsize, learning_rate,burnin);
+    if(0){
+      Eigen::VectorXd grad0(nfr);
+      grad0 << grad_beta_f, grad_beta_r;
+      Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
+      Eigen::VectorXd betamu(nfr);
+      betamu << beta_fixed, beta_random ;
+      Eigen::VectorXd step1=  betamu + stepsize * step0;
+      beta_fixed   = step1.head(beta_fixed.size());
+      beta_random  = step1.tail(beta_random.size());
+      Hessian *= 0.4;
+      grad_beta_f *= 0.;
+      grad_beta_r *= 0.;
+      grad_beta   *= 0.;
+  }
     if(Br.size() > 0)
       step_Sigma(stepsize, learning_rate,burnin);
 
@@ -774,7 +803,7 @@ void NormalMixedEffect::step_beta_random(const double stepsize,const double lear
 
 void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_rate,const int burnin)
 {
-    double pos_def = 0;
+  double pos_def = 0;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
   UUt -= weight_total*vec(Sigma);
   dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;

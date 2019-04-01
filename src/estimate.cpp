@@ -127,7 +127,7 @@ if(debug)
       Br = mixobj.Br[i];
     }else{
       Br.resize(mixobj.Br[i].rows(), 2*mixobj.Br[i].cols());
-      Eigen::MatrixXd Br_mu = (1.-mixobj.V(i)) * mixobj.Br[i];
+      Eigen::MatrixXd Br_mu = (mixobj.V(i)-1.) * mixobj.Br[i];
       Br << mixobj.Br[i], Br_mu;
     }
  }
@@ -146,6 +146,7 @@ if(debug)
   Eigen::MatrixXd  XtQ = QX.transpose();
   Eigen::MatrixXd AtQX = Ajoint.transpose()*QX;
   Eigen::MatrixXd XtQA = AtQX.transpose();
+  Eigen::MatrixXd Res;
   if(calc_mean){
   // Xt*Q_e*() *(res - A*mu_hat )
    // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
@@ -168,13 +169,17 @@ if(debug)
       }
       grad2 *= weight;
       mixobj.add_gradient2(grad2);
+      //return Results;
     }
 
-    return(Results);
+   
   }
   Eigen::MatrixXd tmp = Qsolver.solve(AtQX);
   
   Results += XtQA*tmp;
+  
+  Res = weight * Results;
+  mixobj.get_Hessian(Res);
   return Results;
 }
 
@@ -673,7 +678,7 @@ List estimateLong_cpp(Rcpp::List in_list)
               //if(i==0)
               //Rcpp::Rcout << "Vmf = " << Vmf << "\n";
 
-              }
+          }
           // collects the gradient for computing estimate of variances
           grad_inner.block(0, count_inner,
                            mixobj->npars, 1)  = mixobj->get_gradient();
@@ -686,9 +691,10 @@ List estimateLong_cpp(Rcpp::List in_list)
                              Kobj->npars, 1) = Kobj -> get_gradient();
 
           }
+
           // adjusting so we get last gradient not cumsum
           /*
-          Eigen::VectorXd grad_last_temp = grad_inner.col(count_inner);
+          
           grad_inner.col(count_inner).array() -= grad_last.array();
           Eigen::MatrixXd Fisher_temp  = 0.5 * grad_inner.col(count_inner)*grad_inner.col(count_inner).transpose() /  sampler->weight[i];
           Fisher_information -=  Fisher_temp + Fisher_temp.transpose(); //gives -sum g_i*g_i'
@@ -713,6 +719,7 @@ List estimateLong_cpp(Rcpp::List in_list)
             //Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -=  Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr) 
             //                                                             + Fisher_add.topLeftCorner(mixobj->nfr, mixobj->nfr).transpose();  
             Fisher_information.topLeftCorner(mixobj->nfr, mixobj->nfr) -= Vmf * (sampler->weight[i] );
+            //Rcpp::Rcout << "Fisher information" << Fisher_information << "\n";
             Vmf *= 0; 
         }
       //GradientVariance    -=  Fisher_add + Fisher_add.transpose();

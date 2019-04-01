@@ -212,15 +212,15 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,c
     }
   }
 
-  if(nu_temp  > 100){
-  		nu_temp =100;
+  if(nu_temp  > 600){
+  		nu_temp =600;
       dnu_old = 0;
   } else if(nu_temp < 5e-06){
     nu_temp =5e-06;
     dnu_old = 0;
   }
 	nu = nu_temp;
-
+  //nu = 400;
   EiV = 1. + 1./nu;
   VV = 1./nu;
   set_b_GIG();

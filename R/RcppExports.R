@@ -89,3 +89,7 @@ test_error <- function(niter, Y, error_list) {
     .Call(`_ngme_test_error`, niter, Y, error_list)
 }
 
+test_mixed_Fisher <- function(niter, Y, mixed_list, error_list) {
+    .Call(`_ngme_test_mixed_Fisher`, niter, Y, mixed_list, error_list)
+}
+

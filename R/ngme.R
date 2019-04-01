@@ -539,8 +539,29 @@ ngme <- function(fixed,
       }
 
       if(fit$mixedEffect_list$noise == "Normal" && reffects != "Normal"){
-        fit$mixedEffect_list$nu <- as.matrix(3.)
-        fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
+        if(dim(fit$mixedEffect_list$U)[1]==1){
+          lambda <- function(x) -sum(dnig(c(fit$mixedEffect_list$U),0,0,exp(x[1]),exp(x[2]),log = T))
+          res <- optim(c(
+                  0,
+                  log(fit$mixedEffect_list$Sigma)/2),
+                lambda)
+          fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
+          fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[1])),600)
+          fit$mixedEffect_list$Sigma <- as.matrix(exp(2*res$par[2]))
+          if(fit$mixedEffect_list$nu< 10){
+            lambda <- function(x) -sum(dnig(c(fit$mixedEffect_list$U),-x[1],x[1],exp(x[2]),exp(x[3]),log = T))
+            res <- optim(c(0,
+              0,
+              log(fit$mixedEffect_list$Sigma)/2),
+              lambda)
+            fit$mixedEffect_list$mu <- res$par[1]
+            fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[2])),600)
+            fit$mixedEffect_list$Sigma <- as.matrix(exp(2*res$par[3]))
+          }
+        }else{
+          fit$mixedEffect_list$nu <- as.matrix(3.)
+          fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
+        }
       }
       fit$mixedEffect_list$noise <- reffects
       

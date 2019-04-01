@@ -23,6 +23,7 @@ class MixedEffect {
   public:
     Eigen::VectorXd mu;
     int calc_grad;
+    Eigen::VectorXd gradientVec;
     Eigen::VectorXd grad_beta_r; // gradient for random intercept
     Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
     Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
@@ -50,9 +51,8 @@ class MixedEffect {
     Eigen::VectorXd beta_fixed;
 	  Eigen::VectorXd dbeta_r_old;
 	  Eigen::VectorXd dbeta_f_old;
-
-
-    Eigen::VectorXd V; // scaling vector
+    Eigen::VectorXd V;
+    Eigen::MatrixXd Hessian; // scaling vector
 
     /*
       HOW to start up the class from the list.
@@ -90,6 +90,9 @@ class MixedEffect {
 
     };
     virtual Rcpp::List toList()=0;
+    virtual void get_Hessian(Eigen::MatrixXd & H){
+        Hessian += H;
+    };
     virtual void sampleU(const int, const Eigen::VectorXd &,  const double ) = 0;
     virtual void sampleU_par(const int, const Eigen::VectorXd &,  const double, std::mt19937 &) = 0;
     // sampleU2 is sampling with diagonal covariance matrix for the noise

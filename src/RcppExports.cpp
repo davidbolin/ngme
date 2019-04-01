@@ -293,6 +293,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_mixed_Fisher
+Rcpp::List test_mixed_Fisher(int niter, Rcpp::List Y, Rcpp::List mixed_list, Rcpp::List error_list);
+RcppExport SEXP _ngme_test_mixed_Fisher(SEXP niterSEXP, SEXP YSEXP, SEXP mixed_listSEXP, SEXP error_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type mixed_list(mixed_listSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type error_list(error_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_mixed_Fisher(niter, Y, mixed_list, error_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
@@ -317,6 +331,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_sample_internalR", (DL_FUNC) &_ngme_sample_internalR, 4},
     {"_ngme_test_mixed", (DL_FUNC) &_ngme_test_mixed, 4},
     {"_ngme_test_error", (DL_FUNC) &_ngme_test_error, 3},
+    {"_ngme_test_mixed_Fisher", (DL_FUNC) &_ngme_test_mixed_Fisher, 4},
     {NULL, NULL, 0}
 };
 

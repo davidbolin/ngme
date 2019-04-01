@@ -118,20 +118,17 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
   if(init_list.containsElementNamed("B_fixed"))
   {
     Rcpp::List Bf_list = init_list["B_fixed"];
-
-    
     Bf.resize(Bf_list.length());
     for( Rcpp::List::iterator it = Bf_list.begin(); it != Bf_list.end(); ++it ) {
       Bf[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
     }
     n_f = Bf[0].cols();
-    grad_beta_f.setZero(Bf[0].cols());
-
+    grad_beta_f.resize(n_f);
+    grad_beta_f.setZero(n_f);
     if(init_list.containsElementNamed("beta_fixed"))
       beta_fixed = Rcpp::as < Eigen::VectorXd >( init_list["beta_fixed"]);
     else
       beta_fixed.setZero(Bf[0].cols());
-
 
     if(beta_fixed.size() != Bf[0].cols())
     {
@@ -147,14 +144,12 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
     }else{
         beta_fixed_constrainted.setOnes(Bf[0].cols());;
     }
-
     dbeta_f_old.setZero(Bf[0].cols());
     H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
     npars += Bf[0].cols();
 
   }else{ Bf.resize(0);}
   count = 0;
-
   if(init_list.containsElementNamed("B_random"))
   {
     Rcpp::List Br_list = init_list["B_random"];
@@ -196,7 +191,6 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
         H_rf.setZero(Br[0].cols(), Bf[0].cols());
       }
     }
-
     if(init_list.containsElementNamed("Sigma"))
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
     else
@@ -261,6 +255,8 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
 
 
   nfr = n_f + 2 * n_r;
+
+  Hessian.setZero(nfr, nfr);
 }
 void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
 
@@ -637,6 +633,7 @@ void GHMixedEffect::gradient( const int i,
                               const int use_EU
                               )
 {
+    //gradientVec.setZero(npars);
     Eigen::VectorXd res_  = res;
     Eigen::VectorXd U_;
     if(Br.size() > 0){
@@ -655,21 +652,18 @@ void GHMixedEffect::gradient( const int i,
 
     if(Br.size() > 0){
       if(calc_grad){
-        grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-        gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
-        grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
         gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
+        gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        
+        grad_beta_r  +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+
+        grad_beta_r2 +=  weight * (invSigma * U_)/V(i);
       }
       
       if(Bf.size() > 0)
           H_rf +=  weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
       
       H_beta_random += weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Br[i]);
-
-
-      
-
-      
 
 
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
@@ -695,9 +689,18 @@ void GHMixedEffect::gradient2(  const int i,
                                 const int nssigma            //  = 0
                               )
 {
-   Eigen::VectorXd res_  = res;
-    Eigen::VectorXd U_;
+ // gradientVec.setZero(npars);
+  Eigen::VectorXd res_  = res;
+  Eigen::VectorXd U_;
+
+
+  int n_r = 0;
+  int n_s = 0;
+  int n_f = 0;
+
     if(Br.size() > 0){
+      n_r = Br[i].cols();
+      n_s = n_r * (n_r +1) /2;
 
       U_ = U.col(i) - (-1 + V(i)) * mu;
       gradient_sigma(i, U_, weight);
@@ -711,11 +714,23 @@ void GHMixedEffect::gradient2(  const int i,
     }
     res_ = res_.cwiseProduct(iV);
 
-
+    if(Bf.size() > 0){
+      n_r = Bf[i].cols();
+      //gradientVec.head(n_r) = exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      if(calc_grad){
+        //grad_beta_f   += weight * gradientVec.head(n_r);
+        grad_beta_f += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
+      }
+      H_beta_fixed  += weight * EiV *  exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
+    }
     if(Br.size() > 0){
       if(calc_grad){
+        //gradientVec.segment(n_f, n_r) = exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
+        //grad_beta_r  += weight * gradientVec.segment(n_f, n_r);
         grad_beta_r  += weight * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
-        gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() * res_);
+        //gradientVec.segment(n_f + n_r, n_r) = (-1 + V(i) ) * gradientVec.segment(n_f, n_r);
+        //gradMu_2 += weight * gradientVec.segment(n_f + n_r, n_r);
+        gradMu_2 += weight * (-1 + V(i) ) * exp( - log_sigma2_noise) * (Br[i].transpose() *  res_);
         grad_beta_r2 += weight *  (invSigma * U_)/V(i);
         gradMu   += weight * ((-1 + V(i) )/V(i) ) * (invSigma * U_);
       }
@@ -723,18 +738,10 @@ void GHMixedEffect::gradient2(  const int i,
       if(Bf.size() > 0)
           H_rf +=  EiV * weight * exp( - log_sigma2_noise) * (Br[i].transpose() * Bf[i]);
       H_beta_random +=  weight * EiV * exp( - log_sigma2_noise) * (Br[i].transpose()  * Br[i]);
-
-
-      
-      
       term1_mu += weight * ((-1 + V(i) )/V(i) )*(-1 + V(i) );
       term2_mu += weight * ((-1 + V(i))/V(i) )*(invSigma*U_) + weight*(-1 + V(i))*exp(-log_sigma2_noise)*(Br[i].transpose() * res_);
     }
-    if(Bf.size() > 0){
-      if(calc_grad)
-        grad_beta_f   += weight * exp( - log_sigma2_noise) * (Bf[i].transpose() * res_);
-      H_beta_fixed  += weight * EiV *  exp( - log_sigma2_noise) * (Bf[i].transpose() * Bf[i]);
-    }
+    
     counter++;
   weight_total += weight;
 }
@@ -742,9 +749,13 @@ void GHMixedEffect::gradient2(  const int i,
 
 void GHMixedEffect::gradient_sigma(const int i, Eigen::VectorXd& U_ ,const double weight)
 {
+
+  int n_r = Br[i].cols();
+  int n_s = n_r * (n_r +1) /2;
   Eigen::MatrixXd UUT =  (U_ * U_.transpose());
   UUT.array() /= V(i);
-  UUt    += weight * vec( UUT);
+  //gradientVec.tail(n_s) = vec( UUT);
+  UUt += weight *  vec( UUT);//gradientVec.tail(n_s);
 }
 
 void GHMixedEffect::store_param_function(const double polyak_rate){
@@ -779,15 +790,30 @@ void GHMixedEffect::store_param_function(const double polyak_rate){
 }
 
 
-
 void GHMixedEffect::step_theta(const double stepsize,
                                const double learning_rate,
                                const double polyak_rate,
                                const int burnin)
 {
   
+if(0){
+  Eigen::VectorXd grad0(nfr);
+  grad0 << grad_beta_f, grad_beta_r, gradMu_2;
+  Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
+  Eigen::VectorXd betamu(nfr);
+  betamu << beta_fixed, beta_random, mu ;
+  Eigen::VectorXd step1=  betamu + stepsize * step0;
+  beta_fixed = step1.head(beta_fixed.size());
+  beta_random = step1.segment(beta_fixed.size(), beta_random.size());
+  mu          = step1.tail(beta_random.size());
+  Hessian *= 0.8;
+  grad_beta_f *= 0.;
+  grad_beta_r *= 0.;
+  gradMu_2    *= 0.;
+}
+
   if(Br.size() > 0){
-    step_mu(stepsize, 0,burnin);
+      step_mu(stepsize, 0,burnin);
     if(Bf.size() == 0){
       step_beta_random(stepsize, 0,burnin);
     }else{
@@ -887,6 +913,7 @@ void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,co
       mu(i) = mu_temp(i);
     }
   }
+  //mu.array() = 0;
   gradMu_2.setZero(Br[0].cols(), 1);
 }
 
@@ -963,7 +990,6 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   }else{
     step1  = H_beta.ldlt().solve(grad_beta);
   }
-
   if(Bf.size() > 0){
     dbeta_f_old.array() *= learning_rate;
     dbeta_f_old += 0.5 * step1.tail(n_f);
@@ -1026,9 +1052,9 @@ Eigen::MatrixXd GHMixedEffect::d2Given( const int i,
 
     // dmu dSigma
 
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
-    d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  *= 0.5* weight * (1 / V(i));
-    d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
+    //d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  =  kroneckerProduct(B_mu * invSigma, (invSigma * U_).transpose()) * Dd;
+    //d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s)  *= 0.5* weight * (1 / V(i));
+    //d2.block(  2 * n_r +n_f, n_r +n_f , n_s, n_r)  =  d2.block( n_r +n_f , 2 * n_r +n_f, n_r, n_s).transpose();
   }
   /*
   if(Br.size() * Bf.size()>0){

@@ -289,6 +289,7 @@ Rcpp::List test_mixed(int niter,
         mixobj->sampleU( i, res, 2 * log(errObj->sigma));
       }
 
+
       if(type_me == "Normal"){
         mixobj->gradient(i, res, 2 * log(errObj->sigma), 1., 1);
       }else{
@@ -379,4 +380,128 @@ Rcpp::List test_error(int niter,
   out_list["measurementError_list"] = errobj_list;
   return(out_list);
 
+}
+
+
+/*
+  simple optimazation of mixed effect object
+  niter      - number of set in conjuagete gradient
+  Y          - observtions
+  mixed_list - conatins init ofr mixed_list
+
+*/
+// [[Rcpp::export]]
+Rcpp::List test_mixed_Fisher(int niter,
+                      Rcpp::List Y,
+                      Rcpp::List mixed_list,
+                      Rcpp::List error_list)
+{
+  int nindv = Y.size(); 
+  std::vector< Eigen::VectorXd > Ys( nindv);
+  for(int i=0; i < nindv; i++)
+    Ys[i] = Rcpp::as<Eigen::VectorXd>(Y[i]);
+  
+  
+  MixedEffect *mixobj = NULL;
+  std::string type_mixed = Rcpp::as <std::string> (mixed_list["name"]);
+  if(type_mixed == "Normal"){
+      mixobj = new NormalMixedEffect;
+    }else if(type_mixed == "tdist") {
+      mixobj   = new tdMixedEffect;
+    }else if(type_mixed == "NIG") {
+      mixobj   = new NIGMixedEffect;
+    } else {
+      Rcpp::Rcout << "Wrong mixed effect distribution";
+    }
+    mixobj->initFromList(mixed_list);
+
+
+
+  MeasurementError *errObj;
+  std::string type_me = Rcpp::as <std::string> (error_list["name"]);
+  if(type_me == "Normal")
+    errObj = new GaussianMeasurementError;
+  else if(type_me == "nsNormal")
+    errObj = new nsGaussianMeasurementError;
+  errObj->initFromList(error_list);
+  
+  mixobj->setupStoreTracj(niter);
+  errObj->setupStoreTracj(niter);
+  Eigen::MatrixXd d2Given;
+  Eigen::MatrixXd VVt;
+  Eigen::VectorXd V;
+  Eigen::VectorXd Vtemp;
+  Eigen::VectorXd Vtemp_old;
+  d2Given.setZero(mixobj->npars, mixobj->npars);
+  VVt.setZero(mixobj->npars, mixobj->npars);
+  V.setZero(mixobj->npars);
+  Vtemp.setZero(mixobj->npars);
+  for(int iter=0; iter < niter; iter++){
+
+    Vtemp_old= Vtemp;
+    Vtemp.setZero(mixobj->npars);
+    for(int i=0; i < nindv; i++){
+      Eigen::VectorXd  res = Y[i];
+      mixobj->remove_cov(i, res);
+
+      //mixobj->remove_inter(i, res);
+      //mixobj->add_inter(i, res);
+      Eigen::VectorXd sigmas; 
+      Eigen::MatrixXd d2Given_temp;
+      if(errObj->nsSigma)
+        sigmas = errObj->sigmas[i];
+      if(errObj->nsSigma>0){
+        mixobj->sampleU2( i, res, sigmas.array().pow(2).cwiseInverse(),2 * log(errObj->sigma));
+      }else{
+        mixobj->sampleU( i, res, 2 * log(errObj->sigma));
+      }
+
+      if(type_me == "Normal"){
+        mixobj->gradient(i, res, 2 * log(errObj->sigma), 1., 0);
+        d2Given_temp = mixobj->d2Given(i,
+                                  res,
+                                  2 * log(errObj->sigma),
+                                  1.);
+      }else{
+      mixobj->gradient2(i,
+                      res,
+                      errObj->Vs[i].cwiseInverse(),
+                      sigmas,
+                      2 * log(errObj->sigma),
+                      1.,
+                      1., //w 
+                      0,
+                      errObj->nsSigma);
+
+        d2Given_temp = mixobj->d2Given2(i,
+                                   res,
+                                   errObj->Vs[i].cwiseInverse(),
+                                   2 * log(errObj->sigma),
+                                   1.,
+                                   0);
+
+      }
+      mixobj->remove_inter(i, res);
+      d2Given += d2Given_temp.topLeftCorner(mixobj->npars,mixobj->npars);
+      Vtemp     += mixobj->gradientVec;
+      errObj->gradient(i, res, 1.);
+    }
+    VVt += Vtemp * Vtemp.transpose();
+    V   += Vtemp;
+    //mixobj->step_theta(0.5, 0, -1);
+    //errObj->step_theta(0.5, 0, -1);
+    mixobj->clear_gradient();
+    errObj->clear_gradient();
+  }
+  
+  Rcpp::List out_list;
+  Rcpp::List mixobj_list       = mixobj->toList();
+  out_list["mixedEffect_list"] = mixobj_list;
+  Rcpp::List errobj_list            = errObj->toList();
+  out_list["measurementError_list"] = errobj_list;
+  out_list["V"] = V/niter;
+  out_list["VVt"] = VVt/niter;
+  out_list["d2Given"] = d2Given/niter;
+
+  return(out_list);
 }
