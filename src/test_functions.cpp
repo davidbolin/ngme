@@ -517,7 +517,10 @@ Rcpp::List test_process(int niter,
   gig rgig;
   rgig.seed(random_engine());
   gig *rgig_pointer = &rgig;
-
+  int sampleV = 1;
+  if(process_list.containsElementNamed("sampleV" ))
+    sampleV = Rcpp::as<int>(process_list["sampleV"]);
+  
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (process_list["h"]);
   
   std::vector<Eigen::VectorXd > h;
@@ -535,9 +538,10 @@ Rcpp::List test_process(int niter,
   SparseMatrix<double> spI = I.sparseView();
   for(int j = 0; j< niter; j++){
     for(int i = 0; i < h_list.length(); i++){
-     process->sample_V(i ,
-                       rgig,
-                       spI);
+      if(sampleV)
+        process->sample_V(i ,
+                          rgig,
+                          spI);
       process->gradient(i, spI, spI, h[0], 1., 1., 1.);
     
 
@@ -563,7 +567,10 @@ Rcpp::List test_Mprocess(int niter,
   gig rgig;
   rgig.seed(random_engine());
   gig *rgig_pointer = &rgig;
-
+  int sampleV = 1;
+  if(process_list.containsElementNamed("sampleV" ))
+    sampleV = Rcpp::as<int>(process_list["sampleV"]);
+ 
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (process_list["h"]);
   
   std::vector<Eigen::VectorXd > h;
@@ -580,9 +587,10 @@ Rcpp::List test_Mprocess(int niter,
   SparseMatrix<double> spI = I.sparseView();
   for(int j = 0; j< niter; j++){
     for(int i = 0; i < h_list.length(); i++){
-      //process->sample_V(i ,
-       //                *rgig_pointer,
-       //                spI);
+      if(sampleV)
+        process->sample_V(i ,
+                          *rgig_pointer,
+                          spI);
       process->gradient(i, spI, spI, h[0], 1., 1., 1.);
       //process->gradient_v2(i , spI, spI, h[0], 1., h[0], 1., 1., 1.);
     }

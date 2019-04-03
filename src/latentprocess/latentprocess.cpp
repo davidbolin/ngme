@@ -771,7 +771,7 @@ void MGHProcess::gradient_mu_centered(const int i,
     Eigen::VectorXd h_  =  iV.cwiseProduct(-h[i] + Vs[i]);
     h_.array() *= (-h[i] + Vs[i]).array();
     dMu    += weight * Bmu[i].transpose() * temp_1 ;
-    ddMu   += weight * Bmu[i].transpose() * h_.asDiagonal() * Bmu[i];
+    ddMu   -= weight * Bmu[i].transpose() * h_.asDiagonal() * Bmu[i];
     }
 
 
@@ -846,7 +846,7 @@ void GHProcessBase::step_theta(const double stepsize,
 
 	if( type_process == "CH")
   		return;
-    
+  
 	step_mu(stepsize,
           learning_rate,
           burnin,
@@ -955,7 +955,7 @@ void GHProcessBase::step_nu(const double stepsize, const double learning_rate, c
       }
     }
   }
-  nu_temp = term1/term2;
+  //nu_temp = term1/term2;
   nu = nu_temp;
   update_nu();
   if(store_param)
