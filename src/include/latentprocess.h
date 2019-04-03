@@ -34,9 +34,9 @@ public:
   Eigen::MatrixXd Cov_theta;// assymptotic covariance of the parameters
 
   virtual Eigen::VectorXd get_mean_prior(const int i, const Eigen::SparseMatrix<double,0,int> & K){
-    Eigen::VectorXd res;
-    res.setZero(h[i].size());
-    return(res);
+  Eigen::VectorXd res;
+  res.setZero(h[i].size());
+  return(res);
   };
   virtual Eigen::VectorXd  get_gradient() { Eigen::VectorXd temp; return(temp);};
   virtual void  clear_gradient() {};
@@ -191,7 +191,7 @@ class GHProcessBase : public Process{
 
 
 public:
-
+  std::vector< Eigen::VectorXd > sampleVbool;
   std::vector< Eigen::VectorXd > h2;
   std::vector< double > h_sum;
   std::vector< double >  h_min;
@@ -204,8 +204,8 @@ public:
   double dnu_prev;
   double dmu_prev;
   std::vector< Eigen::VectorXd > EiV;
-  Eigen::VectorXd mu_vec;
-  Eigen::VectorXd nu_vec;
+  Eigen::MatrixXd mu_vec;
+  Eigen::MatrixXd nu_vec;
   int vec_counter;
   double counter;
   double  ddmu_1, ddmu_2;
@@ -215,9 +215,9 @@ public:
 
   Eigen::VectorXd get_mean_prior(const int, const Eigen::SparseMatrix<double,0,int> & );
 
-  void update_nu();
-  void grad_nu(const int, const double);
-  void gradient_mu_centered(const int ,
+  virtual void update_nu();
+  virtual void grad_nu(const int, const double);
+  virtual void gradient_mu_centered(const int ,
                             const Eigen::SparseMatrix<double,0,int> & ,
                             const double);
 
@@ -248,7 +248,6 @@ public:
 
     names.push_back("mu_process");
     if( type_process != "CH"){
-
       names.push_back("nu_process");
     }
   };
@@ -318,12 +317,12 @@ public:
                     const double weight);
 
   void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1, const int burnin = 0);
-  void step_mu(const double, const double, const int);
-  void step_nu(const double, const double, const int);
+  virtual void step_mu(const double, const double, const int, const double);
+  virtual void step_nu(const double, const double, const int,const double);
   void printIter();
-  Rcpp::List toList();
-  void setupStoreTracj(const int);
-  void sample_V(const int,
+  virtual Rcpp::List toList();
+  virtual void setupStoreTracj(const int);
+  virtual void sample_V(const int,
                 gig &,
                 const Eigen::SparseMatrix<double,0,int> &);
 
@@ -337,9 +336,9 @@ public:
   void simulate_V(const int,
                   gig &);
 
-  Eigen::VectorXd  get_gradient();
-  void  clear_gradient();
-  Eigen::VectorXd  mean_X(const int );
+  virtual Eigen::VectorXd  get_gradient();
+  virtual void  clear_gradient();
+  virtual Eigen::VectorXd  mean_X(const int );
 };
 
 
@@ -358,8 +357,34 @@ class MGHProcess : public GHProcessBase{
 
 
 public:
- 
+  void gradient_mu_centered(const int ,
+                            const Eigen::SparseMatrix<double,0,int> & ,
+                            const double);
+  void step_mu(const double, const double, const int, const double);
+  void grad_nu(const int i, const double weight);
+  void step_nu(const double, const double, const int,const double);
+  void update_nu();
+  void clear_gradient();
+  Eigen::VectorXd  Nu;
+  Eigen::VectorXd  Mu;
+  Eigen::VectorXd  dNu;
+  Eigen::VectorXd  dMu;
+  Eigen::VectorXd  dMu_prev;
+  Eigen::VectorXd  dNu_prev;
+  Eigen::MatrixXd  ddNu;
+  Eigen::MatrixXd  ddMu;
+
+
+  std::vector< Eigen::MatrixXd>  Bmu;
+  std::vector< Eigen::MatrixXd>  Bnu;
+  void setupStoreTracj(const int);
   void initFromList(const Rcpp::List  &, const std::vector <Eigen::VectorXd > &);
+  Rcpp::List toList();
+  Eigen::VectorXd  get_gradient();
+  virtual Eigen::VectorXd  mean_X(const int );
+  void sample_V(const int ,
+                gig & ,
+                const Eigen::SparseMatrix<double,0,int> & );
 };
 
 

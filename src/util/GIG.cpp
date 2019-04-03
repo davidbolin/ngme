@@ -115,12 +115,13 @@ Eigen::VectorXd sampleV_post(gig &sampler,
                         	 const double sigma,
                         	 const double mu,
                         	 const double nu,
-                        	 const std::string type)
+                        	 const std::string type,
+                           const Eigen::VectorXd &SampleV)
 {
   Eigen::VectorXd  p, b;
   
   b = (KX +  mu * h) / sigma;
-  b = b.array().square();
+  b.array() = b.array().square();
   double b_adj  = 0;
      b_adj = 1e-14;
   
@@ -132,7 +133,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
     b.array() += b_adj;
   }else if(type == "NIG"){
     p.setOnes(h.size());
-    p *= -1.;
+    p.array() *= -1.;
     a += pow(nu, 2);
     b.array() += (nu * h).array().square();
   }else if(type == "CH"){
@@ -149,8 +150,10 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   
   
-  for(int i = 0; i < KX.size(); i++)
-  	V[i] = sampler.sample( p[i], a, b[i] ) ; 
+  for(int i = 0; i < KX.size(); i++){
+    if(SampleV[i] >0 )
+  	 V[i] = sampler.sample( p[i],  b[i], a ) ; 
+    }
   
    double Vadj  = 1e-12;  
     if(type == "GAL")
@@ -158,3 +161,59 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   return(V);
 }
+
+Eigen::VectorXd sampleV_post(gig &sampler,
+                           const Eigen::VectorXd &h, 
+                           const Eigen::VectorXd &KX,
+                           const double sigma,
+                           const Eigen::VectorXd &mu,
+                           const Eigen::VectorXd &nu,
+                           const std::string type,
+                           const Eigen::VectorXd &SampleV)
+{
+  Eigen::VectorXd  p, b;
+  b = KX;
+  b += mu.cwiseProduct(h);
+  b.array() /= sigma;
+  b.array() = b.array().square();
+  double b_adj  = 0;
+  b_adj = 1e-14;
+  
+  Eigen::VectorXd a(mu.size());
+  for(int i =0; i < a.size(); i++)
+    a(i)  =  pow(mu(i) / sigma, 2);
+  if(type == "GAL"){
+    p = h * nu;
+    p.array() -= 0.5;
+    a += 2 * nu;
+    b.array() += b_adj;
+  }else if(type == "NIG"){
+    p.setOnes(h.size());
+    p.array() *= -1.;
+    for(int i =0; i < a.size(); i++)
+      a(i) += pow(nu(i), 2);
+    b.array() += (nu.cwiseProduct(h)).array().square();
+  }else if(type == "CH"){
+    p.setOnes(h.size());
+    p.array() *= -1.;
+    b.array() *= 4 * 0.5;
+    b.array() += (h ).array().square();
+    b.array() *= 2 * 0.25;
+  }else{
+    throw("sampleV_pre type must either be NIG, GAL or CH");
+  }
+  Eigen::VectorXd V(KX.size());
+  
+  
+  
+  for(int i = 0; i < KX.size(); i++){
+    if(SampleV[i] >0 )
+     V[i] = sampler.sample( p[i],  b[i], a[i]) ; 
+    }
+   double Vadj  = 1e-12;  
+    if(type == "GAL")
+      V.array() += Vadj;
+  
+  return(V);
+}
+

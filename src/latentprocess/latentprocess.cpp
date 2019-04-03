@@ -190,6 +190,10 @@ if(type_process == "CH"){
     for(int i =0; i < nindv; i++)
       mu0[i] = mu * (-h[i] + Vs[i]);
 
+    sampleVbool.resize(nindv);
+    for(int i =0; i < nindv; i++)
+      sampleVbool[i].setOnes(h[i].size());
+
 }
 
 
@@ -197,7 +201,7 @@ if(type_process == "CH"){
 
 void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)
 {
-  std::vector<std::string> check_names =  {"X","V"};
+  std::vector<std::string> check_names =  {"X","V","Bmu","Bnu"};
   check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
   Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
@@ -239,28 +243,27 @@ void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Ei
     h_sum[i]   = h[i].sum();
     h_min[i]   = h[i].minCoeff();
     h3_mean[i] = h[i].array().pow(3).sum()/h[i].size();
+    EiV[i].resize(h[i].size());
   }
   h_MIN = *std::min_element(h_min.begin(), h_min.end());
 
-  int Vsample_in = init_list.containsElementNamed("toSampleV");
-  Rcpp::List toSampleV_list = Rcpp::as<Rcpp::List>  (init_list["toSampleV"]);
-  if(Vsample_in)
-    toSampleV_list = Rcpp::as<Rcpp::List>  (init_list["toSampleV"]);
 
+
+  Rcpp::List Bmu_in = Rcpp::as<Rcpp::List>  (init_list["Bmu"]);
+  Rcpp::List Bnu_in = Rcpp::as<Rcpp::List>  (init_list["Bnu"]);
+  Bmu.resize(nindv);
+  Bnu.resize(nindv);
   for(int i = 0; i < nindv; i++ ){
 
-      Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-      Ws[i] = Xs[i];
-      Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
-      if(Vsample_in==0){
-        toSampleV[i].setOnes(Vs[i].size());
-      }else{
-        toSampleV[i] = Rcpp::as<Eigen::VectorXd>( toSampleV_list[i]);
-      }
+      Xs[i]  = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      Ws[i]  = Xs[i];
+      Vs[i]  = Rcpp::as<Eigen::VectorXd>( V_list[i]);
+      Bnu[i] = Rcpp::as<Eigen::MatrixXd>( Bnu_in[i]);
+      Bmu[i] = Rcpp::as<Eigen::MatrixXd>( Bmu_in[i]);
     }
 
 
-    type_process = Rcpp::as<std::string> (init_list["noise"]);
+type_process = Rcpp::as<std::string> (init_list["noise"]);
 if(type_process == "CH"){
     Vv_mean.resize(h2.size());
     for(int i =0; i < nindv; i++){
@@ -275,19 +278,36 @@ if(type_process == "CH"){
     dnu_prev = 0;
     dmu_prev = 0;
     npars = 1;
-    if(type_process != "CH"){
-    npars = 2;
+
+
+
+
+  if(type_process != "CH"){
+    npars = Bnu[0].cols() + Bmu[0].cols();
       if(init_list.containsElementNamed("nu"))
-        nu = Rcpp::as < double >( init_list["nu"]);
+        Nu = Rcpp::as < Eigen::VectorXd >( init_list["nu"]);
       else
-        nu = 1.;
+        Nu.resize(Bnu[0].cols());
   }
     if(init_list.containsElementNamed("mu"))
-      mu = Rcpp::as < double >( init_list["mu"]);
+      Mu = Rcpp::as < Eigen::VectorXd >( init_list["mu"]);
     else
-      mu = 0.;
+      Mu.resize(Bmu[0].cols());
 
-
+    Mu *= 0;
+    Nu *= 0;
+    dMu.resize(Mu.size());
+    dMu *= 0;
+    ddMu.resize(Mu.size(), Mu.size());
+    ddMu *=0;
+    dMu_prev.resize(Mu.size());
+    dMu_prev *=0;
+    dNu.resize(Nu.size());
+    dNu *=0;
+    ddNu.resize(Nu.size(), Nu.size());
+    dNu_prev.resize(Nu.size());
+    dNu_prev *=0;
+    ddNu *= 0;
     dmu    = 0;
   ddmu_1 = 0;
     if(type_process != "CH"){
@@ -312,6 +332,20 @@ if(type_process == "CH"){
     mu0.resize(nindv);
     for(int i =0; i < nindv; i++)
       mu0[i] = mu * (-h[i] + Vs[i]);
+
+
+
+
+    sampleVbool.resize(nindv);
+    if(init_list.containsElementNamed("toSampleV")){
+      Rcpp::List toSampleV_list = Rcpp::as<Rcpp::List>  (init_list["toSampleV"]);
+      for(int i = 0; i < nindv; i++)
+        sampleVbool[i] = Rcpp::as<Eigen::VectorXd>( toSampleV_list[i]);
+
+    }else{
+      for(int i =0; i < nindv; i++)
+        sampleVbool[i].setOnes(h[i].size());
+    }
 
 }
 
@@ -348,35 +382,7 @@ Eigen::VectorXd GHProcessBase::get_mean_prior(const int i, const Eigen::SparseMa
     return(mu_prior);
 };
 
-void GHProcessBase::sample_X(const int i,
-              Eigen::VectorXd & Z,
-              const Eigen::VectorXd & Y,
-              const Eigen::SparseMatrix<double,0,int> & Q,
-              const Eigen::SparseMatrix<double,0,int> & K,
-              const Eigen::SparseMatrix<double,0,int> & A,
-              const double sigma,
-              solver       & solver)
-{
-  Eigen::VectorXd X_prev = Xs[i];
-  iV = Vs[i].cwiseInverse();
-  double sigma2  =pow(sigma, 2);
-  Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
-  Eigen::VectorXd DQ_12 = Qi.diagonal().cwiseInverse().cwiseSqrt();
-  Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
-  for (int j = 0; j < Qi.rows(); j++)
-    DQD.coeffRef(j, j) += 1e-12;
 
-  solver.compute(DQD);
-  Eigen::VectorXd b = A.transpose()*Y / sigma2;
-  Eigen::VectorXd temp  =  - h[i];
-  temp = temp.cwiseProduct(iV);
-  temp.array() += 1.;
-  temp.array() *= mu;
-  b +=  K.transpose() * temp;
-  b = b.cwiseProduct(DQ_12);
-  Xs[i] = DQ_12.cwiseProduct(solver.rMVN(b, Z));
-  Ws[i] = K*Xs[i];
-}
 
 
 
@@ -389,8 +395,9 @@ void GHProcessBase::simulate(const int i,
 			  solver  &  solver) //Solver not used
 {
   Z = Z.cwiseProduct(Vs[i].cwiseSqrt());
+  Eigen::VectorXd b = mean_X(i);
   for(int ii = 0; ii < Z.size(); ii++)
-  Z[ii] += - mu * h[i][ii] + Vs[i][ii] * mu;
+  Z[ii] += b[ii];
   
   Ws[i] = Z; //Save noise
   Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > LU(K);  // performs a Cholesky factorization of A
@@ -398,6 +405,8 @@ void GHProcessBase::simulate(const int i,
   Y += A * Xs[i];
 
 }
+
+
 
 
 void GaussianProcess::sample_Xv2( const int i,
@@ -419,31 +428,7 @@ void GaussianProcess::sample_Xv2( const int i,
 }
 
 
-void GHProcessBase::sample_Xv2(  const int i,
-              Eigen::VectorXd & Z,
-              const Eigen::VectorXd & Y,
-              const Eigen::SparseMatrix<double,0,int> & Q,
-              const Eigen::SparseMatrix<double,0,int> & K,
-              const Eigen::SparseMatrix<double,0,int> & A,
-              const double sigma,
-              solver       & solver,
-              const Eigen::VectorXd & iV_noise )
-{
-	iV = Vs[i].cwiseInverse();
-  double sigma2  =pow(sigma, 2);
-  Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*iV_noise.asDiagonal()*A)/ sigma2;
 
-
-  solver.compute(Qi);
-  Eigen::VectorXd b = A.transpose()* (iV_noise.cwiseProduct(Y) )/ sigma2;
-  Eigen::VectorXd temp  =  - h[i];
-  temp = temp.cwiseProduct(iV);
-  temp.array() += 1.;
-  temp *= mu;
-  b +=  K.transpose() * temp;
-   Xs[i] =solver.rMVN(b, Z);
-   Ws[i] = K*Xs[i];
-}
 
 void GHProcessBase::sample_V(const int i ,
     					              gig & rgig,
@@ -451,18 +436,17 @@ void GHProcessBase::sample_V(const int i ,
 {
 
   Eigen::VectorXd KX = K * Xs[i];
-
 	double nu_in = nu;
 	if( type_process == "NIG")
 		nu_in = sqrt(nu_in);
-
  	Vs[i] = sampleV_post(rgig,
                  h[i],
                  KX,
                  1.,
                  mu,
                  nu_in,
-                 type_process);
+                 type_process,
+                 sampleVbool[i]);
 
 
   mu0[i] = mu * (-h[i] + Vs[i]);
@@ -494,6 +478,61 @@ void GHProcessBase::sample_V(const int i ,
   }
 
 }
+
+void MGHProcess::sample_V(const int i ,
+                            gig & rgig,
+                            const Eigen::SparseMatrix<double,0,int> & K)
+{
+  Eigen::VectorXd KX = K * Xs[i];
+  Eigen::VectorXd  Nu_in = Bnu[i]*Nu;
+  Nu_in.array() = Nu_in.array().exp();
+  if( type_process == "NIG"){
+    for(int j = 0; j < Nu_in.size(); j++)
+      Nu_in(j) = sqrt(Nu_in(j));
+    }
+    Eigen::VectorXd  Bmu_in = Bmu[i]*Mu;
+  Vs[i] = sampleV_post(rgig,
+                 h[i],
+                 KX,
+                 1.,
+                 Bmu_in,
+                 Nu_in,
+                 type_process,
+                 sampleVbool[i]);
+
+  //mu0[i] = (Bmu[i] * Mu) * (-h[i] + Vs[i]);
+  if(useEV)
+  {
+    if(type_process != "GAL"){
+      Rcpp::Rcout << "useEV only implimented for GAL\n";
+      exit(-1);
+    }
+    Eigen::VectorXd  p, b;
+    double sigma = 1.;
+    Eigen::VectorXd Bmumu = Bmu[i]*Mu;
+    b = (KX +  (Bmumu * h[i]) )/ sigma;
+    b = b.array().square();
+    double b_adj = 1e-14;
+    Eigen::VectorXd a(h[i].size());
+    for(int j = 0; j < Nu_in.size(); j++)
+      a(i)  =  pow(Bmumu(j) / sigma, 2);
+    p = h[i];
+    p *= Nu_in;
+    p.array() -= 0.5;
+    a += 2 * Nu_in;
+    b.array() += b_adj;
+    EV_post[i].resize(Vs[i].size());
+    ElogV_post[i].resize(Vs[i].size());
+    for(int j = 0; j < KX.size(); j++ )
+    {
+      EV_post[i](j)    = ElogV_GIG(p(j), a(j), b(j));
+      ElogV_post[i](j) = ElogV_GIG(p(j), a(j), b(j));
+    }
+
+  }
+
+}
+
 void GHProcessBase::simulate_V(const int i ,
     					   gig & rgig)
 {
@@ -547,7 +586,7 @@ void GHProcessBase::gradient( const int i ,
   	counter++;
   	//if( type_process == "CH")
   	//	return;
-
+   
 	if( type_process == "NIG"){
 		gradient_mu_centered(i, K, weight);
 	}else if(type_process=="GAL"){
@@ -699,25 +738,40 @@ void GHProcessBase::gradient_v2( const int i ,
 }
 
 
-
 void GHProcessBase::gradient_mu_centered(const int i,
 									 const Eigen::SparseMatrix<double,0,int> & K,
 									 const double weight)
 {
 		iV = Vs[i].cwiseInverse();
 		Eigen::VectorXd temp_1  =  - h[i];
-  		temp_1 = temp_1.cwiseProduct(iV);
-
-  		temp_1.array() += 1.;
+  	temp_1 = temp_1.cwiseProduct(iV);
+    temp_1.array() += 1.;
 		Eigen::VectorXd temp_2;
 		Eigen::VectorXd temp_3 =  Vs[i] ;
-  		temp_3 -= h[i];
+  	temp_3 -= h[i];
 		temp_3.array() *= mu;
 		temp_2 = K * Xs[i];
 		temp_2 -= temp_3;
 		dmu    += weight * temp_1.dot(temp_2);
 		ddmu_1 += weight * H_mu[i];
 }
+
+//  (( (KX) - (-h + V) * (Bmu * mu) )^T diag(iV) * (-h + V)) * Bmu 
+void MGHProcess::gradient_mu_centered(const int i,
+                   const Eigen::SparseMatrix<double,0,int> & K,
+                   const double weight)
+{
+    iV = Vs[i].cwiseInverse();
+    Eigen::VectorXd mX = mean_X(i);
+    Eigen::VectorXd temp_1  =   (K * Xs[i] ) - mX;
+    temp_1 = temp_1.cwiseProduct(iV);
+
+    temp_1.array() *= (-h[i] + Vs[i]).array();
+    Eigen::VectorXd h_  =  iV.cwiseProduct(-h[i] + Vs[i]);
+    h_.array() *= (-h[i] + Vs[i]).array();
+    dMu    += weight * Bmu[i].transpose() * temp_1 ;
+    ddMu   += weight * Bmu[i].transpose() * h_.asDiagonal() * Bmu[i];
+    }
 
 
 void GHProcessBase::grad_nu(const int i, const double weight)
@@ -757,6 +811,31 @@ void GHProcessBase::grad_nu(const int i, const double weight)
 
 }
 
+void MGHProcess::grad_nu(const int i, const double weight)
+{
+  iV = Vs[i].cwiseInverse();
+  Eigen::VectorXd Nu_vec = Bnu[i] * Nu;
+  Nu_vec.array() = Nu_vec.array().exp(); 
+  // dnu
+  if(type_process == "NIG"){
+    Eigen::VectorXd temp(h[i].size());
+    Eigen::VectorXd Etemp(h[i].size());
+    for(int j = 0; j < h[i].size(); j++){
+      //1/V * (V - h)^2
+      temp(j)  =  0.5 - 0.5 * ( h2[i](j) * iV(j)  + Vs[i](j) - 2 * h[i](j)) * Nu_vec(j);
+      Etemp(j) =  0.5 * (h2[i](j)  * EiV[i](j) - h[i](j)) * Nu_vec(j);
+    }
+    //ddNu -=  weight * Bnu[i].transpose() *temp.asDiagonal() * Bnu[i];
+    ddNu -=  weight * Bnu[i].transpose() *Etemp.asDiagonal()*  Bnu[i];
+    dNu  +=  weight * Bnu[i].transpose() * temp;
+    
+  }else if(type_process == "GAL"){
+      
+  }
+
+
+}
+
 
 void GHProcessBase::step_theta(const double stepsize,
 						   const double learning_rate,
@@ -766,51 +845,82 @@ void GHProcessBase::step_theta(const double stepsize,
 
 	if( type_process == "CH")
   		return;
-	step_mu(stepsize, learning_rate,burnin);
+    /*
+	step_mu(stepsize,
+          learning_rate,
+          burnin,
+          polyak_rate);
 	counter = 0;
-	if(store_param){
-		if(vec_counter == 0 || polyak_rate == -1)
-			mu_vec[vec_counter] = mu;
-		else
-			mu_vec[vec_counter] = polyak_rate * mu + (1- polyak_rate) * mu_vec[vec_counter-1];
-
-	}
-
-
-	step_nu(stepsize, learning_rate,burnin);
+*/
+	step_nu(stepsize,
+          learning_rate,
+           burnin,
+           polyak_rate);
 
 	counter = 0;
 
 	clear_gradient();
-
-	if(store_param)
-	{
-		if(vec_counter == 0 || polyak_rate == -1)
-			nu_vec[vec_counter] = nu;
-		else
-			nu_vec[vec_counter] = polyak_rate * nu + (1- polyak_rate) * nu_vec[vec_counter-1];
-
-		vec_counter++;
-	}
+  vec_counter++;
 }
 
-void GHProcessBase::step_mu(const double stepsize, const double learning_rate,const int burnin)
+void GHProcessBase::step_mu(const double stepsize, const double learning_rate,const int burnin, const double polyak_rate)
 {
-	dmu /= -  ddmu_1;
+  dmu /= -  ddmu_1;
 
   if(std::abs(dmu_prev) > 10*std::abs(dmu))
-  	dmu_prev *= 0.1;
+    dmu_prev *= 0.1;
 
   dmu_prev = learning_rate * dmu_prev +  dmu;
   double step  = stepsize *  dmu_prev;
 
-	mu +=  step ;//(sqrt(cache_mu) + 1);
-	ddmu_1 = 0;
-	ddmu_2 = 0;
-
+  mu +=  step ;//(sqrt(cache_mu) + 1);
+  ddmu_1 = 0;
+  ddmu_2 = 0;
+if(store_param){
+    if(vec_counter == 0 || polyak_rate == -1)
+      mu_vec(vec_counter,0) = mu;
+    else
+      mu_vec(vec_counter,0) = polyak_rate * mu + (1- polyak_rate) * mu_vec(vec_counter-1,0);
+  }
 }
 
-void GHProcessBase::step_nu(const double stepsize, const double learning_rate, const int burnin)
+void MGHProcess::step_mu(const double stepsize, const double learning_rate,const int burnin, const double polyak_rate)
+{
+  dMu = -ddMu.ldlt().solve(dMu);
+  dMu_prev *= learning_rate;
+  dMu_prev +=  dMu;
+	Mu +=  stepsize *  dMu_prev ;//(sqrt(cache_mu) + 1);
+  dMu  *= 0;
+  ddMu *=0;
+  if(store_param){
+      if(vec_counter == 0 || polyak_rate == -1)
+        mu_vec.row(vec_counter) = Mu;
+      else
+        mu_vec.row(vec_counter) = polyak_rate * Mu + (1- polyak_rate) * mu_vec.row(vec_counter-1);
+    }
+}
+
+
+
+
+void MGHProcess::step_nu(const double stepsize, const double learning_rate, const int burnin, const double polyak_rate)
+{
+  dNu = -ddNu.ldlt().solve(dNu);
+  dNu_prev = learning_rate * dNu_prev +    dNu;
+  Nu += stepsize * dNu_prev;
+  update_nu();
+  if(store_param)
+  {
+    if(vec_counter == 0 || polyak_rate == -1)
+      nu_vec.row(vec_counter) = Nu;
+    else
+      nu_vec.row(vec_counter) = polyak_rate * Nu + (1- polyak_rate) * nu_vec.row(vec_counter-1);
+    
+  }
+}
+
+
+void GHProcessBase::step_nu(const double stepsize, const double learning_rate, const int burnin, const double polyak_rate)
 {
   double nu_temp = -1;
   dnu /=  ddnu;
@@ -845,8 +955,15 @@ void GHProcessBase::step_nu(const double stepsize, const double learning_rate, c
     }
   }
   nu = nu_temp;
-
   update_nu();
+  if(store_param)
+  {
+    if(vec_counter == 0 || polyak_rate == -1)
+      nu_vec(vec_counter,0) = nu;
+    else
+      nu_vec(vec_counter,0) = polyak_rate * nu + (1- polyak_rate) * nu_vec(vec_counter-1,0);
+    
+  }
 }
 
 
@@ -857,11 +974,19 @@ Eigen::VectorXd GHProcessBase::get_gradient()
   if( type_process == "CH")
       return(g);
 	g[0] = dmu;
-
-
-
 	g[1] = dnu;
 	return(g);
+}
+
+Eigen::VectorXd MGHProcess::get_gradient()
+{
+
+  Eigen::VectorXd  g(npars);
+  if( type_process == "CH")
+      return(g);
+  g.head(Bmu[0].cols()) = dMu;
+  g.tail(Bnu[0].cols()) = dNu;
+  return(g);
 }
 
 void GHProcessBase::clear_gradient()
@@ -871,6 +996,13 @@ void GHProcessBase::clear_gradient()
 	term1 = 0;
 	term2 = 0;
 }
+void MGHProcess::clear_gradient()
+{
+  dNu *= 0;
+  dMu *= 0;
+  ddMu *= 0;
+  ddNu *= 0;
+}
 
 void GHProcessBase::setupStoreTracj(const int Niter)
 {
@@ -879,11 +1011,25 @@ void GHProcessBase::setupStoreTracj(const int Niter)
 	store_param = 1;
 
 
-	mu_vec.resize(Niter);
+	mu_vec.resize(Niter,1);
 
   	if( type_process == "CH")
   		return;
-	nu_vec.resize(Niter);
+	nu_vec.resize(Niter,1);
+}
+
+void MGHProcess::setupStoreTracj(const int Niter)
+{
+
+  vec_counter = 0;
+  store_param = 1;
+
+
+  mu_vec.resize(Niter,Mu.size());
+
+    if( type_process == "CH")
+      return;
+  nu_vec.resize(Niter,Nu.size());
 }
 
 
@@ -913,11 +1059,37 @@ Rcpp::List GHProcessBase::toList()
   {
   	out["mu_vec"]     = mu_vec;
   	out["nu_vec"]     = nu_vec;
-  	out["nu"]         = nu_vec[nu_vec.size() - 1];
-    out["mu"]         = mu_vec[mu_vec.size() - 1];
+  	out["nu"]         = nu_vec.row(nu_vec.size() - 1);
+    out["mu"]         = mu_vec.row(mu_vec.size() - 1);
   }
 
   return(out);
+}
+Rcpp::List MGHProcess::toList(){
+Rcpp::List out;
+  out["X"]      = Xs;
+  out["V"]      = Vs;
+  out["noise"]  = type_process;
+  out["Cov_theta"]   = Cov_theta;
+
+  if( type_process == "CH")
+  return(out);
+
+
+  out["nu"]     = Nu;
+  out["mu"]     = Mu;
+  out["Bmu"]     = Bmu;
+  out["Bnu"]     = Bnu;
+  if(store_param)
+  {
+    out["mu_vec"]     = mu_vec;
+    out["nu_vec"]     = nu_vec;
+    out["nu"]         = nu_vec.row(nu_vec.rows() - 1);
+    out["mu"]         = mu_vec.row(mu_vec.rows() - 1);
+  }
+
+  return(out);
+
 }
 
 Rcpp::List GaussianProcess::toList()
@@ -971,9 +1143,92 @@ void GHProcessBase::update_nu()
 
 }
 
+void MGHProcess::update_nu()
+{
+    ddNu *= 0;
+    if(type_process == "NIG")
+    {
+
+      for(int i =0; i < h2.size(); i++){
+        Eigen::VectorXd Nu_vec = Bnu[i] * Nu;
+        Nu_vec.array() = Nu_vec.array().exp(); 
+        for(int ii = 0; ii < h2[i].size(); ii++){
+          EiV[i](ii) =  1./h2[i](ii);
+          EiV[i](ii) *=  1./Nu_vec(ii);
+          EiV[i](ii) += 1/h[i](ii);
+        }
+      }
+    }
+}
+
+
+
+Eigen::VectorXd  MGHProcess::mean_X(const int i){
+
+ Eigen::VectorXd mean = -h[i] + Vs[i];
+ mean.array() *= (Bmu[i] * Mu).array();
+ return mean;
+ }
+
+
 Eigen::VectorXd  GHProcessBase::mean_X(const int i){
 
  Eigen::VectorXd mean = -h[i] + Vs[i];
  mean.array() *= mu;
  return mean;
  }
+
+void GHProcessBase::sample_X(const int i,
+              Eigen::VectorXd & Z,
+              const Eigen::VectorXd & Y,
+              const Eigen::SparseMatrix<double,0,int> & Q,
+              const Eigen::SparseMatrix<double,0,int> & K,
+              const Eigen::SparseMatrix<double,0,int> & A,
+              const double sigma,
+              solver       & solver)
+{
+  Eigen::VectorXd X_prev = Xs[i];
+  iV = Vs[i].cwiseInverse();
+  double sigma2  =pow(sigma, 2);
+  Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*A)/ sigma2;
+  Eigen::VectorXd DQ_12 = Qi.diagonal().cwiseInverse().cwiseSqrt();
+  Eigen::SparseMatrix<double,0,int> DQD = DQ_12.asDiagonal() * Qi * DQ_12.asDiagonal();
+  for (int j = 0; j < Qi.rows(); j++)
+    DQD.coeffRef(j, j) += 1e-12;
+
+  solver.compute(DQD);
+  Eigen::VectorXd b = A.transpose()*Y / sigma2;
+  // change
+  Eigen::VectorXd priorMean = mean_X(i);
+  Eigen::VectorXd temp  =  - h[i];
+  priorMean = priorMean.cwiseProduct(iV);
+  b +=  K.transpose() * priorMean;
+  b = b.cwiseProduct(DQ_12);
+  Xs[i] = DQ_12.cwiseProduct(solver.rMVN(b, Z));
+  Ws[i] = K*Xs[i];
+}
+
+void GHProcessBase::sample_Xv2(  const int i,
+              Eigen::VectorXd & Z,
+              const Eigen::VectorXd & Y,
+              const Eigen::SparseMatrix<double,0,int> & Q,
+              const Eigen::SparseMatrix<double,0,int> & K,
+              const Eigen::SparseMatrix<double,0,int> & A,
+              const double sigma,
+              solver       & solver,
+              const Eigen::VectorXd & iV_noise )
+{
+  iV = Vs[i].cwiseInverse();
+  double sigma2  =pow(sigma, 2);
+  Eigen::SparseMatrix<double,0,int> Qi = Q + (A.transpose()*iV_noise.asDiagonal()*A)/ sigma2;
+
+
+  solver.compute(Qi);
+  Eigen::VectorXd b = A.transpose()* (iV_noise.cwiseProduct(Y) )/ sigma2;
+  Eigen::VectorXd priorMean = mean_X(i);
+  Eigen::VectorXd temp  =  - h[i];
+  priorMean = priorMean.cwiseProduct(iV);
+  b +=  K.transpose() * priorMean;
+   Xs[i] =solver.rMVN(b, Z);
+   Ws[i] = K*Xs[i];
+}

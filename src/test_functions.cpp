@@ -10,6 +10,7 @@
 #include "operator_helper.h"
 #include "latentprocess.h"
 #include "measError.h"
+#include "estimate_util.h"
 //[[Rcpp::export]]
 Eigen::MatrixXi getDuplicateM(const int n)
 {
@@ -493,7 +494,6 @@ Rcpp::List test_mixed_Fisher(int niter,
     mixobj->clear_gradient();
     errObj->clear_gradient();
   }
-  
   Rcpp::List out_list;
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
@@ -504,4 +504,95 @@ Rcpp::List test_mixed_Fisher(int niter,
   out_list["d2Given"] = d2Given/niter;
 
   return(out_list);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List test_process(int niter,
+                      Rcpp::List U,
+                      Rcpp::List process_list)
+{
+
+  std::mt19937 random_engine;
+  gig rgig;
+  rgig.seed(random_engine());
+  gig *rgig_pointer = &rgig;
+
+  Rcpp::List h_list  = Rcpp::as<Rcpp::List> (process_list["h"]);
+  
+  std::vector<Eigen::VectorXd > h;
+  h.resize(h_list.length());
+  for(int i = 0; i < h_list.length(); i++)
+    h[i] = Rcpp::as<Eigen::VectorXd> (h_list[i]);
+
+
+  Process *process = NULL;
+  process = new GHProcess;
+  process->initFromList(process_list, h);
+  process->setupStoreTracj(niter);
+  Eigen::MatrixXd I = MatrixXd::Identity(h[0].size(), h[0].size());
+
+  SparseMatrix<double> spI = I.sparseView();
+  for(int j = 0; j< niter; j++){
+    for(int i = 0; i < h_list.length(); i++){
+     process->sample_V(i ,
+                       rgig,
+                       spI);
+      process->gradient(i, spI, spI, h[0], 1., 1., 1.);
+      //process->gradient_v2(i , spI, spI, h[0], 1., h[0], 1., 1., 1.);
+    }
+    process->step_theta( 0.95, 0., -1, 0);
+    process->clear_gradient();
+  }
+
+  Rcpp::List out_list;
+  Rcpp::List process_list_out  = process->toList();
+  out_list["process_list"]     = process_list_out;
+  return(out_list);
+
+}
+// [[Rcpp::export]]
+Rcpp::List test_Mprocess(int niter,
+                      Rcpp::List U,
+                      Rcpp::List process_list)
+{
+
+  std::mt19937 random_engine;
+  gig rgig;
+  rgig.seed(random_engine());
+  gig *rgig_pointer = &rgig;
+
+  Rcpp::List h_list  = Rcpp::as<Rcpp::List> (process_list["h"]);
+  
+  std::vector<Eigen::VectorXd > h;
+  h.resize(h_list.length());
+  for(int i = 0; i < h_list.length(); i++)
+    h[i] = Rcpp::as<Eigen::VectorXd> (h_list[i]);
+
+
+  Process *process = NULL;
+  process = new MGHProcess;
+  process->initFromList(process_list, h);
+  process->setupStoreTracj(niter);
+  Eigen::MatrixXd I = MatrixXd::Identity(h[0].size(), h[0].size());
+
+  SparseMatrix<double> spI = I.sparseView();
+  for(int j = 0; j< niter; j++){
+    for(int i = 0; i < h_list.length(); i++){
+      //process->sample_V(i ,
+       //                *rgig_pointer,
+       //                spI);
+      process->gradient(i, spI, spI, h[0], 1., 1., 1.);
+      //process->gradient_v2(i , spI, spI, h[0], 1., h[0], 1., 1., 1.);
+    }
+
+    process->step_theta( 0.95, 0., -1, 0);
+    process->clear_gradient();
+  }
+
+  Rcpp::List out_list;
+  Rcpp::List process_list_out  = process->toList();
+  out_list["process_list"]     = process_list_out;
+  return(out_list);
+
 }

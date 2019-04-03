@@ -307,6 +307,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_process
+Rcpp::List test_process(int niter, Rcpp::List U, Rcpp::List process_list);
+RcppExport SEXP _ngme_test_process(SEXP niterSEXP, SEXP USEXP, SEXP process_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type U(USEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type process_list(process_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_process(niter, U, process_list));
+    return rcpp_result_gen;
+END_RCPP
+}
+// test_Mprocess
+Rcpp::List test_Mprocess(int niter, Rcpp::List U, Rcpp::List process_list);
+RcppExport SEXP _ngme_test_Mprocess(SEXP niterSEXP, SEXP USEXP, SEXP process_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type U(USEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type process_list(process_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_Mprocess(niter, U, process_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
@@ -332,6 +358,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_test_mixed", (DL_FUNC) &_ngme_test_mixed, 4},
     {"_ngme_test_error", (DL_FUNC) &_ngme_test_error, 3},
     {"_ngme_test_mixed_Fisher", (DL_FUNC) &_ngme_test_mixed_Fisher, 4},
+    {"_ngme_test_process", (DL_FUNC) &_ngme_test_process, 3},
+    {"_ngme_test_Mprocess", (DL_FUNC) &_ngme_test_Mprocess, 3},
     {NULL, NULL, 0}
 };
 

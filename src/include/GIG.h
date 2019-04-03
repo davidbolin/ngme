@@ -20,14 +20,24 @@ Eigen::VectorXd sampleV_post(gig &,
                         const double,
                         const int);
 
-                 
+ //last argument is if one should sample at all                
+Eigen::VectorXd sampleV_post(gig &,
+                        const Eigen::VectorXd &, 
+                        const Eigen::VectorXd &,
+                        const double,
+                        const Eigen::VectorXd &,
+                        const Eigen::VectorXd &,
+                        const std::string,
+                        const Eigen::VectorXd &);
+ //last argument is if one should sample at all                
 Eigen::VectorXd sampleV_post(gig &,
                         const Eigen::VectorXd &, 
                         const Eigen::VectorXd &,
                         const double,
                         const double,
                         const double,
-                        const std::string);
+                        const std::string,
+                        const Eigen::VectorXd &);
 Eigen::VectorXd sampleV_pre(gig &,
                             const Eigen::VectorXd &, 
                             const double,
