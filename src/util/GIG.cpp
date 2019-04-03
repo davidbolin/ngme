@@ -122,10 +122,10 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   b = (KX +  mu * h) / sigma;
   b.array() = b.array().square();
-  double b_adj  = 0;
-     b_adj = 1e-14;
+  
   
   double a  =  pow(mu / sigma, 2);
+  double b_adj = 1e-14;
   if(type == "GAL"){
     p = h * nu;
     p.array() -= 0.5;
@@ -152,7 +152,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   for(int i = 0; i < KX.size(); i++){
     if(SampleV[i] >0 )
-  	 V[i] = sampler.sample( p[i],  b[i], a ) ; 
+  	 V[i] = sampler.sample( p[i],  a, b[i]) ; 
     }
   
    double Vadj  = 1e-12;  
@@ -208,7 +208,7 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   for(int i = 0; i < KX.size(); i++){
     if(SampleV[i] >0 )
-     V[i] = sampler.sample( p[i],  b[i], a[i]) ; 
+     V[i] = sampler.sample( p[i], a[i], b[i]) ; 
     }
    double Vadj  = 1e-12;  
     if(type == "GAL")

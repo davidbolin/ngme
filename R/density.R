@@ -1,3 +1,19 @@
+#' @title Density for inverse Gaussian distribution
+#'
+#' @param x A numeric vector for quantiles.
+#' @param a parameter
+#' @param b parameter
+#'
+dig <- function(x, a, b, log_in=F){
+  
+  l = (log(b) - log(2*pi) - 3 *log(x) ) 
+  l = l - a*x - b/x + 2*sqrt(a*b)
+  l = 0.5 * l
+  if(log_in)
+    return(l)
+  return(exp(l))
+}
+
 #' @title Density function of Normal inverse Gaussian distribution.
 #'
 #' @description A function to calculate the value of the probability density 
