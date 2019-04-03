@@ -30,6 +30,16 @@ dig <- function(x, a, b, log_in=F){
 #'   dnig(...)
 #'   }
 
+dgig <- function(x, p, a ,b, log_in=F){
+  
+  l = 0.5 * p*(log(a) - log(b))
+  l = l + (p-1) * log(x)
+  l = l - log(2) - log(besselK(sqrt(a*b),p))
+  l = l - 0.5*(a*x + b/x)
+  if(log_in)
+    return(l)
+  return(exp(l))
+}
 dnig <- function(x, delta, mu, nu, sigma,log=F)
 {
   c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi

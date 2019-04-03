@@ -151,8 +151,9 @@ Eigen::VectorXd sampleV_post(gig &sampler,
   
   
   for(int i = 0; i < KX.size(); i++){
-    if(SampleV[i] >0 )
+    if(SampleV[i] >0 ){
   	 V[i] = sampler.sample( p[i],  a, b[i]) ; 
+    }
     }
   
    double Vadj  = 1e-12;  

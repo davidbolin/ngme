@@ -437,6 +437,7 @@ void GHProcessBase::sample_V(const int i ,
 
   Eigen::VectorXd KX = K * Xs[i];
 	double nu_in = nu;
+
 	if( type_process == "NIG")
 		nu_in = sqrt(nu_in);
  	Vs[i] = sampleV_post(rgig,
@@ -845,13 +846,13 @@ void GHProcessBase::step_theta(const double stepsize,
 
 	if( type_process == "CH")
   		return;
-    /*
+    
 	step_mu(stepsize,
           learning_rate,
           burnin,
           polyak_rate);
 	counter = 0;
-*/
+
 	step_nu(stepsize,
           learning_rate,
            burnin,
@@ -954,6 +955,7 @@ void GHProcessBase::step_nu(const double stepsize, const double learning_rate, c
       }
     }
   }
+  nu_temp = term1/term2;
   nu = nu_temp;
   update_nu();
   if(store_param)

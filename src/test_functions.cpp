@@ -539,6 +539,8 @@ Rcpp::List test_process(int niter,
                        rgig,
                        spI);
       process->gradient(i, spI, spI, h[0], 1., 1., 1.);
+    
+
       //process->gradient_v2(i , spI, spI, h[0], 1., h[0], 1., 1., 1.);
     }
     process->step_theta( 0.95, 0., -1, 0);
@@ -568,7 +570,6 @@ Rcpp::List test_Mprocess(int niter,
   h.resize(h_list.length());
   for(int i = 0; i < h_list.length(); i++)
     h[i] = Rcpp::as<Eigen::VectorXd> (h_list[i]);
-
 
   Process *process = NULL;
   process = new MGHProcess;
