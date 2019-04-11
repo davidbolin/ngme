@@ -96,7 +96,8 @@ generate.1d.mesh <- function(x,
                              Y = NULL,
                              loc.Y = NULL,
                              max.dY = -1,
-                             nJump  = 3){
+                             nJump  = 3,
+                             fix.differences=TRUE){
   if(missing(x))
     stop('Must supply x')
   refine = TRUE
@@ -149,6 +150,23 @@ generate.1d.mesh <- function(x,
     }
   }
 
+  #add nodes to make sure that neighboring nodes do not have too different sizes
+  if(fix.differences){
+    while((max(d[1:(n.mesh-2)]/d[2:(n.mesh-1)]) > 2) || (max(d[2:(n.mesh-1)]/d[1:(n.mesh-2)]) > 2)){
+      if(max(d[1:(n.mesh-2)]/d[2:(n.mesh-1)])>2){
+        i = which.max(d[1:(n.mesh-2)]/d[2:(n.mesh-1)])
+        si = seq(from=s[i],to=s[i+1],length.out = 3)
+        s = c(s[seq(length=(i-1))],si,s[(i+1)+seq(length=n.mesh-(i+1))])
+      } else if(max(d[2:(n.mesh-1)]/d[1:(n.mesh-2)])>2){
+        i = which.max(d[2:(n.mesh-1)]/d[1:(n.mesh-2)])+1
+        si = seq(from=s[i],to=s[i+1],length.out = 3)
+        s = c(s[seq(length=(i-1))],si,s[(i+1)+seq(length=n.mesh-(i+1))])
+      }
+      d = diff(s)
+      n.mesh = length(s)
+    }
+  }
+  #Update to account for jumps in Y (if supplied)
   if(max.dY> 0){
     nY = length(Y)
     dY= diff(Y)

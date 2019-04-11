@@ -204,7 +204,7 @@ protected:
   int is_initialized = 0;
   std::vector<double>  h_average,tau_trace, tau_trace2, kappa_trace, kappa_trace2;
   Eigen::VectorXd g,p;
-  Eigen::SparseMatrix<double,0,int> *G, *C;
+  Eigen::SparseMatrix<double,0,int> *G, *C, *GCG;
   double kappa, dkappa, ddkappa, dtau, ddtau, ddtaukappa;
   double dtau_old, dkappa_old;
   bool use_chol;
@@ -215,6 +215,7 @@ protected:
   SparseMatrix<double,0,int> *d2tauQ, *dtauQ, *dkappaQ, *d2kappaQ;
   void set_matrices();
   void set_matrix(const int);
+  int beta;
 public:
   
   

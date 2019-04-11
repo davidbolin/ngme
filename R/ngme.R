@@ -487,7 +487,7 @@ ngme <- function(fixed,
        (reffects == "Normal" & process[1] == "Normal" & error == "Normal")){
 
       #starting values for process
-      operator_list$type  <- process[2]
+      #operator_list$type  <- process[2]
       operator_list <- operator.startvalues(Y,
                                             locs,
                                             mixedEffect_list,
@@ -566,10 +566,46 @@ ngme <- function(fixed,
       fit$mixedEffect_list$noise <- reffects
       
       if(fit$processes_list$noise == "Normal" && process[1] != "Normal"){
-        fit$processes_list$mu <- 0
-        fit$processes_list$nu <- 10
+        if(0){
+          cat("\n", "Estimate starting values for process parameters.\n")
+          like.proc <- function(x,y,h)
+          {
+            nu = x[1]
+            mu = x[2]
+            tau = x[3]
+            if(nu<0){
+              return(Inf)
+            } else {
+              return(-sum(dnig(y, -mu*h/tau, mu/tau, nu*h, 1/tau,log=TRUE)))  
+            }
+          }
+          
+          noise <- unlist(fit$processes_list$W)
+          h <- unlist(fit$operator_list$h)
+          pars <- optim(c(1,0,1),like.proc,y=noise,h=h)
+          cat("initial process parameters: nu = ", pars$par[1], ", mu = ", pars$par[2], "tau_fix = ", pars$par[3],"\n")
+          if(pars$par[1]<10 && abs(pars$par[2]) < 10){
+            fit$processes_list$nu <- pars$par[1]  
+            fit$processes_list$mu <- pars$par[2]
+            fit$operator_list$tau <- fit$operator_list$tau*pars$par[3]
+          } else {
+            fit$processes_list$mu <- 0
+            fit$processes_list$nu <- 10  
+          }  
+        } else {
+          fit$processes_list$mu <- 0
+          fit$processes_list$nu <- 1    
+        }
+        
       }
       fit$processes_list$noise <- process[1]
+      if(length(process) < 3){
+        nu_limit = 0
+      }else {
+        nu_limit = as.double(process[3])
+      }
+        
+      fit$processes_list$nu_limit <- nu_limit
       
 
       
@@ -927,7 +963,7 @@ ngme <- function(fixed,
     }
 
     #operator - matern
-    if(process[2] %in% c("matern", "exponential")){
+    if(process[2] %in% c("matern", "exponential","matern.asym")){
       operator_kappa <- fit$operator_list$kappa
       operator_kappa_vec <- fit$operator_list$kappaVec
 

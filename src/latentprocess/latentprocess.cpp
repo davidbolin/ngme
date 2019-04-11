@@ -86,6 +86,11 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
   Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   
+  if( init_list.containsElementNamed("nu_limit") ){
+    nu_limit = Rcpp::as<double>(init_list["nu_limit"]);
+  } else {
+    nu_limit = 0;
+  }
   nindv = X_list.size();
   Xs.resize(nindv);
   Ws.resize(nindv);
@@ -945,8 +950,8 @@ void GHProcessBase::step_nu(const double stepsize, const double learning_rate, c
   		dnu_prev = 0;
 
   }else if(type_process == "NIG"){
-    if (nu_temp <0.00001)
-      nu_temp = 0.00001;
+    if (nu_temp < nu_limit)
+      nu_temp = nu_limit;
     if(burnin == 1){
       nu_temp = term1/term2;
       if(nu_temp * pow(h_MIN,2) < 5e-06){
@@ -1048,6 +1053,7 @@ Rcpp::List GHProcessBase::toList()
   Rcpp::List out;
   out["X"]      = Xs;
   out["V"]      = Vs;
+  out["W"] = Ws;
   out["noise"]  = type_process;
   out["Cov_theta"]   = Cov_theta;
 
@@ -1099,6 +1105,7 @@ Rcpp::List GaussianProcess::toList()
   Rcpp::List out;
   out["X"] = Xs;
   out["V"] = Vs;
+  out["W"] = Ws;
   out["noise"]  = "Normal";
   out["Cov_theta"]   = Cov_theta;
   return(out);

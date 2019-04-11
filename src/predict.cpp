@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 0;
+  int debug = 1;
   //**********************************
   //      basic parameter
   //**********************************
@@ -284,6 +284,7 @@ List predictLong_cpp(Rcpp::List in_list)
   std::vector< Eigen::MatrixXd > VVec(nindv); //variance of process
   std::vector< Eigen::MatrixXd > XVec(nindv); //latent field (process + effects)
   std::vector< Eigen::MatrixXd > WnoiseVec(nindv); //process noise
+  std::vector< Eigen::MatrixXd > VnoiseVec(nindv); //process variances
   std::vector< Eigen::MatrixXd > UVec(nindv); //random effects
   std::vector< Eigen::MatrixXd > XVec_deriv(nindv);
   std::vector< Eigen::MatrixXd > WVec_deriv(nindv);
@@ -311,6 +312,7 @@ List predictLong_cpp(Rcpp::List in_list)
     WVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     if(use_process){
       WnoiseVec[i].setZero(Kobj->d[i], nSim);  
+      VnoiseVec[i].setZero(Kobj->d[i], nSim);  
     }
     
     
@@ -372,6 +374,7 @@ List predictLong_cpp(Rcpp::List in_list)
         Eigen::VectorXd res = Y;
         if(n_obs>0){
           mixobj->remove_cov(i, res);
+          errObj->remove_asym(i, res);
           if(use_process == 1){
             if(n_obs>0)
               res -= A * process->Xs[i];
@@ -495,7 +498,7 @@ List predictLong_cpp(Rcpp::List in_list)
         //***********************************
         // random variance noise sampling
         //***********************************
-
+        errObj->add_asym(i, res);
         if(type_MeasurementError != "Normal" || type_MeasurementError != "nsNormal"){
           if(n_obs>0){
             if(ind_general){
@@ -506,6 +509,8 @@ List predictLong_cpp(Rcpp::List in_list)
             
           }
         }
+        errObj->remove_asym(i, res);
+        
 
           // save samples
           if(ii >= nBurnin){
@@ -547,6 +552,7 @@ List predictLong_cpp(Rcpp::List in_list)
           if(use_process == 1){
             AX = Ai * process->Xs[i];
             WnoiseVec[i].col(ii-nBurnin) = process->Ws[i]; // this only makes sense for smoothing
+            VnoiseVec[i].col(ii-nBurnin) = process->Vs[i]; // this only makes sense for smoothing
             if(ind_general){
               //Rcpp::Rcout << "WVec pre\n" << WVec[i] << "\n AX \n" << AX << "\n pred_ind = " << pred_ind[i].row(ipred) << "\n";
               set_subcol(WVec[i], ii-nBurnin, pred_ind[i].row(ipred), AX);
@@ -633,6 +639,7 @@ List predictLong_cpp(Rcpp::List in_list)
   out_list["WVec"] = WVec;
   if(use_process){
     out_list["WnoiseVec"] = WnoiseVec;
+    out_list["VnoiseVec"] = VnoiseVec;
   }
   out_list["VVec"] = VVec;
   out_list["UVec"] = UVec;

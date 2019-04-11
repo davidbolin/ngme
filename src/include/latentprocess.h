@@ -195,6 +195,7 @@ public:
   std::vector< Eigen::VectorXd > h2;
   std::vector< double > h_sum;
   std::vector< double >  h_min;
+  double nu_limit;
   double h_MIN;
   std::vector< double >  h_digamma;
   std::vector< double >  h_trigamma;

@@ -26,12 +26,14 @@ void ExponentialOperator::initFromList(Rcpp::List const & init_list, Rcpp::List 
 {
   is_initialized = 1;
   npars = 2;
-  std::vector<std::string> check_names =  {"C", "G", "kappa", "tau","h"};
+  std::vector<std::string> check_names =  {"C", "G", "kappa", "tau","h","beta"};
   check_Rcpplist(init_list, check_names, "ExponentialOperator::initFromList");
   std::vector<std::string> check_names2 =  {"use.chol"};
   check_Rcpplist(solver_list, check_names2, "ExponentialOperator::initFromList");
   out_list = clone(init_list);
   kappa = Rcpp::as<double>(init_list["kappa"]);
+  beta = Rcpp::as<double>(init_list["beta"]);
+  Rcpp::Rcout << "beta = " << beta << "\n";
   if(kappa < 0){
     Rcpp::Rcout << "warning kappa negative\n";
   }
@@ -47,6 +49,7 @@ void ExponentialOperator::initFromList(Rcpp::List const & init_list, Rcpp::List 
   
   Rcpp::List G_list  = Rcpp::as<Rcpp::List> (init_list["G"]);
   Rcpp::List C_list  = Rcpp::as<Rcpp::List> (init_list["C"]);
+  Rcpp::List Ci_list  = Rcpp::as<Rcpp::List> (init_list["Ci"]);
   Rcpp::List h_list  = Rcpp::as<Rcpp::List> (init_list["h"]);
   nop = G_list.size();
   
@@ -62,6 +65,7 @@ void ExponentialOperator::initFromList(Rcpp::List const & init_list, Rcpp::List 
   
   Q = new Eigen::SparseMatrix<double,0,int>[nop];
   G = new Eigen::SparseMatrix<double,0,int>[nop];
+  GCG = new Eigen::SparseMatrix<double,0,int>[nop];
   C = new Eigen::SparseMatrix<double,0,int>[nop];
   d2tauQ = new Eigen::SparseMatrix<double,0,int>[nop];
   dtauQ = new Eigen::SparseMatrix<double,0,int>[nop];
@@ -84,8 +88,14 @@ void ExponentialOperator::initFromList(Rcpp::List const & init_list, Rcpp::List 
     
     G[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(G_list[i]);
     C[i] =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(C_list[i]);
+    Eigen::SparseMatrix<double,0,int> Ci =  Rcpp::as<Eigen::SparseMatrix<double,0,int>>(Ci_list[i]);
+    GCG[i] =  G[i]*Ci*G[i];
+    if(beta==2){
+      Q[i] = G[i] + C[i] + GCG[i];  
+    } else {
+      Q[i] = G[i] + C[i];
+    }
     
-    Q[i] = G[i] + C[i];
     d[i] = Q[i].rows();
     //d2tauQ.resize(n[i],n[i]);
     
@@ -119,11 +129,24 @@ void ExponentialOperator::set_matrix(int i)
     matrix_set[i] = 1;
     
     double c = pow(2,-0.5);
+    if(beta==2){
+      Q[i] =        c*tau*(pow(kappa,2)*C[i] + 2*kappa*G[i] + GCG[i]);
+      dkappaQ[i] =  c*tau*(2*kappa*C[i] + 2*G[i]);
+      d2kappaQ[i] = c*tau*(2*C[i]);
+      dtauQ[i] =    c*(pow(kappa,2)*C[i] + 2*kappa*G[i] + GCG[i]);
+      
+      Q[i] =        c*tau*(       pow(kappa,0.5)*C[i] +   2*pow(kappa,-0.5)*G[i] +     pow(kappa,-1.5)*GCG[i]);
+      dkappaQ[i] =  c*tau*(  0.5*pow(kappa,-0.5)*C[i] -     pow(kappa,-1.5)*G[i] - 1.5*pow(kappa,-2.5)*GCG[i]);
+      d2kappaQ[i] = c*tau*(-0.25*pow(kappa,-1.5)*C[i] + 1.5*pow(kappa,-2.5)*G[i] + 3.75*pow(kappa,-3.5)*GCG[i]);
+      dtauQ[i] =    c*(pow(kappa,0.5)*C[i] + 2*pow(kappa,-0.5)*G[i] + pow(kappa,-1.5)*GCG[i]);
+      
+    } else {
+      Q[i] =        c*tau*(     pow(kappa,-0.5)*G[i] +     pow(kappa,0.5)*C[i]);
+      dkappaQ[i] =  c*tau*(-0.5*pow(kappa,-1.5)*G[i] + 0.5*pow(kappa,-0.5)*C[i]);
+      d2kappaQ[i] = c*tau*(0.75*pow(kappa,-3.5)*G[i] - 0.25*pow(kappa,-1.5)*C[i]);
+      dtauQ[i] =    c*(pow(kappa,-0.5)*G[i] + pow(kappa,0.5)*C[i]);  
+    }
     
-    Q[i] =        c*tau*(     pow(kappa,-0.5)*G[i] +     pow(kappa,0.5)*C[i]);
-    dkappaQ[i] =  c*tau*(-0.5*pow(kappa,-1.5)*G[i] + 0.5*pow(kappa,-0.5)*C[i]);
-    d2kappaQ[i] = c*tau*(0.75*pow(kappa,-3.5)*G[i] - 0.25*pow(kappa,-1.5)*C[i]);
-    dtauQ[i] =    c*(pow(kappa,-0.5)*G[i] + pow(kappa,0.5)*C[i]);
     (*Qsolver[i]).compute(Q[i]);
     tau_trace[i] = Q[i].cols()/tau;
     tau_trace2[i] = -tau_trace[i]/tau;

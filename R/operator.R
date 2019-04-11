@@ -288,10 +288,17 @@ create_operator <- function(locs,
                             cutoff = 1e-10,
                             n.cores = 1)
 {
-  if(tolower(name) == "matern" || tolower(name) == "exponential"){
+  if(tolower(name) == "matern" || tolower(name) == "exponential" || tolower(name) == "matern.asym"){
+    beta = 1
     if(tolower(name) == "exponential"){
       left.boundary = "dirichlet"
       right.boundary = "none"
+    }
+    if(tolower(name) == "matern.asym"){
+      name = "exponential"
+      left.boundary = "dirichlet"
+      right.boundary = "none"
+      beta = 2
     }
     return(create_matrices_Matern(locs = locs,
                                   common.grid = common.grid,
@@ -301,7 +308,8 @@ create_operator <- function(locs,
                                   n.cores = n.cores,
                                   right.boundary = right.boundary,
                                   left.boundary = left.boundary,
-                                  name = name))
+                                  name = name,
+                                  beta = beta))
   }else{
     return(create_matrices_FD2(locs = locs,
                                common.grid = common.grid,
@@ -346,7 +354,8 @@ create_matrices_Matern <- function(locs,
                                    max.dist,
                                    cutoff = 1e-10,
                                    n.cores = 1,
-                                   name = "matern")
+                                   name = "matern",
+                                   beta=1)
 {
 
   meshes <- generate.adaptive.meshes.1d(locs,
@@ -415,7 +424,8 @@ create_matrices_Matern <- function(locs,
                         right.boundary=right.boundary,
                         left.boundary=left.boundary,
                         manifold = "R",
-                        common.grid = common.grid)
+                        common.grid = common.grid,
+                        beta = beta)
   return(operator_List)
 }
 
