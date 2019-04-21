@@ -279,7 +279,7 @@ predictLong <- function( Y,
         }
       }
   
-      obs_list[[i]] <- list(Y=Y[[i]],
+      obs_list[[i]] <- list(Y=c(Y[[i]]),
                             pred_ind = pred.ind,
                             obs_ind = obs.ind,
                             locs = locs[[i]],

@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 0;
+  int debug = 1;
   //**********************************
   //      basic parameter
   //**********************************
@@ -196,10 +196,16 @@ List predictLong_cpp(Rcpp::List in_list)
       //} else {
       //  Solver.push_back( new cholesky_solver );  
       //}
-      Solver.push_back( new cholesky_solver );  
-      Solver[count]->init(Kobj->d[count], 0, 0, 0);
-      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-
+      Solver.push_back( new cholesky_solver ); 
+      if(Kobj->nop == 1){
+        Solver[count]->init(Kobj->d[0], 0, 0, 0);
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+      } else {
+        Solver[count]->init(Kobj->d[count], 0, 0, 0);  
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+      }
+      
+      
       Q = K.transpose();
       Q = Q * K;
       Q = Q + As[count].transpose()*As[count];
@@ -311,8 +317,13 @@ List predictLong_cpp(Rcpp::List in_list)
     XVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     WVec[i].setZero(Bfixed_pred[i].rows(), nSim);
     if(use_process){
-      WnoiseVec[i].setZero(Kobj->d[i], nSim);  
-      VnoiseVec[i].setZero(Kobj->d[i], nSim);  
+      if(Kobj->nop==1){
+        WnoiseVec[i].setZero(Kobj->d[0], nSim);  
+        VnoiseVec[i].setZero(Kobj->d[0], nSim);  
+      } else {
+        WnoiseVec[i].setZero(Kobj->d[i], nSim);  
+        VnoiseVec[i].setZero(Kobj->d[i], nSim);   
+      }
     }
     
     
@@ -419,7 +430,14 @@ List predictLong_cpp(Rcpp::List in_list)
           }
 
           Eigen::SparseMatrix<double, 0, int> Qi;
-          Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+          int d = 1;
+          if(Kobj->nop == 1){
+            Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);  
+            d = Kobj->d[0];
+          } else {
+            Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+            d = Kobj->d[i];
+          }
 
           Eigen::VectorXd iV(process->Vs[i].size());
           iV.array() = process->Vs[i].array().inverse();
@@ -436,9 +454,8 @@ List predictLong_cpp(Rcpp::List in_list)
           if(debug){
             Rcpp::Rcout << "Sample normals \n";
           }
-          int d = 1;
-          d = Kobj->d[i];
-
+          
+    
           Eigen::VectorXd zi;
           zi.setZero(d);
           for(int j =0; j < d; j++)

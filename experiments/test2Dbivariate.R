@@ -7,8 +7,8 @@ library(ggplot2)
 library(fields)
 library(gridExtra)
 #First estimate stationary model:
-test.pred = FALSE
-test.est = TRUE
+test.pred = TRUE
+test.est = FALSE
 nIter = 1000
 
 noise="Gaussian"
@@ -140,28 +140,32 @@ if(test.est){
 
 
 if(test.pred){
-  locs.pred <- proj$lattice$loc
-  Bf <- kronecker(diag(2),matrix(rep(1, dim(locs.pred)[1])))
-  Bfixed.pred  <- list(Bf)
+  locs.pred <- Bfixed.pred <- list()
+  for(i in 1:n.rep){
+    locs.pred[[i]] <- proj$lattice$loc
+    Bfixed.pred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(locs.pred[[i]])[1])))
+  }
+  
+  
   
   res <- predictLong( Y                = sim_res$Y,
-                      locs.pred        = list(locs.pred),
+                      locs.pred        = locs.pred,
                       Bfixed.pred      = Bfixed.pred,
                       type             = "Smoothing",
                       nSim             = 100,
-                      locs             = list(obs.loc),
+                      locs             = obs.loc,
                       mixedEffect_list = mixedEffect_list,
                       measurment_list  = mError_list,
                       processes_list   = processes_list,
                       operator_list    = operator_list)
   
-  df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,1])
-  df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y.star[[1]][,2])
-  df3 = data.frame(x = locs.pred[,1],y=locs.pred[,2],z=res$X.summary[[1]]$Mean[1:length(locs.pred[,1])])
-  df4 = data.frame(x = locs.pred[,1],y=locs.pred[,2],z=res$X.summary[[1]]$Mean[(length(locs.pred[,1])+1):(2*length(locs.pred[,1]))])
+  df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=sim_res$Y[[1]][,1])
+  df2 = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=sim_res$Y.star[[1]][,2])
+  df3 = data.frame(x = locs.pred[[1]][,1],y=locs.pred[[1]][,2],z=res$X.summary[[1]]$Mean[1:length(locs.pred[[1]][,1])])
+  df4 = data.frame(x = locs.pred[[1]][,1],y=locs.pred[[1]][,2],z=res$X.summary[[1]]$Mean[(length(locs.pred[[1]][,1])+1):(2*length(locs.pred[[1]][,1]))])
   p1 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
   p2 <- ggplot(df2, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
   p3 <- ggplot(df3,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
   p4 <- ggplot(df4,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
-  grid.arrange(p1,p2,p3,p4,ncol=2)
+  grid.arrange(p3,p4,p1,p2,ncol=2)
 }
