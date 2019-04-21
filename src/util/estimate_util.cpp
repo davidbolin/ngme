@@ -30,7 +30,12 @@ Eigen::VectorXd GibbsSampling(int i,
 {
   Eigen::VectorXd b;
   if(process_active){
-    b.setZero(Kobj.d[i]);
+    if(Kobj.nop == 1){
+      b.setZero(Kobj.d[0]);
+    } else {
+      b.setZero(Kobj.d[i]);  
+    }
+    
   }
 
   Eigen::VectorXd  res = Y;
@@ -67,7 +72,12 @@ Eigen::VectorXd GibbsSampling(int i,
     Eigen::VectorXd iV(process.Vs[i].size());
     iV.array() = process.Vs[i].array().inverse();
 
-    K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+    if(Kobj.nop == 1){
+      K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
+    } else {
+      K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);  
+    }
+    
 
     Q = K.transpose();
     Q =  Q * iV.asDiagonal();
@@ -203,8 +213,12 @@ void grad_caculations(int i,
     Eigen::SparseMatrix<double, 0, int> K;
     Eigen::VectorXd iV(process.Vs[i].size());
     iV.array() = process.Vs[i].array().inverse();
-
-    K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+    if(Kobj.nop == 1){
+      K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
+    } else {
+      K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);  
+    }
+    
 
     if(process.type_process != "Normal"){
       if(errObj.noise != "Normal"){

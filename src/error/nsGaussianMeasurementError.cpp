@@ -5,7 +5,7 @@
 
 void nsGaussianMeasurementError::printIter()
 {
-  Rcpp::Rcout << "exp(theta) = " << theta.exp();
+  Rcpp::Rcout << "theta = " << theta.transpose();
   
 }
 void nsGaussianMeasurementError::setupStoreTracj(const int Niter) // setups to store the tracjetory
@@ -51,6 +51,7 @@ void nsGaussianMeasurementError::initFromList(Rcpp::List const &init_list)
     B[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
   }
   npars = B[0].cols();
+
   if(init_list.containsElementNamed("theta"))
     theta = Rcpp::as < Eigen::VectorXd >( init_list["theta"]);
   else

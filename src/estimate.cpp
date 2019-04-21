@@ -72,7 +72,13 @@ Eigen::MatrixXd var_term_calc(
   }
   
   if(n_p > 0){
-    Eigen::SparseMatrix<double, 0, int>  K = Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);
+    Eigen::SparseMatrix<double, 0, int>  K;
+    if(Kobj.nop==1){
+      K= Eigen::SparseMatrix<double,0,int>(Kobj.Q[0]);
+    } else {
+      K= Eigen::SparseMatrix<double,0,int>(Kobj.Q[i]);  
+    }
+    
     setSparseBlock(&Kjoint, n_r, n_r,K);
     mu_prior.tail(n_p)   = process.get_mean_prior(i, K);
   }
@@ -300,9 +306,14 @@ List estimateLong_cpp(Rcpp::List in_list)
     for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
       List obs_tmp = Rcpp::as<Rcpp::List>( *it);
       Solver.push_back( new cholesky_solver );  
-      Solver[count]->init(Kobj->d[count], 0, 0, 0);
-      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
-
+      if(Kobj->nop == 1){
+        Solver[count]->init(Kobj->d[0], 0, 0, 0);
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);  
+      } else {
+        Solver[count]->init(Kobj->d[count], 0, 0, 0);
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[count]);
+      }
+      
       Q = K.transpose();
       Q = Q * K;
       Q = Q + As[count].transpose()*As[count];
@@ -387,7 +398,9 @@ List estimateLong_cpp(Rcpp::List in_list)
     process->initFromList(processes_list, Kobj->h);
     if(estimate_fisher > 0)
       process->useEV = 0;
+    
     process->setupStoreTracj(nIter);
+    
     /*
     Simulation objects
     */
@@ -417,7 +430,12 @@ List estimateLong_cpp(Rcpp::List in_list)
   Vmean.resize(nindv);
   if(process_active){
     for(int i = 0; i < nindv; i++ ){
-      Vmean[i].setZero(Kobj->h[i].size());
+      if(Kobj->nop==1){
+        Vmean[i].setZero(Kobj->h[0].size());
+      } else {
+        Vmean[i].setZero(Kobj->h[i].size());  
+      }
+      
     }
   }
 
@@ -550,7 +568,12 @@ List estimateLong_cpp(Rcpp::List in_list)
       */
       if(estimate_fisher == 1){
         if(process_active){
-          K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+          if(Kobj->nop == 1){
+            K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+          } else {
+            K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);  
+          }
+          
         }
         if(debug)
           Rcpp::Rcout << "estimate::simulate error\n";
@@ -595,7 +618,11 @@ List estimateLong_cpp(Rcpp::List in_list)
       int count_inner = 0;
       Eigen::MatrixXd grad_inner(npars, nSim); // within person variation  (Gibbs)
       if(process_active){
-        z.setZero(Kobj->h[i].size());
+        if(Kobj->nop==1){
+          z.setZero(Kobj->h[0].size());
+        } else {
+          z.setZero(Kobj->h[i].size());  
+        }
       } else {
         z.setZero(0);
       }
@@ -605,7 +632,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         if(process_active){
           if(debug)
             Rcpp::Rcout << "simulate z\n";
-          for(int j =0; j < Kobj->h[i].size(); j++)
+          for(int j =0; j < z.size(); j++)
             z[j] =  normal(random_engine);
         }
 

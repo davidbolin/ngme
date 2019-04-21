@@ -119,9 +119,16 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 
 
   for(int i = 0; i < nindv; i++ ){
-	  Xs[i].resize( Kobj->d[i] );
-	  Vs[i] = Kobj->h[i];
-	  Zs[i].resize(Kobj->d[i]);
+    if(Kobj->nop == 1){
+      Xs[i].resize( Kobj->d[0] );
+      Vs[i] = Kobj->h[0];
+      Zs[i].resize(Kobj->d[0]);
+    } else {
+      Xs[i].resize( Kobj->d[i] );
+      Vs[i] = Kobj->h[i];
+      Zs[i].resize(Kobj->d[i]);  
+    }
+	  
   }
 
   	/*
@@ -167,24 +174,34 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
       if(type_processes != "Normal"){
-        Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );
+        if(Kobj->nop == 1){
+          Vs[i] = sampleV_pre(rgig, Kobj->h[0], nu, type_processes );
+        } else {
+          Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );  
+        }
       }
       iV.resize(Vs[i].size());
       iV.array() = Vs[i].array().inverse();
       int d;
-      d = Kobj->d[i];
-
       Eigen::VectorXd h;
-      z.setZero(Kobj->d[i]);
-      h = Kobj->h[i];
+      if(Kobj->nop == 1){
+        d = Kobj->d[0];
+        z.setZero(Kobj->d[0]);
+        h = Kobj->h[0];
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+      } else {
+        d = Kobj->d[i];
+        z.setZero(Kobj->d[i]);
+        h = Kobj->h[i];
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+      }
+      
       for(int ii =0; ii < d; ii++){
         z[ii] =   sqrt(Vs[i][ii]) * normal(random_engine);
         if(type_processes != "Normal"){
           z[ii] += - mu * h[ii] + Vs[i][ii] * mu;
         }
       }
-
-      K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
 
       if(type_operator == "matern bivariate" || type_operator == "exponential"){
         if(debug == 1){

@@ -229,22 +229,31 @@ create_operator_matern2D <- function(mesh)
 #'   }
 #'
 
-create_operator_matern2Dbivariate <- function(mesh)
+create_operator_matern2Dbivariate <- function(mesh,n.rep = 1)
 {
   INLA:::inla.require.inherits(mesh, c("inla.mesh", "inla.mesh.1d"), "'mesh'")
   fem = INLA::inla.fmesher.smorg(mesh$loc, mesh$graph$tv, fem = 2,
                                  output = list("c0", "c1", "g1", "g2","dx","dy","dz"),
                                  gradients=TRUE)
-  n = mesh$n
-  h = (fem$c1%*%matrix(rep(1,n)))@x
   
+  n = mesh$n
+  hi = (fem$c1%*%matrix(rep(1,n)))@x
+  C <- Ci <- G <- Ce <- h <- loc <- list()
+  for(i in 1:n.rep)
+  {
+    C[[i]] = as(fem$c1,"CsparseMatrix")
+    Ci[[i]] = Matrix::Diagonal(n,1/hi)
+    G[[i]] = as(fem$g1,"CsparseMatrix")
+    h[[i]] = c(hi,hi)
+    loc[[i]] <- mesh$loc
+  }
   out <- list(type = "matern bivariate",
               mesh = list(mesh),
-              C = list(as(fem$c1,"CsparseMatrix")),
-              G = list(as(fem$g1,"CsparseMatrix")),
-              Ci = list(Matrix::Diagonal(n,1/h)),
-              h = list(c(h,h)),
-              loc   = list(mesh$loc),
+              C = C,
+              G = G,
+              Ci = Ci,
+              h = h,
+              loc   = loc,
               common.grid = TRUE,
               estimate_theta = 1,
               manifold ="R2")

@@ -59,7 +59,7 @@ simulateLongPrior <- function( Y,
         #Yi <- Yi[!is.nan(Yi)]
         #locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
         #locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
-        locsi <- cbind(locs,locs)
+        locsi <- rbind(locsi,locsi)
         
       }
       obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)

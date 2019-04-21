@@ -423,6 +423,7 @@ List predictLong_cpp(Rcpp::List in_list)
 
           Eigen::VectorXd iV(process->Vs[i].size());
           iV.array() = process->Vs[i].array().inverse();
+          //Rcpp::Rcout << iV.maxCoeff()  << "\n";
           Qi = Ki.transpose();
 
           if(Ki.cols() != iV.size()){

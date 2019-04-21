@@ -16,14 +16,14 @@ kappa1 = 1
 kappa2 = 1
 tau1 = 5
 tau2 = 5
-rho = 0
+rho = 1
 theta = 0
 sigma.e = c(0.01,0.1)
 beta.fixed = c(0,0)
 
 n.lattice = 40
 n.obs=200 #number of observations per replicate
-n.rep = 10 #number of replicates
+n.rep = 3 #number of replicates
 
 #create mesh 
 x=seq(from=0,to=10,length.out=n.lattice)
@@ -70,10 +70,14 @@ operator_list$rho   <- rho
 operator_list$theta   <- theta
 
 processes_list = list(noise = "Normal", V <- list())
-processes_list$V[[1]] <- c(operator_list$h,operator_list$h)
+for(i in 1:n.rep){
+  processes_list$V[[i]] <- c(operator_list$h[[1]],operator_list$h[[1]])  
+  processes_list$X[[i]] <- 0*processes_list$V[[i]]
+}
+
 
 cat("Simulate\n")
-sim_res <- simulateLongPrior( locs              = list(obs.loc),
+sim_res <- simulateLongPrior( locs              = obs.loc,
                               mixedEffect_list  = mixedEffect_list,
                               measurment_list   = mError_list,
                               processes_list    = processes_list,
@@ -88,8 +92,8 @@ df2 <- expand.grid(x= proj$x, y = proj$y)
 df2$z <- c(inla.mesh.project(proj,sim_res$X[[1]][(n.proc/2+1):n.proc]))
 p1 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
 p2 <- ggplot(df2, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
-df = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,1])
-df2 = data.frame(x = obs.loc[,1],y=obs.loc[,2],z=sim_res$Y[[1]][,2])
+df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=sim_res$Y[[1]][,1])
+df2 = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=sim_res$Y[[1]][,2])
 p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
 p4 <- ggplot(df2) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
 grid.arrange(p1,p2,p3,p4,ncol=2)
@@ -105,7 +109,7 @@ if(test.est){
   res.est <- estimateLong(Y                = sim_res$Y,
                           nIter            = nIter,
                           nSim             = 10,
-                          locs             = list(obs.loc),
+                          locs             = obs.loc,
                           mixedEffect_list = mixedEffect_list,
                           measurment_list  = mError_list,
                           processes_list   = processes_list,

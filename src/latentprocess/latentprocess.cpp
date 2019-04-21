@@ -37,6 +37,7 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
   nindv = X_list.length();
 
   h.resize(nindv);
+
   for(int i =0; i < nindv; i++){
   	if(h_in.size() > 1)
     	h[i] = h_in[i];
@@ -44,7 +45,6 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
     	h[i] = h_in[0];
 
   }
-
   Xs.resize(nindv);
   Ws.resize(nindv);
   Vs.resize(nindv);
@@ -55,7 +55,6 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
     	Vs[i]  = h[i];
       mu0[i].setZero(h[i].size());
   	}
-
 
 
 }
