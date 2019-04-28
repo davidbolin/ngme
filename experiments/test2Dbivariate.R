@@ -7,8 +7,8 @@ library(ggplot2)
 library(fields)
 library(gridExtra)
 #First estimate stationary model:
-test.pred = TRUE
-test.est = FALSE
+test.pred = FALSE
+test.est = TRUE
 nIter = 1000
 
 noise="Gaussian"
@@ -21,7 +21,7 @@ theta = 0
 sigma.e = c(0.01,0.1)
 beta.fixed = c(0,0)
 
-n.lattice = 40
+n.lattice = 10
 n.obs=200 #number of observations per replicate
 n.rep = 3 #number of replicates
 

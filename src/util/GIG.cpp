@@ -108,6 +108,33 @@ Eigen::VectorXd sampleV_pre(gig &sampler,
   return(V);
 }
 
+Eigen::VectorXd sampleV_pre(gig &sampler,
+                        const Eigen::VectorXd &h, 
+                        const Eigen::VectorXd &nu,
+                        const std::string type)
+{
+  Eigen::VectorXd V(h.size());
+  double Vadj = 1e-14;
+  if(type == "NIG"){
+    for(int i = 0; i < h.size(); i++)
+      V[i] = sampler.sample(-0.5 , nu[i], pow(h[i] , 2)* nu[i]);
+      
+  }else if(type == "GAL"){
+    for(int i = 0; i < h.size(); i++)
+      V[i] = sampler.sample( h[i] * nu[i], 2 *nu[i], 0) + Vadj; 
+      
+  }else if(type == "CH"){
+    for(int i = 0; i < h.size(); i++)
+      V[i] = sampler.sample( -0.5, 0, 2*0.25 * pow(h[i], 2)); 
+    
+  }else{
+    throw("sampleV_pre type must either be NIG, GAL or CH");
+  }
+  
+  
+  return(V);
+}
+
 
 Eigen::VectorXd sampleV_post(gig &sampler,
                         	 const Eigen::VectorXd &h, 

@@ -91,7 +91,9 @@ public:
                         gig &,
                         const Eigen::SparseMatrix<double,0,int> &){};
 
-
+  virtual Eigen::VectorXd  simulate_E(const int i,
+                  Eigen::VectorXd & Z,
+                  gig & rgig) {return Z;};
   virtual void simulate_V(const int,
                           gig &){};
   virtual void initFromList(const Rcpp::List &, const std::vector <Eigen::VectorXd > &){};
@@ -334,8 +336,12 @@ public:
                 const Eigen::SparseMatrix<double,0,int> & ,
                 Eigen::VectorXd& ,
                 solver  &  );
-  void simulate_V(const int,
+  virtual void simulate_V(const int,
                   gig &);
+
+  Eigen::VectorXd  simulate_E(const int ,
+                  Eigen::VectorXd & ,
+                  gig & );
 
   virtual Eigen::VectorXd  get_gradient();
   virtual void  clear_gradient();
@@ -386,6 +392,9 @@ public:
   void sample_V(const int ,
                 gig & ,
                 const Eigen::SparseMatrix<double,0,int> & );
+
+  void simulate_V(const int,
+                  gig &);
 };
 
 

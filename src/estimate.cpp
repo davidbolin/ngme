@@ -389,10 +389,13 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
     type_processes= Rcpp::as<std::string> (processes_list["noise"]);
 
-    if (type_processes != "Normal"){
+    if (type_processes == "Normal"){
+       process  = new GaussianProcess;
+      
+    }else if(type_processes == "MultiGH" )
       process  = new GHProcess;
-    }else{
-      process  = new GaussianProcess;
+    else{
+      process  = new GHProcess;
     }
 
     process->initFromList(processes_list, Kobj->h);

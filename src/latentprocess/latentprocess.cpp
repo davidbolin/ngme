@@ -29,13 +29,13 @@ double Trigamma(double x)
 
 void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
+  nindv = h_in.size();
+  Xs.resize(nindv);
+  Ws.resize(nindv);
+  Vs.resize(nindv);
+  mu0.resize(nindv);
   npars = 0;
   type_process = "Normal";
-  std::vector<std::string> check_names =  {"X"};
-  check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
-  Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
-  nindv = X_list.length();
-
   h.resize(nindv);
 
   for(int i =0; i < nindv; i++){
@@ -43,19 +43,22 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
     	h[i] = h_in[i];
     else
     	h[i] = h_in[0];
-
   }
-  Xs.resize(nindv);
-  Ws.resize(nindv);
-  Vs.resize(nindv);
-  mu0.resize(nindv);
-  for(int i = 0; i < nindv; i++ ){
-    	Xs[i]  = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+  Rcpp::List X_list;
+  int X_list_exist  = init_list.containsElementNamed("X");
+  if(X_list_exist)
+    X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  
+   for(int i = 0; i < nindv; i++ ){
+      if(X_list_exist){
+        Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      }else{
+        Xs[i].setZero(h[i].size());
+      }
       Ws[i]  = Xs[i];
-    	Vs[i]  = h[i];
+      Vs[i]  = h[i];
       mu0[i].setZero(h[i].size());
-  	}
-
+  }
 
 }
 
@@ -80,32 +83,52 @@ void GaussianProcess::simulate(const int i,
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)
 {
-	std::vector<std::string> check_names =  {"X","V"};
-  check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
-  Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
-  Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  nindv = h_in.size();
+
+  h.resize(nindv);
+  for(int i =0; i < nindv; i++){
+    if(h_in.size() > 1)
+      h[i] = h_in[i];
+    else
+      h[i] = h_in[0];
+
+  }
+
+
+  Xs.resize(nindv);
+  Ws.resize(nindv);
+  Vs.resize(nindv);
+  Rcpp::List V_list;
+  Rcpp::List X_list;
+  int V_list_exist  = init_list.containsElementNamed("V");
+  int X_list_exist  = init_list.containsElementNamed("X");
+  if(V_list_exist)
+    V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
+  if(X_list_exist)
+    X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   
+   for(int i = 0; i < nindv; i++ ){
+      if(X_list_exist){
+        Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      }else{
+        Xs[i].setZero(h[i].size());
+      }
+      Ws[i] = Xs[i];
+      if(V_list_exist){
+        Vs[i] = Rcpp::as<Eigen::VectorXd>(V_list[i]);
+      }else{
+        Vs[i].setOnes(h[i].size());
+      }
+  }
+
   if( init_list.containsElementNamed("nu_limit") ){
     nu_limit = Rcpp::as<double>(init_list["nu_limit"]);
   } else {
     nu_limit = 0;
   }
-  nindv = X_list.size();
-  Xs.resize(nindv);
-  Ws.resize(nindv);
-  Vs.resize(nindv);
+  
   term1 = 0;
   term2 = 0;
-
-
-  h.resize(nindv);
-  for(int i =0; i < nindv; i++){
-  	if(h_in.size() > 1)
-    	h[i] = h_in[i];
-    else
-    	h[i] = h_in[0];
-
-  }
 
 
 
@@ -133,12 +156,7 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
 
 
 
-  for(int i = 0; i < nindv; i++ ){
-
-    	Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-    	Ws[i] = Xs[i];
-      Vs[i] = Rcpp::as<Eigen::VectorXd>( V_list[i]);
-  	}
+ 
 
 
   	type_process = Rcpp::as<std::string> (init_list["noise"]);
@@ -205,27 +223,68 @@ if(type_process == "CH"){
 
 void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)
 {
-  std::vector<std::string> check_names =  {"X","V","Bmu","Bnu"};
+  
+  std::vector<std::string> check_names =  {"Bmu","Bnu"};
   check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
-  Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
-  Rcpp::List X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
-  nindv = X_list.size();
-  Xs.resize(nindv);
-  Ws.resize(nindv);
-  Vs.resize(nindv);
-  toSampleV.resize(nindv);
-  term1 = 0;
-  term2 = 0;
+  Rcpp::List Bmu_in = Rcpp::as<Rcpp::List>  (init_list["Bmu"]);
+  Rcpp::List Bnu_in = Rcpp::as<Rcpp::List>  (init_list["Bnu"]);
+  nindv = Bmu_in.size();
+  Bmu.resize(nindv);
+  Bnu.resize(nindv);
 
-
+  
   h.resize(nindv);
   for(int i =0; i < nindv; i++){
     if(h_in.size() > 1)
       h[i] = h_in[i];
     else
       h[i] = h_in[0];
-
   }
+
+  for(int i = 0; i < nindv; i++ ){
+      if(Bnu_in.size() > 1){
+        Bnu[i] = Rcpp::as<Eigen::MatrixXd>( Bnu_in[i]);
+      }else{
+         Bnu[i] = Rcpp::as<Eigen::MatrixXd>( Bnu_in[0]);
+      }
+      if(Bmu_in.size() > 1){
+        Bmu[i] = Rcpp::as<Eigen::MatrixXd>( Bmu_in[i]);
+      }else{
+        Bmu[i] = Rcpp::as<Eigen::MatrixXd>( Bmu_in[0]);
+      }
+  }
+
+  Xs.resize(nindv);
+  Ws.resize(nindv);
+  Vs.resize(nindv);
+  Rcpp::List V_list;
+  Rcpp::List X_list;
+  int V_list_exist  = init_list.containsElementNamed("V");
+  int X_list_exist  = init_list.containsElementNamed("X");
+  if(V_list_exist)
+    V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
+  if(X_list_exist)
+    X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  
+   for(int i = 0; i < nindv; i++ ){
+      if(X_list_exist){
+        Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      }else{
+        Xs[i].setZero(h[i].size());
+      }
+      Ws[i] = Xs[i];
+      if(V_list_exist){
+        Vs[i] = Rcpp::as<Eigen::VectorXd>(V_list[i]);
+      }else{
+        Vs[i].setOnes(h[i].size());
+      }
+  }
+  toSampleV.resize(nindv);
+  term1 = 0;
+  term2 = 0;
+
+
+
 
 
 
@@ -253,18 +312,7 @@ void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Ei
 
 
 
-  Rcpp::List Bmu_in = Rcpp::as<Rcpp::List>  (init_list["Bmu"]);
-  Rcpp::List Bnu_in = Rcpp::as<Rcpp::List>  (init_list["Bnu"]);
-  Bmu.resize(nindv);
-  Bnu.resize(nindv);
-  for(int i = 0; i < nindv; i++ ){
 
-      Xs[i]  = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-      Ws[i]  = Xs[i];
-      Vs[i]  = Rcpp::as<Eigen::VectorXd>( V_list[i]);
-      Bnu[i] = Rcpp::as<Eigen::MatrixXd>( Bnu_in[i]);
-      Bmu[i] = Rcpp::as<Eigen::MatrixXd>( Bmu_in[i]);
-    }
 
 
 type_process = Rcpp::as<std::string> (init_list["noise"]);
@@ -291,15 +339,12 @@ if(type_process == "CH"){
       if(init_list.containsElementNamed("nu"))
         Nu = Rcpp::as < Eigen::VectorXd >( init_list["nu"]);
       else
-        Nu.resize(Bnu[0].cols());
+        Nu.setZero(Bnu[0].cols());
   }
-    if(init_list.containsElementNamed("mu"))
-      Mu = Rcpp::as < Eigen::VectorXd >( init_list["mu"]);
-    else
-      Mu.resize(Bmu[0].cols());
-
-    Mu *= 0;
-    Nu *= 0;
+  if(init_list.containsElementNamed("mu"))
+    Mu = Rcpp::as < Eigen::VectorXd >( init_list["mu"]);
+  else
+    Mu.setZero(Bmu[0].cols());
     dMu.resize(Mu.size());
     dMu *= 0;
     ddMu.resize(Mu.size(), Mu.size());
@@ -313,7 +358,7 @@ if(type_process == "CH"){
     dNu_prev *=0;
     ddNu *= 0;
     dmu    = 0;
-  ddmu_1 = 0;
+    ddmu_1 = 0;
     if(type_process != "CH"){
       update_nu();
       clear_gradient();
@@ -334,8 +379,6 @@ if(type_process == "CH"){
 
 
     mu0.resize(nindv);
-    for(int i =0; i < nindv; i++)
-      mu0[i] = mu * (-h[i] + Vs[i]);
 
 
 
@@ -408,6 +451,20 @@ void GHProcessBase::simulate(const int i,
   Xs[i] = LU.solve(Z);         // use the factorization to solve for the given right hand side
   Y += A * Xs[i];
 
+}
+
+  //simulate from prior distribution
+Eigen::VectorXd  GHProcessBase::simulate_E(const int i,
+                                           Eigen::VectorXd & Z,
+                                           gig & rgig)
+{
+  simulate_V(i, rgig);
+  Z = Z.cwiseProduct(Vs[i].cwiseSqrt());
+  Eigen::VectorXd b = mean_X(i);
+  for(int ii = 0; ii < Z.size(); ii++)
+  Z[ii] += b[ii];
+
+  return(Z);
 }
 
 
@@ -491,10 +548,9 @@ void MGHProcess::sample_V(const int i ,
   Eigen::VectorXd KX = K * Xs[i];
   Eigen::VectorXd  Nu_in = Bnu[i]*Nu;
   Nu_in.array() = Nu_in.array().exp();
-  if( type_process == "NIG"){
-    for(int j = 0; j < Nu_in.size(); j++)
-      Nu_in(j) = sqrt(Nu_in(j));
-    }
+  for(int j = 0; j < Nu_in.size(); j++)
+    Nu_in(j) = sqrt(Nu_in(j));
+    
     Eigen::VectorXd  Bmu_in = Bmu[i]*Mu;
   Vs[i] = sampleV_post(rgig,
                  h[i],
@@ -502,7 +558,7 @@ void MGHProcess::sample_V(const int i ,
                  1.,
                  Bmu_in,
                  Nu_in,
-                 type_process,
+                 "NIG",
                  sampleVbool[i]);
 
   //mu0[i] = (Bmu[i] * Mu) * (-h[i] + Vs[i]);
@@ -542,12 +598,22 @@ void GHProcessBase::simulate_V(const int i ,
     					   gig & rgig)
 {
 	double nu_in = nu;
-	if( type_process == "NIG")
-		nu_in = sqrt(nu_in);
  	Vs[i] = sampleV_pre(rgig,
                  h[i],
                  nu_in,
                  type_process);
+
+}
+
+void MGHProcess::simulate_V(const int i ,
+                            gig & rgig)
+{
+  Eigen::VectorXd  Nu_in = Bnu[i]*Nu;
+  Nu_in.array() = Nu_in.array().exp();
+  Vs[i] = sampleV_pre(rgig,
+                      h[i],
+                      Nu_in,
+                      "NIG");
 
 }
 
@@ -717,7 +783,7 @@ void GHProcessBase::gradient_v2( const int i ,
   	counter++;
 
 
-	if( type_process == "NIG"){
+	if( type_process == "NIG" || type_process == "MultiGH"){
 		gradient_mu_centered(i, K, weight);
 	}else if(type_process=="GAL" ){
 			iV = Vs[i].cwiseInverse();
@@ -1172,7 +1238,6 @@ void MGHProcess::update_nu()
 
 
 Eigen::VectorXd  MGHProcess::mean_X(const int i){
-
  Eigen::VectorXd mean = -h[i] + Vs[i];
  mean.array() *= (Bmu[i] * Mu).array();
  return mean;

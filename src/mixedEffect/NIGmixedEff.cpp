@@ -220,7 +220,6 @@ void NIGMixedEffect::step_nu(const double stepsize, const double learning_rate,c
     dnu_old = 0;
   }
 	nu = nu_temp;
-  //nu = 400;
   EiV = 1. + 1./nu;
   VV = 1./nu;
   set_b_GIG();

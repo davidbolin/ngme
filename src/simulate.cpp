@@ -3,6 +3,7 @@
 #include <random>
 #include <chrono>
 #include <string>
+#include "latentprocess.h"
 #include "operatorMatrix.h"
 #include "operator_helper.h"
 #include "GIG.h"
@@ -105,14 +106,18 @@ List simulateLongGH_cpp(Rcpp::List in_list)
 	Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
 
 	std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
-  double nu = -1;
-  double mu = 0;
-  if(type_processes != "Normal"){
-    nu  = Rcpp::as< double > (processes_list["nu"]);
-    if(type_processes != "NIG")
-    	nu = sqrt(nu);
-    mu  = Rcpp::as< double > (processes_list["mu"]);
-  }
+
+  Process *process = NULL;
+  if (type_processes == "Normal"){
+       process  = new GaussianProcess;     
+    }else if(type_processes == "MultiGH" )
+      process  = new MGHProcess;
+    else{
+      process  = new GHProcess;
+    }
+
+  process->initFromList(processes_list, Kobj->h);
+
 	std::vector< Eigen::VectorXd >   Vs( nindv);
   std::vector< Eigen::VectorXd > Xs( nindv);
   std::vector< Eigen::VectorXd > Zs( nindv);
@@ -173,15 +178,7 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     }
     Eigen::VectorXd iV;
     for(int i = 0; i < Ysim.size(); i++) {
-      if(type_processes != "Normal"){
-        if(Kobj->nop == 1){
-          Vs[i] = sampleV_pre(rgig, Kobj->h[0], nu, type_processes );
-        } else {
-          Vs[i] = sampleV_pre(rgig, Kobj->h[i], nu, type_processes );  
-        }
-      }
-      iV.resize(Vs[i].size());
-      iV.array() = Vs[i].array().inverse();
+      
       int d;
       Eigen::VectorXd h;
       if(Kobj->nop == 1){
@@ -196,12 +193,19 @@ List simulateLongGH_cpp(Rcpp::List in_list)
         K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
       }
       
-      for(int ii =0; ii < d; ii++){
-        z[ii] =   sqrt(Vs[i][ii]) * normal(random_engine);
-        if(type_processes != "Normal"){
-          z[ii] += - mu * h[ii] + Vs[i][ii] * mu;
-        }
+      if(debug == 1)
+        Rcpp::Rcout << "simulate process noise \n";
+      for(int ii =0; ii < d; ii++)
+         z[ii] =  normal(random_engine);
+      
+      if(type_processes != "Normal"){
+        z = process->simulate_E(i, z,rgig);
+        Vs[i] = process->Vs[i];
+      }else{
+        z.array() *= Vs[i].array().sqrt();
       }
+      
+      
 
       if(type_operator == "matern bivariate" || type_operator == "exponential"){
         if(debug == 1){
@@ -226,10 +230,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
         
       }
       //
-      
-      
-      
-      
       Zs[i] = z;
       Ysim[i] += As[i] * Xs[i];
   }

@@ -27,7 +27,7 @@ dig <- function(x, a, b, log_in=F){
 #' @return A list of outputs.
 #' @examples
 #'   \dontrun{
-#'   dnig(...)
+#'   dgig(...)
 #'   }
 
 dgig <- function(x, p, a ,b, log_in=F){
@@ -40,6 +40,7 @@ dgig <- function(x, p, a ,b, log_in=F){
     return(l)
   return(exp(l))
 }
+
 dnig <- function(x, delta, mu, nu, sigma,log=F)
 {
   c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi
@@ -53,10 +54,39 @@ dnig <- function(x, delta, mu, nu, sigma,log=F)
   return(f)
 }
 
-#dgig <-function(x, p, a, b, log=T){
-#  f <- 0.5 * p * log(a/b) +(p-1)*log(x) - a*x/2 - b*x/2
-#  f <- f - log(2 * besselI
-#}
+dnig <- function(x, delta, mu, nu, sigma,log=F)
+{
+  c0 <- sqrt(nu) * sqrt( mu^2/sigma^2 + nu) / pi
+  f <- nu + mu * (x - delta) /sigma^2
+  coeff <- sqrt( nu * sigma^2 + (x - delta)^2)
+  f <- f + log(c0) -  log(coeff)
+  f <- f + log(besselK(coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2), -1,TRUE)) -coeff  * sqrt(mu^2/sigma^4 + nu/sigma^2)
+  if(log==F)
+    return(exp(f))
+  
+  return(f)
+}
+#'
+#' Computing the density of the random scattered measure
+#' defined by lesbeuge measure mA
+#'
+#'
+dnigMeasure <- function(x, mA,delta, mu, nu, sigma,log=F)
+{
+  nu1 <-  nu
+  nu2 <- mA^2 * nu
+  c0 <- sqrt(nu2) * sqrt( mu^2/sigma^2 + nu1) / pi
+  f <- sqrt(nu1 * nu2) + mu * (x - delta) /sigma^2
+  coeff <- sqrt( nu2 * sigma^2 + (x - delta)^2)
+  f <- f + log(c0) -  log(coeff)
+  Besel_coeff <- coeff  * sqrt(mu^2/sigma^4 + nu1/sigma^2)
+  f <- f + log(besselK(Besel_coeff, -1,TRUE)) - Besel_coeff
+  if(log==F)
+    return(exp(f))
+  
+  return(f)
+}
+
 
 #' @title  Density for Generalized hyperbolic distribution
 #' 

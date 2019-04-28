@@ -42,6 +42,10 @@ Eigen::VectorXd sampleV_pre(gig &,
                             const Eigen::VectorXd &, 
                             const double,
                             const std::string);
+Eigen::VectorXd sampleV_pre(gig &,
+                            const Eigen::VectorXd &, 
+                            const Eigen::VectorXd &,
+                            const std::string);
 
 
 /*

@@ -33,13 +33,13 @@ for(indv in 1:nindv){
   B_fixed[[indv]]  <- cbind(rep(1, n), rnorm(n))
   B_random[[indv]] <- as.matrix(1:n)
   V_mixed[indv] <-rGIG(rep(-0.5,1),
-                 rep( nu_mixed, 1),
-                 rep( nu_mixed, 1),
-                 as.integer(1000 * runif(1) ))
+                       rep( nu_mixed, 1),
+                       rep( nu_mixed, 1),
+                       as.integer(1000 * runif(1) ))
   V_   <- V_mixed[indv]
   Y[[indv]]        <- B_fixed[[indv]]%*%beta_fixed +
-                   B_random[[indv]]%*%(beta_random + mu_mixed*(-1+V_) + sqrt(V_)*sigma_random*rnorm(1)) +
-                   sigma * rnorm(n)
+    B_random[[indv]]%*%(beta_random + mu_mixed*(-1+V_) + sqrt(V_)*sigma_random*rnorm(1)) +
+    sigma * rnorm(n)
   
   B_sigma[[indv]]  <- as.matrix(rep(1, n))
   
@@ -54,18 +54,18 @@ mixed_list <- list(B_fixed    = B_fixed,
 error_list <- list(name       = 'Normal',
                    B          = B_sigma)
 res_Vknown <- test_mixed(n_iter, 
-                   Y, 
-                   mixed_list,
-                   error_list)
+                         Y, 
+                         mixed_list,
+                         error_list)
 mixed_list <- list(B_fixed    = B_fixed, 
                    B_random   = B_random,
                    V          = V_mixed,
                    fixedV     = 0,
                    name       = 'NIG')
 res_Vunkown <- test_mixed(n_iter, 
-                   Y, 
-                   mixed_list,
-                   error_list)
+                          Y, 
+                          mixed_list,
+                          error_list)
 
 
 
@@ -95,26 +95,27 @@ test_that(" V unkknown, NIG", {
 #plots for debugging
 ###
 if(0){
-x11()
-par(mfrow=c(2,1))
-plot(sqrt(res_Vknown$mixedEffect_list$Sigma_vec))
-plot(sqrt(res_Vunkown$mixedEffect_list$Sigma_vec))
-cat('sigma (V known)= ',sqrt(res_Vknown$mixedEffect_list$Sigma),'\n')
-cat('sigma = ',sqrt(res_Vunkown$mixedEffect_list$Sigma),'\n')
-x11()
-x <-seq(-10,5,length.out = 2000)
-dens <-dnig(x, as.vector(res_Vknown$mixedEffect_list$beta_random)-as.vector(res_Vknown$mixedEffect_list$mu), as.vector(res_Vknown$mixedEffect_list$mu), res_Vknown$mixedEffect_list$nu,  sqrt(res_Vknown$mixedEffect_list$Sigma[1,1]))
-dens2 <-dnig(x, beta_random -mu_mixed,mu_mixed, nu_mixed, sigma_random)
-dens3 <-dnig(x, as.vector(res_Vunkown$mixedEffect_list$beta_random)-as.vector(res_Vunkown$mixedEffect_list$mu), as.vector(res_Vunkown$mixedEffect_list$mu), res_Vunkown$mixedEffect_list$nu,  sqrt(res_Vunkown$mixedEffect_list$Sigma[1,1]))
-
-plot(x,dens2,type='l')
-lines(x, dens, col='red')
-lines(x, dens3, col='blue')
-x11()
-par(mfrow=c(3,1))
-hist(res_Vknown$mixedEffect_list$U,20)
-hist(res_Vunkown$mixedEffect_list$U,20)
-hist(res_Vunkown$mixedEffect_list$U-res_Vknown$mixedEffect_list$U)
+  x11()
+  par(mfrow=c(2,1))
+  plot(sqrt(res_Vknown$mixedEffect_list$Sigma_vec))
+  plot(sqrt(res_Vunkown$mixedEffect_list$Sigma_vec))
+  cat('sigma (V known)= ',sqrt(res_Vknown$mixedEffect_list$Sigma),'\n')
+  cat('sigma = ',sqrt(res_Vunkown$mixedEffect_list$Sigma),'\n')
+  x11()
+  x <-seq(-10,5,length.out = 2000)
+  dens <-dnig(x, as.vector(res_Vknown$mixedEffect_list$beta_random)-as.vector(res_Vknown$mixedEffect_list$mu), as.vector(res_Vknown$mixedEffect_list$mu), res_Vknown$mixedEffect_list$nu,  sqrt(res_Vknown$mixedEffect_list$Sigma[1,1]))
+  dens2 <-dnig(x, beta_random -mu_mixed,mu_mixed, nu_mixed, sigma_random)
+  dens3 <-dnig(x, as.vector(res_Vunkown$mixedEffect_list$beta_random)-as.vector(res_Vunkown$mixedEffect_list$mu), as.vector(res_Vunkown$mixedEffect_list$mu), res_Vunkown$mixedEffect_list$nu,  sqrt(res_Vunkown$mixedEffect_list$Sigma[1,1]))
+  
+  plot(x,dens2,type='l')
+  lines(x, dens, col='red')
+  lines(x, dens3, col='blue')
+  x11()
+  par(mfrow=c(3,1))
+  hist(res_Vknown$mixedEffect_list$U,20)
+  hist(res_Vunkown$mixedEffect_list$U,20)
+  hist(res_Vunkown$mixedEffect_list$U-res_Vknown$mixedEffect_list$U)
 }
+
 
 

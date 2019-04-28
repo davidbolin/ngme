@@ -267,7 +267,7 @@ void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
       }
       
       if(Br.size() > 0 ){
-        grad_beta_r += grad.segment(nf,Br[0].cols());
+        grad_beta_r   += grad.segment(nf,Br[0].cols());
         gradMu_2      += grad.tail(Br[0].cols());
       }
 
@@ -886,6 +886,7 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
     invSigma  = Sigma.inverse();
     iSkroniS = kroneckerProduct(invSigma, invSigma);
     Sigma_vech = vech(Sigma);
+
 }
 
 void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,const int burnin)
@@ -913,7 +914,6 @@ void GHMixedEffect::step_mu(const double stepsize, const double learning_rate,co
       mu(i) = mu_temp(i);
     }
   }
-  //mu.array() = 0;
   gradMu_2.setZero(Br[0].cols(), 1);
 }
 
@@ -956,8 +956,8 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   int n_f = Bf[0].cols();
   
   Eigen:: MatrixXd H_beta(n_f + n_r, n_f + n_r);
-  H_beta.topRightCorner(n_r, n_f)    = H_rf;
-  H_beta.bottomLeftCorner(n_f, n_r)  = H_rf.transpose();
+  H_beta.topRightCorner(n_r, n_f)    = 0*H_rf;
+  H_beta.bottomLeftCorner(n_f, n_r)  = 0*H_rf.transpose();
   H_beta.topLeftCorner(n_r, n_r)     = H_beta_random; 
 
   H_beta.bottomRightCorner(n_f, n_f) = H_beta_fixed;
@@ -1002,8 +1002,8 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   }
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
-    dbeta_r_old += 0.5 *  step1.head(n_r);
-    dbeta_r_old += 0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV);
+    dbeta_r_old +=  0.5 *  step1.head(n_r);
+    dbeta_r_old +=  0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV);
     dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;
     grad_beta_r2.setZero(Br[0].cols());
