@@ -333,6 +333,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_2Doperator
+Rcpp::List test_2Doperator(Rcpp::List process_list, Rcpp::List operator_list);
+RcppExport SEXP _ngme_test_2Doperator(SEXP process_listSEXP, SEXP operator_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type process_list(process_listSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type operator_list(operator_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_2Doperator(process_list, operator_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
@@ -360,6 +372,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_test_mixed_Fisher", (DL_FUNC) &_ngme_test_mixed_Fisher, 4},
     {"_ngme_test_process", (DL_FUNC) &_ngme_test_process, 3},
     {"_ngme_test_Mprocess", (DL_FUNC) &_ngme_test_Mprocess, 3},
+    {"_ngme_test_2Doperator", (DL_FUNC) &_ngme_test_2Doperator, 2},
     {NULL, NULL, 0}
 };
 

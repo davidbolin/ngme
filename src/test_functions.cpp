@@ -605,3 +605,49 @@ Rcpp::List test_Mprocess(int niter,
   return(out_list);
 
 }
+
+
+
+// [[Rcpp::export]]
+Rcpp::List test_2Doperator(Rcpp::List process_list,
+                           Rcpp::List operator_list)
+{
+  
+  operator_list["nIter"] = 1;
+  operator_list["estimate_theta"] = 1;
+  MaternOperator2D* Kobj = new MaternOperator2D;
+  Kobj->initFromList(operator_list, Rcpp::List::create(Rcpp::Named("use.chol") = 1));
+  
+  Process *process = NULL;
+  process  = new GaussianProcess;
+  process->initFromList(process_list, Kobj->h);
+  
+  Kobj->gradient_init(0, 0);
+  
+  Kobj->gradient_add( process->Xs[0],
+                      process->Vs[0].cwiseInverse(),
+                      process->mean_X(0),
+                      0,
+                      1);
+  
+  Eigen::VectorXd g =  Kobj->get_gradient();
+  Rcpp::List olist;
+
+  olist["dtau1"] = g[0];
+  olist["dtau2"] = g[1];
+  olist["dkappa1"] = g[2];
+  olist["dkappa2"] = g[3];
+  olist["drho"] = g[4];
+  olist["dtheta"] = g[5];
+  
+  olist["d2tau1"] = Kobj->ddtau1;
+  olist["d2tau2"] = Kobj->ddtau2;
+  olist["d2kappa1"] = Kobj->ddkappa1;
+  olist["d2kappa2"] = Kobj->ddkappa2;
+  olist["d2rho"] = Kobj->ddrho;
+  olist["d2theta"] = Kobj->ddtheta;
+  
+  delete process;
+  delete Kobj;
+  return(olist);
+}

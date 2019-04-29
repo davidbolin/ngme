@@ -271,9 +271,7 @@ protected:
   std::vector<double>  rho_trace, rho_trace2, theta_trace, theta_trace2;
   Eigen::VectorXd g,p;
   Eigen::SparseMatrix<double,0,int> *G, *C;
-  double kappa1, dkappa1, ddkappa1, dtau1, ddtau1;
-  double kappa2, dkappa2, ddkappa2, dtau2, ddtau2;
-  double rho, drho, ddrho, theta, dtheta, ddtheta;
+  
   double dtau1_old, dkappa1_old, dtau2_old, dkappa2_old,drho_old, dtheta_old;;
   bool use_chol, estimate_theta;
   std::vector<int> matrix_set;
@@ -286,6 +284,9 @@ protected:
   void set_matrices();
   void set_matrix(const int);
 public:
+  double kappa1, dkappa1, ddkappa1, dtau1, ddtau1;
+  double kappa2, dkappa2, ddkappa2, dtau2, ddtau2;
+  double rho, drho, ddrho, theta, dtheta, ddtheta;
   double tau1, tau2;
   Eigen::VectorXd kappa1Vec, kappa2Vec, tau1Vec, tau2Vec, rhoVec, thetaVec;
   

@@ -101,3 +101,7 @@ test_Mprocess <- function(niter, U, process_list) {
     .Call(`_ngme_test_Mprocess`, niter, U, process_list)
 }
 
+test_2Doperator <- function(process_list, operator_list) {
+    .Call(`_ngme_test_2Doperator`, process_list, operator_list)
+}
+
