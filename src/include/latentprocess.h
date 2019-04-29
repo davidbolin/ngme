@@ -322,7 +322,7 @@ public:
   void step_theta(const double stepsize, const double learning_rate = 0, const double polyak_rate = -1, const int burnin = 0);
   virtual void step_mu(const double, const double, const int, const double);
   virtual void step_nu(const double, const double, const int,const double);
-  void printIter();
+  virtual void printIter();
   virtual Rcpp::List toList();
   virtual void setupStoreTracj(const int);
   virtual void sample_V(const int,
@@ -395,6 +395,7 @@ public:
 
   void simulate_V(const int,
                   gig &);
+  void printIter();
 };
 
 

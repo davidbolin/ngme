@@ -107,8 +107,10 @@ Eigen::VectorXd GibbsSampling(int i,
     if(debug)
       Rcpp::Rcout << "estimate::sample V\n";
     // sample V| X
+    
     if(sampleV)
       process.sample_V(i, rgig, K);
+
   }
   if(debug)
     Rcpp::Rcout << "estimate::sample err V\n";

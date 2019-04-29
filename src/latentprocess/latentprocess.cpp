@@ -267,6 +267,7 @@ void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Ei
     X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   
    for(int i = 0; i < nindv; i++ ){
+    Rcpp::Rcout << "i = " << i << "\n";
       if(X_list_exist){
         Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
       }else{
@@ -345,6 +346,7 @@ if(type_process == "CH"){
     Mu = Rcpp::as < Eigen::VectorXd >( init_list["mu"]);
   else
     Mu.setZero(Bmu[0].cols());
+
     dMu.resize(Mu.size());
     dMu *= 0;
     ddMu.resize(Mu.size(), Mu.size());
@@ -658,7 +660,7 @@ void GHProcessBase::gradient( const int i ,
   	//if( type_process == "CH")
   	//	return;
    
-	if( type_process == "NIG"){
+	if( type_process == "NIG" || type_process == "MultiGH"){
 		gradient_mu_centered(i, K, weight);
 	}else if(type_process=="GAL"){
   			iV = Vs[i].cwiseInverse();
@@ -888,22 +890,20 @@ void MGHProcess::grad_nu(const int i, const double weight)
   Eigen::VectorXd Nu_vec = Bnu[i] * Nu;
   Nu_vec.array() = Nu_vec.array().exp(); 
   // dnu
-  if(type_process == "NIG"){
-    Eigen::VectorXd temp(h[i].size());
-    Eigen::VectorXd Etemp(h[i].size());
-    for(int j = 0; j < h[i].size(); j++){
-      //1/V * (V - h)^2
-      temp(j)  =  0.5 - 0.5 * ( h2[i](j) * iV(j)  + Vs[i](j) - 2 * h[i](j)) * Nu_vec(j);
-      Etemp(j) =  0.5 * (h2[i](j)  * EiV[i](j) - h[i](j)) * Nu_vec(j);
-    }
-    //ddNu -=  weight * Bnu[i].transpose() *temp.asDiagonal() * Bnu[i];
-    ddNu -=  weight * Bnu[i].transpose() *Etemp.asDiagonal()*  Bnu[i];
-    dNu  +=  weight * Bnu[i].transpose() * temp;
-    
-  }else if(type_process == "GAL"){
-      
-  }
 
+  Eigen::VectorXd temp(h[i].size());
+  Eigen::VectorXd Etemp(h[i].size());
+  for(int j = 0; j < h[i].size(); j++){
+    //1/V * (V - h)^2
+    temp(j)  =  0.5 - 0.5 * ( h2[i](j) * iV(j)  + Vs[i](j) - 2 * h[i](j)) * Nu_vec(j);
+    Etemp(j) =  0.5 * (h2[i](j)  * EiV[i](j) - h[i](j)) * Nu_vec(j);
+
+  }
+  //ddNu -=  weight * Bnu[i].transpose() *temp.asDiagonal() * Bnu[i];
+   ddNu -=  weight * Bnu[i].transpose() *Etemp.asDiagonal()*  Bnu[i];
+  dNu  +=  weight * Bnu[i].transpose() * temp;
+    
+ 
 
 }
 
@@ -1109,8 +1109,18 @@ void GHProcessBase::printIter()
 {
 	if( type_process != "CH")
 		Rcpp::Rcout << "(nu, mu) = " << nu << ", " << mu;
-	else
+
 		Rcpp::Rcout << "mu = " <<  mu << "\n";
+}
+
+void MGHProcess::printIter()
+{
+  Eigen::VectorXd nu_exp = Nu;
+  nu_exp.array() = nu_exp.array().exp();
+  if( type_process != "CH")
+    Rcpp::Rcout << "nu =" <<  nu_exp.transpose() << "\n";
+
+    Rcpp::Rcout << "mu = " << Mu << "\n";
 }
 
 Rcpp::List GHProcessBase::toList()
@@ -1220,8 +1230,7 @@ void GHProcessBase::update_nu()
 void MGHProcess::update_nu()
 {
     ddNu *= 0;
-    if(type_process == "NIG")
-    {
+
 
       for(int i =0; i < h2.size(); i++){
         Eigen::VectorXd Nu_vec = Bnu[i] * Nu;
@@ -1232,7 +1241,7 @@ void MGHProcess::update_nu()
           EiV[i](ii) += 1/h[i](ii);
         }
       }
-    }
+    
 }
 
 
@@ -1273,7 +1282,6 @@ void GHProcessBase::sample_X(const int i,
   Eigen::VectorXd b = A.transpose()*Y / sigma2;
   // change
   Eigen::VectorXd priorMean = mean_X(i);
-  Eigen::VectorXd temp  =  - h[i];
   priorMean = priorMean.cwiseProduct(iV);
   b +=  K.transpose() * priorMean;
   b = b.cwiseProduct(DQ_12);

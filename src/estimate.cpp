@@ -386,15 +386,15 @@ List estimateLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << " Setup process\n";
     }
     Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
-    Rcpp::List V_list           = Rcpp::as<Rcpp::List>  (processes_list["V"]);
     type_processes= Rcpp::as<std::string> (processes_list["noise"]);
 
+    if(debug)
+      Rcpp::Rcout << "process name = " << type_processes << "\n";
     if (type_processes == "Normal"){
-       process  = new GaussianProcess;
-      
-    }else if(type_processes == "MultiGH" )
-      process  = new GHProcess;
-    else{
+       process  = new GaussianProcess;     
+    }else if(type_processes == "MultiGH" ){
+      process  = new MGHProcess;
+    }else{
       process  = new GHProcess;
     }
 
@@ -795,11 +795,11 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(debug)
         Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
       //mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-      mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
-      errObj->step_theta(stepsize,                   0, polyak_rate_temp);
+      //mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
+      //errObj->step_theta(stepsize,                   0, polyak_rate_temp);
       if(process_active){
         Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-        process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
+        //process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
       }
       if(debug)
         Rcpp::Rcout << "estimate::theta step done\n";

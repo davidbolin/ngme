@@ -5,7 +5,9 @@
 
 void nsGaussianMeasurementError::printIter()
 {
-  Rcpp::Rcout << "theta = " << theta.transpose();
+  VectorXd expsigma = theta;
+  expsigma.array() = expsigma.array().exp();
+  Rcpp::Rcout << "sigma = " << expsigma.transpose();
   
 }
 void nsGaussianMeasurementError::setupStoreTracj(const int Niter) // setups to store the tracjetory
