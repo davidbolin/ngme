@@ -115,7 +115,6 @@ List simulateLongGH_cpp(Rcpp::List in_list)
     else{
       process  = new GHProcess;
     }
-
   process->initFromList(processes_list, Kobj->h);
 
 	std::vector< Eigen::VectorXd >   Vs( nindv);

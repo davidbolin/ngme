@@ -11,7 +11,7 @@ test.pred = FALSE
 test.est = TRUE
 nIter = 1000
 
-noise="Gaussian"
+noise="Normal"
 kappa1 = 1
 kappa2 = 1
 tau1 = 5
@@ -69,9 +69,9 @@ operator_list$tau2   <- tau2
 operator_list$rho   <- rho
 operator_list$theta   <- theta
 
-processes_list = list(noise = "Normal", V <- list())
+processes_list = list(noise = noise, V <- list())
 for(i in 1:n.rep){
-  processes_list$V[[i]] <- c(operator_list$h[[1]],operator_list$h[[1]])  
+  processes_list$V[[i]] <- c(operator_list$h[[1]])  
   processes_list$X[[i]] <- 0*processes_list$V[[i]]
 }
 

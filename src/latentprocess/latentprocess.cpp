@@ -29,7 +29,13 @@ double Trigamma(double x)
 
 void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vector<Eigen::VectorXd >& h_in)
 {
-  nindv = h_in.size();
+  std::vector<std::string> check_names =  {"X"};
+  check_Rcpplist(init_list, check_names, "GaussianProcess::initFromList");
+
+
+  Rcpp::List X_list;
+  X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  nindv = X_list.size();
   Xs.resize(nindv);
   Ws.resize(nindv);
   Vs.resize(nindv);
@@ -44,17 +50,11 @@ void GaussianProcess::initFromList(const Rcpp::List & init_list,const std::vecto
     else
     	h[i] = h_in[0];
   }
-  Rcpp::List X_list;
-  int X_list_exist  = init_list.containsElementNamed("X");
-  if(X_list_exist)
-    X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+
   
    for(int i = 0; i < nindv; i++ ){
-      if(X_list_exist){
-        Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
-      }else{
-        Xs[i].setZero(h[i].size());
-      }
+      Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
+      
       Ws[i]  = Xs[i];
       Vs[i]  = h[i];
       mu0[i].setZero(h[i].size());
@@ -83,7 +83,15 @@ void GaussianProcess::simulate(const int i,
 
 void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eigen::VectorXd >& h_in)
 {
-  nindv = h_in.size();
+
+  std::vector<std::string> check_names =  {"X"};
+  check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
+
+  int X_list_exist  = init_list.containsElementNamed("X");
+
+  Rcpp::List X_list;
+  X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+  nindv = X_list.size();
 
   h.resize(nindv);
   for(int i =0; i < nindv; i++){
@@ -99,13 +107,10 @@ void GHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Eig
   Ws.resize(nindv);
   Vs.resize(nindv);
   Rcpp::List V_list;
-  Rcpp::List X_list;
   int V_list_exist  = init_list.containsElementNamed("V");
-  int X_list_exist  = init_list.containsElementNamed("X");
   if(V_list_exist)
     V_list           = Rcpp::as<Rcpp::List>  (init_list["V"]);
-  if(X_list_exist)
-    X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
+
   
    for(int i = 0; i < nindv; i++ ){
       if(X_list_exist){
@@ -224,7 +229,7 @@ void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Ei
 {
   
   std::vector<std::string> check_names =  {"Bmu","Bnu"};
-  check_Rcpplist(init_list, check_names, "GHProcess::initFromList");
+  check_Rcpplist(init_list, check_names, "MGHProcess::initFromList");
   Rcpp::List Bmu_in = Rcpp::as<Rcpp::List>  (init_list["Bmu"]);
   Rcpp::List Bnu_in = Rcpp::as<Rcpp::List>  (init_list["Bnu"]);
   nindv = Bmu_in.size();
