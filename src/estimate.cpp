@@ -794,12 +794,11 @@ List estimateLong_cpp(Rcpp::List in_list)
         learning_rate_temp = 0;
       if(debug)
         Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-      //mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
-      //mixobj->step_theta(stepsize,                   0, polyak_rate_temp);
-      //errObj->step_theta(stepsize,                   0, polyak_rate_temp);
+      mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+      errObj->step_theta(stepsize,                   0, polyak_rate_temp);
       if(process_active){
         Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);
-        //process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
+        process->step_theta(stepsize, learning_rate_temp, polyak_rate_temp);
       }
       if(debug)
         Rcpp::Rcout << "estimate::theta step done\n";

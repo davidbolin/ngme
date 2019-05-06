@@ -186,7 +186,6 @@ if(type_process == "CH"){
   	else
     	mu = 0.;
 
-
   	dmu    = 0;
 	ddmu_1 = 0;
   	if(type_process != "CH"){
@@ -1109,8 +1108,9 @@ void GHProcessBase::printIter()
 {
 	if( type_process != "CH")
 		Rcpp::Rcout << "(nu, mu) = " << nu << ", " << mu;
-
-		Rcpp::Rcout << "mu = " <<  mu << "\n";
+  else{
+		Rcpp::Rcout << "mu = " <<  mu ;
+  }
 }
 
 void MGHProcess::printIter()

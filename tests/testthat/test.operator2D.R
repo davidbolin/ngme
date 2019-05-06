@@ -11,8 +11,8 @@ set.operator <- function(theta,rho,tau1,tau2,kappa1,kappa2,G,C){
   D[2,1] = sin(theta) - rho*cos(theta)
   D[2,2] = cos(theta)*sqrt(1+rho^2)
   
-  K1 = (tau1/kappa1)*operator_list$G[[1]] + tau1*kappa1*operator_list$C[[1]]
-  K2 = (tau2/kappa2)*operator_list$G[[1]] + tau2*kappa2*operator_list$C[[1]]
+  K1 = (tau1/kappa1)*G + tau1*kappa1*C
+  K2 = (tau2/kappa2)*G + tau2*kappa2*C
   
   return(rbind(cbind(D[1,1]*K1,D[1,2]*K2),
                cbind(D[2,1]*K1,D[2,2]*K2)))
@@ -27,13 +27,13 @@ like <- function(K,X,iV){
 test_that("2Doperator_gradient", {
 
 noise="Gaussian"
-kappa1 = 1
-kappa2 = 1
-tau1 = 5
+kappa1 = 1.23
+kappa2 = 0.8
+tau1 = 5.5
 tau2 = 5
-rho = 1
-theta = 1
-sigma.e = c(0.01,0.1)
+rho = 1.2
+theta = 1.1
+sigma.e = c(0.0123,0.1)
 beta.fixed = c(0,0)
 
 n.lattice = 3
@@ -56,11 +56,12 @@ operator_list$theta   <- theta
 
 processes_list = list(noise = "Normal", V <- list())
 for(i in 1:n.rep){
-  processes_list$V[[i]] <- c(operator_list$h[[1]],operator_list$h[[1]])  
-  processes_list$X[[i]] <- (1:length(operator_list$h[[1]]))
+  processes_list$V[[i]] <-operator_list$h[[1]]
+  processes_list$V[[i]] <- processes_list$V[[i]] + runif(n=length(processes_list$V[[i]]))
+  processes_list$X[[i]] <- rnorm(n=length(operator_list$h[[1]]))
 }
 
-Ci = diag(1/operator_list$h[[1]])
+Ci = diag(1/processes_list$V[[1]])
 grad = test_2Doperator(processes_list, operator_list)
 
 K <- set.operator(theta,rho,tau1,tau2,kappa1,kappa2,operator_list$G[[1]],operator_list$C[[1]])
@@ -120,7 +121,7 @@ le2 <- like(K.eps,processes_list$X[[1]],Ci)
 d2kappa2 = (le-2*l+le2)/e^2
 expect_equal(as.vector(d2kappa2),grad$d2kappa2,tolerance=0.1)
 
-
+e <- 1e-3
 K.eps <- set.operator(theta+e,rho,tau1,tau2,kappa1,kappa2,operator_list$G[[1]],operator_list$C[[1]])
 le <- like(K.eps,processes_list$X[[1]],Ci)
 dtheta = (le-l)/e

@@ -621,11 +621,12 @@ Rcpp::List test_2Doperator(Rcpp::List process_list,
   Process *process = NULL;
   process  = new GaussianProcess;
   process->initFromList(process_list, Kobj->h);
-  
+  Rcpp::List V_list  = Rcpp::as<Rcpp::List>  (process_list["V"]);
+  Eigen::VectorXd V = Rcpp::as<Eigen::VectorXd>( V_list[0]);
   Kobj->gradient_init(0, 0);
   
   Kobj->gradient_add( process->Xs[0],
-                      process->Vs[0].cwiseInverse(),
+                      V.cwiseInverse(),
                       process->mean_X(0),
                       0,
                       1);

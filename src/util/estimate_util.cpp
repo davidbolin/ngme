@@ -49,6 +49,7 @@ Eigen::VectorXd GibbsSampling(int i,
   // remove assymetric from errobj
   mixobj.remove_cov(i, res);
   errObj.remove_asym(i, res);
+
   if(process_active)
     res -= A * process.Xs[i];
   //***********************************
