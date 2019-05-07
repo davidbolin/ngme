@@ -128,13 +128,13 @@ estimateLong <- function(Y,
       Yi <- Y[[i]]
       locsi = locs[[i]]
       if(bivariate){ #for bivariate fields, stack observations 
-        A1 <- A[!is.nan(Y[[i]][,1]),]
-        A2 <- A[!is.nan(Y[[i]][,2]),]
-        A <- bdiag(A,A)
+        A1 <- A[!is.na(Yi[,1]),]
+        A2 <- A[!is.na(Yi[,2]),]
+        A <- bdiag(A1, A2)
         Yi <- c(Y[[i]])
-        Yi <- Yi[!is.nan(Yi)]
-        locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
-        locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
+        Yi <- Yi[!is.na(Yi)]
+        locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
+        locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
         locsi <- cbind(locs,locs)
       }
       obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)

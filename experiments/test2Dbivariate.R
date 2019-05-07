@@ -11,19 +11,23 @@ test.pred = FALSE
 test.est = TRUE
 nIter = 1000
 
-noise="Normal"
+noise="MultiGH" #"MultiGH" "Normal"
 kappa1 = 1
-kappa2 = 1
+kappa2 = 0.5
 tau1 = 5
-tau2 = 5
+tau2 = 3
 rho = 1
-theta = 0
+theta = 1
 sigma.e = c(0.01,0.1)
 beta.fixed = c(0,0)
-
+nu <- log(c(2,3))
+mu <- c(-1,1)
+kappa1.0 <- 2.
+kappa2.0 <- 3.
+tau.0 <- 4
 n.lattice = 10
 n.obs=200 #number of observations per replicate
-n.rep = 3 #number of replicates
+n.rep = 10 #number of replicates
 
 #create mesh 
 x=seq(from=0,to=10,length.out=n.lattice)
@@ -69,11 +73,18 @@ operator_list$tau2   <- tau2
 operator_list$rho   <- rho
 operator_list$theta   <- theta
 
-processes_list = list(noise = noise, V <- list())
+processes_list = list(noise = noise, V <- list(), Bmu <- list(), Bnu <- list(),
+                      mu = as.matrix(mu), nu = as.matrix(nu))
+Bmu <- list()
+Bnu <- list()
+n.grid <- length(operator_list$h[[1]])/2
 for(i in 1:n.rep){
   processes_list$V[[i]] <- c(operator_list$h[[1]])  
   processes_list$X[[i]] <- 0*processes_list$V[[i]]
+  processes_list$Bmu[[i]] <-  kronecker(diag(2),matrix(rep(1, n.grid)))
+  processes_list$Bnu[[i]] <-  kronecker(diag(2),matrix(rep(1, n.grid)))
 }
+
 
 
 cat("Simulate\n")
@@ -99,9 +110,11 @@ p4 <- ggplot(df2) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colou
 grid.arrange(p1,p2,p3,p4,ncol=2)
 
 processes_list$X <- sim_res$X
-#operator_list$kappa <- 1
-#operator_list$tau   <- 10
-operator_list$rho   <- 1.5
+operator_list$kappa1 <- kappa1.0
+operator_list$kappa2 <- kappa2.0
+operator_list$tau1   <- tau.0
+operator_list$tau2   <- tau.0
+operator_list$rho     <- 1.5
 #mixedEffect_list$beta_fixed <- 2
 
 if(test.est){

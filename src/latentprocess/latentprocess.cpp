@@ -271,7 +271,6 @@ void MGHProcess::initFromList(const Rcpp::List & init_list,const  std::vector<Ei
     X_list = Rcpp::as<Rcpp::List>  (init_list["X"]);
   
    for(int i = 0; i < nindv; i++ ){
-    Rcpp::Rcout << "i = " << i << "\n";
       if(X_list_exist){
         Xs[i] = Rcpp::as<Eigen::VectorXd>( X_list[i]);
       }else{
