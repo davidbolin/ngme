@@ -20,6 +20,9 @@ MatrixXd communicationMatrix(const int n, const int m)
 // Set Msub = M(ind,:) where ind is a 0-1 index vector
 void get_submatrix(const MatrixXd& M, const VectorXi& ind, MatrixXd& Msub)
 {
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "get_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	Msub.setZero(ind.sum(),M.cols());
 	int k = 0;
 	for(int i=0;i<M.rows();i++){
@@ -31,6 +34,9 @@ void get_submatrix(const MatrixXd& M, const VectorXi& ind, MatrixXd& Msub)
 // Return Msub = M(ind,:) where ind is a 0-1 index vector
 MatrixXd get_submatrix(const MatrixXd& M, const VectorXi& ind)
 {
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "get_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	MatrixXd Msub(ind.sum(),M.cols());
 	int k = 0;
 	for(int i=0;i<M.rows();i++){
@@ -42,6 +48,9 @@ MatrixXd get_submatrix(const MatrixXd& M, const VectorXi& ind)
 
 MatrixXi get_submatrix(const MatrixXi& M, const VectorXi& ind)
 {
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "get_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	MatrixXi Msub(ind.sum(),M.cols());
 	int k = 0;
 	for(int i=0;i<M.rows();i++){
@@ -56,6 +65,9 @@ MatrixXi get_submatrix(const MatrixXi& M, const VectorXi& ind)
 
 void get_submatrix(SparseMatrix<double,0,int>& M,const VectorXi& ind, SparseMatrix<double,0,int>* Msub)
 {
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "get_submatrix:: number of rows in M does not match length of index vector\n";
+  }
   Msub->resize(ind.sum(),M.cols());
   //create vector with row indices for Msub
   VectorXi ind2(ind.size());
@@ -76,6 +88,9 @@ void get_submatrix(SparseMatrix<double,0,int>& M,const VectorXi& ind, SparseMatr
 void get_subvector(const VectorXd& Y, const VectorXi& ind, VectorXd& Ysub)
 {
   Ysub.resize(ind.sum());
+  if(ind.size() != Y.size()){
+    Rcpp::Rcout << "get_subvector:: number of rows in Y does not match length of index vector\n";
+  }
   int k = 0;
   for(int i=0;i<Y.size();i++){
     if(ind(i) == 1)
@@ -89,6 +104,9 @@ void get_subvector(const VectorXd& Y, const VectorXi& ind, VectorXd& Ysub)
 void set_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind)
 {
 	int k = 0;
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "set_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	for(int i=0;i<ind.size();i++){
 		if(ind(i) == 1){
 			M.row(i) = Msub.row(k);
@@ -99,6 +117,9 @@ void set_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind)
 
 void set_submatrix(MatrixXi& M, const MatrixXi& Msub, const VectorXi& ind)
 {
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "set_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	int k = 0;
 	for(int i=0;i<ind.size();i++){
 		if(ind(i) == 1){
@@ -111,6 +132,9 @@ void set_submatrix(MatrixXi& M, const MatrixXi& Msub, const VectorXi& ind)
 void set_subcol(MatrixXd& M, const int r, const VectorXi& ind, const VectorXd& v)
 {
   int k = 0;
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "set_subcol:: number of rows in M does not match length of index vector\n";
+  }
   for(int i=0;i<ind.size();i++){
     if(ind(i) == 1){
       M(i,r) = v(k);
@@ -124,6 +148,9 @@ void set_subcol(MatrixXd& M, const int r, const VectorXi& ind, const VectorXd& v
 void add_submatrix(MatrixXd& M, const MatrixXd& Msub, const VectorXi& ind)
 {
 	int k = 0;
+  if(ind.size() != M.rows()){
+    Rcpp::Rcout << "add_submatrix:: number of rows in M does not match length of index vector\n";
+  }
 	for(int i=0;i<ind.size();i++){
 		if(ind(i) == 1){
 			M.row(i) += Msub.row(k);

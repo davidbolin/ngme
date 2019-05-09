@@ -20,6 +20,7 @@
 #' @param quantiles A two-elemnent vector that contains the quantiles
 #'   of the predictions to be calculated.
 #' @param predict.derivatives STUFF
+#' @param Y.val Observations to use when calculating CRPS
 #' @param excursions A list of excursion probabilities to compute.
 #'    Each list should contain:
 #'    \itemize{
@@ -68,6 +69,7 @@ predictLong <- function( Y,
                          excursions = NULL,
                          crps = FALSE,
                          crps.skip = 10,
+                         Y.val,
                          mixedEffect_list,
                          measurment_list,
                          processes_list,
@@ -100,7 +102,9 @@ predictLong <- function( Y,
   if(!use.random.effect && !missing(Brandom.pred)){
     stop("Model not specified using random effects")
   }
-
+  if(type=="Smoothing" && crps && missing(Y.val)){
+    warning("CRPS is calculated for smoothing prediction without specifying Y.val. Are you sure this is correct?")
+  }
   use.process = TRUE
   if(missing(processes_list) || is.null(processes_list)){
     use.process = FALSE
@@ -131,7 +135,32 @@ predictLong <- function( Y,
     }
   }
   
+  if(missing(Bfixed.pred)){
+    if(pred_type == 3){
+      Bfixed.pred = mixedEffect_list$B_fixed
+    } else {
+        stop("Must supply Bfixed.pred")
+    }
+  } else {
+    if(pred_type == 3){
+      warning("Bfixed.pred supplied for LOOCV.")
+    }
+  }
 
+  if(use.random.effect){
+    if(missing(Brandom.pred)){
+      if(pred_type == 3){
+        Brandom.pred = mixedEffect_list$B_random
+      } else {
+        stop("Must supply Brandom.pred")
+      }
+    } else {
+      if(pred_type == 3){
+        warning("Brandom.pred supplied for LOOCV.")
+      }
+    }  
+  }
+  
   obs_list <- list()
 
   if(!missing(pInd) && !is.null(pInd)){
@@ -180,12 +209,6 @@ predictLong <- function( Y,
     }
   }
 
-  ind1 <- 1:nSim
-  ind2 <- 1+(nSim/2+ind1-1)%%nSim
-
-  ind3 <- seq(1,nSim,by=2)
-  ind4 <- seq(2,nSim,by=2)
-
   if(sum(abs(unlist(lapply(locs.pred,length))-unlist(lapply(lapply(locs.pred,unique),length))))>0){
     stop("Prediction locations should be unique")
   }
@@ -205,13 +228,18 @@ predictLong <- function( Y,
     }
     if(type == "LOOCV"){
       #for CV, pred.ind and obs.ind have to contain the actual incides
+      if(is.matrix(locs.pred[[i]])){
+        no <- dim(locs.pred[[i]])[1]
+      } else {
+        no <- length(locs.pred[[i]])
+      }
       if(bivariate){
-        pred.ind <- cbind(diag(length(locs.pred[[i]])),diag(length(locs.pred[[i]])))
-        obs.ind <- cbind(1 - diag(length(locs.pred[[i]])),1 - diag(length(locs.pred[[i]])))
+        pred.ind <- cbind(diag(no,diag(no)))
+        obs.ind <- cbind(1 - diag(no),1 - diag(no))
         obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
       } else {
-        pred.ind <- diag(length(locs.pred[[i]]))
-        obs.ind <- 1 - diag(length(locs.pred[[i]]))  
+        pred.ind <- diag(no)
+        obs.ind <- 1 - diag(no)  
       }
       
     } else if(type== "Nowcast"){
@@ -508,10 +536,12 @@ predictLong <- function( Y,
       }
     }
     if(crps){
+      ind1 = 1:round(nSim/2)
+      ind2 <- 1+(nSim/2+ind1-1)%%nSim
       if(dim(output$YVec[[i]])[1]>1){
-        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y.val[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
       } else {
-        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(Y[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
+        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(Y.val[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
       }
     }
   }
