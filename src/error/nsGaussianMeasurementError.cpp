@@ -47,6 +47,17 @@ void nsGaussianMeasurementError::initFromList(Rcpp::List const &init_list)
   
   Rcpp::List B_list = init_list["B"];
   nrep = B_list.length();
+  
+  predict = 0;
+  Bpred.resize(nrep);
+  if(init_list.containsElementNamed("Bpred")){
+    predict = 1;
+    Rcpp::List Bpred_list = init_list["Bpred"];
+    int count =0;
+    for( Rcpp::List::iterator it = Bpred_list.begin(); it != Bpred_list.end(); ++it ) {
+      Bpred[count++] = Rcpp::as < Eigen::MatrixXd >( it[0]);
+    }
+  }
   B.resize(nrep);
   int count =0;
   for( Rcpp::List::iterator it = B_list.begin(); it != B_list.end(); ++it ) {
@@ -60,11 +71,20 @@ void nsGaussianMeasurementError::initFromList(Rcpp::List const &init_list)
     theta.setZero(npars);
   
   sigmas.resize(nrep);
+  sigmas_pred.resize(nrep);  
+  if(predict==1){
+    
+  }
+  
   Vs.resize(nrep);
   for(int i=0;i<nrep;i++){
     sigmas[i] = B[i]*theta;
     sigmas[i] = sigmas[i].array().exp();
     Vs[i]     = sigmas[i].array().pow(2);
+    if(predict==1){
+      sigmas_pred[i] = Bpred[i]*theta;
+      sigmas_pred[i] = sigmas_pred[i].array().exp();
+    }
   }
   clear_gradient();
   dtheta_old.setZero(npars);
@@ -161,7 +181,14 @@ Eigen::VectorXd  nsGaussianMeasurementError::simulate_par(const int i,std::mt199
   std::normal_distribution<double> normal;
   Eigen::VectorXd residual;
   residual.setZero(nsim);
-  residual =  sigmas[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm(nsim)));
+  if(nsim == sigmas[i].size()){
+    residual =  sigmas[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm(nsim)));  
+  } else if(nsim == sigmas_pred[i].size()){
+    residual =  sigmas_pred[i].cwiseProduct(Rcpp::as< Eigen::VectorXd >(Rcpp::rnorm(nsim)));
+  } else {
+    Rcpp::Rcout << "nsGaussianMeasurementError::simulate_par : nsim does not match size of sigma\n";
+  }
+  
   return(residual);
 }
 

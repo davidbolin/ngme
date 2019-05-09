@@ -27,7 +27,7 @@ class MeasurementError {
   	int nsSigma; // non stationary sigma
 
   	std::vector< Eigen::VectorXd > sigmas; // if sigma is non stationary stored in sigmas
-
+  	std::vector< Eigen::VectorXd > sigmas_pred;
   	std::vector< Eigen::VectorXd > Vs;
     std::string noise;
     virtual void get_param(std::vector<double> & param_in){param_in.push_back(sigma); };
@@ -131,10 +131,12 @@ private:
   Eigen::MatrixXd ddtheta;
   Eigen::VectorXd dtheta_old, step;
   std::vector< Eigen::MatrixXd > B;
+  std::vector< Eigen::MatrixXd > Bpred;
   double counter;
   Eigen::MatrixXd theta_vec;
   int nrep;
   Rcpp::List out_list;
+  int predict;
 public:
   nsGaussianMeasurementError();
   ~nsGaussianMeasurementError(){};

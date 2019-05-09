@@ -180,6 +180,11 @@ predictLong <- function( Y,
       if(!is.null(mixedEffect_list$U)){
         mixedEffect_list$U  <- mixedEffect_list$U
       }
+      if(measurment_list$noise == "nsGaussian"){
+        measurment_list$B <- measurment_list$B[pInd]
+        if(!is.null(measurment_list$Bpred))
+          measurment_list$Bpred <- measurment_list$Bpred[pInd]
+      }
     }
     if(!is.null(predict.derivatives)){
       predict.derivatives$B_fixed <- predict.derivatives$B_fixed[pInd]

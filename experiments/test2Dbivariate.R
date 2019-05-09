@@ -154,13 +154,13 @@ if(test.est){
 
 
 if(test.pred){
-  locs.pred <- Bfixed.pred <- list()
+  locs.pred <- Bfixed.pred <- Be.pred <- list()
   for(i in 1:n.rep){
     locs.pred[[i]] <- proj$lattice$loc
     Bfixed.pred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(locs.pred[[i]])[1])))
+    Be.pred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(locs.pred[[i]])[1])))
   }
-  
-  
+  mError_list$Bpred <- Be.pred
   
   res <- predictLong( Y                = sim_res$Y,
                       locs.pred        = locs.pred,
