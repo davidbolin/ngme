@@ -566,7 +566,7 @@ List predictLong_cpp(Rcpp::List in_list)
           if(use_random_effect == 1){
             UVec[i].col(ii-nBurnin) = mixobj->U.col(i); // this only makes sense for smoothing
           }
-
+          
           if(use_process == 1){
             AX = Ai * process->Xs[i];
             WnoiseVec[i].col(ii-nBurnin) = process->Ws[i]; // this only makes sense for smoothing

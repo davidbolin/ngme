@@ -9,7 +9,8 @@ library(gridExtra)
 #First estimate stationary model:
 test.pred = FALSE
 test.est = TRUE
-nIter = 1000
+test.cv = TRUE
+nIter = 20
 
 noise="MultiGH" #"MultiGH" "Normal"
 kappa1 = 1
@@ -181,4 +182,28 @@ if(test.pred){
   p3 <- ggplot(df3,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
   p4 <- ggplot(df4,aes(x,y))+geom_raster(aes(fill=z))+ scale_fill_gradientn(colours=tim.colors(100)) 
   grid.arrange(p3,p4,p1,p2,ncol=2)
+}
+
+if(test.cv){
+  res2 <- predictLong( Y                = sim_res$Y,
+                       type             = "LOOCV",
+                       nSim             = 100,
+                       pInd = 1,
+                       locs             = obs.loc,
+                       mixedEffect_list = mixedEffect_list,
+                       measurment_list  = mError_list,
+                       processes_list   = processes_list,
+                       operator_list    = operator_list,
+                       crps             = TRUE)
+  
+  df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=res2$Y.summary[[1]]$Mean[1:n.obs]-sim_res$Y[[1]][,1])
+  p1 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=res2$Y.summary[[1]]$crps[1:n.obs])
+  p2 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=res2$Y.summary[[1]]$Mean[(n.obs+1):(2*n.obs)]-sim_res$Y[[1]][,2])
+  p3 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  df = data.frame(x = obs.loc[[1]][,1],y=obs.loc[[1]][,2],z=res2$Y.summary[[1]]$crps[(n.obs+1):(2*n.obs)])
+  p4 <- ggplot(df, aes(x, y,color=z)) + geom_point() + scale_color_gradientn(colours=tim.colors(100)) 
+  grid.arrange(p1,p2,p3,p4,ncol=2)
+  
 }
