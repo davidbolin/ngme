@@ -219,7 +219,7 @@ if(test.cv){
   grid.arrange(p1,p2,ncol=2)
   
   #compare with direct CV using predictLong
-  res2 <- predictLong( Y                = sim_res$Y,
+  res2 <- predictLong(Y                = sim_res$Y,
                       type             = "LOOCV",
                       nSim             = 1000,
                       locs             = obs.loc,

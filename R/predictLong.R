@@ -105,6 +105,9 @@ predictLong <- function( Y,
   if(type=="Smoothing" && crps && missing(Y.val)){
     warning("CRPS is calculated for smoothing prediction without specifying Y.val. Are you sure this is correct?")
   }
+  if(missing(Y.val)){
+    Y.val = Y
+  }
   use.process = TRUE
   if(missing(processes_list) || is.null(processes_list)){
     use.process = FALSE
@@ -165,6 +168,7 @@ predictLong <- function( Y,
 
   if(!missing(pInd) && !is.null(pInd)){
     Y                   <- Y[pInd]
+    Y.val               <- Y.val[pInd]
     locs                <- locs[pInd]
     locs.pred           <- locs.pred[pInd]
     Bfixed.pred         <- Bfixed.pred[pInd]
@@ -234,7 +238,7 @@ predictLong <- function( Y,
         no <- length(locs.pred[[i]])
       }
       if(bivariate){
-        pred.ind <- cbind(diag(no,diag(no)))
+        pred.ind <- cbind(diag(no),diag(no))
         obs.ind <- cbind(1 - diag(no),1 - diag(no))
         obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
       } else {
@@ -539,10 +543,10 @@ predictLong <- function( Y,
       ind1 = 1:round(nSim/2)
       ind2 <- 1+(nSim/2+ind1-1)%%nSim
       if(dim(output$YVec[[i]])[1]>1){
-        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(Y.val[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
       } else {
-        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(Y.val[[i]],each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
-      }
+        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
+      }  
     }
   }
   return(out_list)
