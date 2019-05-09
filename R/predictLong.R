@@ -199,6 +199,10 @@ predictLong <- function( Y,
         operator_list$Ci <- operator_list$Ci[pInd]
         operator_list$G <- operator_list$G[pInd]
       }
+      if(processes_list$noise =="MultiGH"){
+        processes_list$Bmu <- processes_list$Bmu[pInd]
+        processes_list$Bnu <- processes_list$Bnu[pInd]
+      }
     }
 
     n.patient = length(pInd)

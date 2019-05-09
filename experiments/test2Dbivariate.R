@@ -9,7 +9,7 @@ library(gridExtra)
 #First estimate stationary model:
 test.pred = TRUE
 test.est = FALSE
-test.cv = FALSE
+test.cv = TRUE
 nIter = 20
 
 noise="MultiGH" #"MultiGH" "Normal"
