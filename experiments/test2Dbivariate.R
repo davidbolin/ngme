@@ -7,9 +7,9 @@ library(ggplot2)
 library(fields)
 library(gridExtra)
 #First estimate stationary model:
-test.pred = FALSE
-test.est = TRUE
-test.cv = TRUE
+test.pred = TRUE
+test.est = FALSE
+test.cv = FALSE
 nIter = 20
 
 noise="MultiGH" #"MultiGH" "Normal"
