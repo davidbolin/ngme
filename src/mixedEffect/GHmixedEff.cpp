@@ -68,21 +68,27 @@ void GHMixedEffect::get_param(std::vector<double> & param_in ){
 
 Rcpp::List GHMixedEffect::toList()
 {
-  Rcpp::List out;
-  out["B_fixed"]          = Bf;
-  out["B_random"]          = Br;
-  out["beta_random"] = beta_random;
-  out["beta_fixed"]  = beta_fixed;
   Eigen::VectorXd temp_r = - beta_random_constrainted;
   temp_r.array() += 1;
   Eigen::VectorXd temp_f = - beta_fixed_constrainted;
   temp_f.array() += 1;
-  out["beta_random_constrained"] = temp_r;
-  out["beta_fixed_constrained"]  = temp_f;
-  out["Sigma"]  = Sigma;
-  out["U"]      = U;
-  out["V"]      = V;
-  out["mu"]     = mu;
+  Rcpp::List out;
+    if(Bf.size() > 0){
+    out["B_fixed"]          = Bf;
+    out["beta_fixed"]  = beta_fixed;
+    out["beta_fixed_constrained"]  = temp_f;
+  }
+  if(Br.size() > 0){
+    out["B_random"]          = Br;
+    out["beta_random"] = beta_random;
+    out["beta_random_constrained"] = temp_r;
+    out["Sigma"]  = Sigma;
+    out["U"]      = U;
+    out["V"]      = V;
+    out["mu"]     = mu;
+  }
+  
+  
   out["noise"]       = noise;
   out["Sigma_epsilon"]       = Sigma_epsilon;
   out["Cov_theta"]   = Cov_theta;

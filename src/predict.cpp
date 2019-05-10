@@ -557,7 +557,6 @@ List predictLong_cpp(Rcpp::List in_list)
           Eigen::VectorXd random_effect_c;
           Eigen::VectorXd mNoise; 
           Eigen::VectorXd Noise = errObj->simulate_par(i,random_engine[rank],random_effect.size());
-
           if(ind_general){
             get_subvector(random_effect,pred_ind[i].row(ipred), random_effect_c);
             get_subvector(Noise,pred_ind[i].row(ipred), mNoise);
