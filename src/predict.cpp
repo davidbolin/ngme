@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 1;
+  int debug = 0;
   //**********************************
   //      basic parameter
   //**********************************
@@ -542,29 +542,22 @@ List predictLong_cpp(Rcpp::List in_list)
               Rcpp::Rcout << "Save samples\n";
             }
           if(use_process == 1){
-            Rcpp::Rcout << "here\n";
             if(ind_general){
               get_submatrix(As_pred[i],pred_ind[i].row(ipred), &Ai);
             } else {
               Ai = As_pred[i].middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
             }
-            Rcpp::Rcout << "here\n";
-            
           }
-          Rcpp::Rcout << "here 1.1\n";
           Eigen::VectorXd random_effect;
           if(use_random_effect == 1){
             random_effect= Bfixed_pred[i]*mixobj->beta_fixed + Brandom_pred[i]*(mixobj->U.col(i)+mixobj->beta_random);
           } else {
             random_effect = Bfixed_pred[i]*mixobj->beta_fixed;
           }
-          Rcpp::Rcout << "here 1.2\n";
           Eigen::VectorXd random_effect_c;
           Eigen::VectorXd mNoise; 
-          Rcpp::Rcout << "random_effect.size() = " << random_effect.size() << "\n";
           Eigen::VectorXd Noise = errObj->simulate_par(i,random_engine[rank],random_effect.size());
 
-          Rcpp::Rcout << "here 1.31\n";
           if(ind_general){
             get_subvector(random_effect,pred_ind[i].row(ipred), random_effect_c);
             get_subvector(Noise,pred_ind[i].row(ipred), mNoise);
@@ -573,22 +566,17 @@ List predictLong_cpp(Rcpp::List in_list)
             mNoise = Noise.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));  
           }
           
-          Rcpp::Rcout << "here 1.3\n";
           Eigen::VectorXd AX;
           if(use_random_effect == 1){
             UVec[i].col(ii-nBurnin) = mixobj->U.col(i); // this only makes sense for smoothing
           }
           
           if(use_process == 1){
-
-            Rcpp::Rcout << "here 3\n";
             AX = Ai * process->Xs[i];
 
-            Rcpp::Rcout << "here 4\n";
             WnoiseVec[i].col(ii-nBurnin) = process->Ws[i]; // this only makes sense for smoothing
             VnoiseVec[i].col(ii-nBurnin) = process->Vs[i]; // this only makes sense for smoothing
 
-            Rcpp::Rcout << "here 5\n";
             if(ind_general){
               //Rcpp::Rcout << "WVec pre\n" << WVec[i] << "\n AX \n" << AX << "\n pred_ind = " << pred_ind[i].row(ipred) << "\n";
               set_subcol(WVec[i], ii-nBurnin, pred_ind[i].row(ipred), AX);
@@ -661,7 +649,7 @@ List predictLong_cpp(Rcpp::List in_list)
     double time_Ma = static_cast<double>(clock()-start)  / ticks_per_ms;
     if(silent == 0){
       std::stringstream stream;
-      stream << ", time = " << time_Ma;
+      stream << "time = " << time_Ma;
       Rcpp::Rcout << stream.str();
       Rcpp::Rcout << "\n";
     }
