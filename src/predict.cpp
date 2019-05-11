@@ -653,8 +653,10 @@ List predictLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << "\n";
     }
   }
-
-  //Rcpp::Rcout << "store results\n";
+  if(debug){
+    Rcpp::Rcout << "store results\n";  
+  }
+  
   // storing the results
   Rcpp::List out_list;
   out_list["YVec"] = YVec;
@@ -671,7 +673,6 @@ List predictLong_cpp(Rcpp::List in_list)
     out_list["XVec_deriv"] = XVec_deriv;
     out_list["WVec_deriv"] = WVec_deriv;
   }
-
   //Free memory
   delete mixobj;
   delete errObj;
@@ -679,6 +680,5 @@ List predictLong_cpp(Rcpp::List in_list)
     delete process;
     delete Kobj;
   }
-
   return(out_list);
 }

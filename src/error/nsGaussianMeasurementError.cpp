@@ -34,6 +34,7 @@ Rcpp::List nsGaussianMeasurementError::toList()
   out_list["theta"]  = theta;
   out_list["gsd"]     = sigmas;
   out_list["noise"]       = noise;
+  out_list["B"]       = B;
   if(store_param){
     out_list["theta_vec"] = theta_vec;
   }

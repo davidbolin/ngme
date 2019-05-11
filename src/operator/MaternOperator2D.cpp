@@ -20,8 +20,10 @@ MaternOperator2D::~MaternOperator2D()
     delete[] d2kappa2Q;
     delete[] d2rhoQ;
     delete[] drhoQ;
-    delete[] dthetaQ;
-    delete[] d2thetaQ;
+    if(estimate_theta){
+      delete[] dthetaQ;
+      delete[] d2thetaQ;  
+    }
     for(int i=0;i<nop;i++){
       delete Qsolver[i];
       delete Qepssolver[i];
