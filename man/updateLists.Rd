@@ -5,7 +5,7 @@
 \title{STUFF}
 \usage{
 updateLists(mixedEffect_list, processes_list, operator_list,
-  measurement_list, Bfixed, Brandom, locs)
+  measurement_list, Bfixed, Brandom, locs, pred.ind = NULL)
 }
 \arguments{
 \item{mixedEffect_list}{A list of inputs for the random effects.}

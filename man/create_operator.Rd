@@ -4,17 +4,15 @@
 \alias{create_operator}
 \title{Create operator components.}
 \usage{
-create_operator(locs, n, name = "matern", right.boundary = "neumann",
+create_operator(locs, name = "matern", right.boundary = "neumann",
   left.boundary = "neumann", common.grid = FALSE, extend = NULL,
   max.dist, cutoff = 1e-10, n.cores = 1)
 }
 \arguments{
 \item{locs}{A numeric list of measurement locations.}
 
-\item{n}{A numeric value for the number of FEM basis functions that should be used.}
-
 \item{name}{A character string for the operator type,
-possible options are \code{"matern"} and \code{"fd2"}.}
+possible options are \code{"matern"}, \code{"exponential"} and \code{"fd2"}.}
 
 \item{right.boundary}{A character string denoting the boundary condition
 for the right boundary.}
@@ -28,6 +26,8 @@ for the left boundary.}
 
 \item{extend}{A numeric vector with two elements specifying the amount of extension
 of the grid to the left and right beyondthe measurement locations.}
+
+\item{max.dist}{A numeric value for largest distance between nodes in the discretization}
 }
 \description{
 A function to compute a list of objects for the operator.

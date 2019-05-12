@@ -1069,7 +1069,7 @@ ngme <- function(fixed,
     index_random = index_random
   )
   
-  class(out) <- "ngme"
+  class(out) <- "ngme.spatial"
   out
 
 }

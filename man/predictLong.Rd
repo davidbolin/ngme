@@ -7,9 +7,10 @@
 predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
   return.samples = FALSE, type = "Filter", quantiles = NULL,
   predict.derivatives = NULL, excursions = NULL, crps = FALSE,
-  crps.skip = 10, mixedEffect_list, measurment_list, processes_list,
-  operator_list = NULL, nSim = 1, nBurnin = 10, silent = FALSE,
-  max.num.threads = 2, repeat.mix = 10, seed = NULL)
+  crps.skip = 10, Y.val, mixedEffect_list, measurment_list,
+  processes_list, operator_list = NULL, nSim = 1, nBurnin = 10,
+  silent = FALSE, max.num.threads = 2, repeat.mix = 10,
+  seed = NULL)
 }
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}
@@ -59,6 +60,8 @@ calculate, \code{"FALSE"} do not calculate.}
 
 \item{crps.skip}{A numerical value, say a, that indicates every \emph{a}th
 element of the sample to be used to compute the crps score.}
+
+\item{Y.val}{Observations to use when calculating CRPS}
 
 \item{mixedEffect_list}{A list of inputs for random effects.
 \itemize{

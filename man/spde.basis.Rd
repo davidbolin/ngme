@@ -5,7 +5,7 @@
 \title{Compute FEM matrices.}
 \usage{
 spde.basis(x, right.boundary = "neumann", left.boundary = "neumann",
-  compute.Ce = FALSE)
+  compute.Ce = FALSE, name = "matern")
 }
 \arguments{
 \item{x}{A numeric vector containing node locations.}

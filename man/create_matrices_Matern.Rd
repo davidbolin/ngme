@@ -6,7 +6,7 @@
 \usage{
 create_matrices_Matern(locs, n, right.boundary = "neumann",
   left.boundary = "neumann", common.grid = FALSE, extend = NULL,
-  max.dist, cutoff = 1e-10, n.cores = 1)
+  max.dist, cutoff = 1e-10, n.cores = 1, name = "matern", beta = 1)
 }
 \arguments{
 \item{locs}{A numeric list for the meansurement locations.}
@@ -25,6 +25,11 @@ for the left boundary.}
 
 \item{extend}{A numeric vector with two elements specifying the amount of extension
 of the grid to the left and right beyondthe measurement locations.}
+
+\item{max.dist}{A numeric value for largest distance between nodes in the discretization}
+
+\item{name}{A character string for the operator type,
+possible options are \code{"matern"}, \code{"exponential"} and \code{"fd2"}.}
 }
 \value{
 Returns matrices.

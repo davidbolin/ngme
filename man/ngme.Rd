@@ -4,20 +4,21 @@
 \alias{ngme}
 \title{Parameter estimation.}
 \usage{
-ngme(fixed, random, use.process = TRUE, reffects = "Normal",
-  process = c("Normal", "fd2"), error = "Normal", data,
-  timeVar = NULL, silent = TRUE, nIter, mesh = list(max.dist = NULL,
-  cutoff = NULL, common.grid = FALSE, extend = NULL, n.cores = 1),
-  controls = list(learning.rate = 0, polyak.rate = 0.1, nBurnin = 100,
-  nSim = 2, pSubsample = 0.1, nPar.burnin = 0, nIter.fisher = 1000,
-  nSim.fisher = 1000, step0 = 0.3, alpha = 0.3, nBurnin.learningrate =
-  NULL, nBurnin.base = 0, subsample.type = 4, pSubsample2 = 0.3,
-  standardize.mixedEffects = FALSE, estimate.fisher = 2, individual.sigma =
-  FALSE), controls.init = list(learning.rate.init = 0, polyak.rate.init =
-  0.1, nBurnin.init = 100, nSim.init = 2, nIter.init = 1000,
-  pSubsample.init = 0.1, nPar.burnin.init = 0, step0.init = 0.3, alpha.init
-  = 0.3, nBurnin.learningrate.init = NULL, nBurnin.base.init = 0,
-  subsample.type.init = 4, pSubsample2.init = 0.3,
+ngme(fixed, random = NULL, use.process = FALSE, reffects = "Normal",
+  process = c("Normal", "fd2"), error = "Normal",
+  error_assymetric = FALSE, data, timeVar = NULL, silent = TRUE,
+  nIter = 1000, mesh = list(max.dist = NULL, cutoff = NULL, common.grid
+  = FALSE, extend = NULL, n.cores = 1), controls = list(learning.rate =
+  0, polyak.rate = 0.1, nBurnin = 100, nSim = 2, pSubsample = NULL,
+  nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 0.3,
+  alpha = 0.3, nBurnin.learningrate = NULL, nBurnin.base = 0,
+  subsample.type = 4, pSubsample2 = 0.3, standardize.mixedEffects = FALSE,
+  estimate.fisher = FALSE, individual.sigma = FALSE),
+  controls.init = list(learning.rate.init = 0, polyak.rate.init = 0.1,
+  nBurnin.init = 100, nSim.init = 2, nIter.init = 1000, pSubsample.init =
+  0.1, nPar.burnin.init = 0, step0.init = 0.3, alpha.init = 0.3,
+  nBurnin.learningrate.init = NULL, nBurnin.base.init = 0,
+  subsample.type.init = 0, pSubsample2.init = 0.3,
   standardize.mixedEffects.init = FALSE, individual.sigma.init = FALSE),
   init.fit = NULL)
 }
@@ -39,7 +40,8 @@ the process. Whilst the first element is for the covariance structure, the
 second element for the process distribution. Available options for the
 first are:
 \code{"fd2"} for integrated Random-Walk (integrated Brownian Motion),
-\code{"matern"} for Matern family;
+\code{"matern"} for Matern covarince with smoothnes 3/2,
+\code{"exponential"} for exponential covarince (Matern with smoothnes 1/2);
 for the second element are:
 \code{"Normal"} for Normal distribution,
 \code{"NIG"} for Normal-inverse Gaussian,
@@ -53,6 +55,8 @@ Available options are:
 \code{"NIG"} for Normal-inverse Gaussian,
 \code{"tdist"} for t.}
 
+\item{error_assymetric}{if true the non-Gaussian error is assymetric}
+
 \item{data}{A data-frame from which the response and covariates to be extracted.}
 
 \item{silent}{A logical value for printing the details of the iterations;
@@ -63,19 +67,19 @@ used by the stochastic gradient.}
 
 \item{mesh}{A list of control variables for creating mesh.
 \itemize{
-  \item \code{max.dist} 
-  \item \code{cutoff} A numeric value. All time points that are separated less 
+  \item \code{max.dist}
+  \item \code{cutoff} A numeric value. All time points that are separated less
   than \code{cutoff} will be merged to one node.
-  \item \code{commond.grid} A logical value for creating same grids for different 
-  subjects. \code{"TRUE"} indicates common grid, \code{"FALSE"} uncommon grid. 
-  \item \code{extend} A numeric value or two element numeric vector for  
-  extending the meshes beyond the measurement locations with the specified 
-  percentage(s). If \code{extend} 
-  is specified by a single value, it indicates extending the mesh towards 
-  left and right by the same amount. If specified by a two element vector, 
-  whilst the first element is for extending towards the left, the second is 
-  for extending towards the right.   
-  \item \code{n.cores} A numeric value for the number of cores to be used to create the 
+  \item \code{commond.grid} A logical value for creating same grids for different
+  subjects. \code{"TRUE"} indicates common grid, \code{"FALSE"} uncommon grid.
+  \item \code{extend} A numeric value or two element numeric vector for
+  extending the meshes beyond the measurement locations with the specified
+  percentage(s). If \code{extend}
+  is specified by a single value, it indicates extending the mesh towards
+  left and right by the same amount. If specified by a two element vector,
+  whilst the first element is for extending towards the left, the second is
+  for extending towards the right.
+  \item \code{n.cores} A numeric value for the number of cores to be used to create the
   mesh.
 }}
 
@@ -97,7 +101,7 @@ used by the stochastic gradient.}
    \item \code{nSim.fisher} A numeric value for the number of samples of the Gibbs sampler
      to obtain the Fisher-Information matrix.
    \item \code{step0} A numeric value for step-size of the optimizer;
-     where step-size is defined as step0 / i^alpha, i being the iteration, 
+     where step-size is defined as step0 / i^alpha, i being the iteration,
      \code{alpha} is another tuning parameter specified next.
    \item \code{alpha} A numeric value for stepsize of the optimizer; step0 / i^alpha.
    \item \code{nBurnin.learningrate} A numeric value until which the learning will
@@ -113,23 +117,23 @@ used by the stochastic gradient.}
      to be used in each gradient subsampling weighted by gradient.
    \item \code{standardize.mixedEffects} A logical variable for standardising the covariates;
      \code{"FALSE"} indicates no standardisation, \code{"TRUE"} standardisation.
-   \item \code{estimate.fisher} A logical variable or numeric scalar 
+   \item \code{estimate.fisher} A logical variable or numeric scalar
     for whether Fisher-Information matrix
-     to be obtained; \code{"FALSE"} indicates do not obtain, \code{1} expected Fisher 
+     to be obtained; \code{"FALSE"} indicates do not obtain, \code{1} expected Fisher
      matrix, \code{2} for observed.
    \item \code{individual.sigma} A logical variable for specifying patient-specific mixture
      random variable for the error-term; \code{"FALSE"} indicates do not obtain,
      \code{"TRUE"} obtain.
 }}
 
-\item{controls.init}{A list of control variables to be used to fit the normal model 
-    to get the initial values for fitting a model with at least one of random effects, 
-    process and error being non-Gaussian. 
+\item{controls.init}{A list of control variables to be used to fit the normal model
+    to get the initial values for fitting a model with at least one of random effects,
+    process and error being non-Gaussian.
 \itemize{
-\item \code{learning.rate.init} See \code{learning.rate} in \code{controls}. 
+\item \code{learning.rate.init} See \code{learning.rate} in \code{controls}.
 \item \code{polyak.rate.init} See \code{polyak.rate} in \code{controls}.
-\item \code{nBurnin.init} See \code{nBurnin} in \code{controls}. 
-\item \code{nSim.init} See \code{nSim} in \code{controls}.  
+\item \code{nBurnin.init} See \code{nBurnin} in \code{controls}.
+\item \code{nSim.init} See \code{nSim} in \code{controls}.
 \item \code{nIter.init} See \code{nIter} in \code{controls}.
 \item \code{pSubsample.init} See \code{pSubsample} in \code{controls}.
 \item \code{nPar.burnin.init} See \code{nPar.burnin} in \code{controls}.
@@ -143,17 +147,17 @@ used by the stochastic gradient.}
 \item \code{individual.sigma.init = FALSE} See \code{individual.sigma} in \code{controls}.
 }}
 
-\item{init.fit}{A fitted \code{ngme} object with normal distribution for random effects, 
+\item{init.fit}{A fitted \code{ngme} object with normal distribution for random effects,
 process and error.}
 
-\item{timevar}{A character string that indicates the column name of the time variable 
+\item{timevar}{A character string that indicates the column name of the time variable
 in \code{data}.}
 }
 \value{
 A list of outputs.
 }
 \description{
-Estimates model parameters using maximum likelihood 
+Estimates model parameters using maximum likelihood
   implemented by a computationally efficient stochastic gradient algorithm.
 }
 \details{
@@ -166,15 +170,15 @@ This function is a user-friendly wrapper that calls the \code{estimateLong} func
 \examples{
   \dontrun{
   data(srft_data)
-  
+
   # transform pwl to decrese it correlation with bage
-  # then center all the covariates for better convergence 
+  # then center all the covariates for better convergence
   srft_data$pwl2 <- with(srft_data, pwl - bage/1.5)
-  srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <- 
+  srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <-
     scale(srft_data[, c("sex", "bage", "fu", "pwl2")], scale = FALSE)
- 
-  # fit the model with normal assumption for random effects, process and error 
-  # covariance function is integrated random walk        
+
+  # fit the model with normal assumption for random effects, process and error
+  # covariance function is integrated random walk
   set.seed(123)
   fit_normal_normal_normal_fd2 <- ngme(fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
                                        random = ~ 1|id,
@@ -198,7 +202,7 @@ This function is a user-friendly wrapper that calls the \code{estimateLong} func
                                                        alpha = 0.01
                                                        )
                                        )
-# fit the model with NIG assumption for all the random components                                       
+# fit the model with NIG assumption for all the random components
 set.seed(123)
 fit_nig_nig_nig_fd2 <- update(fit_normal_normal_normal_fd2,
                               reffects = "NIG",

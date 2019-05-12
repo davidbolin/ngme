@@ -18,4 +18,20 @@ Orthodont
 \description{
 A data-set that contains dental data for 27 children at ages 8, 10, 12 and 14
 }
+\examples{
+  \dontrun{
+data(Orthodont)
+set.seed(123)
+NormalMVD <- ngme(                   fixed       = distance ~ age,
+                                     random      = ~ 1|id,
+                                     data        = Orthodont,
+                                     reffects    = "Normal",
+                                     use.process = F,
+                                     silent      = F,
+                                     nIter       = 2,
+                                     controls    = list(estimate.fisher = FALSE,
+                                                        subsample.type  = 0))
+print(NormalMVD$fixed_est)
+}
+}
 \keyword{datasets}

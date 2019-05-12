@@ -5,7 +5,8 @@
 \title{Create 1d mesh from observation locations adaptively.}
 \usage{
 generate.adaptive.meshes.1d(locs, max.dist = NULL, cutoff = 1e-10,
-  common.grid = FALSE, extend = NULL, n.cores = 1)
+  common.grid = FALSE, extend = NULL, n.cores = 1, Y = NULL,
+  loc.Y = NULL, max.dY = -1, nJump = 3)
 }
 \arguments{
 \item{locs}{A list of measurement locations.}

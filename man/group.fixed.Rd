@@ -2,7 +2,7 @@
 % Please edit documentation in R/util.R
 \name{group.fixed}
 \alias{group.fixed}
-\title{Group individuals.}
+\title{Group individuals for grouped sub-sampler.}
 \usage{
 group.fixed(B)
 }

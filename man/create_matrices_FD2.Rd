@@ -5,7 +5,8 @@
 \title{Create matrices for Finite difference.}
 \usage{
 create_matrices_FD2(locs, common.grid = FALSE, extend = NULL, max.dist,
-  cutoff = 1e-10)
+  cutoff = 1e-10, n.cores = 1, Y = NULL, loc.Y = NULL,
+  max.dY = -1, nJump = 3)
 }
 \arguments{
 \item{locs}{A numeric list for the meansurement locations.}
@@ -16,6 +17,8 @@ create_matrices_FD2(locs, common.grid = FALSE, extend = NULL, max.dist,
 
 \item{extend}{A numeric vector with two elements specifying the amount of extension
 of the grid to the left and right beyondthe measurement locations.}
+
+\item{max.dist}{A numeric value for largest distance between nodes in the discretization}
 }
 \value{
 Returns matrices.

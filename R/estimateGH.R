@@ -278,7 +278,7 @@ ME.startvalues <- function(Y, mixedEffect_list)
   nc = nc.f + nc.r
   BB = matrix(0,nc,nc)
   BY = matrix(0,nc,1)
-
+  res = NULL
   if(nc.r  > 0){
     beta_r = matrix(0,n,nc.r)
     I = diag(1,nc)
@@ -292,7 +292,7 @@ ME.startvalues <- function(Y, mixedEffect_list)
     beta = solve(BB,BY)
     mixedEffect_list$beta_fixed = beta[1:nc.f]
     mixedEffect_list$beta_random = beta[(nc.f+1):nc]
-    res = NULL
+    
     Sigma = matrix(0,nc.r,nc.r)
     br = matrix(0,n,nc.r)
     res.list = list()

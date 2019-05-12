@@ -4,7 +4,7 @@
 \alias{polyak.ngme}
 \title{Post-processing of ngme parameter estimates}
 \usage{
-polyak.ngme(object, param = "fixed", polyak.rate = 0, plot = TRUE,
+polyak.ngme(object, param = "fixed", polyak.rate = 1, plot = TRUE,
   burnin.end = NULL)
 }
 \arguments{
@@ -16,7 +16,12 @@ polyak.ngme(object, param = "fixed", polyak.rate = 0, plot = TRUE,
 \code{"process"} for stochastic process,
 \code{"error"} for error term.}
 
-\item{param}{plot Plot the results or not?}
+\item{polyak.rate}{- ([0,1]) how much much of moving average should be used
+(using weighted average where weight is polyak.rate)}
+
+\item{plot}{Plot the results or not?}
+
+\item{burnin.end}{- (int) where from start the variance calc and polyak averaging}
 }
 \description{
 Updates the results using Polyak averaging and estimates the MC variance of the parameter estimates.

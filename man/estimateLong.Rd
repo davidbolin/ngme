@@ -4,13 +4,13 @@
 \alias{estimateLong}
 \title{Estimate parameters.}
 \usage{
-estimateLong(Y, locs, mixedEffect_list, measurment_list, processes_list,
-  operator_list, step0 = 0.3, alpha = 0.3, learning_rate = 0,
-  nBurnin_learningrate = NULL, nBurnin_base = 0, pSubsample = 1,
-  polyak_rate = -1, subsample.type = 1, nPar_burnin = 0,
-  pSubsample2 = 0.3, nIter = 10, nSim = 1, nBurnin = 10,
-  silent = FALSE, seed = NULL, standardize.mixedEffects = FALSE,
-  estimate_fisher = FALSE)
+estimateLong(Y, locs = NULL, mixedEffect_list, measurment_list,
+  processes_list, operator_list, step0 = 0.3, alpha = 0.3,
+  learning_rate = 0, nBurnin_learningrate = NULL, nBurnin_base = 0,
+  pSubsample = 1, polyak_rate = -1, subsample.type = 1,
+  nPar_burnin = 0, pSubsample2 = 0.3, nIter = 10, nSim = 1,
+  nBurnin = 10, silent = FALSE, seed = NULL,
+  standardize.mixedEffects = FALSE, estimate_fisher = FALSE)
 }
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}

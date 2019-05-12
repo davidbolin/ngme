@@ -4,7 +4,9 @@
 \alias{generate.1d.mesh}
 \title{Create 1d mesh from observation locations.}
 \usage{
-generate.1d.mesh(x, max.dist, cutoff = 1e-10, extend)
+generate.1d.mesh(x, max.dist, cutoff = 1e-10, extend = NULL,
+  Y = NULL, loc.Y = NULL, max.dY = -1, nJump = 3,
+  fix.differences = TRUE)
 }
 \arguments{
 \item{x}{A list of measurement locations.}
