@@ -140,9 +140,9 @@ void nsGaussianMeasurementError::step_theta(const double stepsize,
       theta_vec.row(vec_counter) = theta;
     } else{
       theta_vec.row(vec_counter) = polyak_rate * theta;
-      step = theta_vec.col(vec_counter-1);
+      step = theta_vec.row(vec_counter-1);
       step *= (1 - polyak_rate);
-      theta_vec.col(vec_counter) += step;
+      theta_vec.row(vec_counter) += step;
     }
     vec_counter++;
   }

@@ -461,7 +461,6 @@ ngme.spatial <- function(fixed,
         if(!silent){
           cat("Estimate Gaussian")
         }
-        
         fit <- estimateLong(Y,
                             locs,
                             mixedEffect_list,
@@ -545,8 +544,6 @@ ngme.spatial <- function(fixed,
       
       fit$measurementError_list$common_V <- controls$individual.sigma
       
-      
-      # Obtain parameter estimates
       fit <- estimateLong(Y,
                           locs,
                           fit$mixedEffect_list,
@@ -574,6 +571,7 @@ ngme.spatial <- function(fixed,
         cat("Estimate Model")
       }
       
+      # Obtain parameter estimates
       # Obtain parameter estimates
       fit <- estimateLong(Y,
                           locs,
