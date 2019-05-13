@@ -195,14 +195,15 @@ predictLong <- function( Y,
     if(use.process){
       processes_list$X    <- processes_list$X[pInd]
       processes_list$V    <- processes_list$V[pInd]
-
-      operator_list$Q <- operator_list$Q[pInd]
-      operator_list$loc <- operator_list$loc[pInd]
-      operator_list$h <- operator_list$h[pInd]
-      if(tolower(operator_list$type) %in% c("matern","exponential","matern bivariate","matern.asym")){
-        operator_list$C <- operator_list$C[pInd]
-        operator_list$Ci <- operator_list$Ci[pInd]
-        operator_list$G <- operator_list$G[pInd]
+      if(operator_list$common.grid == FALSE){
+        operator_list$Q <- operator_list$Q[pInd]
+        operator_list$loc <- operator_list$loc[pInd]
+        operator_list$h <- operator_list$h[pInd]
+        if(tolower(operator_list$type) %in% c("matern","exponential","matern bivariate","matern.asym")){
+          operator_list$C <- operator_list$C[pInd]
+          operator_list$Ci <- operator_list$Ci[pInd]
+          operator_list$G <- operator_list$G[pInd]
+        }
       }
       if(processes_list$noise =="MultiGH"){
         processes_list$Bmu <- processes_list$Bmu[pInd]

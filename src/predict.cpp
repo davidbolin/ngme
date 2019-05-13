@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 1;
+  int debug = 0;
   //**********************************
   //      basic parameter
   //**********************************
@@ -59,6 +59,7 @@ List predictLong_cpp(Rcpp::List in_list)
   Rcpp::List mixedEffect_list  = Rcpp::as<Rcpp::List> (in_list["mixedEffect_list"]);
   std::string type_mixedEffect = Rcpp::as<std::string> (mixedEffect_list["noise"]);
   MixedEffect *mixobj;
+
   if(type_mixedEffect == "Normal"){
     mixobj = new NormalMixedEffect;
   }else if(type_mixedEffect == "tdist") {
@@ -72,7 +73,6 @@ List predictLong_cpp(Rcpp::List in_list)
 
 
   mixobj->initFromList(mixedEffect_list);
-
 
 
   //**********************************
@@ -102,6 +102,7 @@ List predictLong_cpp(Rcpp::List in_list)
   count = 0;
   for( List::iterator it = obs_list.begin(); it != obs_list.end(); ++it ) {
     List obs_tmp = Rcpp::as<Rcpp::List>(*it);
+
     if(use_process == 1){
       As[count]            = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["A"]);
       As_pred[count]       = Rcpp::as<Eigen::SparseMatrix<double,0,int> >(obs_tmp["Apred"]);
@@ -162,7 +163,6 @@ List predictLong_cpp(Rcpp::List in_list)
     count++;
   }
 
-
   //**********************************
   //operator setup
   //***********************************
@@ -177,6 +177,7 @@ List predictLong_cpp(Rcpp::List in_list)
     if(silent == 0){
       Rcpp::Rcout << " Setup operator\n";
     }
+
     operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
     type_operator = Rcpp::as<std::string>(operator_list["type"]);
     operator_list["nIter"] = 1;
@@ -216,13 +217,13 @@ List predictLong_cpp(Rcpp::List in_list)
 
   }
 
-
   //**********************************
   // measurement setup
   //***********************************
   if(silent == 0){
     Rcpp::Rcout << " Setup noise\n";
   }
+
   MeasurementError *errObj;
   Rcpp::List measurementError_list  = Rcpp::as<Rcpp::List> (in_list["measurementError_list"]);
   std::string type_MeasurementError= Rcpp::as <std::string> (measurementError_list["noise"]);
