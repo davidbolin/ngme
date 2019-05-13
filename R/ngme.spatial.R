@@ -72,7 +72,7 @@ ngme.spatial <- function(fixed,
                                  alpha = 0.3,
                                  nBurnin.learningrate = NULL,
                                  nBurnin.base = 0,
-                                 subsample.type = 4,
+                                 subsample.type = 1,
                                  pSubsample2 = 0.3,
                                  individual.sigma = FALSE),
                  controls.init = list(learning.rate.init = 0,
@@ -384,14 +384,25 @@ ngme.spatial <- function(fixed,
     }
     
     if(use.process){
-      operator_list <- create_operator_matern2D(mesh)
-      
-      process_list = list(noise = "Normal",
-                          nu  = 1,
-                          mu  = 0)
-      process_list$V <- list()
-      process_list$X <- list()
-      
+      if(bivariate){
+        operator_list <- create_operator_matern2Dbivariate(mesh)
+        n.grid <- length(operator_list$h[[1]])/2
+        
+        process_list = list(noise = "Normal", 
+                            Bmu = list(kronecker(diag(2),matrix(rep(1, n.grid)))), 
+                            Bnu = list(kronecker(diag(2),matrix(rep(1, n.grid)))),
+                            mu = as.matrix(c(0,0)), 
+                            nu = as.matrix(c(1,1)))
+        process_list$V <- list()
+        process_list$X <- list()
+      } else {
+        operator_list <- create_operator_matern2D(mesh)  
+        process_list = list(noise = "Normal",
+                            nu  = 1,
+                            mu  = 0)
+        process_list$V <- list()
+        process_list$X <- list()
+      }
       for(i in 1:length(locs))
       {
         if(length(operator_list$h)==1){
@@ -401,43 +412,9 @@ ngme.spatial <- function(fixed,
         }
         process_list$X[[i]] <- rep(0, length(h_in))
         process_list$V[[i]] <- h_in
-      if(bivariate){
-        operator_list <- create_operator_matern2Dbivariate(mesh)
-      } else {
-        operator_list <- create_operator_matern2D(mesh)  
-      }
-      
-      if(bivariate){
-        n.grid <- length(operator_list$h[[1]])/2
-        
-        process_list = list(noise = "Normal", 
-                              Bmu = list(kronecker(diag(2),matrix(rep(1, n.grid)))), 
-                              Bnu = list(kronecker(diag(2),matrix(rep(1, n.grid)))),
-                              mu = as.matrix(c(0,0)), 
-                              nu = as.matrix(c(1,1)))
-        process_list$V <- list()
-        process_list$X <- list()
-        
-        for(i in 1:length(locs))
-        {
-          process_list$X[[i]] <- rep(0, length(operator_list$h[[1]]))
-          process_list$V[[i]] <- operator_list$h[[1]]
-        }  
-      } else {
-        process_list = list(noise = "Normal",
-                            nu  = 1,
-                            mu  = 0)
-        process_list$V <- list()
-        process_list$X <- list()
-        
-        for(i in 1:length(locs))
-        {
-          process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
-          process_list$V[[i]] <- operator_list$h[[i]]
-        }  
       }
     }
-    
+     
     # starting values for measurement error and mixed effects using OLS:
     if(!silent){
       cat("Calculate starting values\n")
@@ -819,8 +796,14 @@ ngme.spatial <- function(fixed,
   }
   
   # measurement error
-  meas_error_sigma <- fit$measurementError_list$sigma
-  meas_error_sigma_vec <- fit$measurementError_list$sigma_vec
+  if(bivariate){
+    meas_error_sigma <- exp(fit$measurementError_list$theta)
+    meas_error_sigma_vec <- exp(fit$measurementError_list$theta_vec)
+  } else {
+    meas_error_sigma <- fit$measurementError_list$sigma
+    meas_error_sigma_vec <- fit$measurementError_list$sigma_vec  
+  }
+  
   
   if(error %in% c("NIG", "tdist")){
     meas_error_nu <- fit$measurementError_list$nu

@@ -135,7 +135,7 @@ estimateLong <- function(Y,
         Yi <- Yi[!is.na(Yi)]
         locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
         locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
-        locsi <- cbind(locs,locs)
+        locsi <- rbind(locs1,locs2)
       }
       obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)
     } else {

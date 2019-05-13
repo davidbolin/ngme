@@ -210,7 +210,7 @@ create_operator_matern2D <- function(mesh)
               G = list(as(fem$g1,"CsparseMatrix")),
               Ci = list(Matrix::Diagonal(n,1/h)),
               h = list(h),
-              loc   = list(mesh$loc),
+              loc   = list(mesh$loc[,1:2]),
               common.grid = TRUE,
               manifold ="R2")
 }
@@ -245,7 +245,7 @@ create_operator_matern2Dbivariate <- function(mesh,n.rep = 1)
     Ci[[i]] = Matrix::Diagonal(n,1/hi)
     G[[i]] = as(fem$g1,"CsparseMatrix")
     h[[i]] = c(hi,hi)
-    loc[[i]] <- mesh$loc
+    loc[[i]] <- mesh$loc[,1:2]
   }
   out <- list(type = "matern bivariate",
               mesh = list(mesh),
