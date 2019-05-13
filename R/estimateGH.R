@@ -310,10 +310,10 @@ ME.startvalues <- function(Y, mixedEffect_list)
       BB = BB + t(mixedEffect_list$B_fixed[[i]])%*%mixedEffect_list$B_fixed[[i]]
       BY = BY + t(mixedEffect_list$B_fixed[[i]])%*%Y[[i]]
     }
-    beta_fixed = solve(BB,BY)
+    mixedEffect_list$beta_fixed = solve(BB,BY)
     res.list = list()
     for(i in 1:n){
-      res.list[[i]] = Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%beta_fixed
+      res.list[[i]] = Y[[i]] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed
       res <- c(res,res.list[[i]])
     }
     mixedEffect_list$sigma = sqrt(var(res))
@@ -394,12 +394,12 @@ ME.startvalues.bivariate <- function(Y, mixedEffect_list)
       BB = BB + t(mixedEffect_list$B_fixed[[i]])%*%mixedEffect_list$B_fixed[[i]]
       BY = BY + t(mixedEffect_list$B_fixed[[i]][ind,])%*%cY[ind]
     }
-    beta_fixed = solve(BB,BY)
+    mixedEffect_list$beta_fixed = solve(BB,BY)
     res.list = list()
     for(i in 1:n){
       cY = cbind(Y[[i]][,1],Y[[i]][,2])
       ind <- !is.na(cY)
-      res.list[[i]] = cY[ind] - mixedEffect_list$B_fixed[[i]][ind,]%*%beta_fixed
+      res.list[[i]] = cY[ind] - mixedEffect_list$B_fixed[[i]][ind,]%*%mixedEffect_list$beta_fixed
       res <- c(res,res.list[[i]])
     }
     mixedEffect_list$theta = log(sqrt(var(res)))*c(1,1)
