@@ -22,7 +22,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
 
-  int debug = 0;
+  int debug = 1;
   //**********************************
   //      basic parameter
   //**********************************

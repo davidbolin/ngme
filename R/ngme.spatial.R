@@ -248,7 +248,8 @@ ngme.spatial <- function(fixed,
     if(is.null(idname)){
       locs <- list(as.matrix(data[, location.names]))  
     } else {
-      locs <- tapply(as.matrix(data[, location.names]), id, function(x) x)  
+      locs <- split(data[, location.names], id, function(x) x) 
+      locs <- lapply(locs, function(x) as.matrix(x))
     }
   }
   
@@ -315,8 +316,13 @@ ngme.spatial <- function(fixed,
       
       for(i in 1:length(locs))
       {
-        process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
-        process_list$V[[i]] <- operator_list$h[[i]]
+        if(length(operator_list$h)==1){
+          h_in <- operator_list$h[[1]]
+        }else{
+          h_in <- operator_list$h[[i]]
+        }
+        process_list$X[[i]] <- rep(0, length(h_in))
+        process_list$V[[i]] <- h_in
       }
     }
     
@@ -431,12 +437,13 @@ ngme.spatial <- function(fixed,
       if(fit$measurementError_list$noise == "Normal" && error != "Normal"){
         fit$measurementError_list$nu  <-  3.
         fit$measurementError_list$mu  <-  0
+        fit$measurementError_list$Vs  <- Vin
       }
       fit$measurementError_list$noise      <- error
       fit$measurementError_list$assymetric <- error_assymetric
       
       fit$measurementError_list$common_V <- controls$individual.sigma
-      fit$measurementError_list$Vs       <- Vin
+      
       
       # Obtain parameter estimates
       fit <- estimateLong(Y,
