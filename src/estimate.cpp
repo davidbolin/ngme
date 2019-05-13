@@ -886,7 +886,6 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::List olist          = Kobj->output_list();
     out_list["operator_list"] = olist;
   }
-
   Rcpp::List mixobj_list       = mixobj->toList();
   out_list["mixedEffect_list"] = mixobj_list;
   Rcpp::List errobj_list            = errObj->toList();

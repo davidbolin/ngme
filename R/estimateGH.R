@@ -195,6 +195,7 @@ estimateLong <- function(Y,
 
   #input <- asS4(input)
   output <- estimateLong_cpp(input)
+
   if(use.process){
     output$A <- lapply(1:length(obs_list), function(i) obs_list[[i]]$A)
   }
@@ -210,7 +211,6 @@ estimateLong <- function(Y,
       mixedEffect_list$Sigma <- scale.sigma(mixedEffect_list$Sigma,Br.list,inv=TRUE)
     }
   }
-
 
   return(output)
 }
@@ -322,6 +322,94 @@ ME.startvalues <- function(Y, mixedEffect_list)
   return(mixedEffect_list)
 }
 
+#'
+#' @title Obtain initials for random effects.
+#'
+#' @description A function to obtain initial values for random effects for bivariate models.
+#'
+#' @inheritParams estimateLong
+#' @param mixedEffect_list A list for random effects.
+#'
+#' @return Returns a list for the mixed effects.
+#'     See e.g. \code{mixedEffect_list} in the \code{"EstimateLong"} function.
+#'
+#' @details The function treats random effects as fixed effects to
+#'    obtain start values using ordinary least squares (OLS).
+#'
+#' @seealso \code{\link{ngme}}
+#'
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'   ME.startvalues(...)
+#'   }
+#'
+
+ME.startvalues.bivariate <- function(Y, mixedEffect_list)
+{
+  n = length(mixedEffect_list$B_fixed)
+  nc.f= dim(mixedEffect_list$B_fixed[[1]])[2]
+  nc.r = 0
+  if(!is.null(mixedEffect_list$B_random)){
+    nc.r= dim(mixedEffect_list$B_random[[1]])[2]
+  }
+  nc = nc.f + nc.r
+  BB = matrix(0,nc,nc)
+  BY = matrix(0,nc,1)
+  res = NULL
+  if(nc.r  > 0){
+    beta_r = matrix(0,n,nc.r)
+    I = diag(1,nc)
+    
+    for(i in 1:n){
+      cY = cbind(Y[[i]][,1],Y[[i]][,2])
+      ind <- !is.na(cY)
+      Bi = cbind(mixedEffect_list$B_fixed[[i]],mixedEffect_list$B_random[[i]])
+      Bi = Bi[ind,]
+      BB = BB + t(Bi)%*%Bi
+      BY = BY + t(Bi)%*%cY[ind]
+    }
+    beta = solve(BB,BY)
+    mixedEffect_list$beta_fixed = beta[1:nc.f]
+    mixedEffect_list$beta_random = beta[(nc.f+1):nc]
+    
+    Sigma = matrix(0,nc.r,nc.r)
+    br = matrix(0,n,nc.r)
+    res.list = list()
+    for(i in 1:n){
+      cY = cbind(Y[[i]][,1],Y[[i]][,2])
+      ind <- !is.na(cY)
+      BB = ginv(t(mixedEffect_list$B_random[[i]])%*%mixedEffect_list$B_random[[i]])
+      br[i,] = BB%*%t(mixedEffect_list$B_random[[i]][ind,])%*%(cY[ind] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed)
+      res.list[[i]] =  cY[ind] - mixedEffect_list$B_fixed[[i]][ind,]%*%mixedEffect_list$beta_fixed - mixedEffect_list$B_random[[i]][ind,]%*%br[i,]
+      res <- c(res,res.list[[i]])
+    }
+    m = br - colMeans(br)
+    mixedEffect_list$Sigma = t(m)%*%m/n
+    mixedEffect_list$sigma = sqrt(var(res))
+  } else {
+    for(i in 1:n){
+      cY = cbind(Y[[i]][,1],Y[[i]][,2])
+      ind <- !is.na(cY)
+      BB = BB + t(mixedEffect_list$B_fixed[[i]])%*%mixedEffect_list$B_fixed[[i]]
+      BY = BY + t(mixedEffect_list$B_fixed[[i]][ind,])%*%cY[ind]
+    }
+    beta_fixed = solve(BB,BY)
+    res.list = list()
+    for(i in 1:n){
+      cY = cbind(Y[[i]][,1],Y[[i]][,2])
+      ind <- !is.na(cY)
+      res.list[[i]] = cY[ind] - mixedEffect_list$B_fixed[[i]][ind,]%*%beta_fixed
+      res <- c(res,res.list[[i]])
+    }
+    mixedEffect_list$theta = log(sqrt(var(res)))*c(1,1)
+  }
+  #mixedEffect_list$res = res.list
+  return(mixedEffect_list)
+}
+
+
+
 #' @title Obtain initial values for the operator.
 #'
 #' @description A function to obtain initials for the operator.
@@ -356,5 +444,40 @@ operator.startvalues <- function(Y, locs, mixedEffect_list, operator_list, measu
     }
     
   }
+  return(operator_list)
+}
+
+#' @title Obtain initial values for the operator.
+#'
+#' @description A function to obtain initials for the bivariate operator.
+#'
+#' @inheritParams estimateLong
+#' @param mixedEffect_list A list for random effects.
+#' @param operator_list A list for operator.
+#' @param measurement_list A list for measurement error.
+#'
+#' @return A list for operator.
+#'    See e.g. \code{"operator_list"} in \code{"estimateLong"}.
+#'
+#' @examples
+#'   \dontrun{
+#'   operator.startvalues(...)
+#'   }
+#'
+operator.startvalues.bivariate <- function(Y, locs, mixedEffect_list, operator_list, measurement_list)
+{
+  operator_list$tau1 = 1/exp(measurement_list$theta[1])
+  operator_list$tau2 = 1/exp(measurement_list$theta[2])
+  
+  m = min(unlist(lapply(lapply(locs,range),min)))
+  M = max(unlist(lapply(lapply(locs,range),max)))
+  h.min = min(unlist(lapply(operator_list$h,min)))
+  range = max(4*h.min,0.1*(M-m))
+  
+  operator_list$kappa1 = sqrt(8*3/2)/range  
+  operator_list$kappa2 = sqrt(8*3/2)/range  
+  operator_list$rho = 0
+  operator_list$theta = 0
+    
   return(operator_list)
 }

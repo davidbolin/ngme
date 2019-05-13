@@ -206,3 +206,15 @@ Eigen::VectorXd nsGaussianMeasurementError::get_gradient()
   g = dtheta;
   return(g);
 }
+
+void nsGaussianMeasurementError::get_param(std::vector<double> & param_in){
+  for(int i = 0; i<npars;i++){
+    param_in.push_back(theta[i]);   
+  }
+}
+  
+void nsGaussianMeasurementError::get_param_names(Rcpp::StringVector & names){
+  for(int i = 0; i<npars;i++){
+    names.push_back("sigma_error_" + std::to_string(i+1));
+  }
+}

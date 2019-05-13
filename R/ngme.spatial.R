@@ -49,6 +49,8 @@
 
 ngme.spatial <- function(fixed,
                  random = NULL,
+                 fixed2 = NULL,
+                 random2 = NULL,
                  group.id = NULL,
                  use.process = TRUE,
                  reffects = "Normal",
@@ -241,7 +243,71 @@ ngme.spatial <- function(fixed,
     }
   }
   
-  
+  #if we have a bivariate model, extract effect matrices for second dimension. 
+  bivariate = FALSE
+  if(!is.null(fixed2)){ 
+    bivariate = TRUE
+    mf_fixed2 <- model.frame(formula = fixed2, data = data)
+    y2        <- as.matrix(model.extract(mf_fixed2, "response"))
+    x_fixed_f2  <- as.matrix(model.matrix(attr(mf_fixed2, "terms"), data = mf_fixed2))
+    colnames(x_fixed_f2)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f2)[1])
+    
+    if(use.random){
+      cov_list_fixed2  <- attr(terms(fixed2), "term.labels")
+      cov_list_random2 <- unlist(strsplit(attr(terms(random2), "term.labels"), " | ", fixed = TRUE))
+      cov_list_random2 <- c(strsplit(cov_list_random2[1], " + ", fixed=TRUE)[[1]], cov_list_random2[2])
+      cov_list_random2 <- cov_list_random2[-length(cov_list_random2)]  
+      to_del_x_fixed2 <- c("Intercept", cov_list_fixed2[(cov_list_fixed2 %in% cov_list_random2)])
+      x_fixed2 <- x_fixed_f2[, !(colnames(x_fixed_f2) %in% to_del_x_fixed2), drop = FALSE]
+      #random effects design matrix
+      random_names2             <- unlist(strsplit(as.character(random2)[-1], " | ", fixed = TRUE))
+      random_names_id_excluded2 <- random_names2[!(random_names2 %in% idname)]
+      random_formula2           <- as.formula(paste("~", paste(random_names_id_excluded2, collapse = "+")))
+      
+      mf_random2 <- model.frame(formula = random_formula2, data = data)
+      x_random2  <- as.matrix(model.matrix(attr(mf_random2, "terms"), data = mf_random2))
+      colnames(x_random2)[1] <- gsub("[[:punct:]]", "", colnames(x_random2)[1])
+      
+      idlist <- unique(id)
+      data_random2 <- data.frame(cbind(id, x_random2))
+      B_random2    <- split(data_random2[, -1], data_random2[,1])
+      B_random2    <- lapply(B_random2, function(x) as.matrix(x))
+      
+      Y2 <- tapply(y2, id, function(x) x)
+      data_fixed2 <- data.frame(cbind(id, x_fixed2))
+      B_fixed2    <- split(data_fixed2[, -1], data_fixed2[,1])
+      B_fixed2    <- lapply(B_fixed2, function(x) as.matrix(x))  
+      x_random <- cbind(x_random,x_random2)
+      to_del_x_fixed <- cbind(to_del_x_fixed,to_del_x_fixed2)
+    } else {
+      x_fixed2 <- x_fixed_f2
+      x_fixed <- cbind(x_fixed,x_fixed2)
+      x_fixed_f <- cbind(x_fixed_f,x_fixed_f2)
+      x_random2 <- NA
+      if(is.null(idname)){ # no replicates
+        Y2 <- list(y2)
+        B_fixed2 = list(x_fixed2)
+      } else {
+        Y2 <- tapply(y2, id, function(x) x)
+        data_fixed2 <- data.frame(cbind(id, x_fixed2))
+        B_fixed2    <- split(data_fixed2[, -1], data_fixed2[,1])
+        B_fixed    <- lapply(B_fixed2, function(x) as.matrix(x))
+      }
+    }
+    
+    #combine fixed effect matrices and data
+    for(i in 1:length(B_fixed)){
+      B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]],B_fixed2[[i]]))
+      Y[[i]] <- cbind(Y[[i]],Y2[[i]])
+    }
+    
+    #combine random effect matrices
+    if(use.random){
+      for(i in 1:length(B_fixed)){
+        B_random[[i]] <- as.matrix(bdiag(B_random[[i]],B_random2[[i]]))
+      }
+    }
+  }
   
   # extract variables for process
   if(use.process == TRUE){
@@ -294,9 +360,21 @@ ngme.spatial <- function(fixed,
       cat("Setup lists\n")
     }
     
-    measurement_list <- list(Vs = Vin,
-                             noise = "Normal",
-                             sigma = 0.1)
+    if(bivariate){
+      Be <- list()
+      for(i in 1:length(Y)){
+        Be[[i]] = kronecker(diag(2),matrix(rep(1,dim(Y[[i]])[1])))
+      }
+      measurement_list <- list(Vs = Vin,
+                               noise = "nsNormal",
+                               B = Be,
+                               sigma = c(0.1,0.1))
+    } else {
+      measurement_list <- list(Vs = Vin,
+                               noise = "Normal",
+                               sigma = 0.1)  
+    }
+    
     
     mixedEffect_list <- list(B_fixed  = B_fixed,
                              noise = "Normal",
@@ -323,6 +401,40 @@ ngme.spatial <- function(fixed,
         }
         process_list$X[[i]] <- rep(0, length(h_in))
         process_list$V[[i]] <- h_in
+      if(bivariate){
+        operator_list <- create_operator_matern2Dbivariate(mesh)
+      } else {
+        operator_list <- create_operator_matern2D(mesh)  
+      }
+      
+      if(bivariate){
+        n.grid <- length(operator_list$h[[1]])/2
+        
+        process_list = list(noise = "Normal", 
+                              Bmu = list(kronecker(diag(2),matrix(rep(1, n.grid)))), 
+                              Bnu = list(kronecker(diag(2),matrix(rep(1, n.grid)))),
+                              mu = as.matrix(c(0,0)), 
+                              nu = as.matrix(c(1,1)))
+        process_list$V <- list()
+        process_list$X <- list()
+        
+        for(i in 1:length(locs))
+        {
+          process_list$X[[i]] <- rep(0, length(operator_list$h[[1]]))
+          process_list$V[[i]] <- operator_list$h[[1]]
+        }  
+      } else {
+        process_list = list(noise = "Normal",
+                            nu  = 1,
+                            mu  = 0)
+        process_list$V <- list()
+        process_list$X <- list()
+        
+        for(i in 1:length(locs))
+        {
+          process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
+          process_list$V[[i]] <- operator_list$h[[i]]
+        }  
       }
     }
     
@@ -330,10 +442,13 @@ ngme.spatial <- function(fixed,
     if(!silent){
       cat("Calculate starting values\n")
     }
-    
-    mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
-    measurement_list$sigma <- mixedEffect_list$sigma
-    
+    if(bivariate){
+      mixedEffect_list       <- ME.startvalues.bivariate(Y, mixedEffect_list)
+      measurement_list$theta <- mixedEffect_list$theta
+    } else {
+      mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
+      measurement_list$sigma <- mixedEffect_list$sigma  
+    }
   }
   
   # Fitting the models: the case where the model formulation consists of W(t)
@@ -344,11 +459,20 @@ ngme.spatial <- function(fixed,
       
       #starting values for process
       #operator_list$type  <- process[2]
-      operator_list <- operator.startvalues(Y,
-                                            locs,
-                                            mixedEffect_list,
-                                            operator_list,
-                                            measurement_list)
+      if(bivariate){
+        operator_list <- operator.startvalues.bivariate(Y,
+                                              locs,
+                                              mixedEffect_list,
+                                              operator_list,
+                                              measurement_list)
+      } else {
+        operator_list <- operator.startvalues(Y,
+                                              locs,
+                                              mixedEffect_list,
+                                              operator_list,
+                                              measurement_list)  
+      }
+      
     }
     
     # at least one of random effects, process or measurement error non-Gaussian

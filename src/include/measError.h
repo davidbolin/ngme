@@ -163,6 +163,8 @@ public:
   void setupStoreTracj(const int ); // setups to store the tracjetory
   
     Eigen::VectorXd  getSigma(const int i,  const int n = 0)  { return(sigmas[i].array().square());}; 
+    void get_param(std::vector<double> & param_in);
+    void get_param_names(Rcpp::StringVector & names);
   
 };
 
