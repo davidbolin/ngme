@@ -89,7 +89,8 @@ ngme.spatial <- function(fixed,
                                       subsample.type.init = 0,
                                       pSubsample2.init = 0.3,
                                       individual.sigma.init = FALSE),
-                 init.fit = NULL
+                 init.fit = NULL,
+                 debug = FALSE
 )
 {
   # generate a seed
@@ -196,115 +197,30 @@ ngme.spatial <- function(fixed,
   } else {
     idname = NULL
   }
-  
-  # response matrix and fixed effects design matrix
-  mf_fixed <- model.frame(formula = fixed, data = data)
-  y        <- as.matrix(model.extract(mf_fixed, "response"))
-  x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
-  colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])
-  
-  # excluding the intercept and the covariates that are specified in random
-  if(use.random){
-    cov_list_fixed  <- attr(terms(fixed), "term.labels")
-    cov_list_random <- unlist(strsplit(attr(terms(random), "term.labels"), " | ", fixed = TRUE))
-    cov_list_random <- c(strsplit(cov_list_random[1], " + ", fixed=TRUE)[[1]], cov_list_random[2])
-    cov_list_random <- cov_list_random[-length(cov_list_random)]  
-    to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
-    x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
-    #random effects design matrix
-    random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
-    random_names_id_excluded <- random_names[!(random_names %in% idname)]
-    random_formula           <- as.formula(paste("~", paste(random_names_id_excluded, collapse = "+")))
-    
-    mf_random <- model.frame(formula = random_formula, data = data)
-    x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
-    colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
-    
-    idlist <- unique(id)
-    data_random <- data.frame(cbind(id, x_random))
-    B_random    <- split(data_random[, -1], data_random[,1])
-    B_random    <- lapply(B_random, function(x) as.matrix(x))
-    
-    Y <- tapply(y, id, function(x) x)
-    data_fixed <- data.frame(cbind(id, x_fixed))
-    B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
-    B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))  
-  } else {
-    x_fixed <- x_fixed_f
-    x_random <- NA
-    if(is.null(idname)){ # no replicates
-      Y <- list(y)
-      B_fixed = list(x_fixed)
-    } else {
-      Y <- tapply(y, id, function(x) x)
-      data_fixed <- data.frame(cbind(id, x_fixed))
-      B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
-      B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))
-    }
-  }
+  effects <- extract.effects(data = data, fixed = fixed,random=random, idname = idname)
+  Y<-effects$Y
+  B_fixed <- effects$B_fixed
+  x_fixed <- effects$x_fixed
+  x_random <- effects$x_random
+  x_fixed_f <- effects$x_fixed_f
+  to_del_x_fixed <- effects$to_del_x_fixed
   
   #if we have a bivariate model, extract effect matrices for second dimension. 
   bivariate = FALSE
   if(!is.null(fixed2)){ 
     bivariate = TRUE
-    mf_fixed2 <- model.frame(formula = fixed2, data = data)
-    y2        <- as.matrix(model.extract(mf_fixed2, "response"))
-    x_fixed_f2  <- as.matrix(model.matrix(attr(mf_fixed2, "terms"), data = mf_fixed2))
-    colnames(x_fixed_f2)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f2)[1])
-    
-    if(use.random){
-      cov_list_fixed2  <- attr(terms(fixed2), "term.labels")
-      cov_list_random2 <- unlist(strsplit(attr(terms(random2), "term.labels"), " | ", fixed = TRUE))
-      cov_list_random2 <- c(strsplit(cov_list_random2[1], " + ", fixed=TRUE)[[1]], cov_list_random2[2])
-      cov_list_random2 <- cov_list_random2[-length(cov_list_random2)]  
-      to_del_x_fixed2 <- c("Intercept", cov_list_fixed2[(cov_list_fixed2 %in% cov_list_random2)])
-      x_fixed2 <- x_fixed_f2[, !(colnames(x_fixed_f2) %in% to_del_x_fixed2), drop = FALSE]
-      #random effects design matrix
-      random_names2             <- unlist(strsplit(as.character(random2)[-1], " | ", fixed = TRUE))
-      random_names_id_excluded2 <- random_names2[!(random_names2 %in% idname)]
-      random_formula2           <- as.formula(paste("~", paste(random_names_id_excluded2, collapse = "+")))
-      
-      mf_random2 <- model.frame(formula = random_formula2, data = data)
-      x_random2  <- as.matrix(model.matrix(attr(mf_random2, "terms"), data = mf_random2))
-      colnames(x_random2)[1] <- gsub("[[:punct:]]", "", colnames(x_random2)[1])
-      
-      idlist <- unique(id)
-      data_random2 <- data.frame(cbind(id, x_random2))
-      B_random2    <- split(data_random2[, -1], data_random2[,1])
-      B_random2    <- lapply(B_random2, function(x) as.matrix(x))
-      
-      Y2 <- tapply(y2, id, function(x) x)
-      data_fixed2 <- data.frame(cbind(id, x_fixed2))
-      B_fixed2    <- split(data_fixed2[, -1], data_fixed2[,1])
-      B_fixed2    <- lapply(B_fixed2, function(x) as.matrix(x))  
-      x_random <- cbind(x_random,x_random2)
-      to_del_x_fixed <- cbind(to_del_x_fixed,to_del_x_fixed2)
-    } else {
-      x_fixed2 <- x_fixed_f2
-      x_fixed <- cbind(x_fixed,x_fixed2)
-      x_fixed_f <- cbind(x_fixed_f,x_fixed_f2)
-      x_random2 <- NA
-      if(is.null(idname)){ # no replicates
-        Y2 <- list(y2)
-        B_fixed2 = list(x_fixed2)
-      } else {
-        Y2 <- tapply(y2, id, function(x) x)
-        data_fixed2 <- data.frame(cbind(id, x_fixed2))
-        B_fixed2    <- split(data_fixed2[, -1], data_fixed2[,1])
-        B_fixed    <- lapply(B_fixed2, function(x) as.matrix(x))
-      }
-    }
-    
+    effects2 <- extract.effects(data = data, fixed = fixed2,random=random2, idname = idname)
+    x_random <- cbind(x_random,effects2$x_random)
+    to_del_x_fixed <- cbind(to_del_x_fixed,effects2$to_del_x_fixed)
+    x_fixed <- cbind(x_fixed,effects2$x_fixed)
+    x_fixed_f <- cbind(x_fixed_f,effects2$x_fixed_f)
+  
     #combine fixed effect matrices and data
     for(i in 1:length(B_fixed)){
-      B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]],B_fixed2[[i]]))
-      Y[[i]] <- cbind(Y[[i]],Y2[[i]])
-    }
-    
-    #combine random effect matrices
-    if(use.random){
-      for(i in 1:length(B_fixed)){
-        B_random[[i]] <- as.matrix(bdiag(B_random[[i]],B_random2[[i]]))
+      B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]],effects2$B_fixed[[i]]))
+      Y[[i]] <- cbind(Y[[i]],effects2$Y[[i]])
+      if(use.random){
+        B_random[[i]] <- as.matrix(bdiag(B_random[[i]],effects2$B_random[[i]]))
       }
     }
   }
@@ -389,12 +305,12 @@ ngme.spatial <- function(fixed,
         n.grid <- length(operator_list$h[[1]])/2
         
         process_list = list(noise = "Normal", 
-                            Bmu = list(kronecker(diag(2),matrix(rep(1, n.grid)))), 
-                            Bnu = list(kronecker(diag(2),matrix(rep(1, n.grid)))),
                             mu = as.matrix(c(0,0)), 
                             nu = as.matrix(c(1,1)))
         process_list$V <- list()
         process_list$X <- list()
+        process_list$Bmu <- list()
+        process_list$Bnu <- list()
       } else {
         operator_list <- create_operator_matern2D(mesh)  
         process_list = list(noise = "Normal",
@@ -412,6 +328,10 @@ ngme.spatial <- function(fixed,
         }
         process_list$X[[i]] <- rep(0, length(h_in))
         process_list$V[[i]] <- h_in
+        if(bivariate){
+          process_list$Bmu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+          process_list$Bnu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+        }
       }
     }
      
@@ -429,6 +349,7 @@ ngme.spatial <- function(fixed,
   }
   
   # Fitting the models: the case where the model formulation consists of W(t)
+  debug.output <- list()
   if(use.process){
     
     if(is.null(init.fit) == TRUE ||
@@ -460,6 +381,15 @@ ngme.spatial <- function(fixed,
         # first fit the Gaussian model to obtain initials
         if(!silent){
           cat("Estimate Gaussian")
+        }
+        
+        if(debug){
+          debug.output$gaussian.input = list(Y =Y,
+                                          locs = locs,
+                                          mixedEffect_list = mixedEffect_list,
+                                          measurement_list = measurement_list,
+                                          process_list = process_list,
+                                          operator_list = operator_list)
         }
         fit <- estimateLong(Y,
                             locs,
@@ -521,10 +451,17 @@ ngme.spatial <- function(fixed,
       }
       
       if(fit$processes_list$noise == "Normal" && process[1] != "Normal"){
-        fit$processes_list$mu <- 0
-        fit$processes_list$nu <- 1    
+        if(bivariate){
+          fit$processes_list$mu <- as.matrix(c(0,0))
+          fit$processes_list$nu <- as.matrix(c(1,1))  
+        } else {
+          fit$processes_list$mu <- 0
+          fit$processes_list$nu <- 1      
+        }
+        
       }
       fit$processes_list$noise <- process[1]
+      
       if(length(process) < 3){
         nu_limit = 0
       }else {
@@ -544,6 +481,14 @@ ngme.spatial <- function(fixed,
       
       fit$measurementError_list$common_V <- controls$individual.sigma
       
+      if(debug){
+        debug.output$nongaussian.input = list(Y =Y,
+                                           locs = locs,
+                                           mixedEffect_list = fit$mixedEffect_list,
+                                           measurement_list = fit$measurement_list,
+                                           process_list = fit$process_list,
+                                           operator_list = fit$operator_list)
+      }
       fit <- estimateLong(Y,
                           locs,
                           fit$mixedEffect_list,
@@ -573,6 +518,14 @@ ngme.spatial <- function(fixed,
       
       # Obtain parameter estimates
       # Obtain parameter estimates
+      if(debug){
+        debug.output$gaussian.input = list(Y =Y,
+                                           locs = locs,
+                                           mixedEffect_list = mixedEffect_list,
+                                           measurement_list = measurement_list,
+                                           process_list = process_list,
+                                           operator_list = operator_list)
+      }
       fit <- estimateLong(Y,
                           locs,
                           mixedEffect_list,
@@ -862,7 +815,8 @@ ngme.spatial <- function(fixed,
     fisher_est = NA,
     call = match.call(),
     index_fixed = index_fixed,
-    index_random = index_random
+    index_random = index_random,
+    debug = debug.output
   )
   
   class(out) <- "ngme.spatial"

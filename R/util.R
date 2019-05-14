@@ -198,3 +198,59 @@ crop.lists <- function(object,ind){
   object$locs <- object$locs[ind]
   return(object)
 }
+
+extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = idname){
+  # response matrix and fixed effects design matrix
+  mf_fixed <- model.frame(formula = fixed, data = data)
+  y        <- as.matrix(model.extract(mf_fixed, "response"))
+  x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
+  colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])  
+  
+  # excluding the intercept and the covariates that are specified in random
+  if(!is.null(random)){
+    cov_list_fixed  <- attr(terms(fixed), "term.labels")
+    cov_list_random <- unlist(strsplit(attr(terms(random), "term.labels"), " | ", fixed = TRUE))
+    cov_list_random <- c(strsplit(cov_list_random[1], " + ", fixed=TRUE)[[1]], cov_list_random[2])
+    cov_list_random <- cov_list_random[-length(cov_list_random)]  
+    to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
+    x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
+    #random effects design matrix
+    random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
+    random_names_id_excluded <- random_names[!(random_names %in% idname)]
+    random_formula           <- as.formula(paste("~", paste(random_names_id_excluded, collapse = "+")))
+    
+    mf_random <- model.frame(formula = random_formula, data = data)
+    x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
+    colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
+    
+    idlist <- unique(id)
+    data_random <- data.frame(cbind(id, x_random))
+    B_random    <- split(data_random[, -1], data_random[,1])
+    B_random    <- lapply(B_random, function(x) as.matrix(x))
+    
+    Y <- tapply(y, id, function(x) x)
+    data_fixed <- data.frame(cbind(id, x_fixed))
+    B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
+    B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))  
+  } else {
+    x_fixed <- x_fixed_f
+    x_random <- NA
+    to_del_x_fixed = NA
+    if(is.null(idname)){ # no replicates
+      Y <- list(y)
+      B_fixed = list(x_fixed)
+    } else {
+      Y <- tapply(y, id, function(x) x)
+      data_fixed <- data.frame(cbind(id, x_fixed))
+      B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
+      B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))
+    }
+  }
+  return(list(Y=Y,
+              B_fixed = B_fixed,
+              x_fixed = x_fixed,
+              x_random = x_random,
+              x_fixed_f = x_fixed_f,
+              to_del_x_fixed = to_del_x_fixed))
+}
+

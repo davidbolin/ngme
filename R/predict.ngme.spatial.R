@@ -68,24 +68,22 @@ predict.ngme.spatial <- function(object,
                                    crps = TRUE,
                                    nSim = 1000,
                                    nBurnin = 100,
-                                   silent = TRUE
+                                   silent = TRUE,
+                                   seed = NULL
                                  )
 )
 {
   
-  controls$seed <- ceiling(10^8 * runif(1))
   
-  if(length(controls) < 11){
+  if(length(controls) < 6){
     controls_full <- list(
       return.samples = FALSE,
       excursions = NULL,
       crps = TRUE,
-      crps.skip = 1,
       nSim = 1000,
       nBurnin = 100,
       silent = TRUE,
-      n.cores = 1,
-      batch.size = 100
+      seed = ceiling(10^8 * runif(1))
     )
     for(i in 1:length(controls)){
       controls_full[names(controls)[i]] <- controls[i]
@@ -128,75 +126,138 @@ predict.ngme.spatial <- function(object,
     
     Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
     
-    pred_data <- data.frame(id       = rep(id, unlist(lapply(Y_for_pred, length))),
-                            time     = unlist(lapply(1:length(pInd), function(i) object$locs[[pInd[i]]])),
-                            observed = unlist(Y_for_pred),
-                            mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean)),
-                            median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median)),
-                            lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field)),
-                            upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field)),
-                            crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
-    )
+    if(dim(object$Y[[1]])[2] == 2){
+      n.obs <- lapply(1:length(pInd), function(i) dim(object$Y[[pInd[i]]])[1])
+      Y1_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,1])
+      Y2_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,2])
+      pred_data1 <- data.frame(id       = rep(id, unlist(lapply(Y1_for_pred, length))),
+                              observed = unlist(Y1_for_pred),
+                              mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean[1:n.obs[[i]]])),
+                              median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median[1:n.obs[[i]]])),
+                              lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[1:n.obs[[i]]])),
+                              upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[1:n.obs[[i]]])),
+                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[1:n.obs[[i]]])))
+      ind1 <- !is.na(pred_data1$observed)
+      pred_data1$id       = pred_data1$id[ind1]
+      pred_data1$observed = pred_data1$observed[ind1]
+      pred_data1$mean     = pred_data1$mean[ind1]
+      pred_data1$median   = pred_data1$median[ind1]
+      pred_data1$lower    = pred_data1$lower[ind1]
+      pred_data1$upper    = pred_data1$upper[ind1]
+      pred_data1$crps     = pred_data1$crps[ind1]
+                               
+      pred_data2 <- data.frame(id       = rep(id, unlist(lapply(Y2_for_pred, length))),
+                               observed = unlist(Y2_for_pred),
+                               mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean[(n.obs[[i]]+1):(2*n.obs[[i]])])),
+                               median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median[(n.obs[[i]]+1):(2*n.obs[[i]])])),
+                               lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
+                               upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
+                               crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[(n.obs[[i]]+1):(2*n.obs[[i]])])))
+      ind2 <- !is.na(pred_data2$observed)
+      pred_data2$id       = pred_data2$id[ind1]
+      pred_data2$observed = pred_data2$observed[ind1]
+      pred_data2$mean     = pred_data2$mean[ind1]
+      pred_data2$median   = pred_data2$median[ind1]
+      pred_data2$lower    = pred_data2$lower[ind1]
+      pred_data2$upper    = pred_data2$upper[ind1]
+      pred_data2$crps     = pred_data2$crps[ind1]
+      
+      abs_diff_mean1   <- with(pred_data1, abs(observed - mean))
+      abs_diff_median1 <- with(pred_data1, abs(observed - median))
+      sq_diff_mean1   <- with(pred_data1, (observed - mean)^2)
+      sq_diff_median1 <- with(pred_data1, (observed - median)^2)
+      covered1   <- with(pred_data1, lower < observed & upper > observed)
+      int.width1 <- with(pred_data1, upper - lower)
+      n_obs1 <- nrow(pred_data1)
+      
+      abs_diff_mean2   <- with(pred_data2, abs(observed - mean))
+      abs_diff_median2 <- with(pred_data2, abs(observed - median))
+      sq_diff_mean2   <- with(pred_data2, (observed - mean)^2)
+      sq_diff_median2 <- with(pred_data2, (observed - median)^2)
+      covered2   <- with(pred_data2, lower < observed & upper > observed)
+      int.width2 <- with(pred_data2, upper - lower)
+      n_obs2 <- nrow(pred_data2)
+      mean.rmse.mean.predictor <- c(sqrt(mean(sq_diff_mean1)),sqrt(mean(sq_diff_mean2)))
+      mean.rmse.median.predictor <- c(sqrt(mean(sq_diff_median1)),sqrt(mean(sq_diff_median2)))
+      
+      out <- list(predictions = preds,
+                  id = id,
+                  type = type,
+                  call = match.call(),
+                  pred.data1 = pred_data1,
+                  pred.data2 = pred_data2,
+                  mean.mae.mean.predictor = c(mean(abs_diff_mean1),mean(abs_diff_mean2)),
+                  mean.mae.median.predictor = c(mean(abs_diff_median1),mean(abs_diff_median2)),
+                  median.mae.mean.predictor = c(median(abs_diff_mean1),median(abs_diff_mean2)),
+                  median.mae.median.predictor = c(median(abs_diff_median1),median(abs_diff_median2)),
+                  std.mae.mean.predictor = c(sqrt(var(abs_diff_mean1)/n_obs1),sqrt(var(abs_diff_mean2)/n_obs2)),
+                  std.mae.median.predictor = c(sqrt(var(abs_diff_median1)/n_obs1),sqrt(var(abs_diff_median2)/n_obs2)),
+                  mean.rmse.mean.predictor = mean.rmse.mean.predictor,
+                  mean.rmse.median.predictor = mean.rmse.median.predictor,
+                  std.rmse.mean.predictor = c(sqrt( (0.5 * (1/mean.rmse.mean.predictor[1]) * var(sq_diff_mean1)) / n_obs1),
+                                              sqrt( (0.5 * (1/mean.rmse.mean.predictor[2]) * var(sq_diff_mean2)) / n_obs2)),
+                  std.rmse.median.predictor = c(sqrt( (0.5 * (1/mean.rmse.median.predictor[1]) * var(sq_diff_median1)) / n_obs1),
+                                                sqrt( (0.5 * (1/mean.rmse.median.predictor[2]) * var(sq_diff_median2)) / n_obs2)),
+                  coverage.mean = 100*c(mean(covered1),mean(covered2)),
+                  coverage.std = 100*c(sqrt(var(covered1)/n_obs1),sqrt(var(covered2)/n_obs2)),
+                  mean.crps = c(mean(pred_data1$crps),mean(pred_data2$crps)),
+                  median.crps = c(median(pred_data1$crps),median(pred_data2$crps)),
+                  std.crps = c(sqrt(var(pred_data1$crps)/n_obs1),sqrt(var(pred_data2$crps)/n_obs2)),
+                  mean.int.width = c(mean(int.width1),mean(int.width2)),
+                  std.int.width = c(sqrt(var(int.width1)/n_obs1),sqrt(var(int.width2)/n_obs2)),
+                  Y = object$Y,
+                  locs = object$locs,
+                  id_list = id_list
+      )  
+      
+    } else {
+      pred_data <- data.frame(id       = rep(id, unlist(lapply(Y_for_pred, length))),
+                              observed = unlist(Y_for_pred),
+                              mean     = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Mean)),
+                              median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median)),
+                              lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field)),
+                              upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field)),
+                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
+      )
+      
+      abs_diff_mean   <- with(pred_data, abs(observed - mean))
+      abs_diff_median <- with(pred_data, abs(observed - median))
+      sq_diff_mean   <- with(pred_data, (observed - mean)^2)
+      sq_diff_median <- with(pred_data, (observed - median)^2)
+      covered   <- with(pred_data, lower < observed & upper > observed)
+      int.width <- with(pred_data, upper - lower)
+      n_obs <- nrow(pred_data)
+      mean.rmse.mean.predictor <- sqrt(mean(sq_diff_mean))
+      mean.rmse.median.predictor <<- sqrt(mean(sq_diff_median))
+      
+      out <- list(predictions = preds,
+                  id = id,
+                  type = type,
+                  call = match.call(),
+                  pred.data = pred_data,
+                  mean.mae.mean.predictor = mean(abs_diff_mean),
+                  mean.mae.median.predictor = mean(abs_diff_median),
+                  median.mae.mean.predictor = median(abs_diff_mean),
+                  median.mae.median.predictor = median(abs_diff_median),
+                  std.mae.mean.predictor = sqrt(var(abs_diff_mean)/n_obs),
+                  std.mae.median.predictor = sqrt(var(abs_diff_median)/n_obs),
+                  mean.rmse.mean.predictor = mean.rmse.mean.predictor,
+                  mean.rmse.median.predictor = mean.rmse.median.predictor,
+                  std.rmse.mean.predictor = sqrt( (0.5 * (1/mean.rmse.mean.predictor) * var(sq_diff_mean)) / n_obs),
+                  std.rmse.median.predictor = sqrt( (0.5 * (1/mean.rmse.median.predictor) * var(sq_diff_median)) / n_obs),
+                  coverage.mean = 100 * mean(covered),
+                  coverage.std = 100 * sqrt(var(covered)/n_obs),
+                  mean.crps = mean(pred_data$crps),
+                  median.crps = median(pred_data$crps),
+                  std.crps = sqrt(var(pred_data$crps)/n_obs),
+                  mean.int.width = mean(int.width),
+                  std.int.width = sqrt(var(int.width)/n_obs),
+                  Y = object$Y,
+                  locs = object$locs,
+                  id_list = id_list
+      )  
+    }
     
-    abs_diff_mean   <- with(pred_data, abs(observed - mean))
-    abs_diff_median <- with(pred_data, abs(observed - median))
-    
-    sq_diff_mean   <- with(pred_data, (observed - mean)^2)
-    sq_diff_median <- with(pred_data, (observed - median)^2)
-    
-    covered   <- with(pred_data, lower < observed & upper > observed)
-    int.width <- with(pred_data, upper - lower)
-    
-    n_obs <- nrow(pred_data)
-    
-    mean.mae.mean.predictor       <- mean(abs_diff_mean)
-    mean.mae.median.predictor     <- mean(abs_diff_median)
-    median.mae.mean.predictor       <- median(abs_diff_mean)
-    median.mae.median.predictor     <- median(abs_diff_median)
-    std.mae.mean.predictor        <- sqrt(var(abs_diff_mean)/n_obs)
-    std.mae.median.predictor      <- sqrt(var(abs_diff_median)/n_obs)
-    
-    mean.rmse.mean.predictor      <- sqrt(mean(sq_diff_mean))
-    mean.rmse.median.predictor    <- sqrt(mean(sq_diff_median))
-    std.rmse.mean.predictor       <- sqrt( (0.5 * (1/mean.rmse.mean.predictor) * var(sq_diff_mean)) / n_obs)
-    std.rmse.median.predictor     <- sqrt( (0.5 * (1/mean.rmse.median.predictor) * var(sq_diff_median)) / n_obs)
-    
-    coverage.mean  <- 100 * mean(covered)
-    coverage.std   <- 100 * sqrt(var(covered)/n_obs)
-    
-    mean.crps      <- mean(pred_data$crps)
-    median.crps      <- median(pred_data$crps)
-    std.crps       <- sqrt(var(pred_data$crps)/n_obs)
-    
-    mean.int.width <- mean(int.width)
-    std.int.width  <- sqrt(var(int.width)/n_obs)
-    
-    out <- list(predictions = preds,
-                id = id,
-                type = type,
-                call = match.call(),
-                pred.data = pred_data,
-                mean.mae.mean.predictor = mean.mae.mean.predictor,
-                mean.mae.median.predictor = mean.mae.median.predictor,
-                median.mae.mean.predictor = median.mae.mean.predictor,
-                median.mae.median.predictor = median.mae.median.predictor,
-                std.mae.mean.predictor = std.mae.mean.predictor,
-                std.mae.median.predictor = std.mae.median.predictor,
-                mean.rmse.mean.predictor = mean.rmse.mean.predictor,
-                mean.rmse.median.predictor = mean.rmse.median.predictor,
-                std.rmse.mean.predictor = std.rmse.mean.predictor,
-                std.rmse.median.predictor = std.rmse.median.predictor,
-                coverage.mean = coverage.mean,
-                coverage.std = coverage.std,
-                mean.crps = mean.crps,
-                median.crps = median.crps,
-                std.crps = std.crps,
-                mean.int.width = mean.int.width,
-                std.int.width = std.int.width,
-                Y = object$Y,
-                locs = object$locs,
-                id_list = id_list
-    )
     
   }  else {
     #kriging prediction
@@ -220,52 +281,35 @@ predict.ngme.spatial <- function(object,
     }
     response.name <- all.vars(fixed)[1]
     data[response.name] = 0
-    mf_fixed <- model.frame(formula = fixed, data = data)
-    x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
-    colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])
-    
-    # excluding the intercept and the covariates that are specified in random
-    if(use.random){
-      cov_list_fixed  <- attr(terms(fixed), "term.labels")
-      cov_list_random <- unlist(strsplit(attr(terms(random), "term.labels"), " | ", fixed = TRUE))
-      cov_list_random <- c(strsplit(cov_list_random[1], " + ", fixed=TRUE)[[1]], cov_list_random[2])
-      cov_list_random <- cov_list_random[-length(cov_list_random)]  
-      to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
-      x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
-      #random effects design matrix
-      random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
-      random_names_id_excluded <- random_names[!(random_names %in% idname)]
-      random_formula           <- as.formula(paste("~", paste(random_names_id_excluded, collapse = "+")))
-      
-      mf_random <- model.frame(formula = random_formula, data = data)
-      x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
-      colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
-      
-      idlist <- unique(id)
-      data_random <- data.frame(cbind(id, x_random))
-      B_random    <- split(data_random[, -1], data_random[,1])
-      B_random    <- lapply(B_random, function(x) as.matrix(x))
-      
-      data_fixed <- data.frame(cbind(id, x_fixed))
-      B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
-      B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))  
-    } else {
-      x_fixed <- x_fixed_f
-      x_random <- NA
-      if(is.null(idname)){ # no replicates
-        B_fixed = list(x_fixed)
-      } else {
-        data_fixed <- data.frame(cbind(id, x_fixed))
-        B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
-        B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))
-      }
-    }
+    effects <- extract.effects(data = data, fixed = fixed,random=random, idname = idname)
+    B_fixed = effects$B_fixed
+    B_random = effects$B_random
     
     if(is.null(idname)){
       locs <- list(as.matrix(data[, location.names]))  
     } else {
       locs <- tapply(as.matrix(data[, location.names]), id, function(x) x)  
     }
+    
+    if(dim(object$Y[[1]])[2] == 2){
+      fixed2 <-object$call$fixed2
+      random2 <- object$call$random2
+      response.name2 <- all.vars(fixed2)[1]
+      data[response.name2] = 0
+      effects2 <- extract.effects(data = data, fixed = fixed2,random=random2, idname = idname)
+      Be.pred <- list()
+      for(i in 1:length(B_fixed)){
+        B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]],effects2$B_fixed[[i]]))
+        if(use.random){
+          B_random[[i]] <- as.matrix(bdiag(B_random[[i]],effects2$B_random[[i]]))
+        }
+        Be.pred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(locs[[i]])[1])))
+      }
+      object$measurementError_list$Bpred <- Be.pred
+    }
+    
+    
+    
     if(use.random){
       preds <- predictLong(
         Y                    = object$Y,
@@ -318,7 +362,41 @@ predict.ngme.spatial <- function(object,
   }
   
   
-  
+  if(dim(object$Y[[1]])[2] == 2){
+    preds <- out$predictions
+    for(i in 1:length(object$Y)){
+      n.p = length(preds$X.summary[[i]]$Mean)/2
+      preds$Y.summary[[i]]$Mean <- matrix(preds$Y.summary[[i]]$Mean, n.p,2)
+      preds$Y.summary[[i]]$Var <- matrix(preds$Y.summary[[i]]$Var, n.p,2)
+      preds$Y.summary[[i]]$Median <- matrix(preds$Y.summary[[i]]$Median, n.p,2)
+      for(j in 1:length(preds$Y.summary[[i]]$quantiles)){
+        preds$Y.summary[[i]]$quantiles[[j]]$field <- matrix(preds$Y.summary[[i]]$quantiles[[j]]$field, n.p,2)
+      }
+      
+      preds$X.summary[[i]]$Mean <- matrix(preds$X.summary[[i]]$Mean, n.p,2)
+      preds$X.summary[[i]]$Var <- matrix(preds$X.summary[[i]]$Var, n.p,2)
+      preds$X.summary[[i]]$Median <- matrix(preds$X.summary[[i]]$Median, n.p,2)
+      for(j in 1:length(preds$X.summary[[i]]$quantiles)){
+        preds$X.summary[[i]]$quantiles[[j]]$field <- matrix(preds$X.summary[[i]]$quantiles[[j]]$field, n.p,2)
+      }
+      
+      preds$W.summary[[i]]$Mean <- matrix(preds$W.summary[[i]]$Mean, n.p,2)
+      preds$W.summary[[i]]$Var <- matrix(preds$W.summary[[i]]$Var, n.p,2)
+      preds$W.summary[[i]]$Median <- matrix(preds$W.summary[[i]]$Median, n.p,2)
+      for(j in 1:length(preds$W.summary[[i]]$quantiles)){
+        preds$W.summary[[i]]$quantiles[[j]]$field <- matrix(preds$W.summary[[i]]$quantiles[[j]]$field, n.p,2)
+      }
+      
+      preds$V.summary[[i]]$Mean <- matrix(preds$V.summary[[i]]$Mean, n.p,2)
+      preds$V.summary[[i]]$Var <- matrix(preds$V.summary[[i]]$Var, n.p,2)
+      preds$V.summary[[i]]$Median <- matrix(preds$V.summary[[i]]$Median, n.p,2)
+      for(j in 1:length(preds$V.summary[[i]]$quantiles)){
+        preds$V.summary[[i]]$quantiles[[j]]$field <- matrix(preds$V.summary[[i]]$quantiles[[j]]$field, n.p,2)
+      }
+    }
+    
+    out$predictions <- preds
+  }
   
   
   class(out) <- "predict.ngme.spatial"
