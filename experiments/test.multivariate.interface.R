@@ -79,7 +79,7 @@ df$z <- res.pred.gaus$predictions$X.summary[[1]]$Mean[,2]
 p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
-s  
+
   
     
 

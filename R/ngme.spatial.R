@@ -225,6 +225,9 @@ ngme.spatial <- function(fixed,
     }
   }
   
+  if(bivariate && error == "Normal"){
+    error = "nsNormal"
+  }
   # extract variables for process
   if(use.process == TRUE){
     if(is.null(idname)){
@@ -267,7 +270,7 @@ ngme.spatial <- function(fixed,
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
   
   if(is.null(init.fit) == TRUE ||
-     (reffects == "Normal" & (use.process == TRUE & process[1] == "Normal") & error == "Normal") ||
+     (reffects == "Normal" & (use.process == TRUE & process[1] == "Normal") & error %in% c("Normal","nsNormal")) ||
      (reffects == "Normal" & use.process == FALSE & error == "Normal")){
     
     # setup the lists that are going to be passed into the
@@ -353,7 +356,7 @@ ngme.spatial <- function(fixed,
   if(use.process){
     
     if(is.null(init.fit) == TRUE ||
-       (reffects == "Normal" & process[1] == "Normal" & error == "Normal")){
+       (reffects == "Normal" & process[1] == "Normal" & error %in% c("Normal","nsNormal"))){
       
       #starting values for process
       #operator_list$type  <- process[2]
@@ -374,7 +377,7 @@ ngme.spatial <- function(fixed,
     }
     
     # at least one of random effects, process or measurement error non-Gaussian
-    if(reffects != "Normal" || process[1] != "Normal" || error != "Normal"){
+    if(reffects != "Normal" || process[1] != "Normal" || !(error %in% c("Normal","nsNormal"))){
       
       if(is.null(init.fit) == TRUE){
         
@@ -419,10 +422,10 @@ ngme.spatial <- function(fixed,
       
       # then fit the non-Gaussian model
       if(!silent){
-        cat("Estimate non-Gaussian")
+        cat("Estimate non-Gaussian\n")
       }
       if(use.random){
-        if(fit$mixedEffect_list$noise == "Normal" && reffects != "Normal"){
+        if(fit$mixedEffect_list$noise %in% c("Normal","nsNormal") && reffects != "Normal"){
           if(dim(fit$mixedEffect_list$U)[1]==1){
             lambda <- function(x) -sum(dnig(c(fit$mixedEffect_list$U),0,0,exp(x[1]),exp(x[2]),log = T))
             res <- optim(c(
@@ -454,13 +457,28 @@ ngme.spatial <- function(fixed,
         if(bivariate){
           fit$processes_list$mu <- as.matrix(c(0,0))
           fit$processes_list$nu <- as.matrix(c(1,1))  
+          fit$processes_list$Bmu <- list()
+          fit$processes_list$Bnu <- list()
+          n.grid <- length(fit$operator_list$h[[1]])/2
+          for(i in 1:length(locs))
+          {
+            fit$processes_list$Bmu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+            fit$processes_list$Bnu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+          }
         } else {
           fit$processes_list$mu <- 0
           fit$processes_list$nu <- 1      
         }
         
       }
-      fit$processes_list$noise <- process[1]
+      if(bivariate){
+        if(process[1]=="NIG"){
+          fit$processes_list$noise <- "MultiGH"
+        }
+      } else {
+        fit$processes_list$noise <- process[1]  
+      }
+      
       
       if(length(process) < 3){
         nu_limit = 0
@@ -471,7 +489,8 @@ ngme.spatial <- function(fixed,
       fit$processes_list$nu_limit <- nu_limit
       
       
-      if(fit$measurementError_list$noise == "Normal" && error != "Normal"){
+      if((fit$measurementError_list$noise %in% c("Normal", "nsNormal") ) && 
+         !(error %in% c("Normal", "nsNormal"))){
         fit$measurementError_list$nu  <-  3.
         fit$measurementError_list$mu  <-  0
         fit$measurementError_list$Vs  <- Vin
@@ -516,7 +535,6 @@ ngme.spatial <- function(fixed,
         cat("Estimate Model")
       }
       
-      # Obtain parameter estimates
       # Obtain parameter estimates
       if(debug){
         debug.output$gaussian.input = list(Y =Y,

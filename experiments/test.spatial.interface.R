@@ -33,7 +33,7 @@ mesh <- inla.mesh.create.helper( loc,
 
 #Fit gaussian model to pressure data
 res.est.pres <- ngme.spatial(pres ~ 1,
-                              process = c("Normal"),
+                              process = c("NIG"),
                               error = "Normal",
                               data = data,
                               location.names = c("lon","lat"),
