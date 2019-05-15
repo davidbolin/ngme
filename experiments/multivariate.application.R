@@ -140,8 +140,10 @@ plot(res.est.gaus$operator_list$rhoVec,type="l",main="process rho")
 
 #compute accuracy measure from leave-one-out crossvalidation
 res.cv.gaus <-predict(res.est.gaus, type = "LOOCV")
+res.cv.gaus2 <-predict(res.est.gaus, type = "LOOCV",controls = list(n.cores = 8))
 
 cat("mae = ", res.cv.gaus$median.mae.mean.predictor,"crps =",res.cv.gaus$median.crps)
+cat("mae = ", res.cv.gaus2$median.mae.mean.predictor,"crps =",res.cv.gaus2$median.crps)
 
 #define locations where we want predict the process
 proj <- inla.mesh.projector(mesh,dims=c(80,80))
@@ -150,6 +152,7 @@ data.pred = data.frame(lon = proj$lattice$loc[,1],
 
 #compute prediction                         
 res.pred.gaus <-predict(res.est.gaus, data = data.pred)
+
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
 p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 

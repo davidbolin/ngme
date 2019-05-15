@@ -126,6 +126,7 @@ predict.ngme.spatial <- function(object,
     } else {
       cl <- makeCluster(controls$n.cores)
       registerDoSNOW(cl)
+      n.obs <- dim(object$Y[[1]])[1]
       pb <- txtProgressBar(max = n.obs, style = 3)
       progress <- function(n) setTxtProgressBar(pb, n)
       opts <- list(progress = progress)
@@ -139,23 +140,49 @@ predict.ngme.spatial <- function(object,
         obs.ind[[i]] <- setdiff(1:n.obs,i)
       }
       
-      parallel::clusterExport(cl, varlist = c('pred.ind','obs.ind', 'object','controls','pInd','quantiles','random'), 
+      parallel::clusterExport(cl, varlist = c('pred.ind','obs.ind', 'object','controls',
+                                              'pInd','quantiles','random','n.obs'), 
                               envir = environment())
       
       #run CV
+      #preds.list <- list()
+      #for(j in 1:length(pred.ind))  
       preds.list <- foreach(j = 1:length(pred.ind), .options.snow = opts) %dopar%
       {
-        locs.pred <- Bfixed.pred <- list()
+       cat(j,"\n") 
+        locs.pred <- Bfixed.pred <- Bfixed.pred <- list()
+        Bfixed <- Brandom <- list()
         Y.i <- Y.val <- loc.i <- list()
+        Be.pred <- Be <- list()
+        mlist <- object$mixedEffect_list
         for(i in 1:length(object$Y)){
           locs.pred[[i]] <- object$locs[[i]][pred.ind[[j]],,drop=FALSE]
-          Bfixed.pred[[i]] <- object$mixedEffect_list$B_fixed[[i]][pred.ind[[j]],,drop=FALSE]
-          if(!is.null(random)){
-            Brandom.pred[[i]] <- object$mixedEffect_list$B_random[[i]][pred.ind[[j]],,drop=FALSE]
+          if(dim(object$Y[[1]])[2] == 2){
+            Bfixed[[i]] <- mlist$B_fixed[[i]][c(obs.ind[[j]],n.obs+obs.ind[[j]]),,drop=FALSE]
+            Bfixed.pred[[i]] <- mlist$B_fixed[[i]][c(pred.ind[[j]],n.obs+pred.ind[[j]]),,drop=FALSE]
+            if(!is.null(random)){
+              Brandom[[i]] <- mlist$B_random[[i]][c(obs.ind[[j]],n.obs+obs.ind[[j]]),,drop=FALSE]
+              Brandom.pred[[i]] <- mlist$B_random[[i]][c(pred.ind[[j]],n.obs+pred.ind[[j]]),,drop=FALSE]
+            }
+            Be.pred[[i]] <- kronecker(diag(2),matrix(rep(1, length(pred.ind[[j]]))))
+            Be[[i]] <- kronecker(diag(2),matrix(rep(1, length(obs.ind[[j]]))))
+          } else {
+            Bfixed.pred[[i]] <- mlist$B_fixed[[i]][pred.ind[[j]],,drop=FALSE]
+            if(!is.null(random)){
+              Brandom.pred[[i]] <- mlist$B_random[[i]][pred.ind[[j]],,drop=FALSE]
+            }  
           }
-          Y.i[[i]] <- object$Y[[i]][obs.ind[[j]],]
-          Y.val[[i]] <- object$Y[[i]][pred.ind[[j]],]
+          Y.i[[i]] <- object$Y[[i]][obs.ind[[j]],,drop=FALSE]
+          Y.val[[i]] <- object$Y[[i]][pred.ind[[j]],,drop=FALSE]
           loc.i[[i]] <- object$locs[[i]][obs.ind[[j]],,drop=FALSE]
+        }
+        mlist$B_fixed <- Bfixed
+        if(!is.null(random)){
+          mlist$B_random <- Brandom
+        }
+        if(dim(object$Y[[1]])[2] == 2){
+          object$measurementError_list$Bpred <- Be.pred
+          object$measurementError_list$B <- Be
         }
         if(is.null(random)){
           res <- ngme::predictLong( Y                = Y.i,
@@ -168,7 +195,7 @@ predict.ngme.spatial <- function(object,
                                     quantiles            = quantiles,
                                     excursions           = controls$excursions,
                                     crps                 = controls$crps,
-                                    mixedEffect_list = object$mixedEffect_list,
+                                    mixedEffect_list = mlist,
                                     measurment_list  = object$measurementError_list,
                                     processes_list   = object$processes_list,
                                     operator_list    = object$operator_list,
@@ -188,7 +215,7 @@ predict.ngme.spatial <- function(object,
                                     quantiles            = quantiles,
                                     excursions           = controls$excursions,
                                     crps                 = controls$crps,
-                                    mixedEffect_list = object$mixedEffect_list,
+                                    mixedEffect_list = mlist,
                                     measurment_list  = object$measurementError_list,
                                     processes_list   = object$processes_list,
                                     operator_list    = object$operator_list,
@@ -201,6 +228,7 @@ predict.ngme.spatial <- function(object,
         
         res$index <- j
         return(res)
+        #preds.list[[j]] <- res
       }
       close(pb)
       stopCluster(cl)
