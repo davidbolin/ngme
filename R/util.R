@@ -205,7 +205,8 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
   y        <- as.matrix(model.extract(mf_fixed, "response"))
   x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
   colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])  
-  
+  id <- as.factor(data[,idname])
+  idlist <- unique(id)
   # excluding the intercept and the covariates that are specified in random
   if(!is.null(random)){
     cov_list_fixed  <- attr(terms(fixed), "term.labels")
@@ -223,7 +224,6 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
     x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
     colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
     
-    idlist <- unique(id)
     data_random <- data.frame(cbind(id, x_random))
     B_random    <- split(data_random[, -1], data_random[,1])
     B_random    <- lapply(B_random, function(x) as.matrix(x))
