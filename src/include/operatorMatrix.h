@@ -152,6 +152,7 @@ class MaternOperator : public operatorMatrix{
     SparseMatrix<double,0,int> *d2tauQ, *dtauQ, *dkappaQ, *d2kappaQ;
     void set_matrices();
     void set_matrix(const int);
+    Eigen::VectorXd step_v, dtheta_v, dtheta_old_v, theta_v, theta_v_tmp;
   public:
 
 

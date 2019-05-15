@@ -43,6 +43,14 @@ void MaternOperator::initFromList(Rcpp::List const & init_list, Rcpp::List const
   dkappa_old = 0;
   dtau = 0;
   dtau_old = 0;
+  
+  dtheta_v.setZero(2);
+  dtheta_old_v.setZero(2);
+  theta_v.setZero(2);
+  theta_v_tmp.setZero(2);
+  theta_v(0) = tau;
+  theta_v(1) = kappa;
+  
   use_chol = Rcpp::as<int>(solver_list["use.chol"]);
 
   Rcpp::List G_list  = Rcpp::as<Rcpp::List> (init_list["G"]);
@@ -268,7 +276,7 @@ void MaternOperator::step_theta(const double stepsize,
                                 const int burnin)
 {
 
-  if(1){ //independent steps
+  if(0){ //independent steps
     dtau  /= ddtau;
     dtau_old = learning_rate * dtau_old + dtau;
     double step = stepsize * dtau_old;
@@ -292,28 +300,28 @@ void MaternOperator::step_theta(const double stepsize,
     kappa = kappa_temp;  
   } else { //better correlated step
     Eigen::MatrixXd d2 = Eigen::MatrixXd::Zero(2, 2);
-    Eigen::VectorXd step_v, dtheta_v, dtheta_old_v, theta_v, theta_v_tmp;
-    
-    dtheta_v.setZero(2);
-    dtheta_old_v.setZero(2);
-    theta_v.setZero(2);
-    theta_v_tmp.setZero(2);
-    
-    theta_v(0) = tau;
-    theta_v(1) = kappa;
     
     dtheta_v(0) = dtau;
     dtheta_v(1) = dkappa;
     
-    dtheta_old_v(0) = dtau_old;
-    dtheta_old_v(1) = dkappa_old;
-    
     d2(0, 0)  = ddtau;
-    d2(1, 0) = ddtaukappa;
-    d2(0,1) = ddtaukappa;
+    d2(1, 0) = 0.5*ddtaukappa;
+    d2(0,1) = 0.5*ddtaukappa;
     d2(1,1) = ddkappa;
+    //Rcpp::Rcout << "d2 = \n";
+    //Rcpp::Rcout << d2 << "\n";
+    
+    //Rcpp::Rcout << "stepsize = " << stepsize << "learning_rate = " << learning_rate << "\n";
+    //Rcpp::Rcout << "dtheta_old_v = " << dtheta_old_v <<"\n";
     
     step_v  = d2.ldlt().solve(dtheta_v);
+    //Rcpp::Rcout << "step_v = " << step_v <<"\n";
+    dtheta_old_v = learning_rate * dtheta_old_v;
+    //Rcpp::Rcout << "dtheta_old_v = " << dtheta_old_v <<"\n";
+    dtheta_old_v += step_v;
+    //  Rcpp::Rcout << "dtheta_old_v = " << dtheta_old_v <<"\n";
+    step_v   = stepsize * dtheta_old_v;
+    //Rcpp::Rcout << "step_v = " << step_v <<"\n";
     
     theta_v_tmp(0) = -1;
     theta_v_tmp(1) = -1;
@@ -342,6 +350,7 @@ void MaternOperator::step_theta(const double stepsize,
 	clear_gradient();
 	ddtau   = 0;
 	ddkappa = 0;
+	ddtaukappa = 0;
 	for(int i=0;i<nop;i++){
 	  matrix_set[i] = 0;
 	}

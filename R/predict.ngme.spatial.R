@@ -69,7 +69,8 @@ predict.ngme.spatial <- function(object,
                                    nSim = 1000,
                                    nBurnin = 100,
                                    silent = TRUE,
-                                   seed = NULL
+                                   seed = NULL,
+                                   n.cores = 1
                                  )
 )
 {
@@ -83,6 +84,7 @@ predict.ngme.spatial <- function(object,
       nSim = 1000,
       nBurnin = 100,
       silent = TRUE,
+      n.cores = 1,
       seed = ceiling(10^8 * runif(1))
     )
     for(i in 1:length(controls)){
@@ -101,24 +103,109 @@ predict.ngme.spatial <- function(object,
   pInd <- which(id_list %in% id)
   
   if(type=="LOOCV"){
-    preds <- predictLong(
-      Y                    = object$Y,
-      locs                 = object$locs,
-      pInd                 = pInd,
-      return.samples       = controls$return.samples,
-      type                 = type,
-      quantiles            = quantiles,
-      excursions           = controls$excursions,
-      crps                 = controls$crps,
-      crps.skip            = 1,
-      mixedEffect_list     = object$mixedEffect_list,
-      measurment_list      = object$measurementError_list,
-      processes_list       = object$processes_list,
-      operator_list        = object$operator_list,
-      nSim                 = controls$nSim,
-      nBurnin              = controls$nBurnin,
-      silent               = controls$silent,
-      seed                 = controls$seed)
+    preds.list <- list()
+    if(controls$n.cores == 1){
+      preds.list[[1]] <- predictLong(
+        Y                    = object$Y,
+        locs                 = object$locs,
+        pInd                 = pInd,
+        return.samples       = controls$return.samples,
+        type                 = type,
+        quantiles            = quantiles,
+        excursions           = controls$excursions,
+        crps                 = controls$crps,
+        crps.skip            = 1,
+        mixedEffect_list     = object$mixedEffect_list,
+        measurment_list      = object$measurementError_list,
+        processes_list       = object$processes_list,
+        operator_list        = object$operator_list,
+        nSim                 = controls$nSim,
+        nBurnin              = controls$nBurnin,
+        silent               = controls$silent,
+        seed                 = controls$seed)  
+    } else {
+      cl <- makeCluster(controls$n.cores)
+      registerDoSNOW(cl)
+      pb <- txtProgressBar(max = n.obs, style = 3)
+      progress <- function(n) setTxtProgressBar(pb, n)
+      opts <- list(progress = progress)
+      
+      random <- object$call$random
+
+      pred.ind <- list()
+      obs.ind <- list()
+      for(i in 1:n.obs){
+        pred.ind[[i]] <- i
+        obs.ind[[i]] <- setdiff(1:n.obs,i)
+      }
+      
+      parallel::clusterExport(cl, varlist = c('pred.ind','obs.ind', 'object','controls','pInd','quantiles','random'), 
+                              envir = environment())
+      
+      #run CV
+      preds.list <- foreach(j = 1:length(pred.ind), .options.snow = opts) %dopar%
+      {
+        locs.pred <- Bfixed.pred <- list()
+        Y.i <- Y.val <- loc.i <- list()
+        for(i in 1:length(object$Y)){
+          locs.pred[[i]] <- object$locs[[i]][pred.ind[[j]],,drop=FALSE]
+          Bfixed.pred[[i]] <- object$mixedEffect_list$B_fixed[[i]][pred.ind[[j]],,drop=FALSE]
+          if(!is.null(random)){
+            Brandom.pred[[i]] <- object$mixedEffect_list$B_random[[i]][pred.ind[[j]],,drop=FALSE]
+          }
+          Y.i[[i]] <- object$Y[[i]][obs.ind[[j]],]
+          Y.val[[i]] <- object$Y[[i]][pred.ind[[j]],]
+          loc.i[[i]] <- object$locs[[i]][obs.ind[[j]],,drop=FALSE]
+        }
+        if(is.null(random)){
+          res <- ngme::predictLong( Y                = Y.i,
+                                    locs.pred        = locs.pred,
+                                    Bfixed.pred      = Bfixed.pred,
+                                    type             = "Smoothing",
+                                    locs             = loc.i,
+                                    pInd             = pInd,         
+                                    Y.val            = Y.val,
+                                    quantiles            = quantiles,
+                                    excursions           = controls$excursions,
+                                    crps                 = controls$crps,
+                                    mixedEffect_list = object$mixedEffect_list,
+                                    measurment_list  = object$measurementError_list,
+                                    processes_list   = object$processes_list,
+                                    operator_list    = object$operator_list,
+                                    nSim             = controls$nSim,
+                                    nBurnin          = controls$nBurnin,  
+                                    seed             = controls$seed,
+                                    silent           = TRUE)    
+        } else {
+          res <- ngme::predictLong( Y                = Y.i,
+                                    locs.pred        = locs.pred,
+                                    Bfixed.pred      = Bfixed.pred,
+                                    Brandom.pred      = Brandom.pred,
+                                    type             = "Smoothing",
+                                    locs             = loc.i,
+                                    pInd             = pInd,         
+                                    Y.val            = Y.val,
+                                    quantiles            = quantiles,
+                                    excursions           = controls$excursions,
+                                    crps                 = controls$crps,
+                                    mixedEffect_list = object$mixedEffect_list,
+                                    measurment_list  = object$measurementError_list,
+                                    processes_list   = object$processes_list,
+                                    operator_list    = object$operator_list,
+                                    nSim             = controls$nSim,
+                                    nBurnin          = controls$nBurnin,  
+                                    seed             = controls$seed,
+                                    silent           = TRUE)  
+        }
+        
+        
+        res$index <- j
+        return(res)
+      }
+      close(pb)
+      stopCluster(cl)
+    }
+    preds <- merge.pred.lists2(preds.list, pInd)
     
     if(controls$silent == FALSE){
       cat("Calculating accuracy measures", "\n")
@@ -403,4 +490,87 @@ predict.ngme.spatial <- function(object,
   out
   
 }
+
+merge.pred.lists2 <- function(preds.list, pInd){
+  #merge lists
+  preds <- preds.list[[1]]
+  if(length(preds.list)>1){
+    for(i in 2:length(preds.list)){
+      preds$index <- c(preds$index, preds.list[[i]]$index)
+      for(j in 1:length(preds$locs)){
+        preds$locs[[j]] <- rbind(preds$locs[[j]], preds.list[[i]]$locs[[j]])
+        preds$Y.summary[[j]]$Mean   <- rbind(preds$Y.summary[[j]]$Mean, preds.list[[i]]$Y.summary[[j]]$Mean)
+        preds$Y.summary[[j]]$Var    <- rbind(preds$Y.summary[[j]]$Var, preds.list[[i]]$Y.summary[[j]]$Var)
+        preds$Y.summary[[j]]$Median <- rbind(preds$Y.summary[[j]]$Median, preds.list[[i]]$Y.summary[[j]]$Median)
+        preds$Y.summary[[j]]$crps   <- rbind(preds$Y.summary[[j]]$crps, preds.list[[i]]$Y.summary[[j]]$crps)
+        for(k in 1:length(preds$X.summary[[j]]$quantiles)){
+          preds$Y.summary[[j]]$quantiles[[k]]$field <- rbind(preds$Y.summary[[j]]$quantiles[[k]]$field, 
+                                                             preds.list[[i]]$Y.summary[[j]]$quantiles[[k]]$field)
+        }
+        
+        preds$X.summary[[j]]$Mean   <- rbind(preds$X.summary[[j]]$Mean, preds.list[[i]]$X.summary[[j]]$Mean)
+        preds$X.summary[[j]]$Var    <- rbind(preds$X.summary[[j]]$Var, preds.list[[i]]$X.summary[[j]]$Var)
+        preds$X.summary[[j]]$Median <- rbind(preds$X.summary[[j]]$Median, preds.list[[i]]$X.summary[[j]]$Median)
+        for(k in 1:length(preds$X.summary[[j]]$quantiles)){
+          preds$X.summary[[j]]$quantiles[[k]]$field <- rbind(preds$X.summary[[j]]$quantiles[[k]]$field, 
+                                                             preds.list[[i]]$X.summary[[j]]$quantiles[[k]]$field)
+        }
+        
+        preds$V.summary[[j]]$Mean   <- rbind(preds$V.summary[[j]]$Mean, preds.list[[i]]$V.summary[[j]]$Mean)
+        preds$V.summary[[j]]$Var    <- rbind(preds$V.summary[[j]]$Var, preds.list[[i]]$V.summary[[j]]$Var)
+        preds$V.summary[[j]]$Median <- rbind(preds$V.summary[[j]]$Median, preds.list[[i]]$V.summary[[j]]$Median)
+        for(k in 1:length(preds$V.summary[[j]]$quantiles)){
+          preds$V.summary[[j]]$quantiles[[k]]$field <- rbind(preds$V.summary[[j]]$quantiles[[k]]$field, 
+                                                             preds.list[[i]]$V.summary[[j]]$quantiles[[k]]$field)
+        }
+        
+        preds$W.summary[[j]]$Mean   <- rbind(preds$W.summary[[j]]$Mean, preds.list[[i]]$W.summary[[j]]$Mean)
+        preds$W.summary[[j]]$Var    <- rbind(preds$W.summary[[j]]$Var, preds.list[[i]]$W.summary[[j]]$Var)
+        preds$W.summary[[j]]$Median <- rbind(preds$W.summary[[j]]$Median, preds.list[[i]]$W.summary[[j]]$Median)
+        for(k in 1:length(preds$W.summary[[j]]$quantiles)){
+          preds$W.summary[[j]]$quantiles[[k]]$field <- rbind(preds$W.summary[[j]]$quantiles[[k]]$field, 
+                                                             preds.list[[i]]$W.summary[[j]]$quantiles[[k]]$field)
+        }
+      }
+    }
+    #sort prediction
+    ix <- sort(preds$index,index.return=TRUE)$ix
+    for(j in 1:length(preds$locs)){
+      preds$locs[[j]] <- preds$locs[[j]][ix,]
+      preds$Y.summary[[j]]$Mean   <- c(preds$Y.summary[[j]]$Mean[ix,])
+      preds$Y.summary[[j]]$Var    <- c(preds$Y.summary[[j]]$Var[ix,])
+      preds$Y.summary[[j]]$Median <- c(preds$Y.summary[[j]]$Median[ix,])
+      preds$Y.summary[[j]]$crps   <- c(preds$Y.summary[[j]]$crps[ix,])
+      for(k in 1:length(preds$X.summary[[j]]$quantiles)){
+        preds$Y.summary[[j]]$quantiles[[k]]$field <- c(preds$Y.summary[[j]]$quantiles[[k]]$field[ix,])
+      }
+      
+      preds$X.summary[[j]]$Mean   <- c(preds$X.summary[[j]]$Mean[ix,])
+      preds$X.summary[[j]]$Var    <- c(preds$X.summary[[j]]$Var[ix,])
+      preds$X.summary[[j]]$Median <- c(preds$X.summary[[j]]$Median[ix,])
+      for(k in 1:length(preds$X.summary[[j]]$quantiles)){
+        preds$X.summary[[j]]$quantiles[[k]]$field <- c(preds$X.summary[[j]]$quantiles[[k]]$field[ix,])
+      }
+      
+      preds$V.summary[[j]]$Mean   <- c(preds$V.summary[[j]]$Mean[ix,])
+      preds$V.summary[[j]]$Var    <- c(preds$V.summary[[j]]$Var[ix,])
+      preds$V.summary[[j]]$Median <- c(preds$V.summary[[j]]$Median[ix,])
+      for(k in 1:length(preds$V.summary[[j]]$quantiles)){
+        preds$V.summary[[j]]$quantiles[[k]]$field <- c(preds$V.summary[[j]]$quantiles[[k]]$field[ix,])
+      }
+      
+      preds$W.summary[[j]]$Mean   <- c(preds$W.summary[[j]]$Mean[ix,])
+      preds$W.summary[[j]]$Var    <- c(preds$W.summary[[j]]$Var[ix,])
+      preds$W.summary[[j]]$Median <- c(preds$W.summary[[j]]$Median[ix,])
+      for(k in 1:length(preds$W.summary[[j]]$quantiles)){
+        preds$W.summary[[j]]$quantiles[[k]]$field <- c(preds$W.summary[[j]]$quantiles[[k]]$field[ix,])
+      }
+    }
+  }
+  return(preds)
+}
+
+
+
+
 

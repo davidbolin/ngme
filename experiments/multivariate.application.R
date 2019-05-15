@@ -45,17 +45,19 @@ res.est.pres <- ngme.spatial(pres ~ 1,
                              data = data,
                              location.names = c("lon","lat"),
                              silent = FALSE,
-                             nIter = 10000,
-                             mesh = mesh,
-                             controls = list(learning.rate = 0.9,
-                                             polyak.rate = 0.1,
-                                             nBurnin = 100,
-                                             nSim = 4,
-                                             step0 = 1,
-                                             alpha = 0.3))
+                             nIter = 5000,
+                             mesh = mesh)
 
 cat("beta = ", res.est.pres$fixed_est, "kappa = ", res.est.pres$operator_kappa,
     "tau = ", res.est.pres$operator_tau, "sigma.e = ", res.est.pres$meas_error_sigma)
+
+par(mfrow = c(2,2))
+matplot(res.est.pres$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1,xlab="",ylab="")
+matplot(res.est.pres$measurementError_list$sigma_vec,type="l",main="noise",col=1,xlab="",ylab="")
+plot(res.est.pres$operator_list$tauVec,type="l",main="process tau")
+plot(res.est.pres$operator_list$kappaVec,type="l",main="process kappa")
+
+
 
 #compute prediction
 res.pred.pres <-predict(res.est.pres, data = data.pred)
@@ -70,30 +72,30 @@ grid.arrange(p1,p2,ncol=2)
 
 #compute accuracy measure from leave-one-out crossvalidation
 res.cv.pres <-predict(res.est.pres, type = "LOOCV")
+res.cv.pres2 <-predict(res.est.pres, type = "LOOCV",controls = list(n.cores = 8))
 
 cat("mae = ", res.cv.pres$median.mae.mean.predictor,"crps =",res.cv.pres$median.crps)
+cat("mae = ", res.cv.pres2$median.mae.mean.predictor,"crps =",res.cv.pres2$median.crps)
 
 ########################################
 #same for temp
 ########################################
   
 res.est.temp <- ngme.spatial(temp ~ 1,
-                             process = c("Normal"),
-                             error = "Normal",
                              data = data,
                              location.names = c("lon","lat"),
                              silent = FALSE,
-                             nIter = 10000,
-                             mesh = mesh,
-                             controls = list(learning.rate = 0.9,
-                                             polyak.rate = 0.1,
-                                             nBurnin = 100,
-                                             nSim = 4,
-                                             step0 = 1,
-                                             alpha = 0.3))
+                             nIter = 5000,
+                             mesh = mesh)
 
 cat("beta = ", res.est.temp$fixed_est, "kappa = ", res.est.temp$operator_kappa,
     "tau = ", res.est.temp$operator_tau, "sigma.e = ", res.est.temp$meas_error_sigma)
+par(mfrow = c(2,2))
+matplot(res.est.temp$mixedEffect_list$betaf_vec,type="l",main="fixed effects",col=1,xlab="",ylab="")
+matplot(res.est.temp$measurementError_list$sigma_vec,type="l",main="noise",col=1,xlab="",ylab="")
+plot(res.est.temp$operator_list$tauVec,type="l",main="process tau")
+plot(res.est.temp$operator_list$kappaVec,type="l",main="process kappa")
+
 
 #compute prediction
 res.pred.temp <-predict(res.est.temp, data = data.pred)
@@ -107,7 +109,7 @@ grid.arrange(p1,p2,ncol=2)
 
 
 #compute accuracy measure from leave-one-out crossvalidation
-res.cv.temp <-predict(res.est.pres, type = "LOOCV")
+res.cv.temp <-predict(res.est.temp, type = "LOOCV")
 
 cat("mae = ", res.cv.temp$median.mae.mean.predictor,"crps =",res.cv.temp$median.crps)
 
@@ -119,21 +121,22 @@ cat("mae = ", res.cv.temp$median.mae.mean.predictor,"crps =",res.cv.temp$median.
 res.est.gaus <- ngme.spatial(fixed = pres ~ 1,
                              fixed2 = temp ~ 1,
                              process = c("Normal","matern"),
-                             error = "Normal",
                              data = data,
                              location.names = c("lon","lat"),
                              silent = FALSE,
                              nIter = 10000,
-                             mesh = mesh,
-                             controls = list(learning.rate = 0.9,
-                                             polyak.rate = 0.1,
-                                             nBurnin = 100,
-                                             nSim = 4,
-                                             step0 = 1,
-                                             alpha = 0.3))
+                             mesh = mesh)
 
 cat("beta = ", res.est.gaus$fixed_est, "kappa = ", res.est.gaus$operator_kappa,
     "tau = ", res.est.gaus$operator_tau, "sigma.e = ", res.est.gaus$meas_error_sigma,"\n")
+
+par(mfrow = c(2,3))
+matplot(res.est.gaus$mixedEffect_list$betaf_vec,type="l",main="fixed effects",xlab="",ylab="")
+matplot(res.est.gaus$measurementError_list$theta_vec,type="l",main="noise",col=1,xlab="",ylab="")
+matplot(t(rbind(res.est.gaus$operator_list$tau1Vec,res.est.gaus$operator_list$tau2Vec)),type="l",main="process tau")
+matplot(t(rbind(res.est.gaus$operator_list$kappa1Vec,res.est.gaus$operator_list$kappa2Vec)),type="l",main="process tau")
+plot(res.est.gaus$operator_list$rhoVec,type="l",main="process rho")
+
 
 #compute accuracy measure from leave-one-out crossvalidation
 res.cv.gaus <-predict(res.est.gaus, type = "LOOCV")
@@ -317,32 +320,19 @@ p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(col
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
 
-cat(c(median(abs(res.cv.nig$Y.summary[[1]]$Mean[1:n.obs] - pres)),
-      median(res.cv.nig$Y.summary[[1]]$crps[1:n.obs]),
-      median(abs(res.cv.nig$Y.summary[[1]]$Mean[(n.obs+1):(2*n.obs)] - temp)),
-      median(res.cv.nig$Y.summary[[1]]$crps[(n.obs+1):(2*n.obs)])))
+cat(c(res.cv.nig$median.mae.mean.predictor, res.cv.nig$median.crps))
+      
   
-  
-GGi = c(median(abs(res.cv.pres$Y.summary[[1]]$Mean - pres)),
-        median(res.cv.pres$Y.summary[[1]]$crps),
-        median(abs(res.cv.temp$Y.summary[[1]]$Mean - temp)),
-        median(res.cv.temp$Y.summary[[1]]$crps))
-GGl = c(median(abs(res.cv.gauss$Y.summary[[1]]$Mean[1:n.obs] - pres)),
-        median(res.cv.gauss$Y.summary[[1]]$crps[1:n.obs]), 
-        median(abs(res.cv.gauss$Y.summary[[1]]$Mean[(n.obs+1):(2*n.obs)] - temp)),
-        median(res.cv.gauss$Y.summary[[1]]$crps[(n.obs+1):(2*n.obs)]))
-NNi = c(median(abs(res.cv.nig.pres$Y.summary[[1]]$Mean[1:n.obs] - pres)),
-        median(res.cv.nig.pres$Y.summary[[1]]$crps),
-        median(abs(res.cv.nig.temp$Y.summary[[1]]$Mean - temp)),
-        median(res.cv.nig.temp$Y.summary[[1]]$crps))
-NNg = c(median(abs(res.cv.nig.full$Y.summary[[1]]$Mean[1:n.obs] - pres)),
-        median(res.cv.nig.full$Y.summary[[1]]$crps[1:n.obs]),
-        median(abs(res.cv.nig.full$Y.summary[[1]]$Mean[(n.obs+1):(2*n.obs)] - temp)),
-        median(res.cv.nig.full$Y.summary[[1]]$crps[(n.obs+1):(2*n.obs)]))
+GGi = c(res.cv.pres$median.mae.mean.predictor, res.cv.temp$median.mae.mean.predictor,
+        res.cv.pres$median.crps,res.cv.temp$median.crps)
+GGl = c(res.cv.gaus$median.mae.mean.predictor, res.cv.gaus$median.crps)
+NNi = c(res.cv.nig.pres$median.mae.mean.predictor, res.cv.nig.temp$median.mae.mean.predictor,
+        res.cv.nig.pres$median.crps,res.cv.nig.temp$median.crps)
+NNg = c(res.cv.nig$median.mae.mean.predictor, res.cv.nig$median.crps)
 
 results <- data.frame(mae.pres = c(GGi[1],GGl[1],NNi[1],NNg[1]),
-                      crps.pres = c(GGi[2],GGl[2],NNi[2],NNg[2]),
-                      mae.temp = c(GGi[3],GGl[3],NNi[3],NNg[3]),
+                      crps.pres = c(GGi[3],GGl[3],NNi[3],NNg[3]),
+                      mae.temp = c(GGi[2],GGl[2],NNi[2],NNg[2]),
                       crps.temp = c(GGi[4],GGl[4],NNi[4],NNg[4]),
                       row.names = c("Gaus indep", "Gauss lower", "NIG indep", "NIG general"))
 print(results)

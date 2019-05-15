@@ -533,7 +533,7 @@ void MaternOperator2D::gradient_add( const Eigen::VectorXd & X,
   dkappa1  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
   ddkappa1 -= weight * dKX.dot(iV.asDiagonal()*dKX);
   ddkappa1 -= weight * d2KX.dot(iV.asDiagonal()*(KX - mean_KX));
-  
+    
   dKX      = dkappa2Q[i] * X;
   d2KX     = d2kappa2Q[i] * X;
   dkappa2  -= weight * dKX.dot(iV.asDiagonal() * (KX - mean_KX));
