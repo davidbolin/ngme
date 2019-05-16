@@ -197,7 +197,7 @@ ngme.spatial <- function(fixed,
   } else {
     idname = NULL
   }
-  effects <- extract.effects(data = data, fixed = fixed,random=random, idname = idname)
+  effects <- extract.effects(data = data, fixed = fixed,random=random, idname = idname, na.action = na.pass)
   Y<-effects$Y
   B_fixed <- effects$B_fixed
   x_fixed <- effects$x_fixed
@@ -208,19 +208,30 @@ ngme.spatial <- function(fixed,
   #if we have a bivariate model, extract effect matrices for second dimension. 
   bivariate = FALSE
   if(!is.null(fixed2)){ 
+
     bivariate = TRUE
-    effects2 <- extract.effects(data = data, fixed = fixed2,random=random2, idname = idname)
+    effects2 <- extract.effects(data = data, fixed = fixed2,random=random2, idname = idname,
+                                na.action = na.pass)
     x_random <- cbind(x_random,effects2$x_random)
-    to_del_x_fixed <- cbind(to_del_x_fixed,effects2$to_del_x_fixed)
+    to_del_x_fixed <- effects2$to_del_x_fixed
     x_fixed <- cbind(x_fixed,effects2$x_fixed)
     x_fixed_f <- cbind(x_fixed_f,effects2$x_fixed_f)
-  
+    Be <- list()
+    ## Vin is needed even if init.fit is not NULL
+    Vin <- list()
     #combine fixed effect matrices and data
     for(i in 1:length(B_fixed)){
-      B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]],effects2$B_fixed[[i]]))
-      Y[[i]] <- cbind(Y[[i]],effects2$Y[[i]])
+      is.na1 <- is.na(Y[[i]])==F
+      is.na2 <- is.na(effects2$Y[[i]])==F
+      B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]][is.na1, , drop =F],
+                                      effects2$B_fixed[[i]][is.na2, , drop=F]))
+      Be[[i]]      <- as.matrix(bdiag(rep(1, sum(is.na1)),
+                                      rep(1, sum(is.na2))))
+      Vin[[i]] <- rep(1,  sum(is.na1) +  sum(is.na2)) 
+      Y[[i]]   <- cbind(Y[[i]],effects2$Y[[i]])
       if(use.random){
-        B_random[[i]] <- as.matrix(bdiag(B_random[[i]],effects2$B_random[[i]]))
+        B_random[[i]] <- as.matrix(bdiag(B_random[[i]][is.na1, , drop =F],
+                                         effects2$B_random[[i]][is.na2, , drop =F]))
       }
     }
   }
@@ -264,9 +275,7 @@ ngme.spatial <- function(fixed,
     }
   }
   
-  ## Vin is needed even if init.fit is not NULL
-  Vin <- lapply(Y, function(x) rep(1, length(x)))
-  
+ 
   ## Obtain starting values - if init.fit is not supplied or everything is Gaussian
   
   if(is.null(init.fit) == TRUE ||
@@ -280,10 +289,6 @@ ngme.spatial <- function(fixed,
     }
     
     if(bivariate){
-      Be <- list()
-      for(i in 1:length(Y)){
-        Be[[i]] = kronecker(diag(2),matrix(rep(1,dim(Y[[i]])[1])))
-      }
       measurement_list <- list(Vs = Vin,
                                noise = "nsNormal",
                                B = Be,

@@ -199,9 +199,10 @@ crop.lists <- function(object,ind){
   return(object)
 }
 
-extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = idname){
+extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = idname,
+                            na.action = na.omit){
   # response matrix and fixed effects design matrix
-  mf_fixed <- model.frame(formula = fixed, data = data)
+  mf_fixed <- model.frame(formula = fixed, data = data,  na.action= na.action)
   y        <- as.matrix(model.extract(mf_fixed, "response"))
   x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
   colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])  

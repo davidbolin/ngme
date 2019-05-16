@@ -330,13 +330,15 @@ predictLong <- function( Y,
         A <- build.A.matrix(operator_list,locs,i)
         Ap <- build.A.matrix(operator_list,locs.pred,i)
         if(bivariate){
-          A1 <- A[!is.nan(Y[[i]][,1]),]
-          A2 <- A[!is.nan(Y[[i]][,2]),]
+          A1 <- A[!is.na(Y[[i]][,1]),]
+          A2 <- A[!is.na(Y[[i]][,2]),]
           obs_list[[i]]$A = bdiag(A1,A2)
           obs_list[[i]]$Apred = bdiag(Ap,Ap)
           Yi <- c(Y[[i]])
-          obs_list[[i]]$Y = Yi[!is.nan(Yi)]
-          obs_list[[i]]$locs = cbind(locs[[i]],locs[[i]])
+          obs_list[[i]]$Y = Yi[!is.na(Yi)]
+          locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
+          locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
+          obs_list[[i]]$locs = rbind(locs1, locs2)
         } else {
           obs_list[[i]]$A = A
           obs_list[[i]]$Apred = Ap
