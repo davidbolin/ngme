@@ -219,10 +219,15 @@ ngme.spatial <- function(fixed,
     Be <- list()
     ## Vin is needed even if init.fit is not NULL
     Vin <- list()
+    B_fixed.full <- list()
+    if(use.random){
+      B_random.full <- list()
+    }
     #combine fixed effect matrices and data
     for(i in 1:length(B_fixed)){
       is.na1 <- is.na(Y[[i]])==F
       is.na2 <- is.na(effects2$Y[[i]])==F
+      B_fixed.full[[i]] <- as.matrix(bdiag(B_fixed[[i]],effects2$B_fixed[[i]]))
       B_fixed[[i]] <- as.matrix(bdiag(B_fixed[[i]][is.na1, , drop =F],
                                       effects2$B_fixed[[i]][is.na2, , drop=F]))
       Be[[i]]      <- as.matrix(bdiag(rep(1, sum(is.na1)),
@@ -230,6 +235,7 @@ ngme.spatial <- function(fixed,
       Vin[[i]] <- rep(1,  sum(is.na1) +  sum(is.na2)) 
       Y[[i]]   <- cbind(Y[[i]],effects2$Y[[i]])
       if(use.random){
+        B_random.full[[i]] <- as.matrix(bdiag(B_random[[i]],effects2$B_random[[i]]))
         B_random[[i]] <- as.matrix(bdiag(B_random[[i]][is.na1, , drop =F],
                                          effects2$B_random[[i]][is.na2, , drop =F]))
       }
@@ -303,6 +309,7 @@ ngme.spatial <- function(fixed,
     mixedEffect_list <- list(B_fixed  = B_fixed,
                              noise = "Normal",
                              Sigma_epsilon = 1)
+
     if(use.random){
       mixedEffect_list$B_random = B_random
     }
@@ -792,6 +799,10 @@ ngme.spatial <- function(fixed,
   }
   
   fisher_est <- NA
+  fit$mixedEffect_list$B_fixed_full = B_fixed.full
+  if(use.random){
+    fit$mixedEffect_list$B_random_full = B_random.full
+  }
   
   out <- list(
     use_process = use.process,

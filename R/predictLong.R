@@ -140,7 +140,7 @@ predictLong <- function( Y,
   
   if(missing(Bfixed.pred)){
     if(pred_type == 3){
-      Bfixed.pred = mixedEffect_list$B_fixed
+      Bfixed.pred = mixedEffect_list$B_fixed_full
     } else {
         stop("Must supply Bfixed.pred")
     }
@@ -153,7 +153,7 @@ predictLong <- function( Y,
   if(use.random.effect){
     if(missing(Brandom.pred)){
       if(pred_type == 3){
-        Brandom.pred = mixedEffect_list$B_random
+        Brandom.pred = mixedEffect_list$B_random_full
       } else {
         stop("Must supply Brandom.pred")
       }
@@ -182,9 +182,13 @@ predictLong <- function( Y,
       }
       if(measurment_list$noise == "nsGaussian"){
         measurment_list$B <- measurment_list$B[pInd]
-        if(!is.null(measurment_list$Bpred))
+        if(!is.null(measurment_list$Bpred)){
           measurment_list$Bpred <- measurment_list$Bpred[pInd]
-      }
+        } else if(type == "LOOCV"){
+          measurment_list$Bpred <- list()
+        }
+          
+      } 
     }
     if(!is.null(predict.derivatives)){
       predict.derivatives$B_fixed <- predict.derivatives$B_fixed[pInd]
@@ -335,10 +339,13 @@ predictLong <- function( Y,
           obs_list[[i]]$A = bdiag(A1,A2)
           obs_list[[i]]$Apred = bdiag(Ap,Ap)
           Yi <- c(Y[[i]])
+          na.ind <- is.na(Yi)
+          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind]
           obs_list[[i]]$Y = Yi[!is.na(Yi)]
           locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
           locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
           obs_list[[i]]$locs = rbind(locs1, locs2)
+          measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Y[[i]])[1])))
         } else {
           obs_list[[i]]$A = A
           obs_list[[i]]$Apred = Ap
@@ -346,7 +353,8 @@ predictLong <- function( Y,
       }
       
       if(use.random.effect){
-        obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
+        mixedEffect_list$Brandom[[i]] <- mixedEffect_list$Brandom[[i]][!na.ind,]
+        mixedEffect_list$Brandom_pred[[i]] = Brandom.pred[[i]]
       }
 
       if(!is.null(predict.derivatives)){
