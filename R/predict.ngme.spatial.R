@@ -213,7 +213,7 @@ predict.ngme.spatial <- function(object,
     
     Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
     
-    if(dim(object$Y[[1]])[2] == 2){
+    if(dim(as.matrix(object$Y[[1]]))[2] == 2){
       n.obs <- lapply(1:length(pInd), function(i) dim(object$Y[[pInd[i]]])[1])
       Y1_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,1])
       Y2_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,2])
@@ -378,7 +378,7 @@ predict.ngme.spatial <- function(object,
       locs <- tapply(as.matrix(data[, location.names]), id, function(x) x)  
     }
     
-    if(dim(object$Y[[1]])[2] == 2){
+    if(dim(as.matrix(object$Y[[1]]))[2] == 2){
       fixed2 <-object$call$fixed2
       random2 <- object$call$random2
       response.name2 <- all.vars(fixed2)[1]
@@ -449,7 +449,7 @@ predict.ngme.spatial <- function(object,
   }
   
   
-  if(dim(object$Y[[1]])[2] == 2){
+  if(dim(as.matrix(object$Y[[1]]))[2] == 2){
     preds <- out$predictions
     for(i in 1:length(object$Y)){
       n.p = length(preds$X.summary[[i]]$Mean)/2
