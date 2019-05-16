@@ -207,6 +207,7 @@ ngme.spatial <- function(fixed,
   
   #if we have a bivariate model, extract effect matrices for second dimension. 
   bivariate = FALSE
+  
   if(!is.null(fixed2)){ 
 
     bivariate = TRUE
@@ -235,7 +236,7 @@ ngme.spatial <- function(fixed,
       }
     }
   }
-  
+
   if(bivariate && error == "Normal"){
     error = "nsNormal"
   }
@@ -294,7 +295,7 @@ ngme.spatial <- function(fixed,
                                B = Be,
                                sigma = c(0.1,0.1))
     } else {
-      measurement_list <- list(Vs = Vin,
+      measurement_list <- list(
                                noise = "Normal",
                                sigma = 0.1)  
     }
