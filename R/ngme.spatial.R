@@ -799,6 +799,7 @@ ngme.spatial <- function(fixed,
   }
   
   fisher_est <- NA
+  
   fit$mixedEffect_list$B_fixed_full = B_fixed.full
   if(use.random){
     fit$mixedEffect_list$B_random_full = B_random.full
