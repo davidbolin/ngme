@@ -39,7 +39,7 @@ res.est.gaus <- ngme.spatial(fixed = pres ~ 1,
                              data = data,
                              location.names = c("lon","lat"),
                              silent = FALSE,
-                             nIter = 10000,
+                             nIter = 10,
                              mesh = mesh,
                              controls = list(learning.rate = 0.9,
                                              polyak.rate = 0.1,
@@ -54,7 +54,7 @@ cat("beta = ", res.est.gaus$fixed_est, "kappa = ", res.est.gaus$operator_kappa,
 
                        
 #compute accuracy measure from leave-one-out crossvalidation
-res.cv.gaus <-predict(res.est.gaus, type = "LOOCV")
+res.cv.gaus <-predict(res.est.gaus, type = "LOOCV",controls = list(n.cores = 8,nSim=10,nBurnin=10))
 
 cat("mae = ", res.cv.gaus$median.mae.mean.predictor,"crps =",res.cv.gaus$median.crps)
 
