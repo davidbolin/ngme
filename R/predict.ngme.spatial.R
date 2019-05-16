@@ -252,14 +252,8 @@ predict.ngme.spatial <- function(object,
                               lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[1:n.obs[[i]]])),
                               upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[1:n.obs[[i]]])),
                               crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[1:n.obs[[i]]])))
-      ind1 <- !is.na(pred_data1$observed)
-      pred_data1$id       = pred_data1$id[ind1]
-      pred_data1$observed = pred_data1$observed[ind1]
-      pred_data1$mean     = pred_data1$mean[ind1]
-      pred_data1$median   = pred_data1$median[ind1]
-      pred_data1$lower    = pred_data1$lower[ind1]
-      pred_data1$upper    = pred_data1$upper[ind1]
-      pred_data1$crps     = pred_data1$crps[ind1]
+
+      pred_data1 <- pred_data1[!is.na(pred_data1$observed),]
                                
       pred_data2 <- data.frame(id       = rep(id, unlist(lapply(Y2_for_pred, length))),
                                observed = unlist(Y2_for_pred),
@@ -268,14 +262,8 @@ predict.ngme.spatial <- function(object,
                                lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
                                upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
                                crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[(n.obs[[i]]+1):(2*n.obs[[i]])])))
-      ind2 <- !is.na(pred_data2$observed)
-      pred_data2$id       = pred_data2$id[ind1]
-      pred_data2$observed = pred_data2$observed[ind1]
-      pred_data2$mean     = pred_data2$mean[ind1]
-      pred_data2$median   = pred_data2$median[ind1]
-      pred_data2$lower    = pred_data2$lower[ind1]
-      pred_data2$upper    = pred_data2$upper[ind1]
-      pred_data2$crps     = pred_data2$crps[ind1]
+    
+      pred_data2 <- pred_data2[!is.na(pred_data2$observed),]
       
       abs_diff_mean1   <- with(pred_data1, abs(observed - mean))
       abs_diff_median1 <- with(pred_data1, abs(observed - median))
