@@ -22,8 +22,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List predictLong_cpp(Rcpp::List in_list)
 {
-
-  int debug = 0;
+  int debug = 1;
   int timeit = 1;
 
   double time_setup = 0;
@@ -44,6 +43,7 @@ List predictLong_cpp(Rcpp::List in_list)
   int ind_general  = Rcpp::as< int > (in_list["ind_general"]);
   int use_random_effect = Rcpp::as< int > (in_list["use_random_effect"]);
   int use_process = 0;
+
   if(in_list.containsElementNamed("processes_list"))
     use_process = 1;
 
@@ -162,8 +162,10 @@ List predictLong_cpp(Rcpp::List in_list)
         throw("input error\n");
       }
     }
+
     Bfixed_pred[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred"]);
 
+  Rcpp::Rcout << "here 5\n";
     if(Bfixed_pred[count].cols() != mixobj->beta_fixed.size())
     {
       Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed[" << count << "].cols() = " << Bfixed_pred[count].cols() << " != "

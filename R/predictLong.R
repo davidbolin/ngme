@@ -350,7 +350,7 @@ predictLong <- function( Y,
           obs_list[[i]]$Apred = bdiag(Ap,Ap)
           Yi <- c(Y[[i]])
           na.ind <- is.na(Yi)
-          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind]
+          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind,drop=F]
           obs_list[[i]]$Y = Yi[!is.na(Yi)]
           locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
           locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
@@ -403,7 +403,6 @@ predictLong <- function( Y,
   }
   if(is.null(seed) == FALSE)
     input <- setseed_ME(input, seed)
-
   output <- predictLong_cpp(input)
   out_list <- list()
 
