@@ -124,116 +124,43 @@ predict.ngme.spatial <- function(object,
         silent               = controls$silent,
         seed                 = controls$seed)  
     } else {
+      batch.size <- 1
+      iterations <- ceiling(length(pInd)/batch.size)
+      pInd.list <- lapply(1:iterations, function(i) na.omit(pInd[(batch.size*(i - 1) + 1) : (batch.size * i)]))
       cl <- makeCluster(controls$n.cores)
       registerDoSNOW(cl)
-      n.obs <- dim(object$Y[[1]])[1]
-      pb <- txtProgressBar(max = n.obs, style = 3)
+      pb <- txtProgressBar(max = length(pInd.list), style = 3)
       progress <- function(n) setTxtProgressBar(pb, n)
       opts <- list(progress = progress)
+      parallel::clusterExport(cl, varlist = c('object','pInd.list', 'controls','type','quantiles'), envir = environment())
       
-      random <- object$call$random
-
-      pred.ind <- list()
-      obs.ind <- list()
-      for(i in 1:n.obs){
-        pred.ind[[i]] <- i
-        obs.ind[[i]] <- setdiff(1:n.obs,i)
-      }
-      
-      parallel::clusterExport(cl, varlist = c('pred.ind','obs.ind', 'object','controls',
-                                              'pInd','quantiles','random','n.obs'), 
-                              envir = environment())
-      
-      #run CV
-      #preds.list <- list()
-      #for(j in 1:length(pred.ind))  
-      preds.list <- foreach(j = 1:length(pred.ind), .options.snow = opts) %dopar%
+      preds.list <- foreach(i = 1:iterations, .options.snow = opts) %dopar%
       {
-       cat(j,"\n") 
-        locs.pred <- Bfixed.pred <- Bfixed.pred <- list()
-        Bfixed <- Brandom <- list()
-        Y.i <- Y.val <- loc.i <- list()
-        Be.pred <- Be <- list()
-        mlist <- object$mixedEffect_list
-        for(i in 1:length(object$Y)){
-          locs.pred[[i]] <- object$locs[[i]][pred.ind[[j]],,drop=FALSE]
-          if(dim(object$Y[[1]])[2] == 2){
-            Bfixed[[i]] <- mlist$B_fixed[[i]][c(obs.ind[[j]],n.obs+obs.ind[[j]]),,drop=FALSE]
-            Bfixed.pred[[i]] <- mlist$B_fixed[[i]][c(pred.ind[[j]],n.obs+pred.ind[[j]]),,drop=FALSE]
-            if(!is.null(random)){
-              Brandom[[i]] <- mlist$B_random[[i]][c(obs.ind[[j]],n.obs+obs.ind[[j]]),,drop=FALSE]
-              Brandom.pred[[i]] <- mlist$B_random[[i]][c(pred.ind[[j]],n.obs+pred.ind[[j]]),,drop=FALSE]
-            }
-            Be.pred[[i]] <- kronecker(diag(2),matrix(rep(1, length(pred.ind[[j]]))))
-            Be[[i]] <- kronecker(diag(2),matrix(rep(1, length(obs.ind[[j]]))))
-          } else {
-            Bfixed.pred[[i]] <- mlist$B_fixed[[i]][pred.ind[[j]],,drop=FALSE]
-            if(!is.null(random)){
-              Brandom.pred[[i]] <- mlist$B_random[[i]][pred.ind[[j]],,drop=FALSE]
-            }  
-          }
-          Y.i[[i]] <- object$Y[[i]][obs.ind[[j]],,drop=FALSE]
-          Y.val[[i]] <- object$Y[[i]][pred.ind[[j]],,drop=FALSE]
-          loc.i[[i]] <- object$locs[[i]][obs.ind[[j]],,drop=FALSE]
-        }
-        mlist$B_fixed <- Bfixed
-        if(!is.null(random)){
-          mlist$B_random <- Brandom
-        }
-        if(dim(object$Y[[1]])[2] == 2){
-          object$measurementError_list$Bpred <- Be.pred
-          object$measurementError_list$B <- Be
-        }
-        if(is.null(random)){
-          res <- ngme::predictLong( Y                = Y.i,
-                                    locs.pred        = locs.pred,
-                                    Bfixed.pred      = Bfixed.pred,
-                                    type             = "Smoothing",
-                                    locs             = loc.i,
-                                    pInd             = pInd,         
-                                    Y.val            = Y.val,
-                                    quantiles            = quantiles,
-                                    excursions           = controls$excursions,
-                                    crps                 = controls$crps,
-                                    mixedEffect_list = mlist,
-                                    measurment_list  = object$measurementError_list,
-                                    processes_list   = object$processes_list,
-                                    operator_list    = object$operator_list,
-                                    nSim             = controls$nSim,
-                                    nBurnin          = controls$nBurnin,  
-                                    seed             = controls$seed,
-                                    silent           = TRUE)    
-        } else {
-          res <- ngme::predictLong( Y                = Y.i,
-                                    locs.pred        = locs.pred,
-                                    Bfixed.pred      = Bfixed.pred,
-                                    Brandom.pred      = Brandom.pred,
-                                    type             = "Smoothing",
-                                    locs             = loc.i,
-                                    pInd             = pInd,         
-                                    Y.val            = Y.val,
-                                    quantiles            = quantiles,
-                                    excursions           = controls$excursions,
-                                    crps                 = controls$crps,
-                                    mixedEffect_list = mlist,
-                                    measurment_list  = object$measurementError_list,
-                                    processes_list   = object$processes_list,
-                                    operator_list    = object$operator_list,
-                                    nSim             = controls$nSim,
-                                    nBurnin          = controls$nBurnin,  
-                                    seed             = controls$seed,
-                                    silent           = TRUE)  
-        }
+        res <- predictLong(
+          Y                    = object$Y,
+          locs                 = object$locs,
+          pInd                 = pInd[[i]],
+          return.samples       = controls$return.samples,
+          type                 = type,
+          quantiles            = quantiles,
+          excursions           = controls$excursions,
+          crps                 = controls$crps,
+          crps.skip            = 1,
+          mixedEffect_list     = object$mixedEffect_list,
+          measurment_list      = object$measurementError_list,
+          processes_list       = object$processes_list,
+          operator_list        = object$operator_list,
+          nSim                 = controls$nSim,
+          nBurnin              = controls$nBurnin,
+          silent               = controls$silent,
+          seed                 = controls$seed)  
         
-        
-        res$index <- j
         return(res)
-        #preds.list[[j]] <- res
       }
       close(pb)
       stopCluster(cl)
     }
-    preds <- merge.pred.lists2(preds.list, pInd)
+    preds <- merge.pred.lists(preds.list, pInd)
     
     if(controls$silent == FALSE){
       cat("Calculating accuracy measures", "\n")
@@ -241,7 +168,12 @@ predict.ngme.spatial <- function(object,
     
     Y_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]])
     
-    if(dim(as.matrix(object$Y[[1]]))[2] == 2){
+    bivariate = FALSE
+    if(is.matrix(object$Y[[1]])){
+      if(dim(object$Y[[1]])[2]==2)
+        bivariate = TRUE
+    }
+    if(bivariate){
       n.obs <- lapply(1:length(pInd), function(i) dim(object$Y[[pInd[i]]])[1])
       Y1_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,1])
       Y2_for_pred <- lapply(1:length(pInd), function(i) object$Y[[pInd[i]]][,2])
