@@ -12,6 +12,7 @@
 #include "MixedEffect.h"
 #include "measError.h"
 #include "latentprocess.h"
+#include <Rcpp/Benchmark/Timer.h>
 using namespace Rcpp;
 #define max(a,b) (((a)>(b))?(a):(b))
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -23,6 +24,15 @@ List predictLong_cpp(Rcpp::List in_list)
 {
 
   int debug = 0;
+  int timeit = 1;
+
+  double time_setup = 0;
+  double time_sample = 0;
+  double time_post = 0;
+  double time_process_sample = 0;
+  double time_process_simulate = 0;
+  double time_v_sample = 0;
+  double time_operator = 0;
   //**********************************
   //      basic parameter
   //**********************************
@@ -316,6 +326,9 @@ List predictLong_cpp(Rcpp::List in_list)
 
     clock_t start = clock();
     percent_done++;
+    double start_time;
+    if(timeit)
+      start_time = static_cast<double>(clock())/ ticks_per_ms;
     if(silent == 0){
       std::stringstream stream;
       stream << " Prediction " << 100*percent_done/nindv << " % done\n";
@@ -385,6 +398,11 @@ List predictLong_cpp(Rcpp::List in_list)
         }
         
       }
+
+    if(timeit){
+      time_setup += static_cast<double>(clock())/ ticks_per_ms - start_time;
+      start_time = static_cast<double>(clock())/ ticks_per_ms;
+    }
       for(int ii = 0; ii < nSim + nBurnin; ii ++){
         if(debug){
           Rcpp::Rcout << "Prediction number = " << ipred << ", sample = "<< ii<< "\n";
@@ -435,7 +453,7 @@ List predictLong_cpp(Rcpp::List in_list)
           if(debug){
             Rcpp::Rcout << "Compute operator \n";
           }
-
+          double time_operator_temp = static_cast<double>(clock())/ ticks_per_ms;
           Eigen::SparseMatrix<double, 0, int> Qi;
           int d = 1;
           if(Kobj->nop == 1){
@@ -461,7 +479,7 @@ List predictLong_cpp(Rcpp::List in_list)
           if(debug){
             Rcpp::Rcout << "Sample normals \n";
           }
-          
+          time_operator += static_cast<double>(clock())/ ticks_per_ms  - time_operator_temp;
     
           Eigen::VectorXd zi;
           zi.setZero(d);
@@ -473,7 +491,7 @@ List predictLong_cpp(Rcpp::List in_list)
           if(debug){
             Rcpp::Rcout << "Sample process \n";
           }
-          
+          double sample_p_temp = static_cast<double>(clock())/ ticks_per_ms;
           if(n_obs>0){
             if(type_MeasurementError == "Normal"){
               process->sample_X(i,
@@ -502,14 +520,18 @@ List predictLong_cpp(Rcpp::List in_list)
                                    Vi.cwiseInverse());
             }
             res -= A * process->Xs[i];
+            time_process_sample += static_cast<double>(clock())/ ticks_per_ms - sample_p_temp;
           } else {
             process->simulate(i,zi,A,Ki,Y,*Solver[i]);
+            time_process_simulate += static_cast<double>(clock())/ ticks_per_ms - sample_p_temp;
           }
+          
         }
 
         if(debug){
           Rcpp::Rcout << "Sample variances \n";
         }
+        double sample_v_temp = static_cast<double>(clock())/ ticks_per_ms;
         if(use_process == 1){
           if(debug){
             Rcpp::Rcout << "nobs = " << n_obs << "\n";
@@ -520,6 +542,7 @@ List predictLong_cpp(Rcpp::List in_list)
               process->simulate_V(i, rgig[rank]);
           }
         }
+        time_v_sample += static_cast<double>(clock())/ ticks_per_ms - sample_v_temp;
         //***********************************
         // random variance noise sampling
         //***********************************
@@ -535,7 +558,10 @@ List predictLong_cpp(Rcpp::List in_list)
           }
         }
         errObj->remove_asym(i, res);
-        
+        if(timeit){
+          time_sample += static_cast<double>(clock())/ ticks_per_ms - start_time;
+          start_time   = static_cast<double>(clock())/ ticks_per_ms;
+        }
 
           // save samples
           if(ii >= nBurnin){
@@ -638,6 +664,10 @@ List predictLong_cpp(Rcpp::List in_list)
             }
           }
         }
+        if(timeit){
+            time_post += static_cast<double>(clock())/ ticks_per_ms - start_time;
+            start_time   = static_cast<double>(clock())/ ticks_per_ms;
+          }
       }
 
     }
@@ -653,7 +683,28 @@ List predictLong_cpp(Rcpp::List in_list)
       Rcpp::Rcout << stream.str();
       Rcpp::Rcout << "\n";
     }
+    if(timeit){
+      Rcpp::Rcout << "setup = " << time_setup << "\n";
+      Rcpp::Rcout << "sample = " << time_sample << "\n";
+      if(use_process == 1){
+        Rcpp::Rcout << "\tsample_process = " << time_process_sample << "\n";
+        Rcpp::Rcout << "\tsimulate_process = " << time_process_simulate << "\n";
+        Rcpp::Rcout << "\ttime_v_sample = " << time_v_sample << "\n";
+        Rcpp::Rcout << "\ttime_operator = " << time_operator << "\n";
+        time_v_sample = 0;
+        time_process_simulate = 0;
+        time_process_sample =0;
+        time_operator = 0;
+      }
+      Rcpp::Rcout << "post = " << time_post << "\n";
+      time_setup = 0;
+      time_sample = 0;
+      time_post = 0;
+
+       
+    }
   }
+  
   if(debug){
     Rcpp::Rcout << "store results\n";  
   }

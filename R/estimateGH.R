@@ -399,13 +399,13 @@ ME.startvalues.bivariate <- function(Y, mixedEffect_list)
     res.2 <- c()
     for(i in 1:n){
       cY = c(Y[[i]][,1],Y[[i]][,2])
-      Y <- cbind(Y[[i]][,1],Y[[i]][,2])
-      ind.2 <- !is.na(Y)
+      Y_ <- cbind(Y[[i]][,1],Y[[i]][,2])
+      ind.2 <- !is.na(Y_)
       ind <- !is.na(cY)
-      res_ <- 0*Y
+      res_ <- 0*Y_
       res_[ind.2]   <- cY[ind] - mixedEffect_list$B_fixed[[i]]%*%mixedEffect_list$beta_fixed
-      res.1  = c(res.1, res_[!is.na(Y[,1]), 1])
-      res.2  = c(res.2, res_[!is.na(Y[,2]), 2])
+      res.1  = c(res.1, res_[!is.na(Y_[,1]), 1])
+      res.2  = c(res.2, res_[!is.na(Y_[,2]), 2])
     }
     mixedEffect_list$theta = log(c(sd(res.1), sd(res.2)))
   }
@@ -479,8 +479,8 @@ operator.startvalues.bivariate <- function(Y, locs, mixedEffect_list, operator_l
   h.min = min(unlist(lapply(operator_list$h,min)))
   range = max(4*h.min,0.1*(M-m))
   
-  operator_list$kappa1 = sqrt(8*3/2)/(0.2*range)  
-  operator_list$kappa2 = sqrt(8*3/2)/(0.2*range) 
+  operator_list$kappa1 = sqrt(8*3/2)/(0.3*range)  
+  operator_list$kappa2 = sqrt(8*3/2)/(0.3*range) 
   operator_list$rho = 0
   operator_list$theta = 0
     
