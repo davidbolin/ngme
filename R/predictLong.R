@@ -267,9 +267,9 @@ predictLong <- function( Y,
           obs.ind <- cbind(1 - diag(no),1 - diag(no))
           obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations  
         } else {
-          pred.ind <- bdiag(diag(no),diag(no))
-          obs.ind <- bdiag(cbind(1 - diag(no),matrix(1,no,no)),
-                           cbind(matrix(1,no,no),1-diag(no)))
+          pred.ind <- as.matrix(bdiag(diag(no),diag(no)))
+          obs.ind <- as.matrix(bdiag(cbind(1 - diag(no),matrix(1,no,no)),
+                           cbind(matrix(1,no,no),1-diag(no))))
           obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
         }
         
@@ -358,7 +358,7 @@ predictLong <- function( Y,
           obs_list[[i]]$Apred = bdiag(Ap,Ap)
           Yi <- c(Y[[i]])
           na.ind <- is.na(Yi)
-          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind,drop=F]
+          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind, drop=F]
           obs_list[[i]]$Y = Yi[!is.na(Yi)]
           locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
           locs2 = locs[[i]][!is.na(Y[[i]][,2]),]

@@ -22,7 +22,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List predictLong_cpp(Rcpp::List in_list)
 {
-  int debug = 1;
+  int debug = 0;
   int timeit = 1;
 
   double time_setup = 0;
@@ -146,7 +146,6 @@ List predictLong_cpp(Rcpp::List in_list)
     }
 
     }
-
     pred_ind[count]      = Rcpp::as<Eigen::MatrixXi>(obs_tmp["pred_ind"]);
     obs_ind[count]       = Rcpp::as<Eigen::MatrixXi>(obs_tmp["obs_ind"]);
     Ys[count]            = Rcpp::as<Eigen::VectorXd>(obs_tmp["Y"]);
@@ -165,7 +164,6 @@ List predictLong_cpp(Rcpp::List in_list)
 
     Bfixed_pred[count]   = Rcpp::as<Eigen::MatrixXd>(obs_tmp["Bfixed_pred"]);
 
-  Rcpp::Rcout << "here 5\n";
     if(Bfixed_pred[count].cols() != mixobj->beta_fixed.size())
     {
       Rcpp::Rcout << "predict: error dimension missmatch :\n Bfixed[" << count << "].cols() = " << Bfixed_pred[count].cols() << " != "
