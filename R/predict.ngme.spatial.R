@@ -416,7 +416,7 @@ predict.ngme.spatial <- function(object,
   
   if(dim(as.matrix(object$Y[[1]]))[2] == 2){
     preds <- out$predictions
-    for(i in 1:length(object$Y)){
+    for(i in 1:length(pInd)){
       n.p = length(preds$X.summary[[i]]$Mean)/2
       preds$Y.summary[[i]]$Mean <- matrix(preds$Y.summary[[i]]$Mean, n.p,2)
       preds$Y.summary[[i]]$Var <- matrix(preds$Y.summary[[i]]$Var, n.p,2)
