@@ -190,15 +190,15 @@ predictLong <- function( Y,
       if(!is.null(mixedEffect_list$U)){
         mixedEffect_list$U  <- mixedEffect_list$U
       }
-      if(measurment_list$noise == "nsGaussian"){
-        measurment_list$B <- measurment_list$B[pInd]
-        if(!is.null(measurment_list$Bpred)){
-          measurment_list$Bpred <- measurment_list$Bpred[pInd]
-        } else if(type == "LOOCV"){
-          measurment_list$Bpred <- list()
-        }
-          
-      } 
+    }
+    if(measurment_list$noise == "nsNormal"){
+      measurment_list$B <- measurment_list$B[pInd]
+      measurment_list$gsd <- measurment_list$gsd[pInd]
+      if(!is.null(measurment_list$Bpred)){
+        measurment_list$Bpred <- measurment_list$Bpred[pInd]
+      } else if(type == "LOOCV" || type == "LOOCV2"){
+        measurment_list$Bpred <- list()
+      }
     }
     if(!is.null(predict.derivatives)){
       predict.derivatives$B_fixed <- predict.derivatives$B_fixed[pInd]
