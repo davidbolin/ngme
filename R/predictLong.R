@@ -140,7 +140,12 @@ predictLong <- function( Y,
   
   if(missing(Bfixed.pred)){
     if(pred_type == 3){
-      Bfixed.pred = mixedEffect_list$B_fixed_full
+      if(bivariate){
+        Bfixed.pred = mixedEffect_list$B_fixed_full  
+      } else {
+        Bfixed.pred = mixedEffect_list$B_fixed
+      }
+      
     } else {
         stop("Must supply Bfixed.pred")
     }
@@ -153,7 +158,12 @@ predictLong <- function( Y,
   if(use.random.effect){
     if(missing(Brandom.pred)){
       if(pred_type == 3){
-        Brandom.pred = mixedEffect_list$B_random_full
+        if(bivariate){
+          Brandom.pred = mixedEffect_list$B_random_full
+        } else {
+          Brandom.pred = mixedEffect_list$B_random
+        }
+        
       } else {
         stop("Must supply Brandom.pred")
       }

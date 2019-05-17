@@ -801,10 +801,13 @@ ngme.spatial <- function(fixed,
   
   fisher_est <- NA
   
-  fit$mixedEffect_list$B_fixed_full = B_fixed.full
-  if(use.random){
-    fit$mixedEffect_list$B_random_full = B_random.full
+  if(bivariate){
+    fit$mixedEffect_list$B_fixed_full = B_fixed.full
+    if(use.random){
+      fit$mixedEffect_list$B_random_full = B_random.full
+    }  
   }
+  
   
   out <- list(
     use_process = use.process,
