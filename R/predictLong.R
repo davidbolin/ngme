@@ -268,7 +268,7 @@ predictLong <- function( Y,
           obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations  
         } else {
           pred.ind <- as.matrix(bdiag(diag(no),diag(no)))
-          obs.ind <- as.matrix(bdiag(cbind(1 - diag(no),matrix(1,no,no)),
+          obs.ind <- as.matrix(rbind(cbind(1 - diag(no),matrix(1,no,no)),
                            cbind(matrix(1,no,no),1-diag(no))))
           obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
         }
