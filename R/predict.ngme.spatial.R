@@ -102,7 +102,7 @@ predict.ngme.spatial <- function(object,
   }
   pInd <- which(id_list %in% id)
   
-  if(type=="LOOCV"){
+  if(type=="LOOCV" || type == "LOOCV2"){
     preds.list <- list()
     if(controls$n.cores == 1){
       preds.list[[1]] <- predictLong(

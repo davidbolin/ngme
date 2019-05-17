@@ -254,7 +254,7 @@ predictLong <- function( Y,
     } else {
       n.pred.i = length(li)
     }
-    if(type == "LOOCV"){
+    if(type == "LOOCV" || type == "LOOCV2"){
       #for CV, pred.ind and obs.ind have to contain the actual incides
       if(is.matrix(locs.pred[[i]])){
         no <- dim(locs.pred[[i]])[1]
@@ -262,9 +262,17 @@ predictLong <- function( Y,
         no <- length(locs.pred[[i]])
       }
       if(bivariate){
-        pred.ind <- cbind(diag(no),diag(no))
-        obs.ind <- cbind(1 - diag(no),1 - diag(no))
-        obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
+        if(type == "LOOCV"){
+          pred.ind <- cbind(diag(no),diag(no))
+          obs.ind <- cbind(1 - diag(no),1 - diag(no))
+          obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations  
+        } else {
+          pred.ind <- bdiag(diag(no),diag(no))
+          obs.ind <- bdiag(cbind(1 - diag(no),matrix(1,no,no)),
+                           cbind(matrix(1,no,no),1-diag(no)))
+          obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] #remove missing observations
+        }
+        
       } else {
         pred.ind <- diag(no)
         obs.ind <- 1 - diag(no)  
