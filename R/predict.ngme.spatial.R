@@ -307,13 +307,29 @@ predict.ngme.spatial <- function(object,
     }
     if(use.random){
       idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
-      id <- data[, idname]  
     } else if(!is.null(group.id)){
       idname = group.id
-      id <- data[, idname]  
     } else {
       idname = NULL
     }
+    if(!is.null(idname)){
+      if(idname %in% names(data)){
+        id <- data[, idname]    
+      } else { #id is missing from data, assume that the data is fixed over id and replicate it
+        id.data <- names(object$Y)
+        datai <- data
+        datai[idname] <- id.data[1]
+        data <- datai 
+        if(length(id.data)>1){
+          for(k in 2:length(id.data)){
+            datai[idname] <- id.data[k]
+            data <- rbind(data,datai)
+          }  
+        }
+        id <- data[, idname]    
+      }
+    }
+    
     response.name <- all.vars(fixed)[1]
     data[response.name] = 0
     effects <- extract.effects(data = data, fixed = fixed,random=random, idname = idname)
@@ -323,7 +339,8 @@ predict.ngme.spatial <- function(object,
     if(is.null(idname)){
       locs <- list(as.matrix(data[, location.names]))  
     } else {
-      locs <- tapply(as.matrix(data[, location.names]), id, function(x) x)  
+      locs <- split(data[, location.names], id, function(x) x) 
+      locs <- lapply(locs, function(x) as.matrix(x))
     }
     
     if(dim(as.matrix(object$Y[[1]]))[2] == 2){

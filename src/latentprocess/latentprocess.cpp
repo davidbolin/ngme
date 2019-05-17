@@ -421,7 +421,6 @@ void GaussianProcess::sample_X(const int i,
   Eigen::VectorXd b = A.transpose()*Y/ sigma2;
   Xs[i] = solver.rMVN(b, Z);
   Ws[i] = K*Xs[i];
-
 }
 
 Eigen::VectorXd GHProcessBase::get_mean_prior(const int i, const Eigen::SparseMatrix<double,0,int> & K){

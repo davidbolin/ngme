@@ -33,6 +33,7 @@ List predictLong_cpp(Rcpp::List in_list)
   double time_process_simulate = 0;
   double time_v_sample = 0;
   double time_operator = 0;
+
   //**********************************
   //      basic parameter
   //**********************************
@@ -454,6 +455,7 @@ List predictLong_cpp(Rcpp::List in_list)
             Rcpp::Rcout << "Compute operator \n";
           }
           double time_operator_temp = static_cast<double>(clock())/ ticks_per_ms;
+          
           Eigen::SparseMatrix<double, 0, int> Qi;
           int d = 1;
           if(Kobj->nop == 1){
@@ -463,24 +465,25 @@ List predictLong_cpp(Rcpp::List in_list)
             Ki = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
             d = Kobj->d[i];
           }
-
-          Eigen::VectorXd iV(process->Vs[i].size());
-          iV.array() = process->Vs[i].array().inverse();
-          //Rcpp::Rcout << iV.maxCoeff()  << "\n";
-          Qi = Ki.transpose();
-
-          if(Ki.cols() != iV.size()){
-              Rcpp::Rcout << "prediction::the columns of Ki ( " << Ki.cols() << ") does not match iV length ( " <<  iV.size() << " )\n";
+          
+          //Eigen::VectorXd iV(process->Vs[i].size());
+          //iV.array() = process->Vs[i].array().inverse();
+          
+          if(Ki.cols() != process->Vs[i].size()){
+              Rcpp::Rcout << "prediction::the columns of Ki ( " << Ki.cols() << ") does not match iV length ( " <<  process->Vs[i].size() << " )\n";
               throw("input error\n");
           }
-
-          Qi =  Qi * iV.asDiagonal();
-          Qi =  Qi * Ki;
+          
+          DiagonalMatrix<double,Dynamic> Vdiag(process->Vs[i].size());
+          Vdiag.diagonal() = process->Vs[i].array().inverse().sqrt();
+          Qi = Vdiag*Ki;
+          Qi = Qi.transpose()* Qi;
+          
+          time_operator += static_cast<double>(clock())/ ticks_per_ms  - time_operator_temp;
+          
           if(debug){
             Rcpp::Rcout << "Sample normals \n";
           }
-          time_operator += static_cast<double>(clock())/ ticks_per_ms  - time_operator_temp;
-    
           Eigen::VectorXd zi;
           zi.setZero(d);
           for(int j =0; j < d; j++)

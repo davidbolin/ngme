@@ -355,7 +355,7 @@ predictLong <- function( Y,
           locs1 = locs[[i]][!is.na(Y[[i]][,1]),]
           locs2 = locs[[i]][!is.na(Y[[i]][,2]),]
           obs_list[[i]]$locs = rbind(locs1, locs2)
-          measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Y[[i]])[1])))
+          measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Bfixed.pred[[i]])[1]/2)))
         } else {
           obs_list[[i]]$A = A
           obs_list[[i]]$Apred = Ap
