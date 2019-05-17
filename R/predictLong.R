@@ -83,7 +83,7 @@ predictLong <- function( Y,
 )
 {
   ind.general = 0
-  if(type == "LOOCV"){
+  if(type == "LOOCV" || type == "LOOCV2"){
     pred_type = 3
     ind.general = 1
   }else if(type == "Nowcast"){
