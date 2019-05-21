@@ -2,7 +2,7 @@ Package: ngme
 Type: Package
 Title: Linear Mixed Effects Models With Flexible Distributions
 Version: 1.0.0
-Date: 2017-06-21
+Date: 2019-05-21
 Authors@R: c(
     person("David", "Bolin", email = "davidbolin@gmail.com", role = c("aut")), 
     person("Jonas", "Wallin", email = "jonas.wallin81@gmail.com", role = c("aut", "cre")), 
@@ -11,7 +11,7 @@ Authors@R: c(
 Description: Inference and prediction for linear mixed effects (random effects) models with 
     fixed effects, time-invariant random effects, time-varying random effects (defined as a 
     stochastic process), and error term. The latter three components can be specified as 
-    Gaussian or non-Gaussian. One can drop the time-varying random effects term. 
+    Gaussian or non-Gaussian. 
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.1)
 LinkingTo: Rcpp, RcppEigen
