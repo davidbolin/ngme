@@ -157,8 +157,9 @@ in \code{data}.}
 A list of outputs.
 }
 \description{
-Estimates model parameters using maximum likelihood
-  implemented by a computationally efficient stochastic gradient algorithm.
+Estimates model parameters for longitudianl models using maximum likelihood
+  implemented by a computationally efficient stochastic gradient algorithm. 
+  See \code{\link{ngme.spatial}} for estimation of spatial models.
 }
 \details{
 This function is a user-friendly wrapper that calls the \code{estimateLong} function.
@@ -211,4 +212,7 @@ fit_nig_nig_nig_fd2 <- update(fit_normal_normal_normal_fd2,
                               init.fit = fit_normal_normal_normal_fd2
                               )
 }
+}
+\seealso{
+\code{\link{ngme.spatial}}
 }

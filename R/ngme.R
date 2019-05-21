@@ -1,8 +1,9 @@
 
 #' @title Parameter estimation.
 #'
-#' @description Estimates model parameters using maximum likelihood
-#'   implemented by a computationally efficient stochastic gradient algorithm.
+#' @description Estimates model parameters for longitudianl models using maximum likelihood
+#'   implemented by a computationally efficient stochastic gradient algorithm. 
+#'   See \code{\link{ngme.spatial}} for estimation of spatial models. 
 #'
 #' @param fixed A two-sided formula to specify the fixed effects design matrix.
 #' @param random A one-sided formula to specify the random effects design matrix.
@@ -125,6 +126,7 @@
 #'     currently the shape parameter is set to 0.5 which corresponds to exponential correlation
 #'     function.
 #' @return A list of outputs.
+#' @seealso \code{\link{ngme.spatial}} 
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)

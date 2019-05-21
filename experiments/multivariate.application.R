@@ -72,10 +72,8 @@ grid.arrange(p1,p2,ncol=2)
 
 #compute accuracy measure from leave-one-out crossvalidation
 res.cv.pres <-predict(res.est.pres, type = "LOOCV")
-res.cv.pres2 <-predict(res.est.pres, type = "LOOCV",controls = list(n.cores = 8))
 
 cat("mae = ", res.cv.pres$median.mae.mean.predictor,"crps =",res.cv.pres$median.crps)
-cat("mae = ", res.cv.pres2$median.mae.mean.predictor,"crps =",res.cv.pres2$median.crps)
 
 ########################################
 #same for temp
@@ -140,10 +138,8 @@ plot(res.est.gaus$operator_list$rhoVec,type="l",main="process rho")
 
 #compute accuracy measure from leave-one-out crossvalidation
 res.cv.gaus <-predict(res.est.gaus, type = "LOOCV")
-res.cv.gaus2 <-predict(res.est.gaus, type = "LOOCV",controls = list(n.cores = 8))
 
 cat("mae = ", res.cv.gaus$median.mae.mean.predictor,"crps =",res.cv.gaus$median.crps)
-cat("mae = ", res.cv.gaus2$median.mae.mean.predictor,"crps =",res.cv.gaus2$median.crps)
 
 #define locations where we want predict the process
 proj <- inla.mesh.projector(mesh,dims=c(80,80))

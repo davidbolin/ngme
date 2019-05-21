@@ -1,15 +1,17 @@
 
 #' @title Prediction.
 #'
-#' @description Obtains predicted values based on filtering and smoothing distributions.
+#' @description Spatial prediction and cross-validation.
 #'
-#' @param object A fitted object obtained by calling \code{"ngme"}.
+#' @param object A fitted object obtained by calling \code{"ngme.spatial"}.
 #' @param id A numeric vector containing the ID's of the replicates for whom
 #'   predictions are to be obtained. Default is set to \code{"NULL"}
 #'   indicating perform predictions for all replicates.
 #' @param type A character string for the type of prediction: \code{"Smoothing"} gives spatial prediction
 #' based on all available data, \code{"LOOCV"} gives leave-one-out crossvalidation where also a number of 
-#' accuracy measures are calculated. 
+#' accuracy measures are calculated. For multivariate models, \code{"LOOCV"} gives cross-validation over 
+#' observation locations (so the data for all dimensions are removed and predicted), whereas \code{"LOOCV"} 
+#' gives crossvalidation over univariate observations. 
 #' @param quantiles A two-element vector that contains the quantiles
 #'   of the predictions to be calculated.
 #' @param controls A list of control variables.
@@ -27,11 +29,9 @@
 #'    \item \code{"process"} A character string that for which component of the model 
 #'     the excursion probabilities to be calculated.
 #'    \itemize{
-#'    \item \eqn{x\alpha + dU + W + Z} with \eqn{x \alpha} being fixed effects,
-#'    \item \eqn{dU} random effects and \eqn{Z} noise, to compute the probability for.
-#'    \item \code{'X'} for \eqn{x\alpha + dU + W},
-#'    \item \code{'W'} for \eqn{W},
-#'    \item \code{'Y'} for \eqn{x\alpha + dU + W + Z},
+#'    \item \code{'X'} for latent process plus fixed and random effects,
+#'    \item \code{'W'} for latent process,
+#'    \item \code{'Y'} for data,
 #'    }
 #'    }
 #'  \item \code{"crps"} A logical variable for calculating
@@ -43,16 +43,16 @@
 #'    discarded as burn-in whilst calculating the predictions.
 #'  \item \code{silent} A logical value for printing the details;
 #'      \code{"TRUE"} indicates do not print, \code{"FALSE"} indicates print.
+#'  \item \code{n.cores} Number of cores to use for paralell computations, default is set to 1. If 
+#'  larger than one, predictions over different replicates are computed in paralell. 
 #'  }
 #' @return A list of output.
 #'
-#' @details This function is a wrapper function that calls
-#'    \code{"predictLong"} internally.
 #'
-#' @seealso \code{\link{ngme}}
+#' @seealso \code{\link{ngme.spatial}}
 #' @examples
 #'   \dontrun{
-#'   fit <- ngme(...)
+#'   fit <- ngme.spatial(...)
 #'   predict(fit, ...)
 #'   }
 

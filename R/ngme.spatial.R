@@ -4,7 +4,11 @@
 #' @description Likelihood-based parameter estimation of spatial non-Gaussian models.
 #'
 #' @param fixed A two-sided formula to specify the fixed effects design matrix.
+#' @param fixed2 A two-sided formula to specify the fixed effects design matrix for the second dimension
+#' for bivariate models.
 #' @param random A one-sided formula to specify the random effects design matrix (if any).
+#' @param random2 A one-sided formula to specify the random effects design matrix (if any) for the second dimension
+#' for bivariate models.
 #' @param use.process A logical variable for inclusion of the stochastic process in
 #'   the mixed model. Default is \code{"TRUE"}.
 #' @param reffects A character string that indicates the distribution of the
@@ -18,11 +22,13 @@
 #'   \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"GAL"} for generalised-asymmetric Laplace, and
 #'   \code{"CH"} for Cauchy.
+#'   For multivariate models, only \code{"Normal"} and \code{"NIG"} are currently available. 
 #' @param error A character string to specify the distribution of the error term.
 #'   Available options are:
 #'   \code{"Normal"} for Normal distribution,
 #'   \code{"NIG"} for Normal-inverse Gaussian,
 #'   \code{"tdist"} for t.
+#'   For mulivariatae models, only \code{"Normal"} is currently available. 
 #' @param error_assymetric if true the non-Gaussian error is assymetric
 #' @param data A data-frame from which the response and covariates to be extracted.
 #' @param location.names A character vector with the names of the spatial coordinates.
@@ -46,6 +52,7 @@
 #' structure, specified as a stochastic PDE with possibly non-Gaussian driving noise. 
 #' The measurement noise \eqn{e_{ij}} is assumed to be independent between observations and replicates. 
 #' @return A list of outputs.
+#' @seealso \code{\link{predict.ngme.spatial}} 
 
 ngme.spatial <- function(fixed,
                  random = NULL,
