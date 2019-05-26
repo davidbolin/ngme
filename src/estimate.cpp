@@ -204,7 +204,10 @@ List estimateLong_cpp(Rcpp::List in_list)
   int nBurnin    = Rcpp::as< int > (in_list["nBurnin"] );
   int nBurnin_base    = Rcpp::as< int > (in_list["nBurnin_base"] );
   int nBurnin_learningrate = nBurnin;
-
+  int iter_start = 0;
+  if(in_list.containsElementNamed("iter_start"))
+    iter_start    = Rcpp::as< int > (in_list["iter_start"] );
+  
   if(in_list.containsElementNamed("nBurnin_learningrate"))
     nBurnin_learningrate    = Rcpp::as< int > (in_list["nBurnin_learningrate"] );
   int silent     = Rcpp::as< int    > (in_list["silent"]);
@@ -784,7 +787,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(estimate_fisher == 0){
       if(debug)
         Rcpp::Rcout << "estimate::theta  step\n";
-      double stepsize = step0/pow(iter + 1, alpha);//step0 / pow(iter + 1, alpha*iter/nIter);
+      double stepsize = step0/pow(iter + 1 + iter_start, alpha);//step0 / pow(iter + 1, alpha*iter/nIter);
       //if(iter < nIter/2){
       //  stepsize = step0 / pow(iter + 1, alpha/2);
       //} 

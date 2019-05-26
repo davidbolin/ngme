@@ -19,7 +19,7 @@ ngme.par <- function(n.cores, std.lim,max.rep,controls, controls.init = NULL,nIt
     opts <- list(progress = progress)
     parallel::clusterExport(cl, varlist = c(), envir = environment())
     if(ii>1){
-      controls$step0 <- step0/((ii-1)*nIter)^alpha
+      controls$iter.start <- (ii-1)*nIter
       controls$nBurnin = 5
     }
       

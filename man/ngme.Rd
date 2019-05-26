@@ -13,7 +13,7 @@ ngme(fixed, random = NULL, use.process = FALSE, reffects = "Normal",
   nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 1,
   alpha = 0.6, nBurnin.learningrate = NULL, nBurnin.base = 0,
   subsample.type = 4, pSubsample2 = 0.3, standardize.mixedEffects = FALSE,
-  estimate.fisher = FALSE, individual.sigma = FALSE),
+  estimate.fisher = FALSE, individual.sigma = FALSE, iter.start = 0),
   controls.init = list(learning.rate.init = 0, polyak.rate.init = 0.1,
   nBurnin.init = 100, nSim.init = 2, nIter.init = 1000, pSubsample.init =
   0.1, nPar.burnin.init = 0, step0.init = 0.3, alpha.init = 0.3,

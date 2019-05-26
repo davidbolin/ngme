@@ -96,6 +96,7 @@ estimateLong <- function(Y,
                          pSubsample = 1.,
                          polyak_rate = -1.,
                          subsample.type = 1,
+                         iter_start = 0, #starting iteration to use when continuing estimation
                          nPar_burnin = 0,
                          pSubsample2 = 0.3,
                          nIter = 10,     # iterations to run the stochastic gradient
@@ -172,6 +173,7 @@ estimateLong <- function(Y,
                  free_samples     = free.samples,
                  group_list       = groups,
                  subsample_type   = subsample.type,
+                 iter_start       = iter_start,
                  nIter            = nIter,     # iterations to run the stochastic gradient
                  nSim             = nSim,
                  nBurnin          = nBurnin,   # steps before starting gradient estimation
