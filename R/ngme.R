@@ -188,16 +188,16 @@ ngme <- function(fixed,
                              common.grid = FALSE,
                              extend = NULL,
                              n.cores = 1),
-                 controls = list(learning.rate = 0,
-                                 polyak.rate = 0.1,
+                 controls = list(learning.rate = 0.2,
+                                 polyak.rate = -1,
                                  nBurnin = 100,
                                  nSim = 2,
                                  pSubsample = NULL,
                                  nPar.burnin = 0,
                                  nIter.fisher = 1000,
                                  nSim.fisher = 1000,
-                                 step0 = 0.3,
-                                 alpha = 0.3,
+                                 step0 = 1,
+                                 alpha = 0.6,
                                  nBurnin.learningrate = NULL,
                                  nBurnin.base = 0,
                                  subsample.type = 4,
@@ -229,16 +229,16 @@ ngme <- function(fixed,
 
   # being sure that controls includes everything
   if(length(controls) < 18){
-    controls.full <- list(learning.rate = 0,
-                          polyak.rate = 0.1,
+    controls.full <- list(learning.rate = 0.2,
+                          polyak.rate = -1,
                           nBurnin = 100,
                           nSim = 2,
                           pSubsample = NULL,
                           nPar.burnin = 0,
                           nIter.fisher = 1000,
                           nSim.fisher = 1000,
-                          step0 = 0.3,
-                          alpha = 0.3,
+                          step0 = 1,
+                          alpha = 0.6,
                           nBurnin.learningrate = NULL,
                           nBurnin.base = 0,
                           subsample.type = 4,
@@ -440,56 +440,55 @@ ngme <- function(fixed,
     if(!silent){
       cat("Setup lists\n")
     }
-
-    measurement_list <- list(Vs = Vin,
-                             noise = "Normal",
-                             sigma = 0.1)
-
-    mixedEffect_list <- list(B_random = B_random,
-                             B_fixed  = B_fixed,
-                             noise = "Normal",
-                             Sigma_epsilon = 1)
-
-    if(use.process){
-      operator_list <- create_operator(locs,
-                                       name = process[2],
-                                       common.grid = mesh$common.grid,
-                                       extend  = mesh$extend,
-                                       max.dist = mesh$max.dist,
-                                       cutoff = mesh$cutoff,
-                                       n.cores = mesh$n.cores)
-
-      process_list = list(noise = "Normal",
-                          nu  = 1,
-                          mu  = 0)
-      process_list$V <- list()
-      process_list$X <- list()
-
-      for(i in 1:length(locs))
-      {
-        process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
-        process_list$V[[i]] <- operator_list$h[[i]]
+    if(!is.null(init.fit)){
+      measurement_list <- init.fit$measurementError_list
+      mixedEffect_list <- init.fit$mixedEffect_list
+      
+      if(use.process){
+        operator_list <- init.fit$operator_list
+        process_list <- init.fit$processes_list
       }
+    } else {
+      measurement_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
+      mixedEffect_list <- list(B_random = B_random,
+                               B_fixed  = B_fixed,
+                               noise = "Normal",
+                               Sigma_epsilon = 1)
+      
+      if(use.process){
+        operator_list <- create_operator(locs,
+                                         name = process[2],
+                                         common.grid = mesh$common.grid,
+                                         extend  = mesh$extend,
+                                         max.dist = mesh$max.dist,
+                                         cutoff = mesh$cutoff,
+                                         n.cores = mesh$n.cores)
+        
+        process_list = list(noise = "Normal", nu  = 1, mu  = 0)
+        process_list$V <- list()
+        process_list$X <- list()
+        
+        for(i in 1:length(locs))
+        {
+          process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
+          process_list$V[[i]] <- operator_list$h[[i]]
+        }  
+      }
+      # starting values for measurement error and mixed effects using OLS:
+      if(!silent){
+        cat("Calculate starting values\n")
+      }
+      
+      mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
+      measurement_list$sigma <- mixedEffect_list$sigma
     }
-
-    # starting values for measurement error and mixed effects using OLS:
-    if(!silent){
-      cat("Calculate starting values\n")
-    }
-
-    mixedEffect_list       <- ME.startvalues(Y, mixedEffect_list)
-    measurement_list$sigma <- mixedEffect_list$sigma
-
+    
   }
 
   # Fitting the models: the case where the model formulation consists of W(t)
   if(use.process){
 
-    if(is.null(init.fit) == TRUE ||
-       (reffects == "Normal" & process[1] == "Normal" & error == "Normal")){
-
-      #starting values for process
-      #operator_list$type  <- process[2]
+    if(is.null(init.fit) == TRUE){
       operator_list <- operator.startvalues(Y,
                                             locs,
                                             mixedEffect_list,
@@ -778,16 +777,18 @@ ngme <- function(fixed,
       if(!silent){
         cat("Estimate non-Gaussian")
       }
-
-      fit$mixedEffect_list$noise <- reffects
-      fit$mixedEffect_list$nu    <- as.matrix(10)
-      fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
-
-      fit$measurementError_list$noise    <- error
-      fit$measurementError_list$nu       <- 3.
-      fit$measurementError_list$assymetric <- error_assymetric
-      fit$measurementError_list$common_V <- controls$individual.sigma
-      fit$measurementError_list$Vs       <- Vin
+      if(fit$mixedEffect_list$noise != reffects){
+        fit$mixedEffect_list$noise <- reffects
+        fit$mixedEffect_list$nu    <- as.matrix(10)
+        fit$mixedEffect_list$mu    <- matrix(0, dim(B_random[[1]])[2], 1)
+        
+        fit$measurementError_list$noise    <- error
+        fit$measurementError_list$nu       <- 3.
+        fit$measurementError_list$assymetric <- error_assymetric
+        fit$measurementError_list$common_V <- controls$individual.sigma
+        fit$measurementError_list$Vs       <- Vin  
+      }
+      
 
       # Obtain parameter estimates
       fit <- estimateLong(Y,
