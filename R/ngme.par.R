@@ -137,7 +137,7 @@ merge.ngme.outputs <- function(est.list){
   #merge mixedEffects
   if(n.cores>1){
     betaf_vec <- est.list[[1]]$mixedEffect_list$betaf_vec/n.cores
-    beta_fixed <- est.list[[1]]$mixedEffect_list$beta_fixed/n.cores
+    beta_fixed_samples <- est.list[[1]]$mixedEffect_list$beta_fixed
     n.fixed <- dim( est.list[[1]]$mixedEffect_list$beta_fixed)[2]
     beta_f <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$beta_fixed)),n.fixed,n.cores)
     beta_fixed <- apply(beta_f,1,mean)
@@ -150,6 +150,7 @@ merge.ngme.outputs <- function(est.list){
       beta_r <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$beta_random)),n.random,n.cores)
       beta_random <- apply(beta_r,1,mean)
       beta_random_var <- apply(beta_r,1,var)/n.cores
+      beta_random_samples <- est.list[[1]]$mixedEffect_list$beta_random
       Sigma_vec <- est.list[[1]]$mixedEffect_list$Sigma_vec/n.cores
       sigma_v <- matrix(unlist(lapply(1:n.cores,function(x) c(est.list[[x]]$mixedEffect_list$Sigma))),n.random^2,n.cores)
       Sigma <- matrix(apply(sigma_v,1,mean),n.random,n.random)
@@ -176,7 +177,9 @@ merge.ngme.outputs <- function(est.list){
     
     for(i in 2:n.cores){
       betaf_vec <- betaf_vec + est.list[[i]]$mixedEffect_list$betaf_vec/n.cores
+      beta_fixed_samples <- rbind(beta_fixed_samples,est.list[[i]]$mixedEffect_list$beta_fixed)
       if(use.random){
+        beta_random_samples <- rbind(beta_random_samples,est.list[[i]]$mixedEffect_list$beta_random)
         betar_vec <- betar_vec + est.list[[i]]$mixedEffect_list$betar_vec/n.cores
         Sigma_vec <- Sigma_vec + est.list[[i]]$mixedEffect_list$Sigma_vec/n.cores
       }
@@ -186,6 +189,7 @@ merge.ngme.outputs <- function(est.list){
         mu_vec <- mu_vec + est.list[[i]]$mixedEffect_list$mu_vec/n.cores
     }  
     est.merge$mixedEffect_list$betaf_vec <- betaf_vec
+    est.merge$mixedEffect_list$beta_fixed_samples <- list(beta_fixed_samples)
     est.merge$fixed_est_vec <- t(matrix(rep(0,length(est.merge$index_fixed)+length(est.merge$index_random))))
     est.merge$fixed_est_vec[est.merge$index_fixed] <- beta_fixed#betaf_vec
     est.merge$fixed_est[est.merge$index_fixed] <- beta_fixed
@@ -196,6 +200,7 @@ merge.ngme.outputs <- function(est.list){
     if(use.random){
       est.merge$mixedEffect_list$betar_vec <- betar_vec
       est.merge$mixedEffect_list$beta_random <- beta_random
+      est.merge$mixedEffect_list$beta_random_samples <- list(beta_random_samples)
       est.merge$mixedEffect_list$beta_random_var <- beta_random_var
       est.merge$fixed_est_vec[est.merge$index_random] <- beta_random#betar_vec
       est.merge$fixed_est[est.merge$index_random] <- beta_random
@@ -362,6 +367,9 @@ attach.ngme.output <- function(obj1,obj2){
     #merge mixedEffects
     output$mixedEffect_list$betaf_vec <- rbind(obj1$mixedEffect_list$betaf_vec,
                                                obj2$mixedEffect_list$betaf_vec)
+    l <- length(obj1$mixedEffect_list$beta_fixed_samples)
+    output$mixedEffect_list$beta_fixed_samples <- obj1$mixedEffect_list$beta_fixed_samples
+    output$mixedEffect_list$beta_fixed_samples[[l+1]] <- obj2$mixedEffect_list$beta_fixed_samples[[1]]
     n <- dim(output$mixedEffect_list$betaf_vec)[1]
     #output$fixed_est_vec <- matrix(0,n,length(obj2$index_fixed)+length(obj2$index_random))
     #output$fixed_est_vec[,obj2$index_fixed] <- output$mixedEffect_list$betaf_vec
@@ -370,6 +378,9 @@ attach.ngme.output <- function(obj1,obj2){
     output$fixed_est_var <- rbind(obj1$fixed_est_var,obj2$fixed_est_var)
     
     if(!is.null(obj2$mixedEffect_list$betar_vec)){
+      
+      output$mixedEffect_list$beta_random_samples <- obj1$mixedEffect_list$beta_random_samples
+      output$mixedEffect_list$beta_random_samples[[l+1]] <- obj2$mixedEffect_list$beta_random_samples[[1]]
       output$mixedEffect_list$betar_vec <- rbind(obj1$mixedEffect_list$betar_vec,
                                                  obj2$mixedEffect_list$betar_vec)
       #output$fixed_est_vec[,obj2$index_random] <- output$mixedEffect_list$betar_vec
