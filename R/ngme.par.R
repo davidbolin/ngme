@@ -42,6 +42,7 @@ ngme.par <- function(n.cores, std.lim,max.rep,controls, controls.init = NULL,nIt
     est.merge <- merge.ngme.outputs(est.list)
     output <- attach.ngme.output(output,est.merge)
     
+    #Plot the fixed effects
     n.fixed = dim(output$mixedEffect_list$betaf_vec)[2]
     n.random = dim(output$mixedEffect_list$betar_vec)[2]
     n.p = ceiling(sqrt(n.fixed+n.random))
@@ -112,20 +113,9 @@ ngme.par <- function(n.cores, std.lim,max.rep,controls, controls.init = NULL,nIt
       }  
     }
     
+    converged <- check.convergence(output,std.lim,silent)
     
-    
-    converged <- check.convergence(output,std.lim)
-    
-    cat("fixed = ", converged$fixed==0,
-        ", random =",converged$random==0,
-        ", operator = ",converged$operator==0,
-        ", process =",converged$process==0,"\n")
-    if(converged$fixed>0){
-      cat("fixed not converged:", converged$fixed.not.converged, "\n")
-      cat("standard deviations:", converged$fixed.not.converged.std, "\n")
-    }
-      
-    if(converged$fixed==0 && converged$random == 0 & converged$operator == 0 && converged$process == 0)
+    if(converged$converged)
           break
   }
   return(output)
@@ -468,131 +458,135 @@ attach.ngme.output <- function(obj1,obj2){
    
 }
 
-check.convergence <- function(output,std.lim, verbose = TRUE){
+check.convergence <- function(output,std.lim,silent=FALSE){
   
   N  <- nrow(output$fixed_est_var)
-  #check mixed effects
-  ind.fixed <- output$fixed_est/sqrt(output$fixed_est_var[N,])
   
-  if(N>2){
-    n.fixed <- length(output$fixed_est)
-    significant <- rep(0,n.fixed)
-    for(i in 1:n.fixed){
-      significant[i] <- simple.convergence.test(output$fixed_est_vec[(N-2):N,i],output$fixed_est_var[(N-2):N,i])
-    }  
-    cat("significant: ",significant,"\n")
+  n.fixed <- length(output$fixed_est)
+  fixed.converged <- rep(TRUE,n.fixed)
+  for(i in 1:n.fixed){
+    fixed.converged[i] <- simple.convergence.test(output$fixed_est_vec[,i],output$fixed_est_var[,i],std.lim)
+  }  
+
+  ranef_Sigma.converged <- NULL
+  if(!is.null(output$ranef_Sigma)){
+    n.sigma <- length(c(output$ranef_Sigma))
+    ranef_Sigma.converged <- rep(TRUE,n.sigma)
+    for(i in 1:n.sigma){
+      ranef_Sigma.converged[i] <- simple.convergence.test(output$ranef_Sigma_vec[,i],
+                                                    output$ranef_Sigma_var[,i],
+                                                    std.lim)  
+    }
   }
   
-  
-  ind.ranef_Sigma <- NULL
-  if(!is.null(output$ranef_Sigma))
-    ind.ranef_Sigma <- c(output$ranef_Sigma)/sqrt(c(output$ranef_Sigma_var[N,]))
-
-  ind.ranef_nu <- NULL
+  ranef_nu.converged <- NULL
   if(!is.null(output$ranef_nu) && !is.na(output$ranef_nu))
-    ind.ranef_nu <- output$ranef_nu/sqrt(output$ranef_nu_var[N])
+    ranef_nu.converged <- simple.convergence.test(output$ranef_nu_vec,
+                                                  output$ranef_nu_var,
+                                                  std.lim)  
   
-  ind.ranef_mu <- NULL
+  ranef_mu.converged <- NULL
   if(!is.null(output$ranef_mu) && !is.na(output$ranef_mu))
-    ind.ranef_mu <- output$ranef_mu/sqrt(output$ranef_mu_var[N])
+    ranef_mu.converged <- simple.convergence.test(output$ranef_mu_vec,
+                                                  output$ranef_mu_var,
+                                                  std.lim)  
+  random.converged <- c(ranef_Sigma.converged, ranef_nu.converged,ranef_mu.converged)
   
   #check error
-  ind.meas_error_sigma <- output$meas_error_sigma/sqrt(output$meas_error_sigma_var[N])
-  ind.meas_error_nu <- NULL
+  meas_error_sigma.converged <- simple.convergence.test(output$meas_error_sigma_vec,
+                                                        output$meas_error_sigma_var,
+                                                        std.lim)  
+  meas_error_nu.converged <- NULL
   if(!is.null(output$meas_error_nu) && !is.na(output$meas_error_nu))
-    ind.meas_error_nu <- output$meas_error_nu/sqrt(output$meas_error_nu_var[N]) 
+    meas_error_nu.converged <- simple.convergence.test(output$meas_error_nu_vec,
+                                                       output$meas_error_nu_var,
+                                                       std.lim)  
   
-  ind.meas_error_mu <- NULL
-  if(!is.null(output$meas_error_mu) && !is.na(output$meas_error_mu))
-    ind.meas_error_mu <- output$meas_error_mu/sqrt(output$meas_error_mu_var[N]) 
+  meas_error_mu.converged <- NULL
+  if(!is.null(output$meas_error_mu) && !is.na(output$meas_error_mu) && output$measurementError_list$assymetric)
+    meas_error_mu.converged <- simple.convergence.test(output$meas_error_mu_vec,
+                                                       output$meas_error_mu_var,
+                                                       std.lim)  
+  meas_error.converged <- c(meas_error_sigma.converged,meas_error_nu.converged,meas_error_mu.converged)
   
   #check operator
-  ind.operator_tau <- NULL
+  operator_tau.converged <- NULL
   if(!is.null(output$operator_tau) && !is.na(output$operator_tau))
-    ind.operator_tau <- output$operator_tau/sqrt(output$operator_tau_var[N]) 
+    operator_tau.converged <- simple.convergence.test(output$operator_tau_vec,
+                                                      output$operator_tau_var,
+                                                      std.lim)  
   
-  ind.operator_kappa <- NULL
+  operator_kappa.converged <- NULL
   if(!is.null(output$operator_kappa) && !is.na(output$operator_kappa))
-    ind.operator_kappa <- output$operator_kappa/sqrt(output$operator_kappa_var[N]) 
+    operator_kappa.converged <- simple.convergence.test(output$operator_kappa_vec,
+                                                        output$operator_kappa_var,
+                                                        std.lim)  
+  operator.converged <- c(operator_tau.converged,operator_kappa.converged)
   
   #check process
-  ind.process_nu <- NULL
+  process_nu.converged <- NULL
   if(!is.null(output$process_nu) && !is.na(output$process_nu))
-    ind.process_nu <- output$process_nu/sqrt(output$process_nu_var[N]) 
+    process_nu.converged <- simple.convergence.test(output$process_nu_vec,
+                                                    output$proess_nu_var,
+                                                    std.lim)  
   
-  ind.process_mu <- NULL
+  process_mu.converged <- NULL
   if(!is.null(output$process_mu) && !is.na(output$process_mu))
-    ind.process_mu <- output$process_mu/sqrt(output$process_mu_var[N]) 
+    process_mu.converged <- simple.convergence.test(output$process_mu_vec,
+                                                    output$process_mu_var,
+                                                    std.lim)  
   
-  converged.fixed <- sum(abs(ind.fixed)<std.lim)
-  if(verbose){
-    cat("fixed = ", abs(ind.fixed), "\n")
-  }
-  converged.random <- 0
-  if(!is.null(ind.ranef_Sigma)){
-    converged.random <- sum(abs(ind.ranef_Sigma)<std.lim)
-    if(verbose){
-      cat("Sigma = ", abs(ind.ranef_Sigma), "\n")
-    }
-    if(!is.null(ind.ranef_mu)){
-      converged.random <- converged.random + sum(abs(ind.ranef_mu)<std.lim)
-      if(verbose){
-        cat("mu_mixed = ", abs(ind.ranef_mu), "\n")
-      }
-    }
-      
-    if(!is.null(ind.ranef_nu)){
-      converged.random <- converged.random + sum(abs(ind.ranef_nu)<std.lim)
-      if(verbose){
-        cat("nu_mixed = ", abs(ind.ranef_mu), "\n")
-      }
-    }
-  }
-  converged.operator <- 0
-  if(!is.null(ind.operator_tau)){
-    converged.operator <- sum(abs(ind.operator_tau)<std.lim) 
-    if(verbose){
-      cat("tau = ", abs(ind.operator_tau), "\n")
-    }
-  }
-    
-  if(!is.null(ind.operator_kappa)){
-    converged.operator <- converged.operator + sum(abs(ind.operator_kappa)<std.lim)
-    if(verbose){
-      cat("kappa = ", abs(ind.operator_kappa), "\n")
-    }
-  }
-    
-  converged.process <-0
-  if(!is.null(ind.process_nu)){
-    converged.process <- sum(abs(ind.process_nu)<std.lim) 
-    if(verbose){
-      cat("nu_process = ", abs(ind.process_nu), "\n")
-    }
-  }
-    
-  if(!is.null(ind.process_mu)){
-    converged.process <- converged.process + sum(abs(ind.process_mu)<std.lim) 
-    if(verbose){
-      cat("mu_process = ", abs(ind.process_mu), "\n")
-    }
-  }
-    
+  process.converged <- c(process_mu.converged,process_nu.converged)
   
-  return(list(fixed = converged.fixed,
-              random = converged.random,
-              operator = converged.operator,
-              process = converged.process,
-              fixed.not.converged = output$fixed_est[ind.fixed>std.lim],
-              fixed.not.converged.std = sqrt(output$fixed_est_var[N,ind.fixed>std.lim])))
+  converged <- TRUE
+  if(length(fixed.converged)>0){
+    converged <- converged*(sum(!fixed.converged)==0)
+    if(!silent){
+      cat("Fixed effects converged: ", fixed.converged,"\n")
+    }
+  }
+  if(length(random.converged)>0){
+    converged <- converged*(sum(!random.converged)==0)
+    if(!silent){
+      cat("Random effects converged: ", random.converged,"\n")
+    }
+  }
+  if(length(operator.converged)>0){
+    converged <- converged*(sum(!operator.converged)==0)
+    if(!silent){
+      cat("Operator converged: ", operator.converged,"\n")
+    }
+  }
+  if(length(process.converged)>0){
+    converged <- converged*(sum(!process.converged)==0)
+    if(!silent){
+      cat("Process converged: ", process.converged,"\n")
+    }
+  }
+  return(list(fixed = fixed.converged,
+              random = random.converged,
+              operator = operator.converged,
+              process = process.converged,
+              converged = converged))
   
 }
 
-simple.convergence.test <- function(m,sigma2){
-  B <- cbind(c(1,1,1),c(1,2,3))
-  Sigma <- diag(sigma2)
-  Q <- solve(t(B)%*%solve(Sigma,B))
-  beta <- Q%*%(t(B)%*%solve(Sigma,m))
-  s2 <- Q[2,2]
-  return(abs(beta[2])>2*sqrt(s2))
+simple.convergence.test <- function(m,sigma2,std.lim){
+  if(length(m)>3){
+    #check that estimate/std is above the limit
+    N = length(m)
+    std.satisfied <- m[N]/sqrt(sigma2[N])>std.lim
+    
+    #check if we have a significant trend in the n.points last points
+    n.points <- min(length(m),4)
+    B <- cbind(rep(n,n.points),1:n.points)
+    Sigma <- diag(sigma2[(N-n.points+1):N])
+    Q <- solve(t(B)%*%solve(Sigma,B))
+    beta <- Q%*%(t(B)%*%solve(Sigma,m[(N-n.points+1):N]))
+    slope.satisfied <- abs(beta[2])<2*sqrt(Q[2,2]) #no significant trend
+    return(std.satisfied&slope.satisfied)  
+  } else {
+    return(FALSE)
+  }
+  
 }
