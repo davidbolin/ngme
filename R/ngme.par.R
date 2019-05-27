@@ -158,7 +158,7 @@ merge.ngme.outputs <- function(est.list){
       est.merge$ranef_mu_var <- mu_var
     }
     #merge error list
-    sigma_vec <- est.list[[1]]$mixedEffect_list$betaf_vec/n.cores
+    sigma_vec <- est.list[[1]]$measurementError_list$sigma_vec/n.cores
     sigma_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$measurementError_list$sigma)),1,n.cores)
     sigma <- apply(sigma_v,1,mean)
     sigma_var <- apply(sigma_v,1,var)/n.cores
@@ -189,6 +189,7 @@ merge.ngme.outputs <- function(est.list){
         mu_vec <- mu_vec + est.list[[i]]$measurementError_list$mu_vec/n.cores
     }  
     est.merge$measurementError_list$sigma <- sigma
+    est.merge$measurementError_list$sigma_vec <- sigma_vec
     est.merge$measurementError_list$sigma_var <- sigma_var
     est.merge$meas_error_sigma <- sigma
     est.merge$meas_error_sigma_var <- sigma_var
@@ -337,23 +338,23 @@ attach.ngme.output <- function(obj1,obj2){
       output$ranef_mu_var <- rbind(obj1$ranef_mu_var,obj2$ranef_mu_var)
     }
     #merge error list
-    output$measurementError_list$sigma_vec <- rbind(obj1$measurementError_list$sigma_vec,
-                                                    obj2$measurementError_list$sigma_vec)
+    output$measurementError_list$sigma_vec <- rbind(matrix(obj1$measurementError_list$sigma_vec),
+                                                    matrix(obj2$measurementError_list$sigma_vec))
     #output$meas_error_sigma_vec <- output$measurementError_list$sigma_vec
     output$meas_error_sigma_vec <- rbind(obj1$meas_error_sigma_vec,obj2$meas_error_sigma_vec)
     output$meas_error_sigma_var <- rbind(obj1$meas_error_sigma_var,obj2$meas_error_sigma_var)
     
     if(!is.null(obj2$measurementError_list$nu_vec)){
-      output$measurementError_list$nu_vec <- rbind(obj1$measurementError_list$nu_vec,
-                                                   obj2$measurementError_list$nu_vec)
+      output$measurementError_list$nu_vec <- rbind(matrix(obj1$measurementError_list$nu_vec),
+                                                   matrix(obj2$measurementError_list$nu_vec))
       #output$meas_error_nu_vec <- output$measurementError_list$nu_vec
       output$meas_error_nu_vec <- rbind(obj1$meas_error_nu_vec,obj2$meas_error_nu_vec)
       output$meas_error_nu_var <- rbind(obj1$meas_error_nu_var,obj2$meas_error_nu_var)
       
     }
     if(!is.null(obj2$measurementError_list$mu_vec)){
-      output$measurementError_list$mu_vec <- rbind(obj1$measurementError_list$mu_vec,
-                                                   obj2$measurementError_list$mu_vec)
+      output$measurementError_list$mu_vec <- rbind(matrix(obj1$measurementError_list$mu_vec),
+                                                   matrix(obj2$measurementError_list$mu_vec))
       #output$meas_error_mu_vec <- output$measurementError_list$mu_vec
       output$meas_error_mu_vec <- rbind(obj1$meas_error_mu_vec,obj2$meas_error_mu_vec)
       output$meas_error_mu_var <- rbind(obj1$meas_error_mu_var,obj2$meas_error_mu_var)
@@ -490,6 +491,12 @@ check.convergence <- function(output,std.lim,silent=FALSE){
       cat("Random effects converged: ", random.converged,"\n")
     }
   }
+  if(length(meas_error.converged)>0){
+    converged <- converged*(sum(!meas_error.converged)==0)
+    if(!silent){
+      cat("Measurement error converged: ", meas_error.converged,"\n")
+    }
+  }
   if(length(operator.converged)>0){
     converged <- converged*(sum(!operator.converged)==0)
     if(!silent){
@@ -506,6 +513,7 @@ check.convergence <- function(output,std.lim,silent=FALSE){
               random = random.converged,
               operator = operator.converged,
               process = process.converged,
+              error = meas_error.converged,
               converged = converged))
   
 }
@@ -550,7 +558,10 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
     n.process.mu = !(is.null(output$process_mu)|is.na(output$process_mu))
     n.process <- n.operator.tau + n.operator.kappa + n.process.mu + n.process.nu
     
-    n.tot = n.effects + n.random.dist + n.process
+    n.meas.nu = !(is.null(output$meas_error_nu)|is.na(output$meas_error_nu))
+    n.meas.mu = (!is.null(output$measurementError_list$assymetric)) && (output$measurementError_list$assymetric==1)
+    n.error = 1 + n.meas.nu + n.meas.mu
+    n.tot = n.effects + n.random.dist + n.process + n.error 
     
     #Plot the fixed effects
     
@@ -694,6 +705,76 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
                                  output$ranef_nu_vec[i]+2*sqrt(output$ranef_nu_var[i])),col=3)
         }
       }
+      
+      if(total.plotted < 16){
+        total.plotted = total.plotted + 1
+        min.y <- min(output$measurementError_list$sigma_vec)
+        max.y <- max(output$measurementError_list$sigma_vec)
+        for(i in 1:n.cores){
+          min.i <- min(est.list[[i]]$measurementError_list$sigma_vec)
+          max.i <- max(est.list[[i]]$measurementError_list$sigma_vec)
+          min.y <- min(min.y,min.i)
+          max.y <- max(max.y,max.i)
+        }
+        plot(output$measurementError_list$sigma_vec,type="l", main = "sigma error",ylim=c(min.y,max.y),xaxt="n")  
+        for(i in 1:n.cores)
+          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$sigma_vec,col="gray")  
+        lines(output$measurementError_list$sigma_vec)
+        points((1:ii)*nIter,output$meas_error_sigma_vec,col=2)
+        points((1:ii)*nIter,output$meas_error_sigma_vec+2*sqrt(output$meas_error_sigma_var),col=3)
+        points((1:ii)*nIter,output$meas_error_sigma_vec-2*sqrt(output$meas_error_sigma_var),col=3)   
+        for(i in 1:ii){
+          lines(i*nIter*c(1,1),c(output$meas_error_sigma_vec[i]-2*sqrt(output$meas_error_sigma_var[i]),
+                                 output$meas_error_sigma_vec[i]+2*sqrt(output$meas_error_sigma_var[i])),col=3)
+        }
+      }
+      
+      if(total.plotted < 16 & n.meas.nu>0){
+        total.plotted = total.plotted + 1
+        min.y <- min(output$measurementError_list$nu_vec)
+        max.y <- max(output$measurementError_list$nu_vec)
+        for(i in 1:n.cores){
+          min.i <- min(est.list[[i]]$measurementError_list$nu_vec)
+          max.i <- max(est.list[[i]]$measurementError_list$nu_vec)
+          min.y <- min(min.y,min.i)
+          max.y <- max(max.y,max.i)
+        }
+        plot(output$measurementError_list$nu_vec,type="l", main = "nu error",ylim=c(min.y,max.y),xaxt="n")  
+        for(i in 1:n.cores)
+          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$nu_vec,col="gray")  
+        lines(output$measurementError_list$nu_vec)
+        points((1:ii)*nIter,output$meas_error_nu_vec,col=2)
+        points((1:ii)*nIter,output$meas_error_nu_vec+2*sqrt(output$meas_error_nu_var),col=3)
+        points((1:ii)*nIter,output$meas_error_nu_vec-2*sqrt(output$meas_error_nu_var),col=3)   
+        for(i in 1:ii){
+          lines(i*nIter*c(1,1),c(output$meas_error_nu_vec[i]-2*sqrt(output$meas_error_nu_var[i]),
+                                 output$meas_error_nu_vec[i]+2*sqrt(output$meas_error_nu_var[i])),col=3)
+        }
+      }
+      
+      if(total.plotted < 16 & n.meas.mu>0){
+        total.plotted = total.plotted + 1
+        min.y <- min(output$measurementError_list$mu_vec)
+        max.y <- max(output$measurementError_list$mu_vec)
+        for(i in 1:n.cores){
+          min.i <- min(est.list[[i]]$measurementError_list$mu_vec)
+          max.i <- max(est.list[[i]]$measurementError_list$mu_vec)
+          min.y <- min(min.y,min.i)
+          max.y <- max(max.y,max.i)
+        }
+        plot(output$measurementError_list$mu_vec,type="l", main = "mu error",ylim=c(min.y,max.y),xaxt="n")  
+        for(i in 1:n.cores)
+          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$mu_vec,col="gray")  
+        lines(output$measurementError_list$mu_vec)
+        points((1:ii)*nIter,output$meas_error_mu_vec,col=2)
+        points((1:ii)*nIter,output$meas_error_mu_vec+2*sqrt(output$meas_error_mu_var),col=3)
+        points((1:ii)*nIter,output$meas_error_mu_vec-2*sqrt(output$meas_error_mu_var),col=3)   
+        for(i in 1:ii){
+          lines(i*nIter*c(1,1),c(output$meas_error_mu_vec[i]-2*sqrt(output$meas_error_mu_var[i]),
+                                 output$meas_error_mu_vec[i]+2*sqrt(output$meas_error_mu_var[i])),col=3)
+        }
+      }
+    
       if(n.operator.tau>0 & total.plotted < 16){
         total.plotted = total.plotted + 1
         min.y <- min(output$operator_list$tauVec)
