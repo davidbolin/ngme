@@ -32,7 +32,6 @@ mesh <- inla.mesh.create.helper( loc,
 
 
 #Fit gaussian model to pressure data
-start_profiler("/profile.out")
 res.est.pres <- ngme.spatial(pres ~ 1,
                               process = c("Normal"),
                               error = "Normal",
@@ -47,7 +46,6 @@ res.est.pres <- ngme.spatial(pres ~ 1,
                                               nSim = 4,
                                               step0 = 1,
                                               alpha = 0.3))
-stop_profiler()
 
 cat("beta = ", res.est.pres$fixed_est, "kappa = ", res.est.pres$operator_kappa,
     "tau = ", res.est.pres$operator_tau, "sigma.e = ", res.est.pres$meas_error_sigma)
