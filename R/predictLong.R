@@ -365,6 +365,7 @@ predictLong <- function( Y,
           obs_list[[i]]$locs = rbind(locs1, locs2)
           measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Bfixed.pred[[i]])[1]/2)))
         } else {
+          na.ind <- is.na(Y[[i]])
           obs_list[[i]]$A = A
           obs_list[[i]]$Apred = Ap
         }
@@ -372,7 +373,8 @@ predictLong <- function( Y,
       
       if(use.random.effect){
         mixedEffect_list$Brandom[[i]] <- mixedEffect_list$Brandom[[i]][!na.ind,]
-        mixedEffect_list$Brandom_pred[[i]] = Brandom.pred[[i]]
+        #mixedEffect_list$Brandom_pred[[i]] = Brandom.pred[[i]]
+        obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
       }
 
       if(!is.null(predict.derivatives)){
