@@ -882,7 +882,6 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
     throw("error");
 
   }
-
   if(pos_def/mu.array().abs().maxCoeff() < 0.0005)
     sample_MALA = 1;
   else
@@ -1009,7 +1008,10 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
     dbeta_r_old +=  0.5 *  step1.head(n_r);
+    Rcpp::Rcout << "step1.head(n_r) = " << step1.head(n_r) << "\n";
     dbeta_r_old +=  0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV);
+    
+    Rcpp::Rcout << "step2.head(n_r) = " << (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV) << "\n";
     dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;
     grad_beta_r2.setZero(Br[0].cols());

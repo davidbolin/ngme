@@ -9,7 +9,7 @@ library(testthat)
 library(doParallel)
 library(Matrix)
 
-use.process = TRUE
+use.process = FALSE
 estimate.parameters = FALSE
 #data options
 n.pers <- 3
@@ -62,6 +62,7 @@ if(use.process){
   for(i in 1:length(locs))
   {
     processes_list$V[[i]] <- operator_list$h[[1]]
+    processes_list$X[[i]] <- 0 * operator_list$h[[1]]
   }
   
 }

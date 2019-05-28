@@ -3,13 +3,12 @@
 ##
 rm(list=ls())
 graphics.off()
-library(testthat)
 library(ngme)
-set.seed(3)
-sim <-  200       
-n_iter <- 5000
+set.seed(7)
+save.file=0
+sim <-  100
 
-nindv <- 1200
+nindv <- 500
 n     <- 30
 
 beta_random  <- as.vector(0.8)
@@ -18,9 +17,9 @@ sigma        <- 0.5
 sigma_random <- 0.5
 nu_mixed     <- 1
 mu_mixed     <- 2
-trace_random <- trace_random2 <- matrix(0,nrow = sim, ncol = n_iter)
 est_param <- est_param2 <- matrix(0, nrow=sim, ncol = 3)
 sd_param  <- sd_param2 <- matrix(0, nrow=sim, ncol = 3)
+sd_param2  <- sd_param2 <- matrix(0, nrow=sim, ncol = 3)
 true_param <- c(beta_fixed, beta_random)
 sum_res <- function(est_param, se_param, true_param){
   lower <- matrix(0, nrow=dim(est_param)[1], ncol = dim(est_param)[2])
@@ -38,7 +37,8 @@ sum_res <- function(est_param, se_param, true_param){
               upper = upper ))
 }
 
-
+m_ = 0
+m_2 = 0
 for(i in 1:sim){
   cat('iter = ',i,'of ',sim,'\n')
   data <-c()
@@ -63,22 +63,35 @@ for(i in 1:sim){
   }
   dimnames(data)[[2]] <- c('B1','B2','B3','V','Y','Ya','id')
   
-  
-  NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
-                  random      = ~ -1+B3|id,
-                  data        = as.data.frame(data),
-                  reffects    = 'NIG',
-                  use.process = F,
-                  silent      = T,
-                  controls.init = list(nIter.init=100),
-                  nIter  = n_iter,
-                  controls    = list(estimate.fisher = FALSE,
-                                     pSubsample = 0.4,
-                                     subsample.type  = 0,
-                                     nSim  =2,
-                                     nBurnin = 2,
-                                     alpha = 0.3,
-                                     step0 = 0.99))
+  if(nindv >= 100){
+    control = list(estimate.fisher = FALSE,
+         pSubsample = 0.2,
+         subsample.type  = 1,
+         alpha = 0.3,
+         nSim  =2,
+         nBurnin = 2,
+         step0 = 0.5,
+         nBurnin.learningrate=1000)
+  }else{
+    control = list(estimate.fisher = FALSE,
+         pSubsample =1,
+         subsample.type  = 1,
+         step0 = 1,
+         alpha = 0.3,
+         nSim  =2,
+         nBurnin = 2,
+         nBurnin.learningrate=1000)
+  }
+  NIGMVD_ass <-  ngme.par(n.cores = 6, std.lim = 2, max.rep = 12,
+                                fixed       = Ya ~ B1 + B2,
+                                random      = ~ -1+B3|id,
+                                data        = as.data.frame(data),
+                                reffects    = 'NIG',
+                                use.process = FALSE,
+                                silent      = FALSE,
+                                controls.init = list(nIter.init=500),
+                                nIter  = 1000,
+                                controls    = control)
   
   fiher_NIG <- ngme.fisher(NIGMVD_ass,
                            nSim = 20,
@@ -91,47 +104,31 @@ for(i in 1:sim){
                            only.effects=F,
                            silent = TRUE)
   est_param[i,] <- c(NIGMVD_ass$mixedEffect_list$beta_fixed, NIGMVD_ass$mixedEffect_list$beta_random)
-  sd_param[i,]  <-  sqrt(diag(solve(fiher_NIG$fisher_est)))[1:length(est_param[i,])]
-  trace_random[i,]<-NIGMVD_ass$mixedEffect_list$betar_vec
-  if(0){
-  NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
-                      random      = ~ -1+B3|id,
-                      data        = as.data.frame(data),
-                      reffects    = 'NIG',
-                      use.process = F,
-                      silent      = T,
-                      nIter  = n_iter,
-                      controls    = list(estimate.fisher = FALSE,
-                                         pSubsample = 0.4,
-                                         subsample.type  = 0,
-                                         nSim  =2,
-                                         nBurnin = 2,
-                                         alpha = 0.3,
-                                         step0 = 0.99),
-                      init.fit = NIGMVD_ass)
-  fiher_NIG <- ngme.fisher(NIGMVD_ass,
-                            nSim = 20,
-                            nIter = 10,
-                            nBurnin=1,
-                            n.cores = 1,
-                            n.rep = 1,
-                            std.threshold = 2,
-                            observed = TRUE,
-                            only.effects=F,
-                            silent = TRUE)
+  V <- diag(solve(fiher_NIG$fisher_est[c(1:4,6), c(1:4,6)]))[1:3]
+  sd_param[i,]  <-  sqrt(V + NIGMVD_ass$fixed_est_var[dim(NIGMVD_ass$fixed_est_var)[1],c(2,3,1)])
+  sd_param2[i,]  <-  sqrt(V)
   
-  est_param2[i,] <- c(NIGMVD_ass$mixedEffect_list$beta_fixed, NIGMVD_ass$mixedEffect_list$beta_random)
-  sd_param2[i,]  <-  sqrt(diag(solve(fiher_NIG$fisher_est)))[1:length(est_param[i,])]
-  trace_random2[i,]<-NIGMVD_ass$mixedEffect_list$betar_vec
-  
-  cat('r = ',est_param2[i,3],'\n')
-  cat('r = ',est_param2[i,3],'\n')
-  }
-  cat('low = ',est_param[i,3] - 1.6*sd_param[i,3]-true_param[3],'\n')
+ 
+  cat('mu  = ',round(NIGMVD_ass$mixedEffect_list$mu,2),'\n')
+  cat('b_r = ',round(NIGMVD_ass$mixedEffect_list$beta_random,2),'\n')
+  cat('low = ',est_param[i,3] - 1.64*sd_param[i,3]-true_param[3],'\n')
   cat('upp = ',est_param[i,3] + 1.6*sd_param[i,3]-true_param[3],'\n')
+  m_ = m_ + ((est_param[i,3] - 1.64*sd_param[i,3]-true_param[3]) * (est_param[i,3] + 1.64*sd_param[i,3]-true_param[3])<0)
+  m_2 = m_2 + ((est_param[i,3] - 1.64*sd_param2[i,3]-true_param[3]) * (est_param[i,3] + 1.64*sd_param2[i,3]-true_param[3])<0)
+  
+  cat('CI  = ',100*round(m_/i,2),'%\n')
+  cat('CI_v2  = ',100*round(m_2/i,2),'%\n')
 }
 res <- sum_res(est_param,sd_param, true_param)
 cat(colMeans(res$in_CI),'\n')
+if(save.file){
+if(mu_mixed ==0){
+  file.name = paste('res_',nindv,'_mu0.RData',sep="")
+}else{
+  file.name = paste('res_',nindv,'_mu1.RData',sep="")
+}
+save(res, file = file.name)
+}
 x11()
 par(mfrow=c(3,1))
 for(i in 1:3){
@@ -150,7 +147,3 @@ for(i in 1:3){
   abline(h=0,col='blue')
 }
 }
-x11()
-par(mfrow=c(2,1))
-plot(trace_random[1,])
-#plot(trace_random2[1,])

@@ -116,7 +116,17 @@ double NIGMixedEffect::logdensity(const Eigen::VectorXd &  U){
                 invSigma,
                 nu);
 }
+void NIGMixedEffect::updateFisher(const int i, 
+                  Eigen::MatrixXd & Fisher, 
+                  Eigen::VectorXd & grad){
 
+  double grad_nu =  0.5 * (1. / nu - V(i) - 1. / V(i) + 2. );
+  grad(npars - 1) = 0.5 * grad_nu;
+  Fisher.row(npars - 1) += - grad_nu * grad;
+  Fisher.col(npars - 1) += - grad_nu * grad;
+  grad(npars - 1) += 0.5 * grad_nu;
+
+}
 
 void NIGMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
@@ -254,7 +264,6 @@ Eigen::MatrixXd NIGMixedEffect::d2Given( const int i,
                                         const double weight)
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given(i, res, log_sigma2_noise, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * 0.5 / pow(nu,2);
   return(d2);
 }
 Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
@@ -266,6 +275,5 @@ Eigen::MatrixXd NIGMixedEffect::d2Given2(const int i,
                                        )
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given2(i, res, iV, log_sigma2_noise, EiV, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * 0.5 / pow(nu,2);
   return(d2);
 }

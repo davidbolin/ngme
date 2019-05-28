@@ -90,6 +90,8 @@ class MixedEffect {
 
     };
     virtual Rcpp::List toList()=0;
+
+    virtual void updateFisher(const int i, Eigen::MatrixXd & Result, Eigen::VectorXd & grad) {};
     virtual void get_Hessian(Eigen::MatrixXd & H){
         Hessian += H;
     };
@@ -521,6 +523,7 @@ class tdMixedEffect : public GHMixedEffect{
     void get_param(std::vector<double> &);
     void get_param_names(Rcpp::StringVector & );
     void initFromList(Rcpp::List const &);
+    void updateFisher(const int, Eigen::MatrixXd & , Eigen::VectorXd &);
     void gradient2(const int i,
                    const Eigen::VectorXd& res,
                    const Eigen::VectorXd& iV,
@@ -611,7 +614,7 @@ class NIGMixedEffect  : public GHMixedEffect{
              const int use_EU = 1,
              const int nssigma = 0             // present - non-stationary sigma
              );
-
+    void updateFisher(const int, Eigen::MatrixXd & , Eigen::VectorXd &);
     void gradient(  const int ,
     			          const Eigen::VectorXd&, 
     			          const double ,

@@ -68,6 +68,7 @@ void GaussianMeasurementError::step_theta(const double stepsize,
 										  const double polyak_rate,
 										  const int burnin)
 {
+
   double sigma_temp = -1;
   dsigma /= ddsigma;
   dsigma_old = dsigma_old * learning_rate + dsigma;

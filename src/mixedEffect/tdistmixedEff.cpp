@@ -111,6 +111,17 @@ double tdMixedEffect::logdensity(const Eigen::VectorXd &  U){
                 get_a_GIG(),
                 get_b_GIG());
 }
+void tdMixedEffect::updateFisher(const int i, 
+                  Eigen::MatrixXd & Fisher, 
+                  Eigen::VectorXd & grad){
+
+  double grad_nu =  log(nu + 1) + nu/( nu + 1.) - R::digamma(nu) - log(V(i)) - 1. / V(i);
+  grad(npars - 1) = 0.5 * grad_nu;
+  Fisher.row(npars - 1) += - grad_nu * grad;
+  Fisher.col(npars - 1) += - grad_nu * grad;
+  grad(npars - 1) += 0.5 * grad_nu;
+
+}
 
 void tdMixedEffect::gradient(const int i,
                               const Eigen::VectorXd& res,
@@ -240,7 +251,6 @@ Eigen::MatrixXd tdMixedEffect::d2Given( const int i,
                                         const double weight)
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given(i, res, log_sigma2_noise, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) );
   return(d2);
 }
 Eigen::MatrixXd tdMixedEffect::d2Given2(const int i,
@@ -252,6 +262,5 @@ Eigen::MatrixXd tdMixedEffect::d2Given2(const int i,
                                        )
 {
   Eigen::MatrixXd d2 = GHMixedEffect::d2Given2(i, res, iV, log_sigma2_noise, EiV, weight);
-  d2(npars - 1 , npars - 1 ) =  weight * ( (2+nu)/( pow(nu+1, 2)  ) - R::trigamma(nu) ) ;
   return(d2);
 }
