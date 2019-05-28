@@ -1,23 +1,89 @@
 
-ngme.par <- function(n.cores, 
-                     std.lim,
-                     max.rep,
-                     controls, 
+#' @title Parameter estimation.
+#'
+#' @description Maximum likelihood model estimation using parallel runs of 
+#'   stochastic gradient estimation. See \code{\link{ngme}} and \code{\link{ngme.spatial}} for explanation of the model specification.
+#'
+#' @param n.cores Number of cores, and the number of parallel chains, to use. Default is 4. 
+#' @param std.lim Parameter for convergence criterium. The estimation is stopped when the rate of change 
+#' in each parameter is small enough, and when the estimate divided by the estimated Monte Carlo standard
+#' deviation for that parameter is larger than std.lim. Default is 10. 
+#' @param max.rep The total number of iterations that is run is given by \code{nIter*max.rep}. Convergence is checked
+#' after every nIter iterations, and max.rep thus sets how many batches of nIter iterations that should be run at most. 
+#' Default is 10. 
+#' @param nIter The number of iterations per batch of runs. Default is 1000. 
+#' @param plot.type Set to "All" to get parameter trajectories of all estimated parameters. However, at most 16 parameters
+#' are plotted at once. Set to "TRUE" or "Fixed" to get plots of only the fixed effects. 
+#' @param ... Other parameter needed by \code{\link{ngme}} 
+#' @return A list of outputs.
+#' @details The function calls \code{\link{ngme}} or \code{\link{ngme.spatial}} internally. See these functions for further information on the actual
+#' model specification. 
+#' @seealso \code{\link{ngme}}, \code{\link{ngme.spatial}} 
+#' @author David Bolin \email{davidbolin@@gmail.com}
+#' @examples
+#'   \dontrun{
+#'   data(srft_data)
+#'
+#'   # transform pwl to decrese it correlation with bage
+#'   # then center all the covariates for better convergence
+#'   srft_data$pwl2 <- with(srft_data, pwl - bage/1.5)
+#'   srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <-
+#'     scale(srft_data[, c("sex", "bage", "fu", "pwl2")], scale = FALSE)
+#'
+#'   # fit the model with normal assumption for random effects, process and error
+#'   # covariance function is integrated random walk
+#'   set.seed(123)
+#'   fit <- ngme.par(n.cores = 5, std.lim = 100,max.rep = 20,
+#'                   fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
+#'                   random = ~ 1|id,
+#'                   data = srft_data,
+#'                   reffects = "Normal",
+#'                   process = c("Normal", "fd2"),
+#'                   error = "Normal",
+#'                   timeVar = "fu",
+#'                   use.process = TRUE,
+#'                   silent = FALSE,
+#'                   mesh = list(cutoff = 1/365,max.dist = 1/12,extend = 0.01),
+#'                   controls = list(pSubsample = 0.025,subsample.type = 1))
+#'}
+
+ngme.par <- function(n.cores = 4, 
+                     std.lim = 10,
+                     max.rep = 10,
+                     controls = NULL, 
                      controls.init = NULL,
-                     nIter,
-                     silent,
+                     nIter = 1000,
+                     timevar = NULL,
+                     location.names = NULL,
+                     init.fit = NULL,
+                     silent = FALSE,
                      plot.type="All",
                      ...)
 {
+  if(n.cores < 2){
+    stop("Must use at least 2 cores. For non-parallel estimation, use ngme for temporal models or ngme.spatial for spatial models.")
+  } 
+  temporal.model = FALSE
+  if(is.null(timevar) && is.null(location.names)){
+    stop("You must specify timevar for temporal models or location.names for spatial models")
+  } else if(!is.null(timevar) && !is.null(location.names)){
+    stop("You can only specify either timevar (if a temporal model is estimiated) or location.names (if a spatial model is estimated).")
+  } else if(!is.null(timevar)){
+    temporal.model = TRUE
+  } 
+  
   output <- NULL
-  step0 <- controls$step0
-  if(is.null(step0))
-    step0 <- 1
-  
-  alpha <- controls$alpha
-  if(is.null(alpha))
-    alpha = 0.6
-  
+  if(is.null(controls)){
+    step0  <- 1
+    alpha <- 0.3
+  } else {
+    step0 <- controls$step0
+    if(is.null(step0))
+      step0 <- 1  
+    alpha <- controls$alpha
+    if(is.null(alpha))
+      alpha = 0.3
+  }
   
   for(ii in 1:max.rep){
     cl <- makeCluster(n.cores)
@@ -27,6 +93,9 @@ ngme.par <- function(n.cores,
     opts <- list(progress = progress)
     parallel::clusterExport(cl, varlist = c(), envir = environment())
     if(ii>1){
+      if(is.null(controls)){
+        controls <- list()
+      }
       controls$iter.start <- (ii-1)*nIter
       controls$nBurnin = 5
     }
@@ -34,13 +103,35 @@ ngme.par <- function(n.cores,
     est.list <- foreach(i = 1:n.cores, .options.snow = opts,.packages = c("ngme","Matrix")) %dopar%
     {
       if(ii==1){
-        est <- ngme::ngme(controls=controls,
-                          controls.init = controls.init,
-                          nIter = nIter,silent = TRUE,...)
+        if(temporal.model){
+          est <- ngme::ngme(controls=controls,
+                            controls.init = controls.init,
+                            timevar = timevar,
+                            nIter = nIter,
+                            init.fit = init.fit,
+                            silent = TRUE,...)  
+        } else {
+          est <- ngme::ngme.spatial(controls=controls,
+                            controls.init = controls.init,
+                            location.names = location.names,
+                            nIter = nIter,
+                            init.fit = init.fit,
+                            silent = TRUE,...)  
+        }
       } else {
-        est <- ngme::ngme(init.fit = est.list.old[[i]],
-                          controls=controls,
-                          nIter = nIter,silent=TRUE,...)
+        if(temporal.model){
+          est <- ngme::ngme(init.fit = est.list.old[[i]],
+                            controls=controls,
+                            timevar = timevar,
+                            nIter = nIter,
+                            silent=TRUE,...)  
+        } else {
+          est <- ngme::ngme.spatial(init.fit = est.list.old[[i]],
+                                    controls=controls,
+                                    location.names = location.names,
+                                    nIter = nIter,
+                                    silent=TRUE,...)  
+        }
       }
       return(est)  
     }
@@ -60,809 +151,3 @@ ngme.par <- function(n.cores,
   return(output)
 }
 
-merge.ngme.outputs <- function(est.list){
-  n.cores <- length(est.list)
-  est.merge <- est.list[[1]]
-  #merge mixedEffects
-  if(n.cores>1){
-    betaf_vec <- est.list[[1]]$mixedEffect_list$betaf_vec/n.cores
-    beta_fixed_samples <- est.list[[1]]$mixedEffect_list$beta_fixed
-    n.fixed <- dim( est.list[[1]]$mixedEffect_list$beta_fixed)[2]
-    beta_f <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$beta_fixed)),n.fixed,n.cores)
-    beta_fixed <- apply(beta_f,1,mean)
-    beta_fixed_var <- apply(beta_f,1,var)/n.cores
-    
-    use.random = FALSE
-    if(!is.null(est.list[[1]]$mixedEffect_list$betar_vec)){
-      betar_vec <- est.list[[1]]$mixedEffect_list$betar_vec/n.cores
-      n.random <- dim( est.list[[1]]$mixedEffect_list$beta_random)[2]
-      beta_r <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$beta_random)),n.random,n.cores)
-      beta_random <- apply(beta_r,1,mean)
-      beta_random_var <- apply(beta_r,1,var)/n.cores
-      beta_random_samples <- est.list[[1]]$mixedEffect_list$beta_random
-      Sigma_vec <- est.list[[1]]$mixedEffect_list$Sigma_vec/n.cores
-      sigma_v <- matrix(unlist(lapply(1:n.cores,function(x) c(est.list[[x]]$mixedEffect_list$Sigma))),n.random^2,n.cores)
-      Sigma <- matrix(apply(sigma_v,1,mean),n.random,n.random)
-      Sigma_var <- matrix(apply(sigma_v,1,var)/n.cores,n.random,n.random)
-      use.random = TRUE
-    }
-    use.nu = FALSE
-    if(!is.null(est.list[[1]]$mixedEffect_list$nu_vec)){
-      nu_vec <- est.list[[1]]$mixedEffect_list$nu_vec/n.cores
-      use.nu = TRUE
-      nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$nu)),1,n.cores)
-      nu <- apply(nu_v,1,mean)
-      nu_var <- apply(nu_v,1,var)/n.cores
-    }
-    use.mu = FALSE
-    if(!is.null(est.list[[1]]$mixedEffect_list$mu_vec)){
-      mu_vec <- est.list[[1]]$mixedEffect_list$mu_vec/n.cores
-      mu <- est.list[[1]]$mixedEffect_list$mu/n.cores
-      use.mu = TRUE
-      mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$mixedEffect_list$mu)),1,n.cores)
-      mu <- apply(mu_v,1,mean)
-      mu_var <- apply(mu_v,1,var)/n.cores
-    }
-    
-    for(i in 2:n.cores){
-      betaf_vec <- betaf_vec + est.list[[i]]$mixedEffect_list$betaf_vec/n.cores
-      beta_fixed_samples <- rbind(beta_fixed_samples,est.list[[i]]$mixedEffect_list$beta_fixed)
-      if(use.random){
-        beta_random_samples <- rbind(beta_random_samples,est.list[[i]]$mixedEffect_list$beta_random)
-        betar_vec <- betar_vec + est.list[[i]]$mixedEffect_list$betar_vec/n.cores
-        Sigma_vec <- Sigma_vec + est.list[[i]]$mixedEffect_list$Sigma_vec/n.cores
-      }
-      if(use.nu)
-        nu_vec <- nu_vec + est.list[[i]]$mixedEffect_list$nu_vec/n.cores
-      if(use.mu)
-        mu_vec <- mu_vec + est.list[[i]]$mixedEffect_list$mu_vec/n.cores
-    }  
-    est.merge$mixedEffect_list$betaf_vec <- betaf_vec
-    est.merge$mixedEffect_list$beta_fixed_samples <- list(beta_fixed_samples)
-    est.merge$fixed_est_vec <- t(matrix(rep(0,length(est.merge$index_fixed)+length(est.merge$index_random))))
-    est.merge$fixed_est_vec[est.merge$index_fixed] <- beta_fixed#betaf_vec
-    est.merge$fixed_est[est.merge$index_fixed] <- beta_fixed
-    est.merge$fixed_est_var <- t(matrix(rep(0,length(est.merge$index_fixed)+length(est.merge$index_random))))
-    est.merge$fixed_est_var[est.merge$index_fixed] <- beta_fixed_var
-    est.merge$mixedEffect_list$beta_fixed <- beta_fixed
-    est.merge$mixedEffect_list$beta_fixed_var <- beta_fixed_var
-    if(use.random){
-      est.merge$mixedEffect_list$betar_vec <- betar_vec
-      est.merge$mixedEffect_list$beta_random <- beta_random
-      est.merge$mixedEffect_list$beta_random_samples <- list(beta_random_samples)
-      est.merge$mixedEffect_list$beta_random_var <- beta_random_var
-      est.merge$fixed_est_vec[est.merge$index_random] <- beta_random#betar_vec
-      est.merge$fixed_est[est.merge$index_random] <- beta_random
-      est.merge$fixed_est_var[est.merge$index_random] <- beta_random_var
-      est.merge$mixedEffect_list$Sigma_vec <- Sigma_vec
-      est.merge$mixedEffect_list$Sigma <- Sigma
-      est.merge$mixedEffect_list$Sigma_var <- Sigma_var
-      est.merge$ranef_Sigma <- Sigma
-      est.merge$ranef_Sigma_var <- Sigma_var
-      est.merge$ranef_Sigma_vec <- t(matrix(c(Sigma)))#Sigma_vec
-    }
-    if(use.nu){
-      est.merge$mixedEffect_list$nu_vec <- matrix(nu_vec)
-      est.merge$mixedEffect_list$nu <- nu
-      est.merge$ranef_nu_vec <- nu#nu_vec 
-      est.merge$ranef_nu <- nu
-      est.merge$ranef_nu_var <- nu_var
-      est.merge$mixedEffect_list$nu_var <- nu_var
-    }
-    if(use.mu){
-      est.merge$mixedEffect_list$mu_vec <- matrix(mu_vec )
-      est.merge$mixedEffect_list$mu <- mu 
-      est.merge$mixedEffect_list$mu_var <- mu_var 
-      est.merge$ranef_mu_vec <- mu#mu_vec 
-      est.merge$ranef_mu <- mu
-      est.merge$ranef_mu_var <- mu_var
-    }
-    #merge error list
-    sigma_vec <- est.list[[1]]$measurementError_list$sigma_vec/n.cores
-    sigma_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$measurementError_list$sigma)),1,n.cores)
-    sigma <- apply(sigma_v,1,mean)
-    sigma_var <- apply(sigma_v,1,var)/n.cores
-    
-    use.nu = FALSE
-    if(!is.null(est.list[[1]]$measurementError_list$nu_vec)){
-      nu_vec <- est.list[[1]]$measurementError_list$nu_vec/n.cores
-      use.nu = TRUE
-      nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$measurementError_list$nu)),1,n.cores)
-      nu <- apply(nu_v,1,mean)
-      nu_var <- apply(nu_v,1,var)/n.cores
-    }
-    use.mu = FALSE
-    if(!is.null(est.list[[1]]$measurementError_list$mu_vec)){
-      mu_vec <- est.list[[1]]$measurementError_list$mu_vec/n.cores
-      mu <- est.list[[1]]$measurementError_list$mu/n.cores
-      use.mu = TRUE
-      mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$measurementError_list$mu)),1,n.cores)
-      mu <- apply(mu_v,1,mean)
-      mu_var <- apply(mu_v,1,var)/n.cores
-    }
-    
-    for(i in 2:n.cores){
-      sigma_vec <- sigma_vec + est.list[[i]]$measurementError_list$sigma_vec/n.cores
-      if(use.nu)
-        nu_vec <- nu_vec + est.list[[i]]$measurementError_list$nu_vec/n.cores
-      if(use.mu)
-        mu_vec <- mu_vec + est.list[[i]]$measurementError_list$mu_vec/n.cores
-    }  
-    est.merge$measurementError_list$sigma <- sigma
-    est.merge$measurementError_list$sigma_vec <- sigma_vec
-    est.merge$measurementError_list$sigma_var <- sigma_var
-    est.merge$meas_error_sigma <- sigma
-    est.merge$meas_error_sigma_var <- sigma_var
-    est.merge$meas_error_sigma_vec <- sigma#sigma_vec
-    if(use.nu){
-      est.merge$measurementError_list$nu_vec <- nu_vec 
-      est.merge$measurementError_list$nu <- nu 
-      est.merge$measurementError_list$nu_var <- nu_var 
-      est.merge$meas_error_nu <- nu
-      est.merge$meas_error_nu_var <- nu_var
-      est.merge$meas_error_nu_vec <- nu#nu_vec
-    }
-    if(use.mu){
-      est.merge$measurementError_list$mu_vec <- mu_vec 
-      est.merge$measurementError_list$mu <- mu 
-      est.merge$measurementError_list$mu_var <- mu_var 
-      est.merge$meas_error_mu <- mu
-      est.merge$meas_error_mu_var <- mu_var
-      est.merge$meas_error_mu_vec <- mu#mu_vec
-    }
-    #merge operator list
-    if(!is.null(est.list[[1]]$operator_list)){
-      tau_vec <- est.list[[1]]$operator_list$tauVec/n.cores
-      tau_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$operator_list$tau)),1,n.cores)
-      tau <- apply(tau_v,1,mean)
-      tau_var <- apply(tau_v,1,var)/n.cores  
-      use.kappa = FALSE
-      if(!is.null(est.list[[1]]$operator_list$kappa)){
-        use.kappa = TRUE
-        kappa_vec <- est.list[[1]]$operator_list$kappaVec/n.cores
-        kappa_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$operator_list$kappa)),1,n.cores)
-        kappa <- apply(kappa_v,1,mean)
-        kappa_var <- apply(kappa_v,1,var)/n.cores  
-      }
-      for(i in 2:n.cores){
-        tau_vec <- tau_vec + est.list[[i]]$operator_list$tauVec/n.cores
-        if(use.kappa)
-          kappa_vec <- kappa_vec + est.list[[i]]$operator_list$kappaVec/n.cores
-      }  
-      est.merge$operator_list$tau <- tau
-      est.merge$operator_list$tauVec <- tau_vec
-      est.merge$operator_list$tau_var <- tau_var
-      est.merge$operator_tau <- tau
-      est.merge$operator_tau_var <- tau_var
-      est.merge$operator_tau_vec <- tau#tau_vec
-      if(use.kappa){
-        est.merge$operator_list$kappa <- kappa
-        est.merge$operator_list$kappaVec <- kappa_vec
-        est.merge$operator_list$kappa_var <- kappa_var
-        est.merge$operator_kappa <- kappa
-        est.merge$operator_kappa_var <- kappa_var
-        est.merge$operator_kappa_vec <- kappa#kappa_vec
-      }
-      #merge process list
-      use.nu = FALSE
-      if(!is.null(est.list[[1]]$processes_list$nu_vec)){
-        nu_vec <- est.list[[1]]$processes_list$nu_vec/n.cores
-        use.nu = TRUE
-        nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$nu)),1,n.cores)
-        nu <- apply(nu_v,1,mean)
-        nu_var <- apply(nu_v,1,var)/n.cores
-      }
-      use.mu = FALSE
-      if(!is.null(est.list[[1]]$processes_list$mu_vec)){
-        mu_vec <- est.list[[1]]$processes_list$mu_vec/n.cores
-        mu <- est.list[[1]]$processes_list$mu/n.cores
-        use.mu = TRUE
-        mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$mu)),1,n.cores)
-        mu <- apply(mu_v,1,mean)
-        mu_var <- apply(mu_v,1,var)/n.cores
-      }
-      
-      for(i in 2:n.cores){
-        if(use.nu)
-          nu_vec <- nu_vec + est.list[[i]]$processes_list$nu_vec/n.cores
-        if(use.mu)
-          mu_vec <- mu_vec + est.list[[i]]$processes_list$mu_vec/n.cores
-      }  
-      if(use.nu){
-        est.merge$processes_list$nu_vec <- nu_vec 
-        est.merge$processes_list$nu <- nu 
-        est.merge$processes_list$nu_var <- nu_var 
-        est.merge$process_nu <- nu
-        est.merge$process_nu_var <- nu_var
-        est.merge$process_nu_vec <- nu#nu_vec
-      }
-      if(use.mu){
-        est.merge$processes_list$mu_vec <- mu_vec 
-        est.merge$processes_list$mu <- mu 
-        est.merge$processes_list$mu_var <- mu_var 
-        est.merge$process_mu <- mu
-        est.merge$process_mu_var <- mu_var
-        est.merge$process_mu_vec <- mu#mu_vec
-      }
-    }
-  }
-  return(est.merge)
-}
-
-attach.ngme.output <- function(obj1,obj2){
-  if(is.null(obj1)){
-    return(obj2)
-  } else {
-    output <- obj2
-    #merge mixedEffects
-    output$mixedEffect_list$betaf_vec <- rbind(obj1$mixedEffect_list$betaf_vec,
-                                               obj2$mixedEffect_list$betaf_vec)
-    l <- length(obj1$mixedEffect_list$beta_fixed_samples)
-    output$mixedEffect_list$beta_fixed_samples <- obj1$mixedEffect_list$beta_fixed_samples
-    output$mixedEffect_list$beta_fixed_samples[[l+1]] <- obj2$mixedEffect_list$beta_fixed_samples[[1]]
-    n <- dim(output$mixedEffect_list$betaf_vec)[1]
-    #output$fixed_est_vec <- matrix(0,n,length(obj2$index_fixed)+length(obj2$index_random))
-    #output$fixed_est_vec[,obj2$index_fixed] <- output$mixedEffect_list$betaf_vec
-    
-    output$fixed_est_vec <- rbind(obj1$fixed_est_vec,obj2$fixed_est_vec)
-    output$fixed_est_var <- rbind(obj1$fixed_est_var,obj2$fixed_est_var)
-    
-    if(!is.null(obj2$mixedEffect_list$betar_vec)){
-      
-      output$mixedEffect_list$beta_random_samples <- obj1$mixedEffect_list$beta_random_samples
-      output$mixedEffect_list$beta_random_samples[[l+1]] <- obj2$mixedEffect_list$beta_random_samples[[1]]
-      output$mixedEffect_list$betar_vec <- rbind(obj1$mixedEffect_list$betar_vec,
-                                                 obj2$mixedEffect_list$betar_vec)
-      #output$fixed_est_vec[,obj2$index_random] <- output$mixedEffect_list$betar_vec
-      output$mixedEffect_list$Sigma_vec <- rbind(obj1$mixedEffect_list$Sigma_vec,
-                                                 obj2$mixedEffect_list$Sigma_vec)
-      #output$ranef_Sigma_vec <- output$mixedEffect_list$Sigma_vec
-      output$ranef_Sigma_vec <- rbind(obj1$ranef_Sigma_vec,obj2$ranef_Sigma_vec)
-      output$ranef_Sigma_var <- rbind(obj1$ranef_Sigma_var,obj2$ranef_Sigma_var)
-      
-    }
-    
-    if(!is.null(obj2$mixedEffect_list$nu_vec)){
-      output$mixedEffect_list$nu_vec <- rbind(obj1$mixedEffect_list$nu_vec,
-                                              obj2$mixedEffect_list$nu_vec)
-      #output$ranef_nu_vec <- output$mixedEffect_list$nu_vec
-      output$ranef_nu_vec <- rbind(obj1$ranef_nu_vec,obj2$ranef_nu_vec)
-      output$ranef_nu_var <- rbind(obj1$ranef_nu_var,obj2$ranef_nu_var)
-    }
-    
-    if(!is.null(obj2$mixedEffect_list$mu_vec)){
-      output$mixedEffect_list$mu_vec <- rbind(obj1$mixedEffect_list$mu_vec,
-                                              obj2$mixedEffect_list$mu_vec)
-      #output$ranef_mu_vec <- output$mixedEffect_list$mu_vec
-      output$ranef_mu_vec <- rbind(obj1$ranef_mu_vec,obj2$ranef_mu_vec)
-      output$ranef_mu_var <- rbind(obj1$ranef_mu_var,obj2$ranef_mu_var)
-    }
-    #merge error list
-    output$measurementError_list$sigma_vec <- rbind(matrix(obj1$measurementError_list$sigma_vec),
-                                                    matrix(obj2$measurementError_list$sigma_vec))
-    #output$meas_error_sigma_vec <- output$measurementError_list$sigma_vec
-    output$meas_error_sigma_vec <- rbind(obj1$meas_error_sigma_vec,obj2$meas_error_sigma_vec)
-    output$meas_error_sigma_var <- rbind(obj1$meas_error_sigma_var,obj2$meas_error_sigma_var)
-    
-    if(!is.null(obj2$measurementError_list$nu_vec)){
-      output$measurementError_list$nu_vec <- rbind(matrix(obj1$measurementError_list$nu_vec),
-                                                   matrix(obj2$measurementError_list$nu_vec))
-      #output$meas_error_nu_vec <- output$measurementError_list$nu_vec
-      output$meas_error_nu_vec <- rbind(obj1$meas_error_nu_vec,obj2$meas_error_nu_vec)
-      output$meas_error_nu_var <- rbind(obj1$meas_error_nu_var,obj2$meas_error_nu_var)
-      
-    }
-    if(!is.null(obj2$measurementError_list$mu_vec)){
-      output$measurementError_list$mu_vec <- rbind(matrix(obj1$measurementError_list$mu_vec),
-                                                   matrix(obj2$measurementError_list$mu_vec))
-      #output$meas_error_mu_vec <- output$measurementError_list$mu_vec
-      output$meas_error_mu_vec <- rbind(obj1$meas_error_mu_vec,obj2$meas_error_mu_vec)
-      output$meas_error_mu_var <- rbind(obj1$meas_error_mu_var,obj2$meas_error_mu_var)
-    }
-    
-    #merge operator list
-    if(!is.null(obj2$operator_list$tauVec)){
-      output$operator_list$tauVec <- rbind(matrix(obj1$operator_list$tauVec),
-                                           matrix(obj2$operator_list$tauVec))
-      #output$operator_tau_vec <- output$operator_list$tau_vec
-      output$operator_tau_vec <- rbind(obj1$operator_tau_vec,obj2$operator_tau_vec)
-      output$operator_tau_var <- rbind(obj1$operator_tau_var,obj2$operator_tau_var)  
-    }
-    
-    
-    if(!is.null(obj2$operator_list$kappaVec)){
-      output$operator_list$kappaVec <- rbind(matrix(obj1$operator_list$kappaVec),
-                                                   matrix(obj2$operator_list$kappaVec))
-      #output$operator_kappa_vec <- output$operator_list$kappa_vec
-      output$operator_kappa_vec <- rbind(obj1$operator_kappa_vec,obj2$operator_kappa_vec)
-      output$operator_kappa_var <- rbind(obj1$operator_kappa_var,obj2$operator_kappa_var)
-    }
-    
-    #merge process list 
-    if(!is.null(obj2$processes_list$mu_vec)){
-      output$processes_list$mu_vec <- rbind(obj1$processes_list$mu_vec,
-                                            obj2$processes_list$mu_vec)
-      #output$process_mu_vec <- output$processes_list$mu_vec
-      output$process_mu_vec <- rbind(obj1$process_mu_vec,obj2$process_mu_vec)
-      output$process_mu_var <- rbind(obj1$process_mu_var,obj2$process_mu_var)
-    }
-    if(!is.null(obj2$processes_list$nu_vec)){
-      output$processes_list$nu_vec <- rbind(obj1$processes_list$nu_vec,
-                                            obj2$processes_list$nu_vec)
-      #output$process_nu_vec <- output$processes_list$nu_vec
-      output$process_nu_vec <- rbind(obj1$process_nu_vec,obj2$process_nu_vec)
-      output$process_nu_var <- rbind(obj1$process_nu_var,obj2$process_nu_var)
-    }
-    return(output)
-  }
-   
-}
-
-check.convergence <- function(output,std.lim,silent=FALSE){
-  
-  N  <- nrow(output$fixed_est_var)
-  
-  n.fixed <- length(output$fixed_est)
-  fixed.converged <- rep(TRUE,n.fixed)
-  for(i in 1:n.fixed){
-    fixed.converged[i] <- simple.convergence.test(output$fixed_est_vec[,i],output$fixed_est_var[,i],std.lim)
-  }  
-
-  ranef_Sigma.converged <- NULL
-  if(!is.null(output$ranef_Sigma)){
-    n.sigma <- length(c(output$ranef_Sigma))
-    ranef_Sigma.converged <- rep(TRUE,n.sigma)
-    for(i in 1:n.sigma){
-      ranef_Sigma.converged[i] <- simple.convergence.test(output$ranef_Sigma_vec[,i],
-                                                    output$ranef_Sigma_var[,i],
-                                                    std.lim)  
-    }
-  }
-  
-  ranef_nu.converged <- NULL
-  if(!is.null(output$ranef_nu) && !is.na(output$ranef_nu))
-    ranef_nu.converged <- simple.convergence.test(output$ranef_nu_vec,
-                                                  output$ranef_nu_var,
-                                                  std.lim)  
-  
-  ranef_mu.converged <- NULL
-  if(!is.null(output$ranef_mu) && !is.na(output$ranef_mu))
-    ranef_mu.converged <- simple.convergence.test(output$ranef_mu_vec,
-                                                  output$ranef_mu_var,
-                                                  std.lim)  
-  random.converged <- c(ranef_Sigma.converged, ranef_nu.converged,ranef_mu.converged)
-  
-  #check error
-  meas_error_sigma.converged <- simple.convergence.test(output$meas_error_sigma_vec,
-                                                        output$meas_error_sigma_var,
-                                                        std.lim)  
-  meas_error_nu.converged <- NULL
-  if(!is.null(output$meas_error_nu) && !is.na(output$meas_error_nu))
-    meas_error_nu.converged <- simple.convergence.test(output$meas_error_nu_vec,
-                                                       output$meas_error_nu_var,
-                                                       std.lim)  
-  
-  meas_error_mu.converged <- NULL
-  if(!is.null(output$meas_error_mu) && !is.na(output$meas_error_mu) && output$measurementError_list$assymetric)
-    meas_error_mu.converged <- simple.convergence.test(output$meas_error_mu_vec,
-                                                       output$meas_error_mu_var,
-                                                       std.lim)  
-  meas_error.converged <- c(meas_error_sigma.converged,meas_error_nu.converged,meas_error_mu.converged)
-  
-  #check operator
-  operator_tau.converged <- NULL
-  if(!is.null(output$operator_tau) && !is.na(output$operator_tau))
-    operator_tau.converged <- simple.convergence.test(output$operator_tau_vec,
-                                                      output$operator_tau_var,
-                                                      std.lim)  
-  
-  operator_kappa.converged <- NULL
-  if(!is.null(output$operator_kappa) && !is.na(output$operator_kappa))
-    operator_kappa.converged <- simple.convergence.test(output$operator_kappa_vec,
-                                                        output$operator_kappa_var,
-                                                        std.lim)  
-  operator.converged <- c(operator_tau.converged,operator_kappa.converged)
-  
-  #check process
-  process_nu.converged <- NULL
-  if(!is.null(output$process_nu) && !is.na(output$process_nu))
-    process_nu.converged <- simple.convergence.test(output$process_nu_vec,
-                                                    output$process_nu_var,
-                                                    std.lim)  
-  
-  process_mu.converged <- NULL
-  if(!is.null(output$process_mu) && !is.na(output$process_mu))
-    process_mu.converged <- simple.convergence.test(output$process_mu_vec,
-                                                    output$process_mu_var,
-                                                    std.lim)  
-  
-  process.converged <- c(process_mu.converged,process_nu.converged)
-  
-  converged <- TRUE
-  if(length(fixed.converged)>0){
-    converged <- converged*(sum(!fixed.converged)==0)
-    if(!silent){
-      cat("Fixed effects converged: ", fixed.converged,"\n")
-    }
-  }
-  if(length(random.converged)>0){
-    converged <- converged*(sum(!random.converged)==0)
-    if(!silent){
-      cat("Random effects converged: ", random.converged,"\n")
-    }
-  }
-  if(length(meas_error.converged)>0){
-    converged <- converged*(sum(!meas_error.converged)==0)
-    if(!silent){
-      cat("Measurement error converged: ", meas_error.converged,"\n")
-    }
-  }
-  if(length(operator.converged)>0){
-    converged <- converged*(sum(!operator.converged)==0)
-    if(!silent){
-      cat("Operator converged: ", operator.converged,"\n")
-    }
-  }
-  if(length(process.converged)>0){
-    converged <- converged*(sum(!process.converged)==0)
-    if(!silent){
-      cat("Process converged: ", process.converged,"\n")
-    }
-  }
-  return(list(fixed = fixed.converged,
-              random = random.converged,
-              operator = operator.converged,
-              process = process.converged,
-              error = meas_error.converged,
-              converged = converged))
-  
-}
-
-simple.convergence.test <- function(m,sigma2,std.lim){
-  if(length(m)>3){
-    #check that estimate/std is above the limit
-    N = length(m)
-    std.satisfied <- m[N]/sqrt(sigma2[N])>std.lim
-    
-    #check if we have a significant trend in the n.points last points
-    n.points <- min(length(m),4)
-    B <- cbind(rep(n,n.points),1:n.points)
-    Sigma <- diag(sigma2[(N-n.points+1):N])
-    Q <- solve(t(B)%*%solve(Sigma,B))
-    beta <- Q%*%(t(B)%*%solve(Sigma,m[(N-n.points+1):N]))
-    slope.satisfied <- abs(beta[2])<2*sqrt(Q[2,2]) #no significant trend
-    return(std.satisfied&slope.satisfied)  
-  } else {
-    return(FALSE)
-  }
-  
-}
-
-plot.output <- function(output,est.list,ii,nIter,plot.type){
-  
-  if(plot.type=="Fixed" || plot.type==TRUE || plot.type=="All"){
-    n.cores = length(est.list)
-    #check which parameters we have 
-    n.fixed = dim(output$mixedEffect_list$betaf_vec)[2]
-    n.random = dim(output$mixedEffect_list$betar_vec)[2]
-    n.effects <- n.fixed + n.random
-    
-    n.random.sigma = n.random*(n.random+1)/2
-    n.random.nu = !(is.null(output$ranef_nu)|is.na(output$ranef_nu))
-    n.random.mu = !(is.null(output$ranef_mu)|is.na(output$ranef_mu))
-    n.random.dist <- n.random.sigma + n.random.mu + n.random.nu
-    
-    n.operator.kappa = !(is.null(output$operator_kappa)|is.na(output$operator_kappa))
-    n.operator.tau = !(is.null(output$operator_tau)|is.na(output$operator_tau))
-    n.process.nu = !(is.null(output$process_nu)|is.na(output$process_nu))
-    n.process.mu = !(is.null(output$process_mu)|is.na(output$process_mu))
-    n.process <- n.operator.tau + n.operator.kappa + n.process.mu + n.process.nu
-    
-    n.meas.nu = !(is.null(output$meas_error_nu)|is.na(output$meas_error_nu))
-    n.meas.mu = (!is.null(output$measurementError_list$assymetric)) && (output$measurementError_list$assymetric==1)
-    n.error = 1 + n.meas.nu + n.meas.mu
-    n.tot = n.effects + n.random.dist + n.process + n.error 
-    
-    #Plot the fixed effects
-    
-    if(plot.type=="Fixed" || plot.type==TRUE){
-      n.p = min(ceiling(sqrt(n.effects)),4)
-      if(n.p*(n.p-1)>=n.effects)
-        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
-      else
-        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
-    } else if(plot.type=="All"){
-      n.p = min(ceiling(sqrt(n.tot)),4)
-      if(n.p*(n.p-1)>=n.tot)
-        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
-      else
-        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
-    }
-    
-    total.plotted = 0
-    for(k in 1:min(n.fixed,16)){
-      total.plotted = total.plotted + 1
-      #fint plot limits
-      min.y <- min(output$mixedEffect_list$betaf_vec[,k])
-      max.y <- max(output$mixedEffect_list$betaf_vec[,k])
-      for(i in 1:n.cores){
-        min.i <- min(est.list[[i]]$mixedEffect_list$betaf_vec[,k])
-        max.i <- max(est.list[[i]]$mixedEffect_list$betaf_vec[,k])
-        min.y <- min(min.y,min.i)
-        max.y <- max(max.y,max.i)
-      }
-      
-      plot(output$mixedEffect_list$betaf_vec[,k],type="l", xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n",main="fixed")  
-      for(i in 1:n.cores)
-        lines((ii-1)*nIter + (1:nIter),est.list[[i]]$mixedEffect_list$betaf_vec[,k],col="gray")  
-      lines(output$mixedEffect_list$betaf_vec[,k])  
-      
-      points((1:ii)*nIter,output$fixed_est_vec[,output$index_fixed[k]],col=2)
-      points((1:ii)*nIter,output$fixed_est_vec[,output$index_fixed[k]]+2*sqrt(output$fixed_est_var[,output$index_fixed[k]]),col=3)
-      points((1:ii)*nIter,output$fixed_est_vec[,output$index_fixed[k]]-2*sqrt(output$fixed_est_var[,output$index_fixed[k]]),col=3)  
-      for(i in 1:ii){
-        lines(i*nIter*c(1,1),c(output$fixed_est_vec[i,output$index_fixed[k]]-2*sqrt(output$fixed_est_var[i,output$index_fixed[k]]),
-                               output$fixed_est_vec[i,output$index_fixed[k]]+2*sqrt(output$fixed_est_var[i,output$index_fixed[k]])),col=3)
-      }
-    }
-    for(k in 1:n.random){
-      if(total.plotted < 16){
-       total.plotted = total.plotted + 1 
-       min.y <- min(output$mixedEffect_list$betar_vec[,k])
-       max.y <- max(output$mixedEffect_list$betar_vec[,k])
-       for(i in 1:n.cores){
-         min.i <- min(est.list[[i]]$mixedEffect_list$betar_vec[,k])
-         max.i <- max(est.list[[i]]$mixedEffect_list$betar_vec[,k])
-         min.y <- min(min.y,min.i)
-         max.y <- max(max.y,max.i)
-       }
-       plot(output$mixedEffect_list$betar_vec[,k],type="l",  xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n",main="random")   
-       for(i in 1:n.cores)
-         lines((ii-1)*nIter + (1:nIter),est.list[[i]]$mixedEffect_list$betar_vec[,k],col="gray")  
-       lines(output$mixedEffect_list$betar_vec[,k])
-       points((1:ii)*nIter,output$fixed_est_vec[,output$index_random[k]],col=2)
-       points((1:ii)*nIter,output$fixed_est_vec[,output$index_random[k]]+2*sqrt(output$fixed_est_var[,output$index_random[k]]),col=3)
-       points((1:ii)*nIter,output$fixed_est_vec[,output$index_random[k]]-2*sqrt(output$fixed_est_var[,output$index_random[k]]),col=3)  
-       for(i in 1:ii){
-         lines(i*nIter*c(1,1),c(output$fixed_est_vec[i,output$index_random[k]]-2*sqrt(output$fixed_est_var[i,output$index_random[k]]),
-                                output$fixed_est_vec[i,output$index_random[k]]+2*sqrt(output$fixed_est_var[i,output$index_random[k]])),col=3)
-       }
-      }
-    }
-    if(plot.type=="All"){
-      kk = 0
-      for(i.r in 1:n.random){
-        for(j.r in 1:n.random){
-          kk=kk+1
-          if(j.r>=i.r){
-            if(total.plotted < 16){
-              total.plotted = total.plotted + 1
-              min.y <- min(output$mixedEffect_list$Sigma_vec[,kk])
-              max.y <- max(output$mixedEffect_list$Sigma_vec[,kk])
-              for(i in 1:n.cores){
-                min.i <- min(est.list[[i]]$mixedEffect_list$Sigma_vec[,kk])
-                max.i <- max(est.list[[i]]$mixedEffect_list$Sigma_vec[,kk])
-                min.y <- min(min.y,min.i)
-                max.y <- max(max.y,max.i)
-              }
-              plot(output$mixedEffect_list$Sigma_vec[,kk],type="l", main = "Sigma random",ylim=c(min.y,max.y),xaxt="n")  
-              for(i in 1:n.cores)
-                lines((ii-1)*nIter + (1:nIter), est.list[[i]]$mixedEffect_list$Sigma_vec[,kk],col="gray")  
-              lines(output$mixedEffect_list$Sigma_vec[,kk])  
-              
-              points((1:ii)*nIter,output$ranef_Sigma_vec[,kk],col=2)
-              points((1:ii)*nIter,output$ranef_Sigma_vec[,kk]-2*sqrt(output$ranef_Sigma_var[,kk]),col=3)
-              points((1:ii)*nIter,output$ranef_Sigma_vec[,kk]+2*sqrt(output$ranef_Sigma_var[,kk]),col=3)                       
-              for(i in 1:ii){
-                lines(i*nIter*c(1,1),c(output$ranef_Sigma_vec[i,kk]-2*sqrt(output$ranef_Sigma_var[i,kk]),
-                                       output$ranef_Sigma_vec[i,kk]+2*sqrt(output$ranef_Sigma_var[i,kk])),col=3)
-              }
-            }
-          }
-        }
-      }
-      if(n.random.mu>0 & total.plotted < 16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$mixedEffect_list$mu_vec)
-        max.y <- max(output$mixedEffect_list$mu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$mixedEffect_list$mu_vec)
-          max.i <- max(est.list[[i]]$mixedEffect_list$mu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$mixedEffect_list$mu_vec,type="l", main = "mu random",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$mixedEffect_list$mu_vec,col="gray")  
-        lines(output$mixedEffect_list$mu_vec)
-        points((1:ii)*nIter,output$ranef_mu_vec,col=2)
-        points((1:ii)*nIter,output$ranef_mu_vec+2*sqrt(output$ranef_mu_var),col=3)
-        points((1:ii)*nIter,output$ranef_mu_vec-2*sqrt(output$ranef_mu_var),col=3)    
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$ranef_mu_vec[i]-2*sqrt(output$ranef_mu_var[i]),
-                                 output$ranef_mu_vec[i]+2*sqrt(output$ranef_mu_var[i])),col=3)
-        }
-      }
-      if(n.random.nu>0 & total.plotted < 16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$mixedEffect_list$nu_vec)
-        max.y <- max(output$mixedEffect_list$nu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$mixedEffect_list$nu_vec)
-          max.i <- max(est.list[[i]]$mixedEffect_list$nu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$mixedEffect_list$nu_vec,type="l", main = "nu random",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$mixedEffect_list$nu_vec,col="gray")  
-        lines(output$mixedEffect_list$nu_vec)
-        points((1:ii)*nIter,output$ranef_nu_vec,col=2)
-        points((1:ii)*nIter,output$ranef_nu_vec+2*sqrt(output$ranef_nu_var),col=3)
-        points((1:ii)*nIter,output$ranef_nu_vec-2*sqrt(output$ranef_nu_var),col=3)   
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$ranef_nu_vec[i]-2*sqrt(output$ranef_nu_var[i]),
-                                 output$ranef_nu_vec[i]+2*sqrt(output$ranef_nu_var[i])),col=3)
-        }
-      }
-      
-      if(total.plotted < 16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$measurementError_list$sigma_vec)
-        max.y <- max(output$measurementError_list$sigma_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$measurementError_list$sigma_vec)
-          max.i <- max(est.list[[i]]$measurementError_list$sigma_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$measurementError_list$sigma_vec,type="l", main = "sigma error",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$sigma_vec,col="gray")  
-        lines(output$measurementError_list$sigma_vec)
-        points((1:ii)*nIter,output$meas_error_sigma_vec,col=2)
-        points((1:ii)*nIter,output$meas_error_sigma_vec+2*sqrt(output$meas_error_sigma_var),col=3)
-        points((1:ii)*nIter,output$meas_error_sigma_vec-2*sqrt(output$meas_error_sigma_var),col=3)   
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$meas_error_sigma_vec[i]-2*sqrt(output$meas_error_sigma_var[i]),
-                                 output$meas_error_sigma_vec[i]+2*sqrt(output$meas_error_sigma_var[i])),col=3)
-        }
-      }
-      
-      if(total.plotted < 16 & n.meas.nu>0){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$measurementError_list$nu_vec)
-        max.y <- max(output$measurementError_list$nu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$measurementError_list$nu_vec)
-          max.i <- max(est.list[[i]]$measurementError_list$nu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$measurementError_list$nu_vec,type="l", main = "nu error",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$nu_vec,col="gray")  
-        lines(output$measurementError_list$nu_vec)
-        points((1:ii)*nIter,output$meas_error_nu_vec,col=2)
-        points((1:ii)*nIter,output$meas_error_nu_vec+2*sqrt(output$meas_error_nu_var),col=3)
-        points((1:ii)*nIter,output$meas_error_nu_vec-2*sqrt(output$meas_error_nu_var),col=3)   
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$meas_error_nu_vec[i]-2*sqrt(output$meas_error_nu_var[i]),
-                                 output$meas_error_nu_vec[i]+2*sqrt(output$meas_error_nu_var[i])),col=3)
-        }
-      }
-      
-      if(total.plotted < 16 & n.meas.mu>0){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$measurementError_list$mu_vec)
-        max.y <- max(output$measurementError_list$mu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$measurementError_list$mu_vec)
-          max.i <- max(est.list[[i]]$measurementError_list$mu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$measurementError_list$mu_vec,type="l", main = "mu error",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$measurementError_list$mu_vec,col="gray")  
-        lines(output$measurementError_list$mu_vec)
-        points((1:ii)*nIter,output$meas_error_mu_vec,col=2)
-        points((1:ii)*nIter,output$meas_error_mu_vec+2*sqrt(output$meas_error_mu_var),col=3)
-        points((1:ii)*nIter,output$meas_error_mu_vec-2*sqrt(output$meas_error_mu_var),col=3)   
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$meas_error_mu_vec[i]-2*sqrt(output$meas_error_mu_var[i]),
-                                 output$meas_error_mu_vec[i]+2*sqrt(output$meas_error_mu_var[i])),col=3)
-        }
-      }
-    
-      if(n.operator.tau>0 & total.plotted < 16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$operator_list$tauVec)
-        max.y <- max(output$operator_list$tauVec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$operator_list$tauVec)
-          max.i <- max(est.list[[i]]$operator_list$tauVec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$operator_list$tauVec,type="l", main = "tau",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$operator_list$tauVec,col="gray")  
-        lines(output$operator_list$tauVec)
-        points((1:ii)*nIter,output$operator_tau_vec,col=2)
-        points((1:ii)*nIter,output$operator_tau_vec+2*sqrt(output$operator_tau_var),col=3)
-        points((1:ii)*nIter,output$operator_tau_vec-2*sqrt(output$operator_tau_var),col=3)  
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$operator_tau_vec[i]-2*sqrt(output$operator_tau_var[i]),
-                                 output$operator_tau_vec[i]+2*sqrt(output$operator_tau_var[i])),col=3)
-        }
-      } 
-      if(n.operator.kappa>0 & total.plotted < 16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$operator_list$kappaVec)
-        max.y <- max(output$operator_list$kappaVec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$operator_list$kappaVec)
-          max.i <- max(est.list[[i]]$operator_list$kappaVec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$operator_list$kappaVec,type="l", main = "kappa",ylim=c(min.y,max.y),xaxt="n")  
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$operator_list$kappaVec,col="gray")  
-        lines(output$operator_list$kappaVec)
-        points((1:ii)*nIter,output$operator_kappa_vec,col=2)
-        points((1:ii)*nIter,output$operator_kappa_vec+2*sqrt(output$operator_kappa_var),col=3)
-        points((1:ii)*nIter,output$operator_kappa_vec-2*sqrt(output$operator_kappa_var),col=3)   
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$operator_kappa_vec[i]-2*sqrt(output$operator_kappa_var[i]),
-                                 output$operator_kappa_vec[i]+2*sqrt(output$operator_kappa_var[i])),col=3)
-        }
-      } 
-      if(n.process.nu>0 & total.plotted<16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$processes_list$nu_vec)
-        max.y <- max(output$processes_list$nu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$processes_list$nu_vec)
-          max.i <- max(est.list[[i]]$processes_list$nu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$processes_list$nu_vec,type="l", main = "nu process",ylim=c(min.y,max.y),xaxt="n")    
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$processes_list$nu_vec,col="gray")
-        lines(output$processes_list$nu_vec)
-        points((1:ii)*nIter,output$process_nu_vec,col=2)
-        points((1:ii)*nIter,output$process_nu_vec+2*sqrt(output$process_nu_var),col=3)
-        points((1:ii)*nIter,output$process_nu_vec-2*sqrt(output$process_nu_var),col=3)
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$process_nu_vec[i]-2*sqrt(output$process_nu_var[i]),
-                                 output$process_nu_vec[i]+2*sqrt(output$process_nu_var[i])),col=3)
-        }
-      }
-      if(n.process.mu>0 & total.plotted<16){
-        total.plotted = total.plotted + 1
-        min.y <- min(output$processes_list$mu_vec)
-        max.y <- max(output$processes_list$mu_vec)
-        for(i in 1:n.cores){
-          min.i <- min(est.list[[i]]$processes_list$mu_vec)
-          max.i <- max(est.list[[i]]$processes_list$mu_vec)
-          min.y <- min(min.y,min.i)
-          max.y <- max(max.y,max.i)
-        }
-        plot(output$processes_list$mu_vec,type="l", main = "mu process",ylim=c(min.y,max.y),xaxt="n")    
-        for(i in 1:n.cores)
-          lines((ii-1)*nIter + (1:nIter), est.list[[i]]$processes_list$mu_vec,col="gray")
-        lines(output$processes_list$mu_vec)
-        points((1:ii)*nIter,output$process_mu_vec,col=2)
-        points((1:ii)*nIter,output$process_mu_vec+2*sqrt(output$process_mu_var),col=3)
-        points((1:ii)*nIter,output$process_mu_vec-2*sqrt(output$process_mu_var),col=3)
-        for(i in 1:ii){
-          lines(i*nIter*c(1,1),c(output$process_mu_vec[i]-2*sqrt(output$process_mu_var[i]),
-                                 output$process_mu_vec[i]+2*sqrt(output$process_mu_var[i])),col=3)
-        }
-      }
-    }
-  }
-}
