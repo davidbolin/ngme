@@ -237,7 +237,7 @@ merge.ngme.outputs <- function(est.list){
       est.merge$operator_tau_vec <- tau#tau_vec
       if(use.kappa){
         est.merge$operator_list$kappa <- kappa
-        est.merge$operator_list$kappaVec <- tau_vec
+        est.merge$operator_list$kappaVec <- kappa_vec
         est.merge$operator_list$kappa_var <- kappa_var
         est.merge$operator_kappa <- kappa
         est.merge$operator_kappa_var <- kappa_var
@@ -371,7 +371,7 @@ attach.ngme.output <- function(obj1,obj2){
     
     
     if(!is.null(obj2$operator_list$kappaVec)){
-      output$operator_list$kappa_vec <- rbind(matrix(obj1$operator_list$kappaVec),
+      output$operator_list$kappaVec <- rbind(matrix(obj1$operator_list$kappaVec),
                                                    matrix(obj2$operator_list$kappaVec))
       #output$operator_kappa_vec <- output$operator_list$kappa_vec
       output$operator_kappa_vec <- rbind(obj1$operator_kappa_vec,obj2$operator_kappa_vec)
@@ -467,7 +467,7 @@ check.convergence <- function(output,std.lim,silent=FALSE){
   process_nu.converged <- NULL
   if(!is.null(output$process_nu) && !is.na(output$process_nu))
     process_nu.converged <- simple.convergence.test(output$process_nu_vec,
-                                                    output$proess_nu_var,
+                                                    output$process_nu_var,
                                                     std.lim)  
   
   process_mu.converged <- NULL
@@ -549,7 +549,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
     
     n.random.sigma = n.random*(n.random+1)/2
     n.random.nu = !(is.null(output$ranef_nu)|is.na(output$ranef_nu))
-    n.random.mu = !is.null(output$ranef_mu|is.na(output$ranef_mu))
+    n.random.mu = !(is.null(output$ranef_mu)|is.na(output$ranef_mu))
     n.random.dist <- n.random.sigma + n.random.mu + n.random.nu
     
     n.operator.kappa = !(is.null(output$operator_kappa)|is.na(output$operator_kappa))
@@ -568,15 +568,15 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
     if(plot.type=="Fixed" || plot.type==TRUE){
       n.p = min(ceiling(sqrt(n.effects)),4)
       if(n.p*(n.p-1)>=n.effects)
-        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.05, 0.05))
+        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
       else
-        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.05, 0.05))
+        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
     } else if(plot.type=="All"){
       n.p = min(ceiling(sqrt(n.tot)),4)
       if(n.p*(n.p-1)>=n.tot)
-        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.05, 0.05))
+        par(mfcol = c(n.p-1, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
       else
-        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.05, 0.05))
+        par(mfcol = c(n.p, n.p), mai = c(0.05, 0.3, 0.1, 0.05))
     }
     
     total.plotted = 0
@@ -592,7 +592,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
         max.y <- max(max.y,max.i)
       }
       
-      plot(output$mixedEffect_list$betaf_vec[,k],type="l", xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n")  
+      plot(output$mixedEffect_list$betaf_vec[,k],type="l", xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n",main="fixed")  
       for(i in 1:n.cores)
         lines((ii-1)*nIter + (1:nIter),est.list[[i]]$mixedEffect_list$betaf_vec[,k],col="gray")  
       lines(output$mixedEffect_list$betaf_vec[,k])  
@@ -616,7 +616,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
          min.y <- min(min.y,min.i)
          max.y <- max(max.y,max.i)
        }
-       plot(output$mixedEffect_list$betar_vec[,k],type="l",  xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n")   
+       plot(output$mixedEffect_list$betar_vec[,k],type="l",  xlab="",ylab="",ylim=c(min.y,max.y),xaxt="n",main="random")   
        for(i in 1:n.cores)
          lines((ii-1)*nIter + (1:nIter),est.list[[i]]$mixedEffect_list$betar_vec[,k],col="gray")  
        lines(output$mixedEffect_list$betar_vec[,k])
@@ -645,7 +645,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
                 min.y <- min(min.y,min.i)
                 max.y <- max(max.y,max.i)
               }
-              plot(output$mixedEffect_list$Sigma_vec[,kk],type="l", main = "Sigma",ylim=c(min.y,max.y),xaxt="n")  
+              plot(output$mixedEffect_list$Sigma_vec[,kk],type="l", main = "Sigma random",ylim=c(min.y,max.y),xaxt="n")  
               for(i in 1:n.cores)
                 lines((ii-1)*nIter + (1:nIter), est.list[[i]]$mixedEffect_list$Sigma_vec[,kk],col="gray")  
               lines(output$mixedEffect_list$Sigma_vec[,kk])  
