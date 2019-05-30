@@ -78,14 +78,14 @@ ngme.par <- function(n.cores = 4,
   output <- NULL
   if(is.null(controls)){
     step0  <- 1
-    alpha <- 0.3
+    alpha <- 0.6
   } else {
     step0 <- controls$step0
     if(is.null(step0))
       step0 <- 1  
     alpha <- controls$alpha
     if(is.null(alpha))
-      alpha = 0.3
+      alpha = 0.6
   }
   
   for(ii in 1:max.rep){
@@ -95,12 +95,14 @@ ngme.par <- function(n.cores = 4,
     progress <- function(n) setTxtProgressBar(pb, n)
     opts <- list(progress = progress)
     parallel::clusterExport(cl, varlist = c(), envir = environment())
+    if(is.null(controls)){
+      controls <- list()
+    }
+    controls$alpha = ii*alpha/max.rep
     if(ii>1){
-      if(is.null(controls)){
-        controls <- list()
-      }
       controls$iter.start <- (ii-1)*nIter
       controls$nBurnin = 5
+      
     }
       
     est.list <- foreach(i = 1:n.cores, .options.snow = opts,.packages = c("ngme","Matrix")) %dopar%

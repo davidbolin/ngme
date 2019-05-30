@@ -766,10 +766,8 @@ List estimateLong_cpp(Rcpp::List in_list)
     if(estimate_fisher == 0){
       if(debug)
         Rcpp::Rcout << "estimate::theta  step\n";
-      double stepsize = step0/pow(iter + 1 + iter_start, alpha);//step0 / pow(iter + 1, alpha*iter/nIter);
-      //if(iter < nIter/2){
-      //  stepsize = step0 / pow(iter + 1, alpha/2);
-      //} 
+      //double stepsize = step0/pow(iter + 1 + iter_start, alpha);
+      double stepsize = step0/pow(iter + 1 + iter_start, alpha*(iter+iter_start)/(nIter+iter_start));
       
       double polyak_rate_temp = polyak_rate;
       double learning_rate_temp  =learning_rate;
