@@ -17,7 +17,10 @@
 #' @param ... Other parameter needed by \code{\link{ngme}} 
 #' @return A list of outputs.
 #' @details The function calls \code{\link{ngme}} or \code{\link{ngme.spatial}} internally. See these functions for further information on the actual
-#' model specification. 
+#' model specification. When plots of parameter trajectories are shown, the gray lines show the trajectories of the individual
+#' runs and the black curve is the estimate obtained by averaging the individual trajectories. The green lines show approximate
+#' 95% confidence bands for the estimate.  
+#' 
 #' @seealso \code{\link{ngme}}, \code{\link{ngme.spatial}} 
 #' @author David Bolin \email{davidbolin@@gmail.com}
 #' @examples
@@ -71,7 +74,7 @@ ngme.par <- function(n.cores = 4,
   } else if(!is.null(timevar)){
     temporal.model = TRUE
   } 
-  
+  call = match.call()
   output <- NULL
   if(is.null(controls)){
     step0  <- 1
@@ -148,6 +151,7 @@ ngme.par <- function(n.cores = 4,
     if(converged$converged)
           break
   }
+  output$call <- call
   return(output)
 }
 

@@ -23,7 +23,7 @@ using namespace Rcpp;
 List predictLong_cpp(Rcpp::List in_list)
 {
   int debug = 0;
-  int timeit = 1;
+  int timeit = 0;
 
   double time_setup = 0;
   double time_sample = 0;

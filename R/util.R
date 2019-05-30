@@ -200,7 +200,7 @@ crop.lists <- function(object,ind){
 }
 
 extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = idname,
-                            na.action = na.omit){
+                            na.action = NULL){
   # response matrix and fixed effects design matrix
   mf_fixed <- model.frame(formula = fixed, data = data,  na.action= na.action)
   y        <- as.matrix(model.extract(mf_fixed, "response"))
