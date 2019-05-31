@@ -285,18 +285,31 @@ merge.ngme.outputs <- function(est.list){
       if(!is.null(est.list[[1]]$processes_list$nu_vec)){
         nu_vec <- est.list[[1]]$processes_list$nu_vec/n.cores
         use.nu = TRUE
-        nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$nu)),1,n.cores)
-        nu <- apply(nu_v,1,mean)
-        nu_var <- apply(nu_v,1,var)/n.cores
+        if(bivariate){
+          nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$nu)),2,n.cores)
+          nu <- matrix(apply(nu_v,1,mean),1,2)
+          nu_var <- matrix(apply(nu_v,1,var)/n.cores,1,2)
+        } else {
+          nu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$nu)),1,n.cores)  
+          nu <- matrix(apply(nu_v,1,mean))
+          nu_var <- matrix(apply(nu_v,1,var)/n.cores)
+        }
       }
       use.mu = FALSE
       if(!is.null(est.list[[1]]$processes_list$mu_vec)){
         mu_vec <- est.list[[1]]$processes_list$mu_vec/n.cores
         mu <- est.list[[1]]$processes_list$mu/n.cores
         use.mu = TRUE
-        mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$mu)),1,n.cores)
-        mu <- apply(mu_v,1,mean)
-        mu_var <- apply(mu_v,1,var)/n.cores
+        if(bivariate){
+          mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$mu)),2,n.cores)
+          mu <- matrix(apply(mu_v,1,mean),1,2)
+          mu_var <- matrix(apply(mu_v,1,var)/n.cores,1,2)
+        } else {
+          mu_v <- matrix(unlist(lapply(1:n.cores,function(x) est.list[[x]]$processes_list$mu)),1,n.cores)  
+          mu <- matrix(apply(mu_v,1,mean))
+          mu_var <- matrix(apply(mu_v,1,var)/n.cores)
+        }
+        
       }
       
       for(i in 2:n.cores){
@@ -380,8 +393,8 @@ attach.ngme.output <- function(obj1,obj2){
       bivariate = TRUE
     }
     if(bivariate){
-      output$measurementError_list$theta_vec <- rbind(matrix(obj1$measurementError_list$theta_vec),
-                                                      matrix(obj2$measurementError_list$theta_vec))
+      output$measurementError_list$theta_vec <- rbind(obj1$measurementError_list$theta_vec,
+                                                      obj2$measurementError_list$theta_vec)
       output$meas_error_sigma_vec <- rbind(obj1$meas_error_sigma_vec,obj2$meas_error_sigma_vec)
       output$meas_error_sigma_var <- rbind(obj1$meas_error_sigma_var,obj2$meas_error_sigma_var)
       
@@ -851,14 +864,37 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
         }
       } 
       if(n.process.nu>0 & total.plotted<16){
-        total.plotted = total.plotted + 1
-        make.plot(output,est.list,ii,nIter,
-                  "processes_list","nu_vec","process_nu_vec","process_nu_var","nu process")
+        if(bivariate){
+          total.plotted = total.plotted + 1
+          make.plot.k(output,est.list,ii,nIter,
+                    "processes_list","nu_vec","process_nu_vec","process_nu_var",1,1,"nu process")  
+          if(total.plotted < 16){
+            total.plotted = total.plotted + 1
+            make.plot.k(output,est.list,ii,nIter,
+                        "processes_list","nu_vec","process_nu_vec","process_nu_var",2,2,"nu process")  
+          }
+        } else {
+          total.plotted = total.plotted + 1
+          make.plot(output,est.list,ii,nIter,
+                    "processes_list","nu_vec","process_nu_vec","process_nu_var","nu process")
+        }
+        
       }
       if(n.process.mu>0 & total.plotted<16){
-        total.plotted = total.plotted + 1
-        make.plot(output,est.list,ii,nIter,
-                  "processes_list","mu_vec","process_mu_vec","process_mu_var","mu process")
+        if(bivariate){
+          total.plotted = total.plotted + 1
+          make.plot.k(output,est.list,ii,nIter,
+                    "processes_list","mu_vec","process_mu_vec","process_mu_var",1,1,"mu process")
+          if(total.plotted < 16){
+            total.plotted = total.plotted + 1
+            make.plot.k(output,est.list,ii,nIter,
+                        "processes_list","mu_vec","process_mu_vec","process_mu_var",2,2,"mu process")
+          }
+        } else {
+          total.plotted = total.plotted + 1
+          make.plot(output,est.list,ii,nIter,
+                    "processes_list","mu_vec","process_mu_vec","process_mu_var","mu process")  
+        }
       }
     }
   }
