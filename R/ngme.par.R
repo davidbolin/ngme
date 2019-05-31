@@ -55,8 +55,9 @@ ngme.par <- function(n.cores = 4,
                      max.rep = 10,
                      controls = NULL, 
                      controls.init = NULL,
+                     use.process = TRUE,
                      nIter = 1000,
-                     timevar = NULL,
+                     timeVar = NULL,
                      location.names = NULL,
                      init.fit = NULL,
                      silent = FALSE,
@@ -67,13 +68,18 @@ ngme.par <- function(n.cores = 4,
     stop("Must use at least 2 cores. For non-parallel estimation, use ngme for temporal models or ngme.spatial for spatial models.")
   } 
   temporal.model = FALSE
-  if(is.null(timevar) && is.null(location.names)){
-    stop("You must specify timevar for temporal models or location.names for spatial models")
-  } else if(!is.null(timevar) && !is.null(location.names)){
-    stop("You can only specify either timevar (if a temporal model is estimiated) or location.names (if a spatial model is estimated).")
-  } else if(!is.null(timevar)){
+  if(use.process){
+    if(is.null(timeVar) && is.null(location.names)){
+      stop("You must specify timevar for temporal models or location.names for spatial models")
+    } else if(!is.null(timeVar) && !is.null(location.names)){
+      stop("You can only specify either timevar (if a temporal model is estimiated) or location.names (if a spatial model is estimated).")
+    } else if(!is.null(timeVar)){
+      temporal.model = TRUE
+    }   
+  } else {
     temporal.model = TRUE
-  } 
+  }
+  
   call = match.call()
   output <- NULL
   if(is.null(controls)){
@@ -111,7 +117,8 @@ ngme.par <- function(n.cores = 4,
         if(temporal.model){
           est <- ngme::ngme(controls=controls,
                             controls.init = controls.init,
-                            timevar = timevar,
+                            timeVar = timeVar,
+                            use.process = use.process,
                             nIter = nIter,
                             init.fit = init.fit,
                             silent = TRUE,...)  
@@ -127,7 +134,8 @@ ngme.par <- function(n.cores = 4,
         if(temporal.model){
           est <- ngme::ngme(init.fit = est.list.old[[i]],
                             controls=controls,
-                            timevar = timevar,
+                            use.process = use.process,
+                            timeVar = timeVar,
                             nIter = nIter,
                             silent=TRUE,...)  
         } else {
