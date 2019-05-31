@@ -9,7 +9,7 @@ save.file=0
 sim <-  100
 
 nindv <- 500
-n     <- 30
+n     <- 100
 
 beta_random  <- as.vector(0.8)
 beta_fixed   <- c(1.1, 2.2)
@@ -39,6 +39,31 @@ sum_res <- function(est_param, se_param, true_param){
 
 m_ = 0
 m_2 = 0
+for(i in 1:2){
+  cat('iter = ',i,'of ',sim,'\n')
+  data <-c()
+  for(indv in 1:nindv){
+    B_fixed  <- cbind(as.matrix(1:n)/n, rnorm(n))
+    B_random <- as.matrix(rep(1, n))
+    V_mixed <-rGIG(rep(-0.5,1),
+                   rep( nu_mixed, 1),
+                   rep( nu_mixed, 1),
+                   as.integer(1000 * runif(1) ))
+    E      = sigma_random * rnorm(n)
+    Y         <- B_fixed%*%beta_fixed +
+      B_random%*%(beta_random  + (-1+V_mixed)*mu_mixed+ sqrt(V_mixed)*sigma*rnorm(1)) + E
+    Ya <- Y 
+    id <- rep(indv, n)
+    data <- rbind(data, cbind(B_fixed,
+                              B_random,
+                              V_mixed,
+                              Y,
+                              Ya,
+                              id))
+  }
+  dimnames(data)[[2]] <- c('B1','B2','B3','V','Y','Ya','id')
+  
+}
 for(i in 1:sim){
   cat('iter = ',i,'of ',sim,'\n')
   data <-c()
@@ -70,7 +95,7 @@ for(i in 1:sim){
          alpha = 0.3,
          nSim  =2,
          nBurnin = 2,
-         step0 = 0.5,
+         step0 = 1,
          nBurnin.learningrate=1000)
   }else{
     control = list(estimate.fisher = FALSE,
@@ -82,11 +107,11 @@ for(i in 1:sim){
          nBurnin = 2,
          nBurnin.learningrate=1000)
   }
-  NIGMVD_ass <-  ngme.par(n.cores = 6, std.lim = 2, max.rep = 12,
+  NIGMVD_ass <-  ngme.par(n.cores = 4, std.lim = 2, max.rep = 6,
                                 fixed       = Ya ~ B1 + B2,
                                 random      = ~ -1+B3|id,
                                 data        = as.data.frame(data),
-                                reffects    = 'NIG',
+                                reffects    = 'Normal',
                                 use.process = FALSE,
                                 silent      = FALSE,
                                 controls.init = list(nIter.init=500),
@@ -94,22 +119,22 @@ for(i in 1:sim){
                                 controls    = control)
   
   fiher_NIG <- ngme.fisher(NIGMVD_ass,
-                           nSim = 20,
+                           nSim = 30,
                            nIter = 10,
-                           nBurnin=1,
+                           nBurnin = 2,
                            n.cores = 1,
                            n.rep = 1,
                            std.threshold = 2,
                            observed = TRUE,
                            only.effects=F,
-                           silent = TRUE)
+                           silent = F)
   est_param[i,] <- c(NIGMVD_ass$mixedEffect_list$beta_fixed, NIGMVD_ass$mixedEffect_list$beta_random)
-  V <- diag(solve(fiher_NIG$fisher_est[c(1:4,6), c(1:4,6)]))[1:3]
+  V <- diag(solve(fiher_NIG$fisher_est[c(1:3), c(1:3)]))[1:3]
   sd_param[i,]  <-  sqrt(V + NIGMVD_ass$fixed_est_var[dim(NIGMVD_ass$fixed_est_var)[1],c(2,3,1)])
   sd_param2[i,]  <-  sqrt(V)
   
  
-  cat('mu  = ',round(NIGMVD_ass$mixedEffect_list$mu,2),'\n')
+ # cat('mu  = ',round(NIGMVD_ass$mixedEffect_list$mu,2),'\n')
   cat('b_r = ',round(NIGMVD_ass$mixedEffect_list$beta_random,2),'\n')
   cat('low = ',est_param[i,3] - 1.64*sd_param[i,3]-true_param[3],'\n')
   cat('upp = ',est_param[i,3] + 1.6*sd_param[i,3]-true_param[3],'\n')

@@ -348,44 +348,18 @@ ngme <- function(fixed,
   idname <- rev(unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE)))[1]
   id <- data[, idname]
 
-  # response matrix and fixed effects design matrix
-  mf_fixed <- model.frame(formula = fixed, data = data)
-  y        <- as.matrix(model.extract(mf_fixed, "response"))
-  x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
-  colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])
-
-  # excluding the intercept and the covariates that are specified in random
-  cov_list_fixed  <- attr(terms(fixed), "term.labels")
-  cov_list_random <- unlist(strsplit(attr(terms(random), "term.labels"), " | ", fixed = TRUE))
-  cov_list_random <- c(strsplit(cov_list_random[1], " + ", fixed=TRUE)[[1]], cov_list_random[2])
-  cov_list_random <- cov_list_random[-length(cov_list_random)]
-
-  to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
-  x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
-
-  #random effects design matrix
-  random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
-  random_names_id_excluded <- random_names[!(random_names %in% idname)]
-  random_formula           <- as.formula(paste("~", paste(random_names_id_excluded, collapse = "+")))
-
-  mf_random <- model.frame(formula = random_formula, data = data)
-  x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
-  colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
-
-  idlist <- unique(id)
-
-  # converting the followings to lists:
-  # fixed effects design matrix, random effects design matrix, response matrix, time variable
-  data_fixed <- data.frame(cbind(id, x_fixed))
-  B_fixed    <- split(data_fixed[, -1], data_fixed[,1])
-  B_fixed    <- lapply(B_fixed, function(x) as.matrix(x))
-
-  data_random <- data.frame(cbind(id, x_random))
-  B_random    <- split(data_random[, -1], data_random[,1])
-  B_random    <- lapply(B_random, function(x) as.matrix(x))
-
-  Y <- tapply(y, id, function(x) x)
-  
+  effects <- extract.effects(data = data, 
+                              fixed = fixed, 
+                              random = random,
+                              idname = idname)
+  Y = effects$Y
+  B_random  = effects$B_random
+  B_fixed   = effects$B_fixed
+  x_fixed   = effects$x_fixed
+  x_random  = effects$x_random
+  x_fixed_f = effects$x_fixed_f
+  to_del_x_fixed = effects$to_del_x_fixed
+    
   # extract variables for process
   if(use.process == TRUE){
     locs <- tapply(as.matrix(data[, timeVar]), id, function(x) x)  
@@ -917,27 +891,23 @@ ngme <- function(fixed,
   alpha_fit      <- fit$alpha
 
   # fixed effects estimates - and chains
-  fixed_est1 <- as.numeric(fit$mixedEffect_list$beta_fixed)
-  fixed_est2 <- as.numeric(fit$mixedEffect_list$beta_random)
+  
+  
+  
+  
+  fixed_est1    <- as.numeric(fit$mixedEffect_list$beta_fixed)
+  fixed_est2    <- as.numeric(fit$mixedEffect_list$beta_random)
+  index_fixed   = 1:length(fixed_est1)
+  index_random  = length(fixed_est1) + (1:length(fixed_est2))
   names(fixed_est1) <- colnames(x_fixed)
-  names(fixed_est2) <- to_del_x_fixed
-  fixed_est <- rep(NA, ncol(x_fixed_f))
-  names(fixed_est) <- colnames(x_fixed_f)
-  
-  index_fixed  <- which(names(fixed_est) %in% names(fixed_est1))
-  index_random <- which(names(fixed_est) %in% names(fixed_est2))
-  
-  fixed_est[index_fixed]  <- fixed_est1
-  fixed_est[index_random] <- fixed_est2
+  names(fixed_est2) <- colnames(x_random)
+  fixed_est <- c(fixed_est1,fixed_est2)
 
   fixed_est1_vec <- fit$mixedEffect_list$betaf_vec
   fixed_est2_vec <- fit$mixedEffect_list$betar_vec
   colnames(fixed_est1_vec) <- colnames(x_fixed)
-  colnames(fixed_est2_vec) <- to_del_x_fixed
-  fixed_est_vec <- matrix(NA, ncol = ncol(x_fixed_f), nrow = nIter)
-  colnames(fixed_est_vec) <- colnames(x_fixed_f)
-  fixed_est_vec[, index_fixed]  <- fixed_est1_vec
-  fixed_est_vec[, index_random] <- fixed_est2_vec
+  colnames(fixed_est2_vec) <- colnames(x_random)
+  fixed_est_vec <- cbind(fixed_est1_vec,fixed_est2_vec)
 
   # random effects
   ranef_Sigma           <- fit$mixedEffect_list$Sigma

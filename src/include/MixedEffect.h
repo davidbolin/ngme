@@ -27,9 +27,13 @@ class MixedEffect {
     Eigen::VectorXd grad_beta_r; // gradient for random intercept
     Eigen::VectorXd grad_beta_r2; //second gradient for random intercept
     Eigen::VectorXd grad_beta_f; // gradient for fixed intercept
+    Eigen::VectorXd grad_Sigma;
     int nfr;
   	int store_param; // store the parameter to list
   	int vec_counter; // internal parameter counter
+
+    Eigen::MatrixXi D;
+    Eigen::MatrixXd Dd;
     virtual void printIter(){}; //print iteration data
     virtual void setupStoreTracj(const int Niter){}; // setups to store the tracjetory
     virtual ~MixedEffect() {};
@@ -53,6 +57,9 @@ class MixedEffect {
 	  Eigen::VectorXd dbeta_f_old;
     Eigen::VectorXd V;
     Eigen::MatrixXd Hessian; // scaling vector
+
+    Eigen::MatrixXd invSigma;
+    Eigen::MatrixXd iSkroniS; // helper matrix
 
     /*
       HOW to start up the class from the list.
@@ -112,12 +119,18 @@ class MixedEffect {
     void add_inter(const int i, Eigen::VectorXd & Y)    { if(Br.size()>0){
     													 Y += Br[i]*U.col(i);} };
     virtual void add_gradient(Eigen::VectorXd & grad){
-
-      if(Bf.size() > 0)
+      int nF = 0;
+      if(Bf.size() > 0){
         grad_beta_f += grad.head(Bf[0].cols());
+        nF = Bf[0].cols();
+      }
       
-      if(Br.size() > 0 )
-        grad_beta_r += grad.tail(Br[0].cols());
+      if(Br.size() > 0 ){
+        int nR = Br[0].cols();
+        grad_beta_r += grad.segment(nF, nR);
+        grad_Sigma  += grad.segment(nF + nR, grad.size());
+
+      }
 
     };
     virtual void add_gradient2(Eigen::VectorXd & grad){
@@ -228,8 +241,6 @@ class MixedEffect {
 
 class NormalMixedEffect  : public MixedEffect{
   private:
-    Eigen::MatrixXd invSigma;
-    Eigen::MatrixXd iSkroniS; // helper matrix
     int counter;
     Eigen::VectorXd UUt;
     Eigen::VectorXd dSigma_vech;
@@ -249,9 +260,6 @@ class NormalMixedEffect  : public MixedEffect{
 	int n_f, n_r;
     double weight_total;
   public:
-
-    Eigen::MatrixXi D;
-    Eigen::MatrixXd Dd;
 
     void printIter(); //print iteration data
     void setupStoreTracj(const int Niter); // setups to store the tracjetory
@@ -348,8 +356,6 @@ public:
   int sample_MALA;
   
 
-  Eigen::MatrixXd invSigma;
-  Eigen::MatrixXd iSkroniS; // helper matrix
   int counter;
   Eigen::VectorXd UUt;
   Eigen::VectorXd dSigma_vech;
@@ -379,8 +385,6 @@ public:
   gig rgig;
   double term1,term2,term1_mu;
   Eigen::VectorXd term2_mu;
-  Eigen::MatrixXi D;
-  Eigen::MatrixXd Dd;
 
   Eigen::VectorXd get_mean_prior(const int );
   void step_Sigma(const double, const double,const int);

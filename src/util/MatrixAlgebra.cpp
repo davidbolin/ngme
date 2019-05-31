@@ -535,4 +535,24 @@ SparseMatrix<double,0,int> full2sparse(MatrixXd& M){
   }
   return A;
 }
+
+
+Eigen::MatrixXd NormalOuterExpectation(const Eigen::MatrixXd & Sigma,
+									   const Eigen::VectorXd & mu,
+									   const Eigen::VectorXd & m){
+
+	Eigen::MatrixXd Res;
+	Res.setZero(Sigma.rows(), Sigma.cols());
+	Eigen::VectorXd mu_m = mu - m;
+	Res += Sigma;
+	Res += mu_m * mu_m.transpose();
+	return(Res);
+}
+
+Eigen::MatrixXd NormalFourthExpectation(const Eigen::MatrixXd & Sigma,
+									    const Eigen::VectorXd  & mu){
+	Eigen::MatrixXd Res;
+	Res.setZero(Sigma.rows(), Sigma.cols());
+	return(Res);
+}
   

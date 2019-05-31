@@ -8,28 +8,29 @@ library(testthat)
 library(ngme)
 set.seed(7)
 
-n_iter <- 200
+n_iter <- 1000
 
-nindv <- 200
+nindv <- 50
 n     <- 30
 
-beta_random  <- as.vector(0.8)
+beta_random  <- c(0.8, -0.6)
 beta_fixed   <- c(1.1, 2.2)
-sigma        <- 0.5
+Sigma        <- diag(c(2,1))
 sigma_random <- 0.5
 nu_mixed     <- 1
-mu_mixed     <- 2
+mu_mixed     <-0* as.matrix(c(2,-1))
 data <-c()
 for(indv in 1:nindv){
-  B_fixed  <- cbind(as.matrix(1:n), rnorm(n))
-  B_random <- as.matrix(rep(1, n))
+  B_fixed  <- cbind(as.matrix(1:n)/n, rnorm(n))
+  B_random <- cbind(rep(1, n), rnorm(n))
   V_mixed <-rGIG(rep(-0.5,1),
                  rep( nu_mixed, 1),
                  rep( nu_mixed, 1),
                  as.integer(1000 * runif(1) ))
+  U = (-1+V_mixed)*mu_mixed+ sqrt(V_mixed)*mvrnorm(n=1, mu = c(0,0),Sigma = Sigma)
   E      = sigma_random * rnorm(n)
   Y         <- B_fixed%*%beta_fixed +
-               B_random%*%(beta_random  + (-1+V_mixed)*mu_mixed+ sqrt(V_mixed)*sigma*rnorm(1)) + E
+               B_random%*%(beta_random  + U) + E
   Ya <- Y 
   id <- rep(indv, n)
   data <- rbind(data, cbind(B_fixed,
@@ -39,21 +40,21 @@ for(indv in 1:nindv){
                             Ya,
                             id))
 }
-dimnames(data)[[2]] <- c('B1','B2','B3','V','Y','Ya','id')
+dimnames(data)[[2]] <- c('B1','B2','B3','B4','V','Y','Ya','id')
 
 
-NIGMVD_ass <- ngme( fixed       = Ya ~ B1 + B2,
-                random      = ~ -1+B3|id,
+NIGMVD_ass <- ngme( fixed       = Ya ~ -1 + B1 + B2,
+                random      = ~ -1+B3+B4|id,
                 data        = as.data.frame(data),
                 reffects    = 'NIG',
                 use.process = F,
-                silent      = T,
+                silent      = F,
                 controls.init = list(nIter.init=100),
                 nIter  = n_iter,
                 controls    = list(estimate.fisher = FALSE,
                                    subsample.type  = 0,
                                    nSim  =2,
-                                   nBurnin = 2,
+                                   nBurnin = 20,
                                    alpha = 0.1,
                                    step0 = 0.5))
 

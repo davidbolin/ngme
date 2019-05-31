@@ -9,17 +9,18 @@ library(testthat)
 library(doParallel)
 library(Matrix)
 
-use.process = FALSE
-estimate.parameters = FALSE
+use.process = TRUE
+estimate.parameters = TRUE
 #data options
-n.pers <- 3
+n.pers <- 10
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-nIter.fisher = 1
-nSim.fisher = 100
+niter.est =10
+nIter.fisher = 10
+nSim.fisher = 10
 nBurnin = 10
 
 #simulate data
@@ -36,7 +37,7 @@ for(i in 1:n.pers)
   Y[[i]] <- rep(1,n.obs[i])
   locs[[i]] <- 1:n.obs[i] #sort(1 + 9*runif(n.obs[i]))
   #random effects, 1 and t
-  B_random[[i]] <- cbind(rep(1, n.obs[i]), locs[[i]])
+  B_random[[i]] <- cbind(rep(1, n.obs[i]), locs[[i]]/max(locs[[i]]))
   #fixed effects, sqrt(t) and 1/t
   B_fixed[[i]]  <- cbind(sqrt(locs[[i]]),1/locs[[i]])
 }
@@ -91,7 +92,7 @@ if(use.process){
 if(estimate.parameters){
   if(use.process){
     res.est <- estimateLong(Y                = sim_res$Y,
-                            nIter            = nIter.fisher,
+                            nIter            = niter.est,
                             nSim             = nSim.fisher,
                             locs             = locs,
                             nBurnin           = nBurnin,
@@ -112,12 +113,12 @@ if(estimate.parameters){
                                operator_list    = res.est$operator_list,
                                nIter = nIter.fisher,
                                nSim             = nSim.fisher,
-                               silent = T,
+                               silent = F,
                                nBurnin_base = nBurnin,
                                estimate_fisher = 2)
   } else {
     res.est <- estimateLong(Y                = sim_res$Y,
-                            nIter            = nIter.fisher,
+                            nIter            = niter.est,
                             nSim             = nSim.fisher,
                             locs             = locs,
                             nBurnin           = nBurnin,
@@ -126,7 +127,7 @@ if(estimate.parameters){
                             measurment_list  = mError_list,
                             pSubsample = 1,
                             subsample.type = 1,
-                            silent = TRUE,
+                            silent = FALSE,
                             estimate_fisher = 0)  
     res.fisher <- estimateLong(Y                = sim_res$Y,
                                locs             = locs,

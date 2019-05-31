@@ -224,6 +224,7 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
     Sigma_vech = vech(Sigma);
     npars += Sigma_vech.size();
     UUt.setZero(Sigma.cols() * Sigma.rows());
+    grad_Sigma.setZero(Dd.cols());
     dSigma_vech.setZero(Sigma_vech.size());
     dSigma_vech_old.setZero(Sigma_vech.size());
     invSigma  = Sigma.inverse();
@@ -654,15 +655,15 @@ void NormalMixedEffect::step_theta(const double stepsize,
 								   const double polyak_rate,
 								   const int burnin)
 {
-  if(0){
-  if(Br.size() > 0){
-    step_beta_random(stepsize, learning_rate,burnin);
-    step_Sigma(stepsize, learning_rate,burnin);
-  }
-  if(Bf.size() > 0)
-    step_beta_fixed(stepsize, learning_rate,burnin);
+  if(1){
+    if(Br.size() > 0){
+      step_beta_random(stepsize, learning_rate,0);
+      step_Sigma(stepsize, learning_rate,0);
+    }
+    if(Bf.size() > 0)
+      step_beta_fixed(stepsize, learning_rate,0);
 }else{
-    step_beta(stepsize, learning_rate,burnin);
+    step_beta(stepsize, learning_rate,0);
     if(0){
       Eigen::VectorXd grad0(nfr);
       grad0 << grad_beta_f, grad_beta_r;
@@ -676,9 +677,9 @@ void NormalMixedEffect::step_theta(const double stepsize,
       grad_beta_f *= 0.;
       grad_beta_r *= 0.;
       grad_beta   *= 0.;
-  }
     if(Br.size() > 0)
-      step_Sigma(stepsize, learning_rate,burnin);
+      step_Sigma(stepsize, learning_rate,0);
+  }
 
 }
   weight_total = 0;
@@ -813,7 +814,7 @@ void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_r
   double pos_def = 0;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
   UUt -= weight_total*vec(Sigma);
-  dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
+  dSigma_vech = grad_Sigma;//  0.5 * Dd.transpose() * iSkroniS * UUt;
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old *= learning_rate;
   dSigma_vech_old += dSigma_vech;
@@ -856,6 +857,7 @@ void NormalMixedEffect::clear_gradient()
   grad_beta.setZero(n_f+n_r);
   UUt.setZero(Sigma.cols() * Sigma.rows());
   weight_total = 0.;
+  grad_Sigma.array() *= 0.;
 
 }
 

@@ -74,4 +74,14 @@ void setSparseBlock_update(SparseMatrix<double,0,int>*,int, int, SparseMatrix<do
 //convert a full matrix to sparse format
 SparseMatrix<double,0,int> full2sparse(MatrixXd&);
 
+// Computing the expectation of
+// (x-m)(x-m)' when x ~  N(mu, Sigma)
+Eigen::MatrixXd NormalOuterExpectation(const Eigen::MatrixXd &,
+									   const Eigen::VectorXd &,
+									   const Eigen::VectorXd &);
+// Computing the expectation of
+// xx'xx' when x ~  N(mu, Sigma)
+Eigen::MatrixXd NormalFourthExpectation(const Eigen::MatrixXd &,
+									    const Eigen::VectorXd &);
+
 #endif /* defined(__MatrixAlgebra__MatrixAlgebra__) */

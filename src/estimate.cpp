@@ -1,4 +1,5 @@
 #include "estimate_util.h"
+#include "MatrixAlgebra.h"
 using namespace Rcpp;
 
 /*
@@ -136,6 +137,8 @@ if(debug)
       Eigen::MatrixXd Br_mu = (mixobj.V(i)-1.) * mixobj.Br[i];
       Br << mixobj.Br[i], Br_mu;
     }
+   
+    //Rcpp::Rcout << "E = \n" << E << "\n";
  }
 
   if(n_r == 0){
@@ -168,9 +171,23 @@ if(debug)
    // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
     
     grad *= weight;
-    mixobj.add_gradient(grad);
+    
 
     if(n_r > 0){
+      Eigen::MatrixXd E;
+      E.setIdentity(b_hat.size(), n_r);
+      Eigen::MatrixXd Sigma_Random = Qsolver.solve(E);
+      Eigen::MatrixXd  EUUt = NormalOuterExpectation(Sigma_Random.topLeftCorner(n_r,n_r),
+                                                     mu_hat.head(n_r),
+                                                     mixobj.get_mean_prior(i));
+      EUUt.array() /= mixobj.V(i);
+      EUUt -=  mixobj.Sigma;
+      Eigen::VectorXd UUt = vec( EUUt);
+      Eigen::VectorXd  dSigma_vech = 0.5 * mixobj.Dd.transpose() * mixobj.iSkroniS * UUt;
+      gradFull.segment(grad.size(), dSigma_vech.size()) = dSigma_vech;
+      gradFull.array() *=  weight;
+      mixobj.add_gradient(gradFull);
+
       Eigen::VectorXd grad2;
       if(mixobj.noise != "Normal"){
         Eigen::VectorXd grad2_temp = iSigma * mu_hat.head(n_r);
@@ -186,6 +203,8 @@ if(debug)
       grad2 *= weight;
       mixobj.add_gradient2(grad2);
       //return Results;
+    }else{
+        mixobj.add_gradient(grad);
     }
 
    
@@ -777,7 +796,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         learning_rate_temp = 0;
       if(debug)
         Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
-      mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp);
+      mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp, iter + iter_start);
       errObj->step_theta(stepsize,                   0, polyak_rate_temp);
       if(process_active){
         Kobj->step_theta(stepsize,    learning_rate_temp, polyak_rate_temp);

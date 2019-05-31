@@ -87,6 +87,7 @@ Rcpp::List GHMixedEffect::toList()
     out["V"]      = V;
     out["mu"]     = mu;
   }
+  //out['Hessian'] = Hessian;
   
   
   out["noise"]       = noise;
@@ -196,6 +197,7 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
       if(Bf.size() > 0){
         H_rf.setZero(Br[0].cols(), Bf[0].cols());
       }
+      grad_Sigma.setZero(Dd.cols());
     }
     if(init_list.containsElementNamed("Sigma"))
       Sigma     =  Rcpp::as< Eigen::MatrixXd > (init_list["Sigma"]) ;
@@ -265,7 +267,6 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
   Hessian.setZero(nfr, nfr);
 }
 void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
-
     int nf = 0;
       if(Bf.size() > 0){
         grad_beta_f += grad.head(Bf[0].cols());
@@ -273,10 +274,13 @@ void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
       }
       
       if(Br.size() > 0 ){
-        grad_beta_r   += grad.segment(nf,Br[0].cols());
-        gradMu_2      += grad.tail(Br[0].cols());
+        int nR = Br[0].cols();
+        int nSigma = nR * (nR +1) /2;
+        grad_beta_r += grad.segment(nf, nR);
+        gradMu_2    += grad.segment(nf + nR, nR);
+        grad_Sigma  += grad.segment(nf + 2*nR, nSigma);
       }
-
+      
 
 }
 void GHMixedEffect::add_gradient2(Eigen::VectorXd & grad){
@@ -819,27 +823,29 @@ if(0){
 }
 
   if(Br.size() > 0){
-      step_mu(stepsize, 0,burnin);
-    if(Bf.size() == 0){
-      step_beta_random(stepsize, 0,burnin);
-    }else{
-      step_beta(stepsize, 0, burnin);
-    }
+      step_mu(stepsize, learning_rate, 0);
+     
     
-    step_Sigma(stepsize, 0,burnin);
+      if(Bf.size() == 0){
+        step_beta_random(stepsize, learning_rate, 0);
+      }else{
+        step_beta(stepsize, learning_rate,  0);
+      }
+    
+    
+    step_Sigma(stepsize, learning_rate, 0);
     H_beta_random.setZero(Br[0].cols(), Br[0].cols());
   }
 
-  if(Bf.size() > 0 & Br.size() == 0)
-    step_beta_fixed(stepsize, learning_rate,burnin);
+  if(Bf.size() > 0 & Br.size() == 0 )
+    step_beta_fixed(stepsize, learning_rate, 0);
 }
 
 void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate,const int burnin)
 {
   double pos_def = 0;
-
   UUt -= weight_total * vec(Sigma);
-  dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt;
+  dSigma_vech = grad_Sigma;//0.5 * Dd.transpose() * iSkroniS * UUt;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old.array() *= learning_rate;
@@ -867,10 +873,9 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
       }
     }
   }
+  //Sigma(0,0) = 0.25 + 1e-4*Sigma(0,0);
   SelfAdjointEigenSolver<MatrixXd> eig(Sigma,EigenvaluesOnly);
   pos_def = eig.eigenvalues().minCoeff();
-  //Rcpp::Rcout << "Sigma = " << Sigma  << "\n";
-  //Rcpp::Rcout << "eig = " << eig.eigenvalues() << "\n";
 
   if(pos_def <= 1e-6){
       dSigma_vech_old *= 0;
@@ -1008,10 +1013,8 @@ void GHMixedEffect::step_beta(const double stepsize,const double learning_rate,c
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
     dbeta_r_old +=  0.5 *  step1.head(n_r);
-    Rcpp::Rcout << "step1.head(n_r) = " << step1.head(n_r) << "\n";
     dbeta_r_old +=  0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV);
     
-    Rcpp::Rcout << "step2.head(n_r) = " << (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ (weight_total*EiV) << "\n";
     dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;
     grad_beta_r2.setZero(Br[0].cols());
@@ -1169,17 +1172,23 @@ void GHMixedEffect::clear_gradient()
    }
    if(Bf.size() > 0 )
       n_f = Bf[0].cols();
-  if(Bf.size() > 0)
+  if(Bf.size() > 0){
     grad_beta_f.setZero(Bf[0].cols());
+    H_beta_fixed *= 0;
+  }
 
   if(Br.size() > 0){
     dSigma_vech.setZero(Sigma_vech.size());
     grad_beta_r.setZero(Br[0].cols());
+    grad_beta_r2.setZero(Br[0].cols());
     gradMu.setZero(Br[0].cols(), 1);
     UUt.array() *= 0;
+    H_beta_random *= 0;
+    H_rf *= 0;
   }
   weight_total = 0;
   counter = 0;
+  grad_Sigma.array() *= 0;
 }
 
 Eigen::VectorXd GHMixedEffect::get_gradient()
