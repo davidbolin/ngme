@@ -9,7 +9,7 @@ library(ngme)
 library(lme4)
 set.seed(4) #4
 
-n_iter <- 1000
+n_iter <- 10
 
 nindv <- 50
 n     <- 30

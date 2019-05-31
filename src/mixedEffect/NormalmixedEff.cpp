@@ -716,17 +716,18 @@ void NormalMixedEffect::step_theta(const double stepsize,
 }
 
  void NormalMixedEffect::add_gradient(Eigen::VectorXd & grad){
-
+      int nF = 0;
       if(Bf.size() > 0){
         grad_beta_f += grad.head(Bf[0].cols());
         grad_beta.tail(Bf[0].cols()) += grad.head(Bf[0].cols());
-
+        nF = Bf[0].cols();
       }
-
       
       if(Br.size() > 0 ){
-        grad_beta_r += grad.tail(Br[0].cols());
-        grad_beta.head(Br[0].cols()) += grad.tail(Br[0].cols());
+        int nR = Br[0].cols();
+        grad_beta_r += grad.segment(nF, nR);
+        grad_beta.head(Br[0].cols()) += grad.segment(nF, nR);
+        grad_Sigma  += grad.segment(nF + nR, grad.size());
 
       }
 
