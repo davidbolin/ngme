@@ -716,27 +716,19 @@ ngme.spatial <- function(fixed,
   
   # fixed effects estimates - and chains
   if(use.random){
-    fixed_est1 <- as.numeric(fit$mixedEffect_list$beta_fixed)
-    fixed_est2 <- as.numeric(fit$mixedEffect_list$beta_random)
+    fixed_est1    <- as.numeric(fit$mixedEffect_list$beta_fixed)
+    fixed_est2    <- as.numeric(fit$mixedEffect_list$beta_random)
+    index_fixed   = 1:length(fixed_est1)
+    index_random  = length(fixed_est1) + (1:length(fixed_est2))
     names(fixed_est1) <- colnames(x_fixed)
-    names(fixed_est2) <- to_del_x_fixed
-    fixed_est <- rep(NA, ncol(x_fixed_f))
-    names(fixed_est) <- colnames(x_fixed_f)
-    
-    index_fixed  <- which(names(fixed_est) %in% names(fixed_est1))
-    index_random <- which(names(fixed_est) %in% names(fixed_est2))
-    
-    fixed_est[index_fixed]  <- fixed_est1
-    fixed_est[index_random] <- fixed_est2
+    names(fixed_est2) <- colnames(x_random)
+    fixed_est <- c(fixed_est1,fixed_est2)
     
     fixed_est1_vec <- fit$mixedEffect_list$betaf_vec
     fixed_est2_vec <- fit$mixedEffect_list$betar_vec
     colnames(fixed_est1_vec) <- colnames(x_fixed)
-    colnames(fixed_est2_vec) <- to_del_x_fixed
-    fixed_est_vec <- matrix(NA, ncol = ncol(x_fixed_f), nrow = nIter)
-    colnames(fixed_est_vec) <- colnames(x_fixed_f)
-    fixed_est_vec[, index_fixed]  <- fixed_est1_vec
-    fixed_est_vec[, index_random] <- fixed_est2_vec
+    colnames(fixed_est2_vec) <- colnames(x_random)
+    fixed_est_vec <- cbind(fixed_est1_vec,fixed_est2_vec)
     
     # random effects
     ranef_Sigma           <- fit$mixedEffect_list$Sigma

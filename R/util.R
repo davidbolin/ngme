@@ -210,12 +210,6 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
   idlist <- unique(id)
   # excluding the intercept and the covariates that are specified in random
   if(!is.null(random)){
-    cov_list_fixed  <- attr(terms(fixed), "term.labels")
-    cov_list_random <- unlist(strsplit(attr(terms(random), "term.labels"), " | ", fixed = TRUE))
-    cov_list_random <- c(strsplit(cov_list_random[1], " + ", fixed=TRUE)[[1]], cov_list_random[2])
-    cov_list_random <- cov_list_random[-length(cov_list_random)]  
-    to_del_x_fixed <- c("Intercept", cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
-    x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
     #random effects design matrix
     random_names             <- unlist(strsplit(as.character(random)[-1], " | ", fixed = TRUE))
     random_names_id_excluded <- random_names[!(random_names %in% idname)]
@@ -223,7 +217,16 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
     
     mf_random <- model.frame(formula = random_formula, data = data)
     x_random  <- as.matrix(model.matrix(attr(mf_random, "terms"), data = mf_random))
-    colnames(x_random)[1] <- gsub("[[:punct:]]", "", colnames(x_random)[1])
+    colnames(x_random) <- gsub("[[:punct:]]", "", colnames(x_random))
+    
+    
+    # excluding the intercept and the covariates that are specified in random
+    cov_list_fixed  <-  colnames(x_fixed_f)
+    cov_list_random <-  colnames(x_random)
+    
+    to_del_x_fixed <- c(cov_list_fixed[(cov_list_fixed %in% cov_list_random)])
+    x_fixed <- x_fixed_f[, !(colnames(x_fixed_f) %in% to_del_x_fixed), drop = FALSE]
+    
     
     data_random <- data.frame(cbind(id, x_random))
     B_random    <- split(data_random[, -1], data_random[,1])
@@ -237,6 +240,7 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
     x_fixed <- x_fixed_f
     x_random <- NA
     to_del_x_fixed = NA
+    B_random       = NA
     if(is.null(idname)){ # no replicates
       Y <- list(y)
       B_fixed = list(x_fixed)
@@ -248,6 +252,7 @@ extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = i
     }
   }
   return(list(Y=Y,
+              B_random = B_random,
               B_fixed = B_fixed,
               x_fixed = x_fixed,
               x_random = x_random,
