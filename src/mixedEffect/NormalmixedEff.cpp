@@ -655,7 +655,7 @@ void NormalMixedEffect::step_theta(const double stepsize,
 								   const double polyak_rate,
 								   const int burnin)
 {
-  if(1){
+  if(0){
     if(Br.size() > 0){
       step_beta_random(stepsize, learning_rate,0);
       step_Sigma(stepsize, learning_rate,0);
@@ -677,10 +677,10 @@ void NormalMixedEffect::step_theta(const double stepsize,
       grad_beta_f *= 0.;
       grad_beta_r *= 0.;
       grad_beta   *= 0.;
-    if(Br.size() > 0)
-      step_Sigma(stepsize, learning_rate,0);
+    
   }
-
+if(Br.size() > 0)
+      step_Sigma(stepsize, learning_rate,0);
 }
   weight_total = 0;
   clear_gradient();
@@ -725,10 +725,10 @@ void NormalMixedEffect::step_theta(const double stepsize,
       
       if(Br.size() > 0 ){
         int nR = Br[0].cols();
+        int nSigma = nR * (nR +1) /2;
         grad_beta_r += grad.segment(nF, nR);
         grad_beta.head(Br[0].cols()) += grad.segment(nF, nR);
-        grad_Sigma  += grad.segment(nF + nR, grad.size());
-
+        grad_Sigma  += grad.segment(nF + nR, nSigma);
       }
 
 }
@@ -768,13 +768,13 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
                      0.5 * grad_beta.tail( n_f),
                      H_beta.bottomRightCorner(n_f, n_f));
     dbeta_f_old =  dbeta_f_old.cwiseProduct(beta_fixed_constrainted);
-    beta_fixed  += stepsize * dbeta_f_old;
+    beta_fixed.array() += stepsize * dbeta_f_old.array();
+
   }
 
   if(Br.size() > 0){
     dbeta_r_old.array() *= learning_rate;
     dbeta_r_old += 0.5 *  step1.head(n_r);
-    //Rcpp::Rcout << "step  = " << (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total << "\n";
     dbeta_r_old += 0.5 * (Sigma * beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total;
     dbeta_r_old = beta_random_constrainted.cwiseProduct(dbeta_r_old);
     beta_random += stepsize * dbeta_r_old;
@@ -792,7 +792,8 @@ void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learn
                    beta_fixed_constrainted,
                    grad_beta_f,
                    H_beta_fixed);
-  beta_fixed += stepsize *  (beta_fixed_constrainted * dbeta_f_old);
+
+  beta_fixed +=  stepsize * (beta_fixed_constrainted.cwiseProduct(dbeta_f_old));
   H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
 
 }
@@ -804,8 +805,9 @@ void NormalMixedEffect::step_beta_random(const double stepsize,const double lear
                    beta_random_constrainted,
                    0.5 * grad_beta_r,
                    H_beta_random);
-	dbeta_r_old += 0.5 * (Sigma * ( beta_random_constrainted * grad_beta_r2))/ weight_total;
-  beta_random += stepsize *  (beta_random_constrainted * dbeta_r_old);
+	dbeta_r_old = 0.5 * (Sigma *  beta_random_constrainted.cwiseProduct(grad_beta_r2))/ weight_total;
+
+  beta_random += stepsize *  beta_random_constrainted.cwiseProduct(dbeta_r_old);
   grad_beta_r2.setZero(Br[0].cols());
   H_beta_random.setZero(Br[0].cols(), Br[0].cols());
 }
@@ -815,7 +817,7 @@ void NormalMixedEffect::step_Sigma(const double stepsize,const double learning_r
   double pos_def = 0;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
   UUt -= weight_total*vec(Sigma);
-  dSigma_vech = grad_Sigma;//  0.5 * Dd.transpose() * iSkroniS * UUt;
+  dSigma_vech =  dSigma_vech = grad_Sigma;// 0.5 * Dd.transpose() * iSkroniS * UUt;
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old *= learning_rate;
   dSigma_vech_old += dSigma_vech;

@@ -847,6 +847,7 @@ void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate
   UUt -= weight_total * vec(Sigma);
   dSigma_vech = grad_Sigma;//0.5 * Dd.transpose() * iSkroniS * UUt;
   ddSigma = 0.5 * weight_total * Dd.transpose() * iSkroniS * Dd;
+
   dSigma_vech = ddSigma.ldlt().solve(dSigma_vech);
   dSigma_vech_old.array() *= learning_rate;
   dSigma_vech_old.array() += dSigma_vech.array();

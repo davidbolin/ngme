@@ -1,5 +1,5 @@
 ##
-#  test mixed effect p measurement error
+#  test mixed effect vs lmm
 #  D:2019-05-31
 ##
 rm(list=ls())
@@ -9,7 +9,7 @@ library(ngme)
 library(lme4)
 set.seed(4) #4
 
-n_iter <- 10
+n_iter <- 50
 
 nindv <- 50
 n     <- 30
@@ -37,12 +37,12 @@ for(indv in 1:nindv){
 dimnames(data)[[2]] <- c('B1','B2','B3','B4','Y','Ya','id')
 
 
-NIGMVD_ass <- ngme( fixed       = Ya ~ -1 + B1 + B2,
+res.ngme <- ngme( fixed       = Ya ~ -1 + B1 + B2,
                     random      = ~ -1 + B3+B4|id,
                     data        = as.data.frame(data),
                     reffects    = 'Normal',
                     use.process = F,
-                    silent      = F,
+                    silent      = T,
                     controls.init = list(nIter.init=100),
                     nIter  = n_iter,
                     controls    = list(estimate.fisher = FALSE,
@@ -56,33 +56,39 @@ NIGMVD_ass <- ngme( fixed       = Ya ~ -1 + B1 + B2,
 
 
 
-theta_est <- c(NIGMVD_ass$measurementError_list$sigma,
-               NIGMVD_ass$mixedEffect_list$beta_random,
-               NIGMVD_ass$mixedEffect_list$beta_fixed,
-               sqrt(NIGMVD_ass$mixedEffect_list$Sigma))
-theta <- c(sigma_random, beta_random,beta_fixed, sigma)
-
+fisher.ngme <- ngme.fisher(res.ngme,
+                         nSim = 2,
+                         nIter = 1,
+                         nBurnin = 1,
+                         n.cores = 1,
+                         n.rep = 1,
+                         std.threshold = 2,
+                         observed = TRUE,
+                         only.effects=T,
+                         silent = T)
 
 lmm <- lmer(Y ~-1 + B1 + B2 +B3 + B4+ (-1 +  B3 + B4| id), data = as.data.frame(data),
             REML = FALSE)
-summary(lmm)
-
+slmm <- summary(lmm)
+beta_lmm <- as.vector(slmm$coefficients[,1])
+beta_est<- c(res.ngme$mixedEffect_list$beta_fixed,
+             res.ngme$mixedEffect_list$beta_random)
 ###
 # debug plots
 ###
-if(0){
-  x11()
-  par(mfrow=c(2,4))
-  plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,1],type='l',ylab='betaf 1')
-  plot(NIGMVD_ass$mixedEffect_list$betaf_vec[,2],type='l',ylab='betaf 2')
-  plot(NIGMVD_ass$mixedEffect_list$betar_vec[,1],type='l',ylab='betar 1')
-  plot(NIGMVD_ass$mixedEffect_list$betar_vec[,2],type='l',ylab='betar 2')
-  plot(sqrt(NIGMVD_ass$mixedEffect_list$Sigma_vec),type='l',ylab='mixed sigma')
-  plot(NIGMVD_ass$mixedEffect_list$nu_vec,type='l',ylab='mixed nu')
-  plot(NIGMVD_ass$mixedEffect_list$mu_vec,type='l',ylab='mixed mu')
-}
+
 test_that("Normal mixed effect", {
-  expect_equal(theta,
-               theta_est,
-               tolerance = 0.1)
+  
+  expect_equal(beta_lmm,
+               beta_est,
+               tolerance = 10^-4)
+  expect_equal(slmm$sigma,
+               res.ngme$measurementError_list$sigma,
+               tol=10^-2)
+  expect_equal( c(as.matrix(slmm$vcov)),
+                c(as.matrix(solve(fisher.ngme$fisher_est))),
+               tol=10^-3)
+  expect_equal( c(res.ngme$mixedEffect_list$Sigma),
+               c(as.matrix(as.data.frame(slmm$varcor$id))),
+                tol = 10^-3)
 })
