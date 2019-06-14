@@ -105,3 +105,11 @@ test_2Doperator <- function(process_list, operator_list) {
     .Call(`_ngme_test_2Doperator`, process_list, operator_list)
 }
 
+getNormalouterKron <- function(Sigma, mu) {
+    .Call(`_ngme_getNormalouterKron`, Sigma, mu)
+}
+
+getXXty <- function(Sigma1, Sigma12, mu1, mu2) {
+    .Call(`_ngme_getXXty`, Sigma1, Sigma12, mu1, mu2)
+}
+

@@ -652,3 +652,26 @@ Rcpp::List test_2Doperator(Rcpp::List process_list,
   delete Kobj;
   return(olist);
 }
+
+
+//[[Rcpp::export]]
+Eigen::MatrixXd getNormalouterKron(const Eigen::MatrixXd & Sigma,
+                                  const Eigen::VectorXd  & mu)
+{
+
+  return(NormalouterKron(Sigma, mu));
+}
+
+//[[Rcpp::export]]
+Eigen::MatrixXd getXXty(const Eigen::MatrixXd & Sigma1,
+                        const Eigen::MatrixXd & Sigma12,
+                        const Eigen::VectorXd  & mu1,
+                        const Eigen::VectorXd  & mu2)
+{
+
+  return(Normalxxty(Sigma1,
+                    Sigma12, 
+                    mu1, 
+                    mu2));
+}
+

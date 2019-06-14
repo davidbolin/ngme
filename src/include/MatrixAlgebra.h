@@ -55,7 +55,7 @@ void set_subcol(MatrixXd&, const int, const VectorXi&, const VectorXd&);
   
 MatrixXi duplicatematrix(int);
 
-VectorXd vec(MatrixXd&);
+VectorXd vec(const MatrixXd&);
 VectorXd vech(MatrixXd&);
 MatrixXd veci(VectorXd&,int,int);
 SparseMatrix<double,0,int> Qinv(SparseMatrix<double,0,int>&);
@@ -82,6 +82,18 @@ Eigen::MatrixXd NormalOuterExpectation(const Eigen::MatrixXd &,
 // Computing the expectation of
 // xx'xx' when x ~  N(mu, Sigma)
 Eigen::MatrixXd NormalFourthExpectation(const Eigen::MatrixXd &,
+									    const Eigen::VectorXd &,
 									    const Eigen::VectorXd &);
+// Computing the expectation of
+// xx' \otimes xx' when x ~  N(mu, Sigma)
+Eigen::MatrixXd NormalouterKron(const Eigen::MatrixXd & ,
+							    const Eigen::VectorXd  & );
+
+// Computing the expectation of
+// xx' \otimes xx' when [x,y] ~  N([mu_1, \mu_2], [Sigma_1, \Sigma_{12}, \Sigma_{21}, \Sigma_2])
+Eigen::MatrixXd Normalxxty(const Eigen::MatrixXd & ,
+						   const Eigen::MatrixXd & ,	
+						   const Eigen::VectorXd & ,	
+						   const Eigen::VectorXd & );
 
 #endif /* defined(__MatrixAlgebra__MatrixAlgebra__) */

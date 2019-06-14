@@ -175,7 +175,7 @@ MatrixXi duplicatematrix(int n){
 	return D;
 }
 
-VectorXd vec(MatrixXd& M){
+VectorXd vec(const MatrixXd& M){
 	VectorXd V;
 	V.setZero(M.rows()*M.cols());
 	for(int i=0;i<M.cols();i++){
@@ -550,9 +550,49 @@ Eigen::MatrixXd NormalOuterExpectation(const Eigen::MatrixXd & Sigma,
 }
 
 Eigen::MatrixXd NormalFourthExpectation(const Eigen::MatrixXd & Sigma,
-									    const Eigen::VectorXd  & mu){
+									    const Eigen::VectorXd  & mu,
+									    const Eigen::VectorXd & m){
 	Eigen::MatrixXd Res;
 	Res.setZero(Sigma.rows(), Sigma.cols());
+	Eigen::MatrixXd mu_m_outer  = (mu + m) * (mu + m).transpose();
+	Eigen::MatrixXd Temp        = (Sigma + mu_m_outer);
+	Res         += Temp * Temp;
+	Res.array() *= 2 + Sigma.diagonal().sum();
+	Res  += mu_m_outer *(Sigma - mu_m_outer);
+	return(Res);
+}
+
+Eigen::MatrixXd NormalouterKron(const Eigen::MatrixXd & Sigma,
+									    const Eigen::VectorXd  & mu){
+	Eigen::MatrixXd Res;
+	int n = mu.size();
+	Eigen::MatrixXd I;
+	I.setIdentity(n*n, n*n);
+	Eigen::MatrixXd  Kn;
+	Kn = communicationMatrix(n, n);
+	
+
+	Res =  kroneckerProduct(Sigma, Sigma).eval();
+	Eigen::MatrixXd mu_mu = mu * mu.transpose();
+	Res +=  kroneckerProduct(Sigma, mu_mu).eval();
+	Res +=  kroneckerProduct(mu_mu, Sigma).eval();
+	Eigen::MatrixXd VX = (I + Kn) * Res;
+	Eigen::MatrixXd Exxt = Sigma + mu_mu;
+	Eigen::VectorXd EX = vec(Exxt);
+	return(VX + EX * EX.transpose());
+}
+
+Eigen::MatrixXd Normalxxty(const Eigen::MatrixXd & Sigma1,
+						   const Eigen::MatrixXd & Sigma12,	
+						   const Eigen::VectorXd & mu1,	
+						   const Eigen::VectorXd & mu2 ){
+
+	Eigen::MatrixXd mu1Kmu1     = kroneckerProduct(mu1, mu1);
+	Eigen::MatrixXd mu1Kmu1mu2t = kroneckerProduct(mu2.transpose(), mu1Kmu1);
+	Eigen::MatrixXd Res = mu1Kmu1mu2t;
+	Res += 	kroneckerProduct(mu1, Sigma12) + kroneckerProduct(Sigma12, mu1);
+	Eigen::VectorXd vSigma1 = vec(Sigma1);
+	Res += vSigma1 * mu2.transpose();
 	return(Res);
 }
   

@@ -67,7 +67,7 @@ Eigen::MatrixXd var_term_calc(
   Eigen::MatrixXd iSigma;
   if(n_r > 0){
     iSigma = mixobj.Sigma.inverse();
-    Eigen::MatrixXd L = iSigma.llt().matrixL();
+    Eigen::MatrixXd L = iSigma.llt().matrixL().transpose();
     Eigen::SparseMatrix<double,0,int> Sigma_root = full2sparse(L);
     setSparseBlock(&Kjoint,0,0,Sigma_root);
   }
@@ -165,15 +165,14 @@ if(debug)
 
   Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
   gradFull.head(grad.size()) = grad;
-  mixobj.updateFisher(i, ResultsFull, gradFull);
-  if(calc_mean){
-  // Xt*Q_e*() *(res - A*mu_hat )
-   // Rcpp::Rcout << "res - A * mu_hat = " << res - Ajoint * mu_hat << "\n";
-    
-    grad *= weight;
-    
-
-    if(n_r > 0){
+  int n_sigma = 0;
+  if(n_r > 0){
+     /*
+      Gradient of Sigma and Fisher
+    */
+      Eigen::VectorXd  dSigma_vech;
+      Eigen::MatrixXd PreCond = 0.5 * mixobj.Dd.transpose() * mixobj.iSkroniS;
+      Eigen::VectorXd dSigma_vech1, dSigma_vech2;
       Eigen::MatrixXd E;
       E.setIdentity(b_hat.size(), n_r);
       Eigen::MatrixXd Sigma_Random = Qsolver.solve(E);
@@ -181,33 +180,79 @@ if(debug)
                                                      mu_hat.head(n_r),
                                                      mixobj.get_mean_prior(i));
       EUUt.array() /= mixobj.V(i);
-      EUUt -=  mixobj.Sigma;
-      Eigen::VectorXd UUt = vec( EUUt);
-      Eigen::VectorXd  dSigma_vech = 0.5 * mixobj.Dd.transpose() * mixobj.iSkroniS * UUt;
-      gradFull.segment(grad.size(), dSigma_vech.size()) = dSigma_vech;
-      gradFull.array() *=  weight;
-      mixobj.add_gradient(gradFull);
+      dSigma_vech1 = vec(EUUt);
+      Eigen::VectorXd vSigma = vec(mixobj.Sigma);
+      dSigma_vech2 =  vSigma;
+      dSigma_vech = PreCond * (dSigma_vech1 - dSigma_vech2);
 
-      Eigen::VectorXd grad2;
-      if(mixobj.noise != "Normal"){
-        Eigen::VectorXd grad2_temp = iSigma * mu_hat.head(n_r);
-        grad2.resize(2*n_r);
-        grad2_temp -= (mixobj.V(i)-1)* iSigma * mixobj.mu;
-        grad2_temp /= mixobj.V(i);
-        grad2.head(n_r) = grad2_temp;
-        grad2.tail(n_r) = (mixobj.V(i) -1.)*grad2_temp;
-      }else{
-        grad2.resize(n_r);
-        grad2 = iSigma * mu_hat.head(n_r);
-      }
-      grad2 *= weight;
-      mixobj.add_gradient2(grad2);
-      //return Results;
+      Eigen::MatrixXd EgradgradT, Fisher_Sigma_temp;
+      EgradgradT =  dSigma_vech2 * dSigma_vech2.transpose();
+      EgradgradT -= dSigma_vech1 * dSigma_vech2.transpose();
+      EgradgradT -= dSigma_vech2 * dSigma_vech1.transpose();
+      Eigen::VectorXd mean_temp = mu_hat.head(n_r) - mixobj.get_mean_prior(i);
+      EgradgradT += NormalouterKron(Sigma_Random.topLeftCorner(n_r,n_r),
+                                      mean_temp)/pow(mixobj.V(i),2);
+
+      Fisher_Sigma_temp = PreCond * EgradgradT * PreCond.transpose();
+      n_sigma = Fisher_Sigma_temp.cols();
+      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) -= Fisher_Sigma_temp;
+    
+      gradFull.segment(grad.size(), dSigma_vech.size()) = dSigma_vech;
+
+      /*
+        Fisher [beta,mu] * [Sigma]^T
+      */
+      Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
+      Eigen::VectorXd aTilde = XtQ * (res + Br * mixobj.get_mean_prior(i));
+      Eigen::VectorXd mu_hat_tilde = mu_hat;
+      mu_hat_tilde.head(n_r).array() -= mixobj.get_mean_prior(i).array();
+      // (-a + AX_i) * vec(Sigma)^T * H^T
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (grad * vSigma.transpose())*PreCond.transpose();
+
+      Rcpp::Rcout << "aTilde = " << aTilde  << "\n";
+      Rcpp::Rcout << "grad = " << grad  << "\n";
+      Rcpp::Rcout << "dSigma_vech.transpose() = " << dSigma_vech.transpose() << "\n";
+      Rcpp::Rcout << "aTilde * dSigma_vech.transpose() = " << aTilde * dSigma_vech.transpose() << "\n";
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += aTilde * dSigma_vech.transpose();
+
+      Eigen::MatrixXd EUUxT = Normalxxty(Sigma_Random.topLeftCorner(n_r,n_r),
+                                         Sigma_Random,
+                                         mu_hat_tilde.head(n_r), 
+                                         mu_hat_tilde); 
+      Rcpp::Rcout << "AX * dSigma_vech.transpose() = " << (XtQ * (Ajoint * EUUxT.transpose() )).transpose()* PreCond.transpose() << "\n";
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (XtQ * (Ajoint * EUUxT.transpose() )).transpose()* PreCond.transpose();
+
+     
+      ResultsFull.block(mixobj.nfr, 0, n_sigma, mixobj.nfr) += ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma).transpose();
+     
+    Eigen::VectorXd grad2;
+    if(mixobj.noise != "Normal"){
+      Eigen::VectorXd grad2_temp = iSigma * mu_hat.head(n_r);
+      grad2.resize(2*n_r);
+      grad2_temp -= (mixobj.V(i)-1)* iSigma * mixobj.mu;
+      grad2_temp /= mixobj.V(i);
+      grad2.head(n_r) = grad2_temp;
+      grad2.tail(n_r) = (mixobj.V(i) -1.)*grad2_temp;
     }else{
-        mixobj.add_gradient(grad);
+      grad2.resize(n_r);
+      grad2 = iSigma * mu_hat.head(n_r);
     }
+    grad2.array() *= weight;
+    if(calc_mean)
+      mixobj.add_gradient2(grad2);
+    //return Results;
+  }else{
+    grad *= weight;  
+    if(calc_mean)
+      mixobj.add_gradient(grad);
+  }
 
    
+  
+  mixobj.updateFisher(i, ResultsFull, gradFull);
+  if(n_r >0 && calc_mean){
+    gradFull.array() *=  weight;
+    mixobj.add_gradient(gradFull);
   }
   Eigen::MatrixXd tmp = Qsolver.solve(AtQX);
   
@@ -215,6 +260,8 @@ if(debug)
   ResultsFull.topLeftCorner(mixobj.nfr, mixobj.nfr) += Results;
   Res = weight * Results;
   mixobj.get_Hessian(Res);
+  Rcpp::Rcout << "ResultsFull = \n" << ResultsFull << "\n";
+  Rcpp::Rcout << "gradFull = \n" << gradFull << "\n";
   return ResultsFull;
 }
 
@@ -734,7 +781,6 @@ List estimateLong_cpp(Rcpp::List in_list)
                                             0,
                                             sampler->weight[i],
                                             debug);
-              
               if(debug)
                 Rcpp::Rcout << "var_term_calc done\n";
               //if(i==0)

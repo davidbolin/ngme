@@ -345,6 +345,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getNormalouterKron
+Eigen::MatrixXd getNormalouterKron(const Eigen::MatrixXd& Sigma, const Eigen::VectorXd& mu);
+RcppExport SEXP _ngme_getNormalouterKron(SEXP SigmaSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(getNormalouterKron(Sigma, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getXXty
+Eigen::MatrixXd getXXty(const Eigen::MatrixXd& Sigma1, const Eigen::MatrixXd& Sigma12, const Eigen::VectorXd& mu1, const Eigen::VectorXd& mu2);
+RcppExport SEXP _ngme_getXXty(SEXP Sigma1SEXP, SEXP Sigma12SEXP, SEXP mu1SEXP, SEXP mu2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma1(Sigma1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma12(Sigma12SEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu1(mu1SEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type mu2(mu2SEXP);
+    rcpp_result_gen = Rcpp::wrap(getXXty(Sigma1, Sigma12, mu1, mu2));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
@@ -373,6 +399,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_test_process", (DL_FUNC) &_ngme_test_process, 3},
     {"_ngme_test_Mprocess", (DL_FUNC) &_ngme_test_Mprocess, 3},
     {"_ngme_test_2Doperator", (DL_FUNC) &_ngme_test_2Doperator, 2},
+    {"_ngme_getNormalouterKron", (DL_FUNC) &_ngme_getNormalouterKron, 2},
+    {"_ngme_getXXty", (DL_FUNC) &_ngme_getXXty, 4},
     {NULL, NULL, 0}
 };
 

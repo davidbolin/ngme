@@ -8,19 +8,19 @@ library(ngme)
 library(testthat)
 library(doParallel)
 library(Matrix)
-
-use.process = TRUE
-estimate.parameters = TRUE
+set.seed(1)
+use.process = F
+estimate.parameters = FALSE
 #data options
-n.pers <- 10
+n.pers <- 1
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 
 #Fisher options
 niter.est =10
-nIter.fisher = 10
-nSim.fisher = 10
+nIter.fisher = 1
+nSim.fisher = 1
 nBurnin = 10
 
 #simulate data
@@ -45,8 +45,8 @@ mError_list <- list(Vs = Vin, noise = "Normal", sigma = 0.1)
 mixedEffect_list  <- list(B_random = B_random,
                           B_fixed  = B_fixed,
                           beta_random = as.matrix(c(0.1,0.2)),
-                          beta_fixed  = as.matrix(c(0.1,0.2)),
-                          Sigma = diag(c(0.1, 0.2)),
+                          beta_fixed  = as.matrix(c(-0.1,0.2)),
+                          Sigma =  matrix(c(0.1,0.05,0.05,0.2),ncol=2),
                           noise = "Normal",
                           Sigma_epsilon=0)
 
@@ -173,6 +173,10 @@ if(estimate.parameters){
                    nrow = dim(B_random[[1]])[2], 
                    ncol = dim(B_random[[1]])[2])
   gradFixed <- Vgrad_F
+  F_total <- matrix(0, nrow = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
+                       ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2])
+  F_beta_sigma <- matrix(0, ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
+                            nrow = 1)
   for(i in 1:length(locs))
   {
     SigmaE  = mError_list$sigma^2*diag(n.obs[i])
@@ -197,6 +201,19 @@ if(estimate.parameters){
     F_fixed   <- F_fixed   + t(B )%*%solve(S, B)
     F_random  <- F_random  + t(D)%*%solve(S, D)
     gradFixed <- gradFixed +t(B )%*%SigmaEi%*%B
+    
+    Sigma_total  <- SigmaE + Djoint%*%Sigma%*%t(Djoint)
+    iSigma_total <- solve(Sigma_total)
+    # numerical differntation for cross gradient
+    E <- matrix(c(1,0,0,0),nrow=2) 
+    eps <- 10^-4
+    Sigma_total_E  <- SigmaE + Djoint%*%(Sigma + eps*E)%*%t(Djoint)
+    iSigma_total_E <- solve(Sigma_total_E)
+    F_total <- F_total + t(cbind(B,D))%*%iSigma_total%*%cbind(B,D)
+    res <- sim_res$Y[[i]] - cbind(B,D)%*%c(mixedEffect_list$beta_fixed,mixedEffect_list$beta_random)
+    print(t(res)%*%iSigma_total%*%cbind(B,D))
+    F_beta_sigma <- F_beta_sigma + (t(res)%*%iSigma_total_E%*%cbind(B,D) - t(res)%*%iSigma_total%*%cbind(B,D))/eps
+    
   }
   F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]
   F_random.est <- res.fisher$FisherMatrix[3:4,3:4]

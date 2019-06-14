@@ -63,7 +63,7 @@ ngme.fisher <- function(fit,
   if(silent == FALSE){
     cat("Compute initial estimate.\n")
   }
-  cl <- makeCluster(n.cores)
+  cl <- makeCluster(n.cores, outfile= "")
   registerDoSNOW(cl)
   f.list <- foreach(i = 1:n.rep) %dopar%
   {

@@ -64,7 +64,7 @@ fisher.ngme <- ngme.fisher(res.ngme,
                          n.rep = 1,
                          std.threshold = 2,
                          observed = TRUE,
-                         only.effects=T,
+                         only.effects=F,
                          silent = T)
 
 lmm <- lmer(Y ~-1 + B1 + B2 +B3 + B4+ (-1 +  B3 + B4| id), data = as.data.frame(data),
