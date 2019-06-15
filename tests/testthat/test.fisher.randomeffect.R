@@ -12,7 +12,7 @@ set.seed(1)
 use.process = F
 estimate.parameters = FALSE
 #data options
-n.pers <- 1
+n.pers <- 2
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
@@ -176,7 +176,7 @@ if(estimate.parameters){
   F_total <- matrix(0, nrow = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
                        ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2])
   F_beta_sigma <- matrix(0, ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
-                            nrow = 1)
+                            nrow = 4)
   for(i in 1:length(locs))
   {
     SigmaE  = mError_list$sigma^2*diag(n.obs[i])
@@ -205,26 +205,36 @@ if(estimate.parameters){
     Sigma_total  <- SigmaE + Djoint%*%Sigma%*%t(Djoint)
     iSigma_total <- solve(Sigma_total)
     # numerical differntation for cross gradient
-    E <- matrix(c(1,0,0,0),nrow=2) 
-    eps <- 10^-4
-    Sigma_total_E  <- SigmaE + Djoint%*%(Sigma + eps*E)%*%t(Djoint)
-    iSigma_total_E <- solve(Sigma_total_E)
+    
+    E <- matrix(c(0,0,0,0),nrow=2) 
+    eps <- 10^-6
     F_total <- F_total + t(cbind(B,D))%*%iSigma_total%*%cbind(B,D)
     res <- sim_res$Y[[i]] - cbind(B,D)%*%c(mixedEffect_list$beta_fixed,mixedEffect_list$beta_random)
-    print(t(res)%*%iSigma_total%*%cbind(B,D))
-    F_beta_sigma <- F_beta_sigma + (t(res)%*%iSigma_total_E%*%cbind(B,D) - t(res)%*%iSigma_total%*%cbind(B,D))/eps
     
+    for(j in 1:4){
+      E[j] <- 1
+      Sigma_total_E  <- SigmaE + Djoint%*%(Sigma + eps*E)%*%t(Djoint)
+      iSigma_total_E <- solve(Sigma_total_E)
+      F_beta_sigma[j, ] <- F_beta_sigma[j,] + (t(res)%*%(iSigma_total_E-iSigma_total)%*%cbind(B,D))/eps
+      E[j] <- 0
+    }
   }
   F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]
   F_random.est <- res.fisher$FisherMatrix[3:4,3:4]
   Vgrad_R.est <- res.fisher$GradientVariance[3:4,3:4]
-  
+  F_beta_sigma <- rbind(F_beta_sigma[1,],
+                        F_beta_sigma[4,],
+                        colSums(F_beta_sigma[2:3,]))
 test_that("Fisher Gaussian mixed effect", {  
     expect_equal(as.vector(as.matrix(F_random.est)),
                  as.vector(as.matrix(F_random)),
                  tolerance = 10^-4)
     expect_equal(as.vector(F_fixed.est),
                  as.vector(F_fixed),
+                 tolerance = 10^-4)
+    
+    expect_equal(as.vector(res.fisher$FisherMatrix[5:7,1:4]),
+                 as.vector(F_beta_sigma),
                  tolerance = 10^-4)
   #  expect_equal(as.vector(res.fisher$GradientVariance[1:2,1:2]),
   #               as.vector(Vgrad_F),
