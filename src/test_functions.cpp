@@ -675,3 +675,15 @@ Eigen::MatrixXd getXXty(const Eigen::MatrixXd & Sigma1,
                     mu2));
 }
 
+
+//[[Rcpp::export]]
+Eigen::MatrixXd HeissanSigmaMVN(const Eigen::MatrixXd & Z,
+                                const Eigen::MatrixXd & iSigma,
+                                const Eigen::MatrixXd & Sigma,
+                                const int n)
+{
+return(HessianSigma(Z,
+                    iSigma,
+                    Sigma,
+                    n));
+}

@@ -192,11 +192,15 @@ if(debug)
       Eigen::VectorXd mean_temp = mu_hat.head(n_r) - mixobj.get_mean_prior(i);
       EgradgradT += NormalouterKron(Sigma_Random.topLeftCorner(n_r,n_r),
                                       mean_temp)/pow(mixobj.V(i),2);
-
       Fisher_Sigma_temp = PreCond * EgradgradT * PreCond.transpose();
       n_sigma = Fisher_Sigma_temp.cols();
-      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) -= Fisher_Sigma_temp;
-    
+      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) += Fisher_Sigma_temp;
+      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) -= dSigma_vech * dSigma_vech.transpose();
+      Eigen::MatrixXd Hessian = HessianSigma(EUUt,
+                                             iSigma,
+                                             mixobj.Sigma,
+                                             1);
+      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) +=  mixobj.Dd.transpose() * Hessian * mixobj.Dd;
       gradFull.segment(grad.size(), dSigma_vech.size()) = dSigma_vech;
 
       /*
@@ -206,16 +210,16 @@ if(debug)
       Eigen::VectorXd mu_hat_tilde = mu_hat;
       mu_hat_tilde.head(n_r).array() -= mixobj.get_mean_prior(i).array();
       // (-a + AX_i) * vec(Sigma)^T * H^T
-      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += (grad * vSigma.transpose())*PreCond.transpose();
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (grad * vSigma.transpose())*PreCond.transpose();
 
-      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= aTilde * dSigma_vech1.transpose() * PreCond.transpose();
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += aTilde * dSigma_vech1.transpose() * PreCond.transpose();
 
       Eigen::MatrixXd EUUxT = Normalxxty(Sigma_Random.topLeftCorner(n_r,n_r),
                                          Sigma_Random,
                                          mu_hat_tilde.head(n_r), 
                                          mu_hat_tilde); 
-      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += (XtQ * (Ajoint * EUUxT.transpose() ))* PreCond.transpose();
-      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) +=  grad * dSigma_vech.transpose();
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (XtQ * (Ajoint * EUUxT.transpose() ))* PreCond.transpose();
+      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -=  grad * dSigma_vech.transpose();
       ResultsFull.block(mixobj.nfr, 0, n_sigma, mixobj.nfr) += ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma).transpose();
      
     Eigen::VectorXd grad2;

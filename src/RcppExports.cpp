@@ -371,6 +371,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// HeissanSigmaMVN
+Eigen::MatrixXd HeissanSigmaMVN(const Eigen::MatrixXd& Z, const Eigen::MatrixXd& iSigma, const Eigen::MatrixXd& Sigma, const int n);
+RcppExport SEXP _ngme_HeissanSigmaMVN(SEXP ZSEXP, SEXP iSigmaSEXP, SEXP SigmaSEXP, SEXP nSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type iSigma(iSigmaSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(HeissanSigmaMVN(Z, iSigma, Sigma, n));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ngme_estimateLong_cpp", (DL_FUNC) &_ngme_estimateLong_cpp, 1},
@@ -401,6 +415,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_test_2Doperator", (DL_FUNC) &_ngme_test_2Doperator, 2},
     {"_ngme_getNormalouterKron", (DL_FUNC) &_ngme_getNormalouterKron, 2},
     {"_ngme_getXXty", (DL_FUNC) &_ngme_getXXty, 4},
+    {"_ngme_HeissanSigmaMVN", (DL_FUNC) &_ngme_HeissanSigmaMVN, 4},
     {NULL, NULL, 0}
 };
 

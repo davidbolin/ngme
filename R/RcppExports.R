@@ -113,3 +113,7 @@ getXXty <- function(Sigma1, Sigma12, mu1, mu2) {
     .Call(`_ngme_getXXty`, Sigma1, Sigma12, mu1, mu2)
 }
 
+HeissanSigmaMVN <- function(Z, iSigma, Sigma, n) {
+    .Call(`_ngme_HeissanSigmaMVN`, Z, iSigma, Sigma, n)
+}
+

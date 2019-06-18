@@ -882,10 +882,7 @@ Eigen::VectorXd NormalMixedEffect::get_gradient()
 		g.segment(start, Br[0].cols()) = grad_beta_r;
 		start += Br[0].cols();
 
-  		Eigen::VectorXd UUt_temp = UUt;
-  		UUt_temp -= weight_total * vec(Sigma);
-  		dSigma_vech = 0.5 * Dd.transpose() * iSkroniS * UUt_temp;
-		g.segment(start, dSigma_vech.size()) = dSigma_vech;
+		g.segment(start, grad_Sigma.size()) = grad_Sigma;
 	}
 	return(g);
 }

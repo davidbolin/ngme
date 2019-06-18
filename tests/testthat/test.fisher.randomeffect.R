@@ -8,11 +8,13 @@ library(ngme)
 library(testthat)
 library(doParallel)
 library(Matrix)
+library(numDeriv)
+library(pracma)
 set.seed(1)
-use.process = F
+use.process = T
 estimate.parameters = FALSE
-#data options
-n.pers <- 2
+#data option
+n.pers <- 10
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
@@ -32,6 +34,7 @@ locs.pred <- list()
 B_random.pred <- list()
 B_fixed.pred <- list()
 Vin <- list()
+
 for(i in 1:n.pers)
 {
   Y[[i]] <- rep(1,n.obs[i])
@@ -175,8 +178,10 @@ if(estimate.parameters){
   gradFixed <- Vgrad_F
   F_total <- matrix(0, nrow = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
                        ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2])
-  F_beta_sigma <- matrix(0, ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
-                            nrow = 4)
+  grad_sigma <- rep(0,4)
+  Lik_E <- rep(0,4)
+  Lik_Em <- rep(0,4)
+  F_numeric <- matrix(0, nrow=2+2+3,ncol=2+2+3)
   for(i in 1:length(locs))
   {
     SigmaE  = mError_list$sigma^2*diag(n.obs[i])
@@ -205,26 +210,36 @@ if(estimate.parameters){
     Sigma_total  <- SigmaE + Djoint%*%Sigma%*%t(Djoint)
     iSigma_total <- solve(Sigma_total)
     # numerical differntation for cross gradient
-    
-    E <- matrix(c(0,0,0,0),nrow=2) 
-    eps <- 10^-6
-    F_total <- F_total + t(cbind(B,D))%*%iSigma_total%*%cbind(B,D)
-    res <- sim_res$Y[[i]] - cbind(B,D)%*%c(mixedEffect_list$beta_fixed,mixedEffect_list$beta_random)
-    
-    for(j in 1:4){
-      E[j] <- 1
-      Sigma_total_E  <- SigmaE + Djoint%*%(Sigma + eps*E)%*%t(Djoint)
-      iSigma_total_E <- solve(Sigma_total_E)
-      F_beta_sigma[j, ] <- F_beta_sigma[j,] + (t(res)%*%(iSigma_total_E-iSigma_total)%*%cbind(B,D))/eps
-      E[j] <- 0
+    loglik <- function(betasigma){
+     
+      beta_fixed  <- c(betasigma[1],betasigma[2])
+      beta_random <- c(betasigma[3],betasigma[4])
+      Sigma[1,1] <- betasigma[5]
+      Sigma[2,2] <- betasigma[6]
+      Sigma[2,1] <- betasigma[7]
+      Sigma[1,2] <- betasigma[7]
+      print(Sigma[1:2,1:2])
+      Sigma_total  <- SigmaE + Djoint%*%Sigma%*%t(Djoint)
+      iSigma_total <- solve(Sigma_total)
+      res <- sim_res$Y[[i]] - cbind(B,D)%*%c(beta_fixed,beta_random)
+      Lik <- sum(log(diag(chol(iSigma_total)))) - 0.5*t(res)%*%iSigma_total%*%res
+      return(Lik)
     }
+   # vecH <- matrix(loglik, c(mixedEffect_list$beta_fixed,
+    #                                 mixedEffect_list$beta_random,
+    #                                 c(Sigma)[c(1,4,2)]),
+    #                       method.args=list(eps=1e-3,d=0.001))
+    #Hnum <- -matrix(vecH,nrow=sqrt(length(vecH)))
+    Hnum <- -pracma::hessian(loglik,c(mixedEffect_list$beta_fixed,
+                                                       mixedEffect_list$beta_random,
+                                                       Sigma[1,1],Sigma[2,2],Sigma[1,2]),
+                             h = 10^-4)
+    F_numeric <-  F_numeric + Hnum
   }
   F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]
   F_random.est <- res.fisher$FisherMatrix[3:4,3:4]
   Vgrad_R.est <- res.fisher$GradientVariance[3:4,3:4]
-  F_beta_sigma <- rbind(F_beta_sigma[1,],
-                        F_beta_sigma[4,],
-                        colSums(F_beta_sigma[2:3,]))
+
 test_that("Fisher Gaussian mixed effect", {  
     expect_equal(as.vector(as.matrix(F_random.est)),
                  as.vector(as.matrix(F_random)),
@@ -232,13 +247,9 @@ test_that("Fisher Gaussian mixed effect", {
     expect_equal(as.vector(F_fixed.est),
                  as.vector(F_fixed),
                  tolerance = 10^-4)
-    
-    expect_equal(as.vector(res.fisher$FisherMatrix[5:7,1:4]),
-                 as.vector(F_beta_sigma),
+    expect_equal(as.vector(res.fisher$FisherMatrix[1:7,1:7]),
+                 as.vector(F_numeric),
                  tolerance = 10^-4)
-  #  expect_equal(as.vector(res.fisher$GradientVariance[1:2,1:2]),
-  #               as.vector(Vgrad_F),
-  #               tolerance = 10^-4)
   #(F_random-Vgrad_R)/length(locs) 
   #Vgrad_R/length(locs)
   })

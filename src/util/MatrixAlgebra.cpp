@@ -595,4 +595,20 @@ Eigen::MatrixXd Normalxxty(const Eigen::MatrixXd & Sigma1,
 	Res += vSigma1 * mu2.transpose();
 	return(Res);
 }
+
+Eigen::MatrixXd HessianSigma(const Eigen::MatrixXd & Z,
+						   const Eigen::MatrixXd & iSigma,
+						   const Eigen::MatrixXd & Sigma,
+						   const int n){
+	int d  = Sigma.rows();
+	Eigen::MatrixXd Kdd = communicationMatrix(d, d);	
+	Kdd.array() *= 0.5;
+	Eigen::MatrixXd QZQ = iSigma * Z * iSigma;
+	Eigen::MatrixXd Res =  -kroneckerProduct(QZQ, iSigma);
+	QZQ -= n*iSigma;
+	Res -= kroneckerProduct(iSigma, QZQ);
+
+	return(Kdd * Res);
+
+}
   

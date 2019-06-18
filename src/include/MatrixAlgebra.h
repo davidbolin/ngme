@@ -95,5 +95,14 @@ Eigen::MatrixXd Normalxxty(const Eigen::MatrixXd & ,
 						   const Eigen::MatrixXd & ,	
 						   const Eigen::VectorXd & ,	
 						   const Eigen::VectorXd & );
+//
+// computing the hessian of multivariate normal (not elementwise)
+// Z      - XX'
+// iSigma -  Sigma^{-1}
+//  Sigma -  Sigma
+Eigen::MatrixXd HessianSigma(const Eigen::MatrixXd & ,
+						   const Eigen::MatrixXd & ,
+						   const Eigen::MatrixXd & ,
+						   const int );
 
 #endif /* defined(__MatrixAlgebra__MatrixAlgebra__) */
