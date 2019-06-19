@@ -213,9 +213,8 @@ if(debug)
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (grad * vSigma.transpose())*PreCond.transpose();
 
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += aTilde * dSigma_vech1.transpose() * PreCond.transpose();
-
       Eigen::MatrixXd EUUxT = Normalxxty(Sigma_Random.topLeftCorner(n_r,n_r),
-                                         Sigma_Random,
+                                         Sigma_Random.transpose(),
                                          mu_hat_tilde.head(n_r), 
                                          mu_hat_tilde); 
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (XtQ * (Ajoint * EUUxT.transpose() ))* PreCond.transpose();

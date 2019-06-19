@@ -14,7 +14,7 @@ set.seed(1)
 use.process = T
 estimate.parameters = FALSE
 #data option
-n.pers <- 10
+n.pers <- 1
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
@@ -179,6 +179,7 @@ if(estimate.parameters){
   F_total <- matrix(0, nrow = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2],
                        ncol = dim(B_fixed[[1]])[2] + dim(B_random[[1]])[2])
   grad_sigma <- rep(0,4)
+  grad <- rep(0,4+3)
   Lik_E <- rep(0,4)
   Lik_Em <- rep(0,4)
   F_numeric <- matrix(0, nrow=2+2+3,ncol=2+2+3)
@@ -197,10 +198,12 @@ if(estimate.parameters){
       Sigma   = mixedEffect_list$Sigma
     }
     B       = B_fixed[[i]]  
-    Sigma<- as.matrix(Sigma)
+    Sigma <- as.matrix(Sigma)
     Djoint <- as.matrix(Djoint)
     VU      = solve(solve(Sigma) + t(Djoint)%*%SigmaEi%*%Djoint) #V[U|Y]
-    Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
+    beta_fixed  <-   mixedEffect_list$beta_fixed
+    beta_random <-   mixedEffect_list$beta_random
+     Vgrad_F   = Vgrad_F + t(B)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%B #V[\Delta_\beta\log(\pi)|Y]
     Vgrad_R   = Vgrad_R + t(D)%*%SigmaEi%*%(Djoint%*%VU%*%t(Djoint))%*%SigmaEi%*%D #V[\Delta_\beta\log(\pi)|Y]
     S =  Djoint%*%Sigma%*%t(Djoint)  +  SigmaE
     F_fixed   <- F_fixed   + t(B )%*%solve(S, B)
@@ -218,22 +221,20 @@ if(estimate.parameters){
       Sigma[2,2] <- betasigma[6]
       Sigma[2,1] <- betasigma[7]
       Sigma[1,2] <- betasigma[7]
-      print(Sigma[1:2,1:2])
       Sigma_total  <- SigmaE + Djoint%*%Sigma%*%t(Djoint)
       iSigma_total <- solve(Sigma_total)
       res <- sim_res$Y[[i]] - cbind(B,D)%*%c(beta_fixed,beta_random)
       Lik <- sum(log(diag(chol(iSigma_total)))) - 0.5*t(res)%*%iSigma_total%*%res
       return(Lik)
     }
-   # vecH <- matrix(loglik, c(mixedEffect_list$beta_fixed,
-    #                                 mixedEffect_list$beta_random,
-    #                                 c(Sigma)[c(1,4,2)]),
-    #                       method.args=list(eps=1e-3,d=0.001))
-    #Hnum <- -matrix(vecH,nrow=sqrt(length(vecH)))
     Hnum <- -pracma::hessian(loglik,c(mixedEffect_list$beta_fixed,
                                                        mixedEffect_list$beta_random,
                                                        Sigma[1,1],Sigma[2,2],Sigma[1,2]),
                              h = 10^-4)
+    grad <- grad +c( pracma::jacobian(loglik,c(mixedEffect_list$beta_fixed,
+                                                        mixedEffect_list$beta_random,
+                                                         Sigma[1,1],Sigma[2,2],Sigma[1,2]),
+                                       h = 10^-4))
     F_numeric <-  F_numeric + Hnum
   }
   F_fixed.est <- res.fisher$FisherMatrix[1:2,1:2]

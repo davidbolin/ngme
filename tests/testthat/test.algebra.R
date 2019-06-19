@@ -53,8 +53,8 @@ ExKx <- colMeans(xKx)
 ExKx_true <- c(getXXty(Sigma[1:d_s,1:d_s],Sigma[1:d_s,],mu[1:d_s],mu))
 
 test_that("third moment", {
-  expect_equal(c(E2xKx_true),
-               c(E2xKx),
+  expect_equal(c(ExKx_true),
+               c(ExKx),
                tolerance = 0.1)
 })
 n <- 3
