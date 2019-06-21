@@ -110,7 +110,6 @@ ngme.par <- function(n.cores = 4,
       controls$nBurnin = 5
       
     }
-      
     est.list <- foreach(i = 1:n.cores, .options.snow = opts,.packages = c("ngme","Matrix")) %dopar%
     {
       if(ii==1){

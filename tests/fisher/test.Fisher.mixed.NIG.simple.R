@@ -10,13 +10,13 @@ library(doParallel)
 library(Matrix)
 
 #data options
-n.pers <- 3
+n.pers <- 30
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 
 
 #Fisher options
 nIter.fisher = 1
-nSim.fisher = 100
+nSim.fisher = 1000
 nBurnin = 10
 
 #simulate data
@@ -67,3 +67,4 @@ res.fisher <- estimateLong(Y                = sim_res$Y,
 
 RES <- solve(res.fisher$FisherMatrix[c(1:6),c(1:6)])
 RES2 <- solve(res.fisher$FisherMatrix[c(1:6,10),c(1:6,10)])
+RES3 <- solve(res.fisher$FisherMatrix)[1:6,1:6]

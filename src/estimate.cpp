@@ -165,6 +165,7 @@ if(debug)
 
   Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
   gradFull.head(grad.size()) = grad;
+  Results += grad * grad.transpose();
   int n_sigma = 0;
   if(n_r > 0){
      /*
@@ -195,7 +196,7 @@ if(debug)
       Fisher_Sigma_temp = PreCond * EgradgradT * PreCond.transpose();
       n_sigma = Fisher_Sigma_temp.cols();
       ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) += Fisher_Sigma_temp;
-      ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) -= dSigma_vech * dSigma_vech.transpose();
+      //ResultsFull.block(mixobj.nfr, mixobj.nfr, n_sigma, n_sigma) -= dSigma_vech * dSigma_vech.transpose();
       Eigen::MatrixXd Hessian = HessianSigma(EUUt,
                                              iSigma,
                                              mixobj.Sigma,
@@ -206,21 +207,24 @@ if(debug)
       /*
         Fisher [beta,mu] * [Sigma]^T
       */
-      Eigen::VectorXd aTilde = XtQ * (res + Br * mixobj.get_mean_prior(i));
+      Eigen::VectorXd aTilde = XtQ *(res -  mixobj.Br[i] * mixobj.get_mean_prior(i));
       Eigen::VectorXd mu_hat_tilde = mu_hat;
       mu_hat_tilde.head(n_r).array() -= mixobj.get_mean_prior(i).array();
       // (-a + AX_i) * vec(Sigma)^T * H^T
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (grad * vSigma.transpose())*PreCond.transpose();
 
+      
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) += aTilde * dSigma_vech1.transpose() * PreCond.transpose();
+
       Eigen::MatrixXd EUUxT = Normalxxty(Sigma_Random.topLeftCorner(n_r,n_r),
                                          Sigma_Random.transpose(),
                                          mu_hat_tilde.head(n_r), 
                                          mu_hat_tilde); 
+      EUUxT.array() /= mixobj.V(i);
       ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -= (XtQ * (Ajoint * EUUxT.transpose() ))* PreCond.transpose();
-      ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -=  grad * dSigma_vech.transpose();
+      //ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma) -=  grad * dSigma_vech.transpose();
       ResultsFull.block(mixobj.nfr, 0, n_sigma, mixobj.nfr) += ResultsFull.block(0, mixobj.nfr, mixobj.nfr, n_sigma).transpose();
-     
+      
     Eigen::VectorXd grad2;
     if(mixobj.noise != "Normal"){
       Eigen::VectorXd grad2_temp = iSigma * mu_hat.head(n_r);
@@ -305,6 +309,7 @@ List estimateLong_cpp(Rcpp::List in_list)
   if(in_list.containsElementNamed("estimate_fisher"))
     estimate_fisher    = Rcpp::as< int > (in_list["estimate_fisher"] );
 
+  
   double polyak_rate = -1;
   if(in_list.containsElementNamed("polyak_rate"))
     polyak_rate = Rcpp::as< double    > (in_list["polyak_rate"]);
@@ -782,8 +787,8 @@ List estimateLong_cpp(Rcpp::List in_list)
                 Rcpp::Rcout << "var_term_calc done\n";
               //if(i==0)
               //Rcpp::Rcout << "Vmf = " << Vmf << "\n";
-              grad_mix_temp += mixobj->get_gradient();
-
+             
+              
           }
           // collects the gradient for computing estimate of variances
           grad_inner.block(0, count_inner,
@@ -802,13 +807,22 @@ List estimateLong_cpp(Rcpp::List in_list)
         }
       }
       if(nfr> 0){
+          Eigen::VectorXd  temp = mixobj->get_gradient() - grad_mix_temp;
+          grad_mix_temp = mixobj->get_gradient();
+          temp.array() /= (sampler->weight[i] );
+          Eigen::MatrixXd T= temp * temp.transpose();
+          Fisher_information.topLeftCorner(mixobj->npars, mixobj->npars) +=  temp * temp.transpose() * (sampler->weight[i]/(nSim) );
           Fisher_information.topLeftCorner(mixobj->npars, mixobj->npars) -= Vmf * (sampler->weight[i] );
-          grad_mix += grad_mix_temp;
+          
           Vmf *= 0; 
         }
       if(process_active)
         Vmean[i] += process->Vs[i];
       count_vec[i] += 1;
+    }
+    if(nfr> 0){
+      grad_mix_temp.array() *= 0;
+      grad_mix +=  mixobj->get_gradient() ;//grad_mix_temp;
     }
     // update weights given the gradient
     // change here to unweighted gradient!
@@ -857,6 +871,7 @@ List estimateLong_cpp(Rcpp::List in_list)
         Kobj ->  clear_gradient();
       }
     }
+
   }
 
   for(int i = 0; i < nindv; i++ )
@@ -910,7 +925,7 @@ List estimateLong_cpp(Rcpp::List in_list)
     Rcpp::colnames(F) = param_names;
     out_list["FisherMatrix"]     = F;
     out_list["FisherMatrix0"]    = Fisher_information0 / (nIter * nSim);
-    out_list["gradient"]         = grad_mix/(nIter * nSim);
+    out_list["gradient"]         = Ys.size() * grad_mix/(nIter * nSim);
     out_list["GradientVariance"] = GradientVariance / (nIter * nSim) ;
 
   }

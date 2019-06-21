@@ -6,10 +6,10 @@ graphics.off()
 library(ngme)
 set.seed(7)
 save.file=0
-sim <-  100
+sim <-  1
 
-nindv <- 500
-n     <- 100
+nindv <- 50
+n     <- 10
 
 beta_random  <- as.vector(0.8)
 beta_fixed   <- c(1.1, 2.2)
@@ -108,10 +108,10 @@ for(i in 1:sim){
          nBurnin.learningrate=1000)
   }
   NIGMVD_ass <-  ngme.par(n.cores = 4, std.lim = 2, max.rep = 6,
-                                fixed       = Ya ~ B1 + B2,
+                                fixed       = Ya ~ -1 + B1 + B2,
                                 random      = ~ -1+B3|id,
                                 data        = as.data.frame(data),
-                                reffects    = 'Normal',
+                                reffects    = 'NIG',
                                 use.process = FALSE,
                                 silent      = FALSE,
                                 controls.init = list(nIter.init=500),
@@ -119,8 +119,8 @@ for(i in 1:sim){
                                 controls    = control)
   
   fiher_NIG <- ngme.fisher(NIGMVD_ass,
-                           nSim = 30,
-                           nIter = 10,
+                           nSim = 1000,
+                           nIter = 1,
                            nBurnin = 2,
                            n.cores = 1,
                            n.rep = 1,
@@ -129,7 +129,7 @@ for(i in 1:sim){
                            only.effects=F,
                            silent = F)
   est_param[i,] <- c(NIGMVD_ass$mixedEffect_list$beta_fixed, NIGMVD_ass$mixedEffect_list$beta_random)
-  V <- diag(solve(fiher_NIG$fisher_est[c(1:3), c(1:3)]))[1:3]
+  V <- diag(solve(fiher_NIG$fisher_est[c(1:4), c(1:4)]))[1:3]
   sd_param[i,]  <-  sqrt(V + NIGMVD_ass$fixed_est_var[dim(NIGMVD_ass$fixed_est_var)[1],c(2,3,1)])
   sd_param2[i,]  <-  sqrt(V)
   

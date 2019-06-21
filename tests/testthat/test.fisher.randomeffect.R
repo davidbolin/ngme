@@ -14,15 +14,15 @@ set.seed(1)
 use.process = T
 estimate.parameters = FALSE
 #data option
-n.pers <- 1
+n.pers <- 4
 n.obs  <- rep(10,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
 
 #Fisher options
-niter.est =10
-nIter.fisher = 1
-nSim.fisher = 1
+niter.est = 2
+nIter.fisher = 5
+nSim.fisher = 3
 nBurnin = 10
 
 #simulate data
@@ -231,6 +231,7 @@ if(estimate.parameters){
                                                        mixedEffect_list$beta_random,
                                                        Sigma[1,1],Sigma[2,2],Sigma[1,2]),
                              h = 10^-4)
+    grad_old <- grad
     grad <- grad +c( pracma::jacobian(loglik,c(mixedEffect_list$beta_fixed,
                                                         mixedEffect_list$beta_random,
                                                          Sigma[1,1],Sigma[2,2],Sigma[1,2]),

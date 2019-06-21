@@ -124,6 +124,7 @@ void NIGMixedEffect::updateFisher(const int i,
   grad(npars - 1) = 0.5 * grad_nu;
   Fisher.row(npars - 1) += - grad_nu * grad;
   Fisher.col(npars - 1) += - grad_nu * grad;
+  Fisher(npars - 1, npars -1) -= 0.5 / (nu * nu);
   grad(npars - 1) += 0.5 * grad_nu;
 
 }
