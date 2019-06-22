@@ -595,7 +595,7 @@ simple.convergence.test <- function(m,sigma2,std.lim){
       n.points <- min(N,4)
       B <- cbind(rep(1,n.points),1:n.points)
       for(i in 1:n.test){
-        std.satisfied <- m[N,i]/sqrt(sigma2[N,i])>std.lim
+        std.satisfied <- abs(m[N,i])/sqrt(sigma2[N,i])>std.lim
         Sigma <- diag(sigma2[(N-n.points+1):N,i])
         Q <- solve(t(B)%*%solve(Sigma,B))
         beta <- Q%*%(t(B)%*%solve(Sigma,m[(N-n.points+1):N,i]))
@@ -608,7 +608,7 @@ simple.convergence.test <- function(m,sigma2,std.lim){
     if(length(m)>3){
       #check that estimate/std is above the limit
       N = length(m)
-      std.satisfied <- m[N]/sqrt(sigma2[N])>std.lim
+      std.satisfied <- abs(m[N])/sqrt(sigma2[N])>std.lim
       
       #check if we have a significant trend in the n.points last points
       n.points <- min(length(m),4)
