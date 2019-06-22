@@ -224,10 +224,7 @@ ngme <- function(fixed,
                  init.fit = NULL
                  )
 {
-  # generate a seed
-  gen_seed <- ceiling(10^8 * runif(1))
-  controls$seed <- controls.init$seed.init <- gen_seed
-
+  
   # being sure that controls includes everything
   if(length(controls) < 18){
     controls.full <- list(learning.rate = 0.2,
@@ -256,14 +253,12 @@ ngme <- function(fixed,
     }
 
   }
+  # generate a seed
+  gen_seed <- ceiling(10^8 * runif(1))
+  controls$seed <-  gen_seed
 
   # check for controls.init
-  if(is.null(init.fit) == TRUE ||
-     (reffects == "Normal" & (use.process == TRUE & process[1] == "Normal") & error == "Normal") ||
-     (reffects == "Normal" & use.process == FALSE & error == "Normal")
-     ){
-
-    if(length(controls.init) < 16){
+  if(is.null(controls.init) || length(controls.init) < 16){
       controls.init.full <- list(learning.rate.init = 0,
                                  polyak.rate.init = 0.1,
                                  nBurnin.init = 100,
@@ -284,10 +279,10 @@ ngme <- function(fixed,
           controls.init[names(controls.init.full)[i]] <- controls.init.full[i]
         }
       }
-
+      controls.init$seed.init <- gen_seed
     }
 
-  }
+  
 
   ## check mesh
   if(length(mesh) < 5){

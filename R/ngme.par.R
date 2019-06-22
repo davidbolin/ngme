@@ -110,17 +110,18 @@ ngme.par <- function(n.cores = 4,
       controls$nBurnin = 5
       
     }
+    #for(i in 1:n.cores)
     est.list <- foreach(i = 1:n.cores, .options.snow = opts,.packages = c("ngme","Matrix")) %dopar%
     {
       if(ii==1){
         if(temporal.model){
-          est <- ngme::ngme(controls=controls,
-                            controls.init = controls.init,
-                            timeVar = timeVar,
-                            use.process = use.process,
-                            nIter = nIter,
-                            init.fit = init.fit,
-                            silent = TRUE,...)  
+            est <- ngme::ngme(controls=controls,
+                              controls.init = controls.init,
+                              timeVar = timeVar,
+                              use.process = use.process,
+                              nIter = nIter,
+                              init.fit = init.fit,
+                              silent = TRUE,...)  
         } else {
           est <- ngme::ngme.spatial(controls=controls,
                             controls.init = controls.init,
