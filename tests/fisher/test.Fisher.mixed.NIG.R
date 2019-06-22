@@ -4,11 +4,11 @@
 rm(list=ls())
 graphics.off()
 library(ngme)
-set.seed(7)
+set.seed(1)
 save.file=0
-sim <-  1
+sim <-  100
 
-nindv <- 50
+nindv <- 500
 n     <- 10
 
 beta_random  <- as.vector(0.8)
@@ -26,8 +26,8 @@ sum_res <- function(est_param, se_param, true_param){
   upper <- lower
   in_CI <- lower
   for(i in 1:dim(est_param)[1]){
-  lower[i,]   <- est_param[i,] -  1.644854*se_param[i,]
-  upper[i,]   <- est_param[i,] +  1.644854*se_param[i,]
+  lower[i,]   <- est_param[i,] -  qnorm(0.95)*se_param[i,]
+  upper[i,]   <- est_param[i,] +  qnorm(0.95)*se_param[i,]
   in_CI[i,]   <-  lower[i,] <= true_param & true_param <= upper[i,]
   }
   return(list(est   = est_param,
@@ -39,31 +39,7 @@ sum_res <- function(est_param, se_param, true_param){
 
 m_ = 0
 m_2 = 0
-for(i in 1:2){
-  cat('iter = ',i,'of ',sim,'\n')
-  data <-c()
-  for(indv in 1:nindv){
-    B_fixed  <- cbind(as.matrix(1:n)/n, rnorm(n))
-    B_random <- as.matrix(rep(1, n))
-    V_mixed <-rGIG(rep(-0.5,1),
-                   rep( nu_mixed, 1),
-                   rep( nu_mixed, 1),
-                   as.integer(1000 * runif(1) ))
-    E      = sigma_random * rnorm(n)
-    Y         <- B_fixed%*%beta_fixed +
-      B_random%*%(beta_random  + (-1+V_mixed)*mu_mixed+ sqrt(V_mixed)*sigma*rnorm(1)) + E
-    Ya <- Y 
-    id <- rep(indv, n)
-    data <- rbind(data, cbind(B_fixed,
-                              B_random,
-                              V_mixed,
-                              Y,
-                              Ya,
-                              id))
-  }
-  dimnames(data)[[2]] <- c('B1','B2','B3','V','Y','Ya','id')
-  
-}
+
 for(i in 1:sim){
   cat('iter = ',i,'of ',sim,'\n')
   data <-c()
@@ -92,7 +68,7 @@ for(i in 1:sim){
     control = list(estimate.fisher = FALSE,
          pSubsample = 0.2,
          subsample.type  = 1,
-         alpha = 0.3,
+         alpha = 0.2,
          nSim  =2,
          nBurnin = 2,
          step0 = 1,
@@ -107,7 +83,7 @@ for(i in 1:sim){
          nBurnin = 2,
          nBurnin.learningrate=1000)
   }
-  NIGMVD_ass <-  ngme.par(n.cores = 4, std.lim = 2, max.rep = 6,
+  NIGMVD_ass <-  ngme.par(n.cores = 4, std.lim = 2, max.rep = 8,
                                 fixed       = Ya ~ -1 + B1 + B2,
                                 random      = ~ -1+B3|id,
                                 data        = as.data.frame(data),
@@ -119,7 +95,7 @@ for(i in 1:sim){
                                 controls    = control)
   
   fiher_NIG <- ngme.fisher(NIGMVD_ass,
-                           nSim = 1000,
+                           nSim = 2000,
                            nIter = 1,
                            nBurnin = 2,
                            n.cores = 1,
@@ -129,17 +105,18 @@ for(i in 1:sim){
                            only.effects=F,
                            silent = F)
   est_param[i,] <- c(NIGMVD_ass$mixedEffect_list$beta_fixed, NIGMVD_ass$mixedEffect_list$beta_random)
-  V <- diag(solve(fiher_NIG$fisher_est[c(1:4), c(1:4)]))[1:3]
-  sd_param[i,]  <-  sqrt(V + NIGMVD_ass$fixed_est_var[dim(NIGMVD_ass$fixed_est_var)[1],c(2,3,1)])
+  #V <- diag(solve(fiher_NIG$fisher_est[c(1:4), c(1:4)]))[1:3]
+  V <- diag(solve(fiher_NIG$fisher_est))[1:3]
+  sd_param[i,]  <-  sqrt(V + NIGMVD_ass$fixed_est_var[dim(NIGMVD_ass$fixed_est_var)[1],c(1,2,3)])
   sd_param2[i,]  <-  sqrt(V)
   
  
  # cat('mu  = ',round(NIGMVD_ass$mixedEffect_list$mu,2),'\n')
   cat('b_r = ',round(NIGMVD_ass$mixedEffect_list$beta_random,2),'\n')
-  cat('low = ',est_param[i,3] - 1.64*sd_param[i,3]-true_param[3],'\n')
-  cat('upp = ',est_param[i,3] + 1.6*sd_param[i,3]-true_param[3],'\n')
-  m_ = m_ + ((est_param[i,3] - 1.64*sd_param[i,3]-true_param[3]) * (est_param[i,3] + 1.64*sd_param[i,3]-true_param[3])<0)
-  m_2 = m_2 + ((est_param[i,3] - 1.64*sd_param2[i,3]-true_param[3]) * (est_param[i,3] + 1.64*sd_param2[i,3]-true_param[3])<0)
+  cat('low = ',est_param[i,3] - qnorm(0.95)*sd_param[i,3]-true_param[3],'\n')
+  cat('upp = ',est_param[i,3] + qnorm(0.95)*sd_param[i,3]-true_param[3],'\n')
+  m_ = m_ + ((est_param[i,3] - qnorm(0.95)*sd_param[i,3]-true_param[3]) * (est_param[i,3] + qnorm(0.95)*sd_param[i,3]-true_param[3])<0)
+  m_2 = m_2 + ((est_param[i,3] - qnorm(0.95)*sd_param2[i,3]-true_param[3]) * (est_param[i,3] + qnorm(0.95)*sd_param2[i,3]-true_param[3])<0)
   
   cat('CI  = ',100*round(m_/i,2),'%\n')
   cat('CI_v2  = ',100*round(m_2/i,2),'%\n')

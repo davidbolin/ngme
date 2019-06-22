@@ -155,7 +155,7 @@ if(debug)
   Eigen::MatrixXd  XtQ = QX.transpose();
   Eigen::MatrixXd AtQX = Ajoint.transpose()*QX;
   Eigen::MatrixXd XtQA = AtQX.transpose();
-  Eigen::MatrixXd Res;
+  Eigen::MatrixXd Hes;
 
   //Result_full
   Eigen::MatrixXd ResultsFull;
@@ -165,6 +165,7 @@ if(debug)
 
   Eigen::VectorXd grad  = XtQ * (res - Ajoint * mu_hat);
   gradFull.head(grad.size()) = grad;
+  Hes = - X.transpose() * QX;
   Results += grad * grad.transpose();
   int n_sigma = 0;
   if(n_r > 0){
@@ -256,8 +257,9 @@ if(debug)
   
   Results += XtQA*tmp;
   ResultsFull.topLeftCorner(mixobj.nfr, mixobj.nfr) += Results;
-  Res = weight * Results;
-  mixobj.get_Hessian(Res);
+  Hes += XtQA*tmp;
+  Hes.array() *= weight;
+  mixobj.get_Hessian(Hes);
   return ResultsFull;
 }
 

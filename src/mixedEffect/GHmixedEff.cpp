@@ -806,7 +806,8 @@ void GHMixedEffect::step_theta(const double stepsize,
                                const int burnin)
 {
   
-if(0){
+  int hessian_step = 1;
+if(hessian_step){
   Eigen::VectorXd grad0(nfr);
   grad0 << grad_beta_f, grad_beta_r, gradMu_2;
   Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
@@ -822,23 +823,25 @@ if(0){
   gradMu_2    *= 0.;
 }
 
-  if(Br.size() > 0){
+if(Br.size() > 0){
+    if(hessian_step==0){
       step_mu(stepsize, learning_rate, 0);
-     
+   
     
       if(Bf.size() == 0){
         step_beta_random(stepsize, learning_rate, 0);
       }else{
         step_beta(stepsize, learning_rate,  0);
       }
-    
-    
-    step_Sigma(stepsize, learning_rate, 0);
-    H_beta_random.setZero(Br[0].cols(), Br[0].cols());
-  }
+    }
+  
+  
+  step_Sigma(stepsize, learning_rate, 0);
+  H_beta_random.setZero(Br[0].cols(), Br[0].cols());
+}
 
-  if(Bf.size() > 0 & Br.size() == 0 )
-    step_beta_fixed(stepsize, learning_rate, 0);
+if(Bf.size() > 0 & Br.size() == 0 & hessian_step==0)
+  step_beta_fixed(stepsize, learning_rate, 0);
 }
 
 void GHMixedEffect::step_Sigma(const double stepsize, const double learning_rate,const int burnin)
