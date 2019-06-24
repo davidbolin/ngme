@@ -518,7 +518,7 @@ ngme <- function(fixed,
                   log(fit$mixedEffect_list$Sigma)/2),
                 lambda)
           fit$mixedEffect_list$mu <- matrix(0, dim(B_random[[1]])[2], 1)
-          fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[1])),600)
+          fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[1])),10)
           fit$mixedEffect_list$Sigma <- as.matrix(exp(2*res$par[2]))
           if(fit$mixedEffect_list$nu< 10){
             lambda <- function(x) -sum(dnig(c(fit$mixedEffect_list$U),-x[1],x[1],exp(x[2]),exp(x[3]),log = T))
@@ -527,7 +527,7 @@ ngme <- function(fixed,
               log(fit$mixedEffect_list$Sigma)/2),
               lambda)
             fit$mixedEffect_list$mu <- res$par[1]
-            fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[2])),600)
+            fit$mixedEffect_list$nu <- max(as.matrix(exp(res$par[2])),10)
             fit$mixedEffect_list$Sigma <- as.matrix(exp(2*res$par[3]))
           }
         }else{

@@ -86,8 +86,8 @@ Rcpp::List GHMixedEffect::toList()
     out["U"]      = U;
     out["V"]      = V;
     out["mu"]     = mu;
+    out["Hessian"] = Hessian;
   }
-  //out['Hessian'] = Hessian;
   
   
   out["noise"]       = noise;
@@ -263,8 +263,15 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
 
 
   nfr = n_f + 2 * n_r;
-
   Hessian.setZero(nfr, nfr);
+  
+  if( init_list.containsElementNamed("Hessian")){
+    Hessian = Rcpp::as< Eigen::MatrixXd > (init_list["Hessian"]);
+  }else{
+    Hessian.setZero(nfr, nfr);
+  }
+  
+  
 }
 void GHMixedEffect::add_gradient(Eigen::VectorXd & grad){
     int nf = 0;
@@ -807,6 +814,9 @@ void GHMixedEffect::step_theta(const double stepsize,
 {
   
   int hessian_step = 1;
+
+  if(burnin < 50)
+    hessian_step = 0;
 if(hessian_step){
   Eigen::VectorXd grad0(nfr);
   grad0 << grad_beta_f, grad_beta_r, gradMu_2;
@@ -817,11 +827,11 @@ if(hessian_step){
   beta_fixed = step1.head(beta_fixed.size());
   beta_random = step1.segment(beta_fixed.size(), beta_random.size());
   mu          = step1.tail(beta_random.size());
-  Hessian *= 0.8;
   grad_beta_f *= 0.;
   grad_beta_r *= 0.;
   gradMu_2    *= 0.;
 }
+Hessian *= 0.8;
 
 if(Br.size() > 0){
     if(hessian_step==0){
