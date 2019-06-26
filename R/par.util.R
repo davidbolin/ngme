@@ -482,6 +482,134 @@ attach.ngme.output <- function(obj1,obj2){
   
 }
 
+
+
+
+
+
+create.tracks <- function(obj){
+  tracks <- list()
+  bivariate = FALSE
+  if(obj[[1]]$measurementError_list$noise == "nsNormal"){
+    bivariate = TRUE
+  }
+  for(i in 1:length(obj)){
+    tracks[[i]]$betaf <- obj[[i]]$mixedEffect_list$betaf_vec
+    if(!is.null(obj[[i]]$mixedEffect_list$betar_vec)){
+      tracks[[i]]$betar <- obj[[i]]$mixedEffect_list$betar_vec
+      tracks[[i]]$Sigma <- obj[[i]]$mixedEffect_list$Sigma_vec
+    }
+    if(!is.null(obj[[i]]$mixedEffect_list$nu_vec)){
+      tracks[[i]]$nu_random <- obj[[i]]$mixedEffect_list$nu_vec
+    }
+    if(!is.null(obj[[i]]$mixedEffect_list$mu_vec)){
+      tracks[[i]]$mu_random <- obj[[i]]$mixedEffect_list$mu_vec
+    }
+    if(bivariate){
+      tracks[[i]]$meas_error_theta <- obj[[i]]$measurementError_list$theta_vec
+    } else {
+      tracks[[i]]$meas_error_sigma <- obj[[i]]$measurementError_list$sigma_vec
+    }
+    if(!is.null(obj[[i]]$measurementError_list$nu_vec)){
+      tracks[[i]]$meas_error_nu <- obj[[i]]$measurementError_list$nu_vec
+    }
+    if(!is.null(obj[[i]]$measurementError_list$mu_vec)){
+      tracks[[i]]$meas_error_mu <- obj[[i]]$measurementError_list$mu_vec
+    }
+    if(bivariate){
+      if(!is.null(obj[[i]]$operator_list$tau1Vec)){
+        tracks[[i]]$tau1 <- obj[[i]]$operator_list$tau1Vec
+        tracks[[i]]$tau2 <- obj[[i]]$operator_list$tau2Vec
+      }
+    } else {
+      if(!is.null(obj[[i]]$operator_list$tauVec)){
+        tracks[[i]]$tau <- obj[[i]]$operator_list$tauVec
+      }  
+    }
+    if(bivariate){
+      if(!is.null(obj[[i]]$operator_list$kappa1Vec)){
+        tracks[[i]]$kappa1 <- obj[[i]]$operator_list$kappa1Vec
+        tracks[[i]]$kappa2 <- obj[[i]]$operator_list$kappa2Vec
+      }  
+    } else {
+      if(!is.null(obj[[i]]$operator_list$kappaVec)){
+        tracks[[i]]$kappa <- obj[[i]]$operator_list$kappaVec
+      }  
+    }
+    
+    if(!is.null(obj[[i]]$processes_list$mu_vec)){
+      tracks[[i]]$process_mu <- obj[[i]]$processes_list$mu_vec
+    }
+    if(!is.null(obj[[i]]$processes_list$nu_vec)){
+      tracks[[i]]$process_nu <- obj[[i]]$processes_list$nu_vec
+    }
+  }
+  return(tracks)
+}
+
+update.tracks <- function(tracks,obj){
+  bivariate = FALSE
+  if(obj[[1]]$measurementError_list$noise == "nsNormal"){
+    bivariate = TRUE
+  }
+  for(i in 1:length(obj)){
+    tracks[[i]]$betaf <- rbind(tracks[[i]]$betaf, obj[[i]]$mixedEffect_list$betaf_vec)
+    if(!is.null(obj[[i]]$mixedEffect_list$betar_vec)){
+      tracks[[i]]$betar <- rbind(tracks[[i]]$betar,obj[[i]]$mixedEffect_list$betar_vec)
+      tracks[[i]]$Sigma <- rbind(tracks[[i]]$Sigma,obj[[i]]$mixedEffect_list$Sigma_vec)
+    }
+    if(!is.null(obj[[i]]$mixedEffect_list$nu_vec)){
+      tracks[[i]]$nu_random <- rbind(tracks[[i]]$nu_random,obj[[i]]$mixedEffect_list$nu_vec)
+    }
+    if(!is.null(obj[[i]]$mixedEffect_list$mu_vec)){
+      tracks[[i]]$mu_random <- rbind(tracks[[i]]$mu_random,obj[[i]]$mixedEffect_list$mu_vec)
+    }
+    
+    if(bivariate){
+      tracks[[i]]$meas_error_theta <- rbind(tracks[[i]]$meas_error_theta,obj[[i]]$measurementError_list$theta_vec)
+    } else {
+      tracks[[i]]$meas_error_sigma <- rbind(tracks[[i]]$meas_error_sigma,obj[[i]]$measurementError_list$sigma_vec)
+    }
+    if(!is.null(obj[[i]]$measurementError_list$nu_vec)){
+      tracks[[i]]$meas_error_nu <- rbind(matrix(tracks[[i]]$meas_error_nu),
+                                         matrix(obj[[i]]$measurementError_list$nu_vec))
+    }
+    if(!is.null(obj[[i]]$measurementError_list$mu_vec)){
+      tracks[[i]]$meas_error_mu <- rbind(matrix(tracks[[i]]$meas_error_mu),
+                                         matrix(obj[[i]]$measurementError_list$mu_vec))
+    }
+    if(bivariate){
+      if(!is.null(obj[[i]]$operator_list$tau1Vec)){
+        tracks[[i]]$tau1 <- rbind(matrix(tracks[[i]]$tau1),matrix(obj2$operator_list$tau1Vec))
+        tracks[[i]]$tau2 <- rbind(matrix(tracks[[i]]$tau2),matrix(obj2$operator_list$tau2Vec))
+      }
+    } else {
+      if(!is.null(obj[[i]]$operator_list$tauVec)){
+        tracks[[i]]$tau <- rbind(matrix(tracks[[i]]$tau),matrix(obj2$operator_list$tauVec))
+      }  
+    }
+    if(bivariate){
+      if(!is.null(obj[[i]]$operator_list$kappa1Vec)){
+        tracks[[i]]$kappa1 <- rbind(matrix(tracks[[i]]$kappa1),matrix(obj[[i]]$operator_list$kappa1Vec))
+        tracks[[i]]$kappa2 <- rbind(matrix(tracks[[i]]$kappa2),matrix(obj[[i]]$operator_list$kappa2Vec))
+      }  
+    } else {
+      if(!is.null(obj[[i]]$operator_list$kappaVec)){
+        tracks[[i]]$kappa <- rbind(matrix(tracks[[i]]$kappa),matrix(obj[[i]]$operator_list$kappaVec))
+      }  
+    }
+    
+    if(!is.null(obj[[i]]$processes_list$mu_vec)){
+      tracks[[i]]$process_mu <- rbind(tracks[[i]]$process_mu,obj[[i]]$processes_list$mu_vec)
+    }
+    if(!is.null(obj[[i]]$processes_list$nu_vec)){
+      tracks[[i]]$process_nu <- rbind(tracks[[i]]$process_nu,obj[[i]]$processes_list$nu_vec)
+    }
+  }
+  return(tracks)
+}
+
+
 check.convergence <- function(output,std.lim,silent=FALSE)
   {
   fixed.converged <- simple.convergence.test(output$fixed_est_vec,output$fixed_est_var,std.lim)
@@ -774,6 +902,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
     }
     
     if(plot.type=="All"){
+      if(plot.type == "Random" || plot.type=="All"){
       if(n.random>0){
         kk = 0
         for(i.r in 1:n.random){
@@ -798,7 +927,8 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
         make.plot(output,est.list,ii,nIter,
                   "mixedEffect_list","nu_vec","ranef_nu_vec","ranef_nu_var","nu random")
       }
-      
+      }
+      if(plot.type == "Error" || plot.type=="All"){
       if(total.plotted < 16){
         if(bivariate){
           for(k in 1:2){
@@ -830,7 +960,8 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
                   "measurementError_list","mu_vec","meas_error_mu_vec","meas_error_mu_var",
                   "mu error")
       }
-      
+      }
+      if(plot.type == "Process" || plot.type=="All"){
       if(n.operator.tau>0 & total.plotted < 16){
         if(bivariate){
           total.plotted = total.plotted + 1
@@ -895,6 +1026,7 @@ plot.output <- function(output,est.list,ii,nIter,plot.type){
           make.plot(output,est.list,ii,nIter,
                     "processes_list","mu_vec","process_mu_vec","process_mu_var","mu process")  
         }
+      }
       }
     }
   }

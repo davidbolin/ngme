@@ -62,6 +62,7 @@ ngme.par <- function(n.cores = 4,
                      init.fit = NULL,
                      silent = FALSE,
                      plot.type="All",
+                     save.tracks,
                      ...)
 {
   if(n.cores < 2){
@@ -110,13 +111,6 @@ ngme.par <- function(n.cores = 4,
       controls$nBurnin = 5
       
     }
-    est <- ngme::ngme(controls=controls,
-                      controls.init = controls.init,
-                      timeVar = timeVar,
-                      use.process = use.process,
-                      nIter = nIter,
-                      init.fit = init.fit,
-                      silent = TRUE,...)  
     est.list <- foreach(i = 1:n.cores, .options.snow = opts,.packages = c("ngme","Matrix")) %dopar%
     {
       if(ii==1){
@@ -158,6 +152,13 @@ ngme.par <- function(n.cores = 4,
     stopCluster(cl)
     est.list.old <- est.list
     est.merge <- merge.ngme.outputs(est.list)
+    if(save.tracks){
+      if(ii==1){
+        tracks <- create.tracks(est.list)
+      } else {
+        tracks <- update.tracks(tracks,est.list)  
+      }
+    }
     output <- attach.ngme.output(output,est.merge)
     
     plot.output(output,est.list,ii,nIter,plot.type=plot.type)
@@ -168,6 +169,9 @@ ngme.par <- function(n.cores = 4,
           break
   }
   output$call <- call
+  if(save.tracks){
+    output$tracks <- tracks
+  }
   return(output)
 }
 
