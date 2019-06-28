@@ -55,7 +55,7 @@ for(i in 1:2){
   grad <- t(data1[,c("B1","B2","B3")])%*%(res- data1$B3%*%mu_hat)/sigma_random^2
   grad_sum <- grad_sum + grad
 }
-GAUSMIX <- ngme( fixed       = Ya ~ B1 + B2,
+GAUSMIX <- ngme( fixed       = Ya ~ -1 + B1 + B2,
                 random      = ~ -1+B3|id,
                 data        = as.data.frame(data),
                 error       = 'Normal',

@@ -103,6 +103,7 @@ Rcpp::List NormalMixedEffect::toList()
     out["beta_random_constrained"] = temp_r;
     out["Sigma"]       = Sigma;
     out["U"]           = U;
+    out["Hessian"] = Hessian;
   }
   
   
@@ -250,7 +251,13 @@ void NormalMixedEffect::initFromList(Rcpp::List const &init_list)
   H_beta.setZero(n_f + n_r, n_r + n_f);
   nfr = n_f + n_r;
   
-  Hessian.setZero(nfr, nfr);
+    Hessian.setZero(nfr, nfr);
+  
+  if( init_list.containsElementNamed("Hessian")){
+    Hessian = Rcpp::as< Eigen::MatrixXd > (init_list["Hessian"]);
+  }else{
+    Hessian.setZero(nfr, nfr);
+  }
 }
 
 
@@ -660,33 +667,29 @@ void NormalMixedEffect::step_theta(const double stepsize,
 								   const double polyak_rate,
 								   const int burnin)
 {
-  if(0){
-    if(Br.size() > 0){
-      step_beta_random(stepsize, learning_rate,0);
-      step_Sigma(stepsize, learning_rate,0);
-    }
-    if(Bf.size() > 0)
-      step_beta_fixed(stepsize, learning_rate,0);
+
+ int hessian_step = 1;
+
+if(burnin < 50)
+    hessian_step = 0;
+if(hessian_step){
+
+  Eigen::VectorXd grad0(nfr);
+  grad0 << grad_beta_f, grad_beta_r;
+  Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
+  Eigen::VectorXd betamu(nfr);
+  betamu << beta_fixed, beta_random ;
+  Eigen::VectorXd step1=  betamu + stepsize * step0;
+  beta_fixed   = step1.head(beta_fixed.size());
+  beta_random  = step1.tail(beta_random.size());
+  grad_beta_f *= 0.;
+  grad_beta_r *= 0.;
 }else{
-    step_beta(stepsize, learning_rate,0);
-    if(0){
-      Eigen::VectorXd grad0(nfr);
-      grad0 << grad_beta_f, grad_beta_r;
-      Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
-      Eigen::VectorXd betamu(nfr);
-      betamu << beta_fixed, beta_random ;
-      Eigen::VectorXd step1=  betamu + stepsize * step0;
-      beta_fixed   = step1.head(beta_fixed.size());
-      beta_random  = step1.tail(beta_random.size());
-      Hessian *= 0.4;
-      grad_beta_f *= 0.;
-      grad_beta_r *= 0.;
-      grad_beta   *= 0.;
-    
-  }
-if(Br.size() > 0)
-      step_Sigma(stepsize, learning_rate,0);
+  step_beta(stepsize, learning_rate,0);
+   step_Sigma(stepsize, learning_rate,0);
 }
+Hessian *= 0.8;
+    
   weight_total = 0;
   clear_gradient();
 
