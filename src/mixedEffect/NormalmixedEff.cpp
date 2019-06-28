@@ -763,6 +763,10 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
 
 
   }else{
+    //H_beta.setZero(H_beta.cols(), H_beta.cols());
+    //for(int i=0;i<H_beta.cols();i++){
+    //H_beta(i,i) = 7000;
+    //}
     step1  = H_beta.ldlt().solve(grad_beta);
   }
   if(Bf.size() > 0){
@@ -792,7 +796,10 @@ void NormalMixedEffect::step_beta(const double stepsize,const double learning_ra
 void NormalMixedEffect::step_beta_fixed(const double stepsize,const double learning_rate,const int burnin)
 {
 	dbeta_f_old.array() *= learning_rate;
-
+  //H_beta_fixed.setZero(Bf[0].cols(), Bf[0].cols());
+  //for(int i=0;i<Bf[0].cols();i++){
+    //H_beta_fixed(i,i) = 1;
+  //}
   solve_const_x_Ab(dbeta_f_old,
                    beta_fixed_constrainted,
                    grad_beta_f,

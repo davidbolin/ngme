@@ -5,15 +5,18 @@
 #'   stochastic gradient estimation. See \code{\link{ngme}} and \code{\link{ngme.spatial}} for explanation of the model specification.
 #'
 #' @param n.cores Number of cores, and the number of parallel chains, to use. Default is 4. 
-#' @param std.lim Parameter for convergence criterium. The estimation is stopped when the rate of change 
-#' in each parameter is small enough, and when the estimate divided by the estimated Monte Carlo standard
-#' deviation for that parameter is larger than std.lim. Default is 10. 
+#' @param std.lim Parameter for first convergence criterium. The estimation is stopped when the estimated Monte Carlo 
+#' standard deviation for each parameter is less than std.lim times the parameter value. Default is 0.1. 
+#' @param trend.lim Parameter for second convergence criterium. The estimation is stopped when the rate of change
+#' per batch of nIter iterations is not significantly larger than trend.lim times the current parameter value. Default is 0.01.
+
 #' @param max.rep The total number of iterations that is run is given by \code{nIter*max.rep}. Convergence is checked
 #' after every nIter iterations, and max.rep thus sets how many batches of nIter iterations that should be run at most. 
 #' Default is 10. 
 #' @param nIter The number of iterations per batch of runs. Default is 1000. 
 #' @param plot.type Set to "All" to get parameter trajectories of all estimated parameters. However, at most 16 parameters
 #' are plotted at once. Set to "TRUE" or "Fixed" to get plots of only the fixed effects. 
+#' @param save.tracks Save the individual parameter tracks for the parallel runs? Default FALSE.
 #' @param ... Other parameter needed by \code{\link{ngme}} 
 #' @return A list of outputs.
 #' @details The function calls \code{\link{ngme}} or \code{\link{ngme.spatial}} internally. See these functions for further information on the actual
@@ -51,7 +54,8 @@
 #'}
 
 ngme.par <- function(n.cores = 4, 
-                     std.lim = 10,
+                     std.lim = 0.1,
+                     trend.lim = 0.01,
                      max.rep = 10,
                      controls = NULL, 
                      controls.init = NULL,
@@ -62,7 +66,7 @@ ngme.par <- function(n.cores = 4,
                      init.fit = NULL,
                      silent = FALSE,
                      plot.type="All",
-                     save.tracks,
+                     save.tracks = FALSE,
                      ...)
 {
   if(n.cores < 2){
@@ -163,7 +167,7 @@ ngme.par <- function(n.cores = 4,
     
     plot.output(output,est.list,ii,nIter,plot.type=plot.type)
     
-    converged <- check.convergence(output,std.lim,silent)
+    converged <- check.convergence(output,std.lim,trend.lim,silent)
     
     if(converged$converged)
           break

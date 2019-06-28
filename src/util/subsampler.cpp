@@ -104,6 +104,8 @@ void subsampler::initFromList(const Rcpp::List & in_list)
                            nSubsample_group);
     if(silent == 0){
       Rcpp::Rcout << "Groups to sample:" <<  nSubsample_group[0] << ", free to sample: "<< nSubsample_group[1] << "\n";
+      Rcpp::Rcout << "nfree:" << free.size() << ", ngrouped: "<< gsum << ", ngroups:"<< groups.size() << "\n";
+      //Rcpp::Rcout << "weights:" << weight << "\n";
     }
   }
   
