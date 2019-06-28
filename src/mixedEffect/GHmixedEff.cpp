@@ -267,6 +267,9 @@ void GHMixedEffect::initFromList(Rcpp::List const &init_list)
   
   if( init_list.containsElementNamed("Hessian")){
     Hessian = Rcpp::as< Eigen::MatrixXd > (init_list["Hessian"]);
+    if(Hessian.cols() != nfr){
+      Hessian.setZero(nfr, nfr);
+    }
   }else{
     Hessian.setZero(nfr, nfr);
   }
