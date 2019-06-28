@@ -684,6 +684,7 @@ if(hessian_step){
   beta_random  = step1.tail(beta_random.size());
   grad_beta_f *= 0.;
   grad_beta_r *= 0.;
+  step_Sigma(stepsize, learning_rate,0);
 }else{
   step_beta(stepsize, learning_rate,0);
    step_Sigma(stepsize, learning_rate,0);
