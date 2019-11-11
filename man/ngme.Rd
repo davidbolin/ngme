@@ -78,7 +78,9 @@ used by the stochastic gradient.}
   is specified by a single value, it indicates extending the mesh towards
   left and right by the same amount. If specified by a two element vector,
   whilst the first element is for extending towards the left, the second is
-  for extending towards the right.
+  for extending towards the right. If you want to extend by a fixed amount instead of with a percentage of the 
+  interval length, use a negative value of \code{extend}. So for example, \code{extend = c(-1,0.1)} means that 
+  the interval is extend by 1 to the left and by 10 percent to the right. 
   \item \code{n.cores} A numeric value for the number of cores to be used to create the
   mesh.
 }}

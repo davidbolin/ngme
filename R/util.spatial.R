@@ -5,8 +5,9 @@
 #' @param loc  A list of locations      (d x 2)
 #' @param Y    A list of observations   (m x 1-2)
 #' @param Bins right locations of the bins {0},(0,Bins[1]], ... (Bins[n-1], Bins[n]] (Bins[n], \inf)
-#' @param nBins create bins by equally spaced locations
-#' @return 
+#' @param nBins create bins by equally spaced location
+#' @details Standard empirical covariance estimation.
+#' @return A list with bins and values
 emp.cov <- function(loc, Y, Bins = NULL, nBins = 10){
   N <- length(loc) 
   d <- dim(Y[[1]])[2]

@@ -28,6 +28,8 @@ NormalVarianceMixtureBaseError::NormalVarianceMixtureBaseError() : MeasurementEr
   dsigma      = 0;
   ddsigma     = 0;
   dsigma_old  = 0;
+  dmu_old  = 0;
+  dmu  = 0;
   common_V    = 0;
   npars       = 0;
   nsSigma     = 0;
@@ -91,6 +93,7 @@ void NormalVarianceMixtureBaseError::initFromList(Rcpp::List const &init_list)
   npars += assymetric;
 
   mu = 0;
+  dmu_old = 0;
   if( init_list.containsElementNamed("mu" ))
       mu = Rcpp::as < double>(init_list["mu"]);
 }

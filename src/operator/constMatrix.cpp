@@ -52,7 +52,7 @@ void constMatrix::initFromList(Rcpp::List const & init_list)
   int nIter = 1;
   if(init_list.containsElementNamed("nIter"))
     nIter = Rcpp::as<int>(init_list["nIter"]);
-  tauVec.resize(nIter+1);
+  tauVec.resize(nIter);
   v.setZero(1);
   m.resize(1,1);
 

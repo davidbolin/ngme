@@ -37,7 +37,17 @@ create.meshes.1d <- function(locs, n, common.grid, extend = NULL)
     if(loc_len == 0){
       stop("min(locs) = max(locs)")
     }
-    loc[[1]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n)
+    if(extend[1] < 0){
+      l.extension = abs(extend[1])
+    } else {
+      l.extension = abs(extend[1])*loc_len
+    }
+    if(extend[2] < 0){
+      r.extension = abs(extend[2])
+    } else {
+      r.extension = abs(extend[2])*loc_len
+    }
+    loc[[1]] <- seq(min_l - l.extension, max_l + r.extension, length.out = n)
 
     hi = (c(diff(loc[[1]]),Inf)+c(Inf,diff(loc[[1]])))/2
     hi[1] <- (loc[[1]][2]-loc[[1]][1])/2
@@ -54,7 +64,17 @@ create.meshes.1d <- function(locs, n, common.grid, extend = NULL)
       min_l <- min(locs[[i]])
       max_l <- max(locs[[i]])
       loc_len = max_l - min_l
-      loc[[i]] <- seq(min_l - extend[1]*loc_len, max_l + extend[2]*loc_len, length.out = n[i])
+      if(extend[1] < 0){
+        l.extension = abs(extend[1])
+      } else {
+        l.extension = abs(extend[1])*loc_len
+      }
+      if(extend[2] < 0){
+        r.extension = abs(extend[2])
+      } else {
+        r.extension = abs(extend[2])*loc_len
+      }
+      loc[[i]] <- seq(min_l - l.extension, max_l + r.extension, length.out = n[i])
 
       hi = (c(diff(loc[[i]]),Inf)+c(Inf,diff(loc[[i]])))/2
       hi[1] <- (loc[[i]][2]-loc[[i]][1])/2
@@ -120,7 +140,17 @@ generate.1d.mesh <- function(x,
 
   loc_len = max_l - min_l
   if(extend_grid){
-    s = c(min_l-extend[1]*loc_len,s,max_l+extend[2]*loc_len)
+    if(extend[1] < 0){
+      l.extension = abs(extend[1])
+    } else {
+      l.extension = abs(extend[1])*loc_len
+    }
+    if(extend[2] < 0){
+      r.extension = abs(extend[2])
+    } else {
+      r.extension = abs(extend[2])*loc_len
+    }
+    s = c(min_l-l.extension,s,max_l+r.extension)
   }
 
   #merge nodes closer than cutoff
