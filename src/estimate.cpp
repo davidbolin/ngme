@@ -845,7 +845,7 @@ List estimateLong_cpp(Rcpp::List in_list)
 
     if(estimate_fisher == 0){
       if(debug)
-        Rcpp::Rcout << "estimate::theta  step\n";
+        Rcpp::Rcout << "estimate::theta step\n";
       //double stepsize = step0/pow(iter + 1 + iter_start, alpha);
       double stepsize = step0/pow(iter + 1 + iter_start, alpha*(iter+iter_start)/(nIter+iter_start));
       
@@ -856,7 +856,7 @@ List estimateLong_cpp(Rcpp::List in_list)
       if(iter < nBurnin_learningrate)
         learning_rate_temp = 0;
       if(debug)
-        Rcpp::Rcout << "polyak_rate_temp = " << polyak_rate_temp <<"\n";
+        Rcpp::Rcout << "estimate::polyak_rate_temp = " << polyak_rate_temp <<"\n";
       mixobj->step_theta(stepsize,  learning_rate_temp, polyak_rate_temp, iter + iter_start);
       errObj->step_theta(stepsize,                   0, polyak_rate_temp);
       if(process_active){

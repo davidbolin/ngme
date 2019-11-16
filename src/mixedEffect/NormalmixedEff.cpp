@@ -667,13 +667,13 @@ void NormalMixedEffect::step_theta(const double stepsize,
 								   const double polyak_rate,
 								   const int burnin)
 {
-
  int hessian_step = 1;
 
 if(burnin < 50)
     hessian_step = 0;
 if(hessian_step){
 
+  
   Eigen::VectorXd grad0(nfr);
   grad0 << grad_beta_f, grad_beta_r;
   Eigen::VectorXd step0  = -Hessian.ldlt().solve(grad0);
@@ -684,9 +684,11 @@ if(hessian_step){
   beta_random  = step1.tail(beta_random.size());
   grad_beta_f *= 0.;
   grad_beta_r *= 0.;
-  step_Sigma(stepsize, learning_rate,0);
+  if(Br.size() > 0)
+    step_Sigma(stepsize, learning_rate,0);
 }else{
   step_beta(stepsize, learning_rate,0);
+  if(Br.size() > 0)
    step_Sigma(stepsize, learning_rate,0);
 }
 Hessian *= 0.8;
