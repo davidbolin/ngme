@@ -20,16 +20,28 @@
 #'   }
 #'
 
-build.A.matrix <- function(operator_list, locs, i)
+build.A.matrix <- function(operator_list, locs, i=NULL)
 {
+  if(is.null(i)){
+    mesh=operator_list$mesh
+    loc          =  locs
+    i=1
+  }else{
+    loc=locs[[i]]
+    if(operator_list$common.grid){
+      mesh=operator_list$mesh[[1]]
+    }else{
+      mesh=operator_list$mesh[[i]]
+    }
+  }
   if(operator_list$manifold == "R2"){
     if(operator_list$common.grid){
-      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[1]],loc=locs[[i]]))
+      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[1]],loc=loc))
     } else {
-      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[i]],loc=locs[[i]]))
+      return(A = INLA::inla.spde.make.A(mesh=operator_list$mesh[[i]],loc=loc))
     }
   } else {
-      return(spde.A(locs[[i]],
+      return(spde.A(loc,
                     operator_list$loc[[i]],
                     right.boundary = operator_list$right.boundary,
                     left.boundary = operator_list$left.boundary))

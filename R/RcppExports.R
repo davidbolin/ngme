@@ -33,6 +33,10 @@ simulateLongME_cpp <- function(in_list) {
     .Call(`_ngme_simulateLongME_cpp`, in_list)
 }
 
+simulateLongProcesses_cpp <- function(in_list) {
+    .Call(`_ngme_simulateLongProcesses_cpp`, in_list)
+}
+
 getDuplicateM <- function(n) {
     .Call(`_ngme_getDuplicateM`, n)
 }

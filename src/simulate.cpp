@@ -13,6 +13,9 @@ using namespace Rcpp;
 
 
 
+
+
+
 /*
 	Simulating from the prior model
 */
@@ -326,6 +329,172 @@ List simulateLongME_cpp(Rcpp::List in_list)
 
   if(errObj->noise != "Normal")
     out_list["V_noise"] = errObj->Vs;
+  return(out_list);
+
+}
+
+/*
+  Simulating process
+*/
+// [[Rcpp::export]]
+List simulateLongProcesses_cpp(Rcpp::List in_list){
+   int debug = 0;
+   int nsim = Rcpp::as<int> (in_list["nsim"]);
+  //**********************************
+  //setting up the main data
+  //**********************************
+  if(debug == 1){
+    Rcpp::Rcout << " Setup data\n";
+  }
+  
+
+  //**********************************
+  //operator setup
+  //***********************************
+  if(debug == 1){
+    Rcpp::Rcout << " Setup oeprator\n";
+  }
+  Rcpp::List operator_list  = Rcpp::as<Rcpp::List> (in_list["operator_list"]);
+  operator_list["nIter"] = 1;
+  std::string type_operator = Rcpp::as<std::string>(operator_list["type"]);
+  operatorMatrix* Kobj;
+  operator_select(type_operator, &Kobj);
+  Kobj->initFromList(operator_list, List::create(Rcpp::Named("use.chol") = 1));
+
+  if(debug==1){
+    Kobj->print_parameters();
+  }
+    
+    
+  Eigen::SparseMatrix<double, 0, int> Q,K;
+
+
+
+  //***********************************
+  // stochastic processes setup
+  //***********************************
+  if(debug == 1){
+    Rcpp::Rcout << " Setup process\n";
+  }
+
+  Rcpp::List processes_list   = Rcpp::as<Rcpp::List>  (in_list["processes_list"]);
+
+  std::string type_processes  = Rcpp::as<std::string> (processes_list["noise"]);
+
+  Process *process = NULL;
+  if (type_processes == "Normal"){
+       process  = new GaussianProcess;     
+    }else if(type_processes == "MultiGH" )
+      process  = new MGHProcess;
+    else{
+      process  = new GHProcess;
+    }
+  process->initFromList(processes_list, Kobj->h);
+
+  std::vector< Eigen::VectorXd > Vs( nsim);
+  std::vector< Eigen::VectorXd > Xs( nsim);
+  std::vector< Eigen::VectorXd > Zs( nsim);
+
+
+  for(int i = 0; i < nsim; i++ ){
+    if(Kobj->nop == 1){
+      Xs[i].resize( Kobj->d[0] );
+      Vs[i] = Kobj->h[0];
+      Zs[i].resize(Kobj->d[0]);
+    } else {
+      Xs[i].resize( Kobj->d[i] );
+      Vs[i] = Kobj->h[i];
+      Zs[i].resize(Kobj->d[i]);  
+    }
+    
+  }
+
+    /*
+    Simulation objects
+    */
+    if(debug == 1){
+      Rcpp::Rcout << " Setup random number generators\n";
+    }
+    std::mt19937 random_engine;
+    std::normal_distribution<double> normal;
+    std::default_random_engine gammagenerator;
+    random_engine.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    gig rgig;
+    rgig.seed(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    Eigen::VectorXd  z;
+
+   
+    //*********************************************
+    //        simulating the processes
+    //*********************************************
+    if(debug == 1){
+      Rcpp::Rcout << " Simulate process\n";
+    }
+    Eigen::VectorXd iV;
+    for(int i = 0; i < nsim; i++) {
+      
+      int d;
+      Eigen::VectorXd h;
+      if(Kobj->nop == 1){
+        d = Kobj->d[0];
+        z.setZero(Kobj->d[0]);
+        h = Kobj->h[0];
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[0]);
+      } else {
+        d = Kobj->d[i];
+        z.setZero(Kobj->d[i]);
+        h = Kobj->h[i];
+        K = Eigen::SparseMatrix<double,0,int>(Kobj->Q[i]);
+      }
+      
+      if(debug == 1)
+        Rcpp::Rcout << "simulate process noise \n";
+      for(int ii =0; ii < d; ii++)
+         z[ii] =  normal(random_engine);
+      
+      if(type_processes != "Normal"){
+        z = process->simulate_E(0, z,rgig);
+        Vs[i] = process->Vs[i];
+      }else{
+        z.array() *= Vs[i].array().sqrt();
+      }
+      
+      
+
+      if(type_operator == "matern bivariate" || type_operator == "exponential"){
+        if(debug == 1){
+          Rcpp::Rcout << " LU" << K.rows() << " "<< K.cols() << "\n";
+        }
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > solver;
+        solver.compute(K);    
+        if(debug == 1){
+          Rcpp::Rcout << " Solve\n";
+        }
+      
+        Xs[i] = solver.solve(z);      
+      } else {
+        if(debug == 1){
+          Rcpp::Rcout << " Chol" << K.rows() << " "<< K.cols() << "\n";
+        }
+        Eigen::SparseLU< Eigen::SparseMatrix<double,0,int> > chol(K);  
+        if(debug == 1){
+          Rcpp::Rcout << " Solve\n";
+        }
+        Xs[i] = chol.solve(z);   
+        
+      }
+      //
+      Zs[i] = z;
+  }
+    if(debug == 1){
+      Rcpp::Rcout << " Save results\n";
+    }
+  Rcpp::List out_list;
+  out_list["X"]    = Xs;
+  out_list["Z"]    = Zs;
+  if(type_processes != "Normal")
+    out_list["V"] = Vs;
+
   return(out_list);
 
 }

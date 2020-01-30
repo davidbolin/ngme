@@ -97,6 +97,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// simulateLongProcesses_cpp
+List simulateLongProcesses_cpp(Rcpp::List in_list);
+RcppExport SEXP _ngme_simulateLongProcesses_cpp(SEXP in_listSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type in_list(in_listSEXP);
+    rcpp_result_gen = Rcpp::wrap(simulateLongProcesses_cpp(in_list));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getDuplicateM
 Eigen::MatrixXi getDuplicateM(const int n);
 RcppExport SEXP _ngme_getDuplicateM(SEXP nSEXP) {
@@ -395,6 +406,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ngme_rGIG_cpp", (DL_FUNC) &_ngme_rGIG_cpp, 4},
     {"_ngme_simulateLongGH_cpp", (DL_FUNC) &_ngme_simulateLongGH_cpp, 1},
     {"_ngme_simulateLongME_cpp", (DL_FUNC) &_ngme_simulateLongME_cpp, 1},
+    {"_ngme_simulateLongProcesses_cpp", (DL_FUNC) &_ngme_simulateLongProcesses_cpp, 1},
     {"_ngme_getDuplicateM", (DL_FUNC) &_ngme_getDuplicateM, 1},
     {"_ngme_test_d2_process", (DL_FUNC) &_ngme_test_d2_process, 3},
     {"_ngme_test_sampling_NIG", (DL_FUNC) &_ngme_test_sampling_NIG, 3},

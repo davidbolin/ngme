@@ -24,3 +24,23 @@ simulate.ngme <- function(object,id=NULL)
 
   return(sim_object)
 }
+#' @title Simulates prior model using processes and operator
+#' 
+#' @description 
+#' 
+#' @param n number of simulations
+#' @param process_list procsess list
+#' @param operator_list operator list
+#' @return A list of simulation
+simulate.process <- function(n, operator_list, process_list){
+  
+  process_list$V <- list()
+  process_list$X <- list()
+  for(i in 1:length(operator_list$h)){
+    process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
+    process_list$V[[i]] <- operator_list$h[[i]]
+  }
+  simulateLongProcesses_cpp(list(nsim = n,
+                                 operator_list=operator_list,
+                                 processes_list=process_list))
+}

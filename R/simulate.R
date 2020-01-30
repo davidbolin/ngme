@@ -1,5 +1,36 @@
-
+#' @title Simulates nig distribution
+#'
+#' @description internal function for simulating nig iid random variables using
+#'              V ~ IG(nu,h^2 nu)
+#'              Z ~ N(0, 1)
+#'              X ~ delta + (V - h) * mu + sqrt(V) * sigma  * Z
+#'               
+#' 
+#' @param n number of simulations (if h is not NULL then n is ignored)
+#' @param delta (real) location parameter
+#' @param mu    (real) symmetric parameter
+#' @param sigma (real) scale parameter
+#' @param nu    (real, >0) shape parameter
+#' @param h     (m x 1) (h = 1) discritization vector
+rNIG <- function(n = 1, delta, mu, sigma, nu, h = NULL){
+  if(is.null(h))
+    h = rep(1,n)
+  n = length(h)
+  if(length(nu) != n)
+    nu = rep(nu, n)
+  if(length(delta)!=n)
+    delta = rep(delta, n)
+  if(length(mu)!=n)
+    mu = rep(mu, n)
+  if(length(sigma)!=n)
+    sigma = rep(sigma, n)
   
+  V =  ngme::rGIG(p = rep(-0.5,n) , nu, h^2 * nu, sample.int(10^6, 1))
+  X = h*delta + (V - h) * mu + sqrt(V) * sigma * rnorm(n)
+  return(X)
+}
+
+
 #' @title Simulates data from the prior model.
 #' 
 #' @description 
@@ -8,7 +39,7 @@
 #' @param locs measurement locations
 #' @param mixedEffect_list mixed effects list
 #' @param measurement_list measurement error list
-#' @param process_list process list
+#' @param process_list procsess list
 #' @param operator_list operator list
 #' @details STUFF 
 #' @return A list of outputs.
