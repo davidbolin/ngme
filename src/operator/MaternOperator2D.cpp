@@ -246,7 +246,6 @@ void MaternOperator2D::set_matrix(int i)
     D(0,1) = -sin(theta)*pow(1+pow(rho,2),0.5);
     D(1,0) = sin(theta) - rho*cos(theta);
     D(1,1) = cos(theta)*pow(1+pow(rho,2),0.5);
-    
     MatrixXd Drho(2,2);
     Drho(0,0) = sin(theta);
     Drho(0,1) = -sin(theta)*rho*pow(1+pow(rho,2),-0.5);

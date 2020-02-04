@@ -581,11 +581,19 @@ predictLong <- function( Y,
     if(crps){
       ind1 = 1:round(nSim/2)
       ind2 <- 1+(nSim/2+ind1-1)%%nSim
+      Yi = matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)
+      Yi = matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)
+      Yi_sim1 <- output$YVec[[i]][,ind1]
+      Yi_sim2 <- output$YVec[[i]][,ind2]
       if(dim(output$YVec[[i]])[1]>1){
-        out_list$Y.summary[[i]]$crps <- apply(abs(matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1]),1,mean) - 0.5*apply(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]),1,mean)
+        EPP <- apply(abs(Yi_sim1-Yi_sim2),1,mean)
+        EPy <- apply(abs(Yi-Yi_sim1),1,mean)
       } else {
-        out_list$Y.summary[[i]]$crps <- mean(abs(matrix(rep(c(Y.val[[i]]),each=length(ind1)),ncol=length(ind1),byrow=TRUE)-output$YVec[[i]][,ind1])) - 0.5*mean(abs(output$YVec[[i]][,ind1]-output$YVec[[i]][,ind2]))
+        EPP <- mean(abs(Yi-Yi_sim1))
+        EPy <- mean(abs(Yi_sim1-Yi_sim2))
       }  
+      out_list$Y.summary[[i]]$crps <- EPy - 0.5*EPP
+      out_list$Y.summary[[i]]$scrps <- 0.5*log(EPP) + EPy/EPP
     }
   }
   return(out_list)

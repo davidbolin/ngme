@@ -424,11 +424,8 @@ List simulateLongProcesses_cpp(Rcpp::List in_list){
     Eigen::VectorXd  z;
 
    
-    //*********************************************
-    //        simulating the processes
-    //*********************************************
     if(debug == 1){
-      Rcpp::Rcout << " Simulate process\n";
+      Rcpp::Rcout << " Simulateion starts\n";
     }
     Eigen::VectorXd iV;
     for(int i = 0; i < nsim; i++) {
@@ -454,7 +451,7 @@ List simulateLongProcesses_cpp(Rcpp::List in_list){
       
       if(type_processes != "Normal"){
         z = process->simulate_E(0, z,rgig);
-        Vs[i] = process->Vs[i];
+        Vs[i] = process->Vs[0];
       }else{
         z.array() *= Vs[i].array().sqrt();
       }
@@ -481,9 +478,7 @@ List simulateLongProcesses_cpp(Rcpp::List in_list){
           Rcpp::Rcout << " Solve\n";
         }
         Xs[i] = chol.solve(z);   
-        
       }
-      //
       Zs[i] = z;
   }
     if(debug == 1){

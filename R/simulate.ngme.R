@@ -40,6 +40,15 @@ simulate.process <- function(n, operator_list, process_list){
     process_list$X[[i]] <- rep(0, length(operator_list$h[[i]]))
     process_list$V[[i]] <- operator_list$h[[i]]
   }
+  if(grepl('bivariate',operator_list$type)){
+    process_list$Bmu <- list()
+    process_list$Bnu <- list()
+    n.grid <- length(operator_list$h[[1]])/2
+    for(i in 1:length(operator_list$h)){
+      process_list$Bmu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+      process_list$Bnu[[i]] = kronecker(diag(2),matrix(rep(1, n.grid)))
+    }
+  }
   simulateLongProcesses_cpp(list(nsim = n,
                                  operator_list=operator_list,
                                  processes_list=process_list))

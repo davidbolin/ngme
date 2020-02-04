@@ -183,7 +183,8 @@ predict.ngme.spatial <- function(object,
                               median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median[1:n.obs[[i]]])),
                               lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[1:n.obs[[i]]])),
                               upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[1:n.obs[[i]]])),
-                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[1:n.obs[[i]]])))
+                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[1:n.obs[[i]]])),
+                              scrps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$scrps[1:n.obs[[i]]])))
 
       pred_data1 <- pred_data1[!is.na(pred_data1$observed),]
                                
@@ -193,7 +194,8 @@ predict.ngme.spatial <- function(object,
                                median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median[(n.obs[[i]]+1):(2*n.obs[[i]])])),
                                lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
                                upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field[(n.obs[[i]]+1):(2*n.obs[[i]])])),
-                               crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[(n.obs[[i]]+1):(2*n.obs[[i]])])))
+                               crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps[(n.obs[[i]]+1):(2*n.obs[[i]])])),
+                               scrps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$scrps[(n.obs[[i]]+1):(2*n.obs[[i]])])))
     
       pred_data2 <- pred_data2[!is.na(pred_data2$observed),]
       
@@ -238,6 +240,9 @@ predict.ngme.spatial <- function(object,
                   mean.crps = c(mean(pred_data1$crps),mean(pred_data2$crps)),
                   median.crps = c(median(pred_data1$crps),median(pred_data2$crps)),
                   std.crps = c(sqrt(var(pred_data1$crps)/n_obs1),sqrt(var(pred_data2$crps)/n_obs2)),
+                  mean.scrps = c(mean(pred_data1$scrps),mean(pred_data2$scrps)),
+                  median.scrps = c(median(pred_data1$scrps),median(pred_data2$scrps)),
+                  std.scrps = c(sqrt(var(pred_data1$scrps)/n_obs1),sqrt(var(pred_data2$scrps)/n_obs2)),
                   mean.int.width = c(mean(int.width1),mean(int.width2)),
                   std.int.width = c(sqrt(var(int.width1)/n_obs1),sqrt(var(int.width2)/n_obs2)),
                   Y = object$Y,
@@ -252,7 +257,8 @@ predict.ngme.spatial <- function(object,
                               median   = unlist(lapply(1:length(id), function(i) preds$X.summary[[i]]$Median)),
                               lower    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[1]]$field)),
                               upper    = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$quantiles[[2]]$field)),
-                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
+                              crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps)),
+                              scrps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$scrps))
       )
       
       abs_diff_mean   <- with(pred_data, abs(observed - mean))
@@ -285,6 +291,9 @@ predict.ngme.spatial <- function(object,
                   mean.crps = mean(pred_data$crps),
                   median.crps = median(pred_data$crps),
                   std.crps = sqrt(var(pred_data$crps)/n_obs),
+                  mean.scrps = mean(pred_data$scrps),
+                  median.scrps = median(pred_data$scrps),
+                  std.scrps = sqrt(var(pred_data$scrps)/n_obs),
                   mean.int.width = mean(int.width),
                   std.int.width = sqrt(var(int.width)/n_obs),
                   Y = object$Y,
@@ -468,6 +477,7 @@ merge.pred.lists2 <- function(preds.list, pInd){
         preds$Y.summary[[j]]$Var    <- rbind(preds$Y.summary[[j]]$Var, preds.list[[i]]$Y.summary[[j]]$Var)
         preds$Y.summary[[j]]$Median <- rbind(preds$Y.summary[[j]]$Median, preds.list[[i]]$Y.summary[[j]]$Median)
         preds$Y.summary[[j]]$crps   <- rbind(preds$Y.summary[[j]]$crps, preds.list[[i]]$Y.summary[[j]]$crps)
+        preds$Y.summary[[j]]$scrps   <- rbind(preds$Y.summary[[j]]$scrps, preds.list[[i]]$Y.summary[[j]]$scrps)
         for(k in 1:length(preds$X.summary[[j]]$quantiles)){
           preds$Y.summary[[j]]$quantiles[[k]]$field <- rbind(preds$Y.summary[[j]]$quantiles[[k]]$field, 
                                                              preds.list[[i]]$Y.summary[[j]]$quantiles[[k]]$field)
@@ -506,6 +516,7 @@ merge.pred.lists2 <- function(preds.list, pInd){
       preds$Y.summary[[j]]$Var    <- c(preds$Y.summary[[j]]$Var[ix,])
       preds$Y.summary[[j]]$Median <- c(preds$Y.summary[[j]]$Median[ix,])
       preds$Y.summary[[j]]$crps   <- c(preds$Y.summary[[j]]$crps[ix,])
+      preds$Y.summary[[j]]$scrps   <- c(preds$Y.summary[[j]]$scrps[ix,])
       for(k in 1:length(preds$X.summary[[j]]$quantiles)){
         preds$Y.summary[[j]]$quantiles[[k]]$field <- c(preds$Y.summary[[j]]$quantiles[[k]]$field[ix,])
       }
