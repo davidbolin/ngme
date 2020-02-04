@@ -260,7 +260,7 @@ density_2d_nig<-function(interv,
   logphi_W <- function(x, u, f){2*pi*x*logchar_nig_f_eval(x,u, param, f)}
   logphi <- function(t){ logchar_dens_matern(t, 
                                              logphi_W  = logphi_W, 
-                                             maternParam = MaternParameter,
+                                             maternParam = maternParam,
                                              2)}
   return(characteristic_function_to_density( logphi, n2, interv))
 }

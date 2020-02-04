@@ -1,5 +1,4 @@
-source("CharFunc.R")
-source("charfuncUtil.R")
+
 
 #' Create margninal moment and density for ngme.spatial object
 #' returns density and moments of various components of the model
