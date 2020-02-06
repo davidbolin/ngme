@@ -21,6 +21,7 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
     maternParam[[1]] <- c(2, operator_list$tau1, operator_list$kappa1)
     maternParam[[2]] <- c(2, operator_list$tau2, operator_list$kappa2)
     maternParam[[3]] <- c(operator_list$rho,operator_list$theta)
+    
     # creates function to compute range
     f_1 = function(x){maternkernelMulti(x,2,operator_list$tau1,operator_list$kappa1,2)}
     range1 = uniroot(function(x) {abs(f_1(x)/f_1(0)) - 10^(-6)}, c(0, 10^20))$root
@@ -29,7 +30,12 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
     # radial integration 
     f_1 = function(x){2*pi*x*maternkernelMulti(x,2,operator_list$tau1,operator_list$kappa1,2)^2}
     f_2 = function(x){2*pi*x*maternkernelMulti(x,2,operator_list$tau2,operator_list$kappa2,2)^2}
-    
+    rho = maternParam[[3]][1]
+    theta = maternParam[[3]][2]
+    B = c(cos(theta)+rho*sin(theta) , -sin(theta)*sqrt(1+rho^2)  ,
+          sin(theta)-rho*cos(theta),cos(theta)*sqrt(1+rho^2))
+    B = matrix(B, nrow=2,ncol=2)
+    Binv = solve(B)
     VX1 <- integrate(f_1,0,range1)$value*(solve(B)[1,1]^2+solve(B)[1,2]^2)
     VX2 <- integrate(f_2,0,range2)$value*(solve(B)[2,2]^2+solve(B)[2,1]^2)
     if(process_list$noise=="MultiGH"){
