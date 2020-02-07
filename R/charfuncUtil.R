@@ -96,7 +96,8 @@ calc_moment_emperical <- function(X, central=F){
 #' @param n2       - (1x1) power of 2 for number of point evaluations
 #' @param interv   - (2x1) evalution interval 
 ###
-characteristic_function_to_density <- function( logphi, n2, interv){
+characteristic_function_to_density <- function( logphi, n2, interv,
+                                                logphi_prev = NULL){
   n = 2**n2
   a = interv[1]
   b = interv[2]
@@ -109,10 +110,13 @@ characteristic_function_to_density <- function( logphi, n2, interv){
   t <- c + i * dt         # Grid, frequency space
   
   #no idea what I am doing below but it works!
-  X <- exp( -(0+1i) * i * dt * a + logphi(t)) 
+  lp <- logphi(t)
+  if(is.null(logphi_prev) == F)
+    lp = lp + logphi_prev
+  X <- exp( -(0+1i) * i * dt * a + lp) 
   Y <- fft(X)
   density <- dt / (2*pi) * exp( - (0+1i) * c * x ) * Y
-  return(data.frame(x = x, density = Re(density)))
+  return(data.frame(x = x, density = Re(density), logphi = lp ))
 }
 
 meshgrid <- function(x, y = x) {
@@ -144,7 +148,8 @@ characteristic_function_to_density2d <- function( logphi,
                                                   n2_x,
                                                   n2_y,
                                                   interv_x,
-                                                  interv_y){
+                                                  interv_y,
+                                                  logphi_prev = NULL){
   n_x = 2**n2_x
   n_y = 2**n2_y
   a_x = interv_x[1]
@@ -170,13 +175,17 @@ characteristic_function_to_density2d <- function( logphi,
   
   mesh_i <- meshgrid(i_x, i_y)
   #no idea what I am doing below but it works!
+  lp <- logphi(t_x, t_y)
+  if(is.null(logphi_prev) == F)
+    lp = lp + logphi_prev
   X <- exp(-(0+1i) * mesh_i$Y * dt_y * a_y
            -(0+1i) * mesh_i$X * dt_x * a_x 
-           + logphi(t_x, t_y))
+           + lp)
   mesh_xy <- meshgrid(x,y)
   density <- fft(X)
   density <- dt_y / (2*pi) * exp( - (0+1i) * c_x * mesh_xy$X ) * density
   density <- dt_x / (2*pi) * exp( - (0+1i) * c_y * mesh_xy$Y ) * density
-  return(list(y = y,x = x, density = Re(density)))
+  res <- list(y = y,x = x, density = Re(density), logphi = lp)
+  return(res)
 }
 

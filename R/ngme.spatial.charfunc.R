@@ -15,6 +15,7 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
   operator_list <- obj$operator_list
   process_list  <- obj$processes_list
   res <- list()
+  dens <- NULL
   if(grepl('bivariate',operator_list$type)){
     
     maternParam <- list()
@@ -71,12 +72,21 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
     moment[[1]] <- moment_transform(sum_moment(moment_raw.p[[1]],moment_raw.e[[1]]))
     moment[[2]] <- moment_transform(sum_moment(moment_raw.p[[2]],moment_raw.e[[2]]))
   }else{
+    # moment and desnity for normal
+    VX1 <- 0
+    if(grepl('Normal',obj$measurementError_list$noise)){
+      sigma <- obj$measurementError_list$sigma
+      moment.e     <-  c(0, sigma^2,0,3)
+      moment_raw.e <- c(0, sigma[1]^2,0,3*sigma[1]^4)
+      VX1 <- sigma^2
+    }
+    
     maternParam <- list()
     maternParam <- c(2, operator_list$tau, operator_list$kappa)
     f_1 = function(x){maternkernel(x,2,operator_list$tau,operator_list$kappa,2)}
     range = uniroot(function(x) {abs(f_1(x)/f_1(0)) - 10^(-6)}, c(0, 10^20))$root
     f_1 = function(x){2*pi*x*maternkernel(x,2,operator_list$tau,operator_list$kappa,2)^2}
-    VX1 <- integrate(f_1,0,range)$value
+    VX1 <- VX1 + integrate(f_1,0,range)$value
     if(process_list$noise=="NIG"){
       
       dens.p <- density_2d_nig(c(-sdx*sqrt(VX1),sdx*sqrt(VX1)),
@@ -88,16 +98,23 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
                                   n2x,
                                   c(0, 1), 
                                   maternParam)
-    }
+    } 
     moment.p <- calc_moment_density(dens.p)
     moment_raw.p <- calc_moment_density(dens.p, central=T)
-    if(grepl('Normal',obj$measurementError_list$noise)){
-      sigma <- obj$measurementError_list$sigma
-      moment.e     <-  c(0, sigma^2,0,3)
-      moment_raw.e <- c(0, sigma[1]^2,0,3*sigma[1]^4)
-    }
+    
     moment <- moment_transform(sum_moment(moment_raw.p,moment_raw.e))
+    if(grepl('Normal',obj$measurementError_list$noise)){
+      dens <- characteristic_function_to_density(
+        function(t,mu=0,sigma=obj$measurementError_list$sigma) 
+        {1i*t*mu - sigma^2/2*t^2 },
+        n2x,
+        c(-sdx*sqrt(VX1),sdx*sqrt(VX1)),
+        logphi_prev = dens.p$logphi
+      )
+    }
+    
   }
+  res$dens                    <- dens
   res$moment                  <- moment
   res$measurementError$moment <- moment.e
   res$process$dens            <- dens.p
