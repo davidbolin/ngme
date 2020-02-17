@@ -37,8 +37,8 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
           sin(theta)-rho*cos(theta),cos(theta)*sqrt(1+rho^2))
     B = matrix(B, nrow=2,ncol=2)
     Binv = solve(B)
-    VX1 <- integrate(f_1,0,range1)$value*(solve(B)[1,1]^2+solve(B)[1,2]^2)
-    VX2 <- integrate(f_2,0,range2)$value*(solve(B)[2,2]^2+solve(B)[2,1]^2)
+    VX1 <- integrate(f_1,0,range1)$value*(solve(B)[1,1]^2+solve(B)[2,1]^2)
+    VX2 <- integrate(f_2,0,range2)$value*(solve(B)[2,2]^2+solve(B)[1,2]^2)
     if(process_list$noise=="MultiGH"){
       
       dens.p <- density_2d_nig_multivariate(c(-sdx*sqrt(VX1),sdx*sqrt(VX1)),
@@ -49,8 +49,8 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
                                               c(0,process_list$mu[2], 1, exp(process_list$nu[2])), 
                                         maternParam)
     }else{
-      dens.p <- density_2d_normal_multivariate(c(-4*sqrt(VX1),4*sqrt(VX1)),
-                                          c(-4*sqrt(VX2),4*sqrt(VX2)),
+      dens.p <- density_2d_normal_multivariate(c(-sdx*sqrt(VX1),sdx*sqrt(VX1)),
+                                          c(-sdy*sqrt(VX2),sdy*sqrt(VX2)),
                                           n2x,
                                           n2y,
                                           c(0, 1),
