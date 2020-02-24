@@ -9,7 +9,6 @@
 #' standard deviation for each parameter is less than std.lim times the parameter value. Default is 0.1. 
 #' @param trend.lim Parameter for second convergence criterium. The estimation is stopped when the rate of change
 #' per batch of nIter iterations is not significantly larger than trend.lim times the current parameter value. Default is 0.01.
-
 #' @param max.rep The total number of iterations that is run is given by \code{nIter*max.rep}. Convergence is checked
 #' after every nIter iterations, and max.rep thus sets how many batches of nIter iterations that should be run at most. 
 #' Default is 10. 
