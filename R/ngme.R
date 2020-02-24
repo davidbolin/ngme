@@ -888,10 +888,6 @@ ngme <- function(fixed,
   alpha_fit      <- fit$alpha
 
   # fixed effects estimates - and chains
-  
-  
-  
-  
   fixed_est1    <- as.numeric(fit$mixedEffect_list$beta_fixed)
   fixed_est2    <- as.numeric(fit$mixedEffect_list$beta_random)
   index_fixed   = 1:length(fixed_est1)
