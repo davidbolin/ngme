@@ -1038,7 +1038,11 @@ ngme <- function(fixed,
     fisher_est = fisher_est,
     call = match.call(),
     index_fixed = index_fixed,
-    index_random = index_random
+    index_random = index_random,
+    idname = idname,
+    fixed_formula = fixed,
+    random_formula = random,
+    mesh = mesh
   )
   
   class(out) <- "ngme"

@@ -70,10 +70,11 @@
 #'   }
 
 predict.ngme <- function(object,
-                          id = NULL,
-                          type = "Filter",
-                          quantiles = c(0.025, 0.975),
-                          controls = list(
+                         newdata = NULL,
+                         id = NULL,
+                         type = "Filter",
+                         quantiles = c(0.025, 0.975),
+                         controls = list(
                             return.samples = FALSE,
                             predict.derivatives = NULL,
                             excursions = NULL,
@@ -101,14 +102,58 @@ predict.ngme <- function(object,
       nBurnin = 100,
       silent = TRUE,
       n.cores = 1,
-      batch.size = 100
-      )
+      batch.size = 100)
+    
     for(i in 1:length(controls)){
         controls_full[names(controls)[i]] <- controls[i]
     }
     controls <- controls_full
   }
 
+  ## when new data were provided
+  if(is.null(newdata) == FALSE){
+    
+    new_ids    <- unique(newdata[, object$idname])
+    n_new_subj <- length(new_ids)
+    n_ava_subj <- length(object$Y)
+    
+    new_effects <- extract.effects(data = newdata, 
+                                   fixed = object$fixed_formula,
+                                   random = object$random_formula, 
+                                   idname = object$idname)
+    
+    object$Y[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_effects$Y
+    names(object$Y)[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_ids
+    
+    object$mixedEffect_list$B_fixed[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_effects$B_fixed
+    object$mixedEffect_list$B_random[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_effects$B_random
+    
+    if(object$use_process == TRUE){
+      
+      new_locs <- tapply(as.matrix(newdata[, object$call$timeVar]), newdata[, object$idname], function(x) x)
+      
+      object$locs[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_locs
+      
+      new_operator_list <- create_operator(new_locs,
+                                           name = object$operator_type,
+                                           common.grid = object$mesh$common.grid,
+                                           extend  = object$mesh$extend,
+                                           max.dist = object$mesh$max.dist,
+                                           cutoff = object$mesh$cutoff,
+                                           n.cores = object$mesh$n.cores)
+      
+      for(i in 1:n_new_subj){
+        object$processes_list$X[[n_ava_subj + i]] <- rep(0, length(new_operator_list$h[[i]]))
+        object$processes_list$W[[n_ava_subj + i]] <- rep(0, length(new_operator_list$h[[i]]))
+        object$processes_list$V[[n_ava_subj + i]] <- new_operator_list$h[[i]]
+        
+        object$operator_list$Q[[n_ava_subj + i]]   <- new_operator_list$Q[[i]]
+        object$operator_list$h[[n_ava_subj + i]]   <- new_operator_list$h[[i]]
+        object$operator_list$loc[[n_ava_subj + i]] <- new_operator_list$loc[[i]]
+      } 
+
+    }
+  }
 
   id_list <- as.numeric(names(object$Y))
   if(is.null(id)){
