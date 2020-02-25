@@ -65,6 +65,7 @@ plot.predict.ngme <- function(object,
            Outcome,
            col = col_p,
            ylim = c(y_range[1] - y_range_inc, y_range[2] + y_range_inc),
+           main = paste0("ID = ", id),
            ...)
 
       lines(locs_i, mean_i, col = col_m)

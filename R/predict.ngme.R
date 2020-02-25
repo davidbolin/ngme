@@ -133,6 +133,7 @@ predict.ngme <- function(object,
       new_locs <- tapply(as.matrix(newdata[, object$call$timeVar]), newdata[, object$idname], function(x) x)
       
       object$locs[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_locs
+      names(object$locs)[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_ids
       
       new_operator_list <- create_operator(new_locs,
                                            name = object$operator_type,
@@ -339,9 +340,9 @@ predict.ngme <- function(object,
                           crps     = unlist(lapply(1:length(id), function(i) preds$Y.summary[[i]]$crps))
                           )
 
-  if(type == "Filter"){
-    pred_data <- pred_data[duplicated(pred_data$id), ]
-  }
+  # if(type == "Filter"){
+  #   pred_data <- pred_data[duplicated(pred_data$id), ]
+  # }
 
   abs_diff_mean   <- with(pred_data, abs(observed - mean))
   abs_diff_median <- with(pred_data, abs(observed - median))
