@@ -24,67 +24,46 @@
 #'
 
 plot.predict.ngme <- function(object,
-                              id,
-                              plot_excursions = FALSE,
-                              col_m = "black",
-                              col_c = "red",
-                              col_p = "black",
-                              ...){
-
-  if(length(id) > 1) stop("id should be specified for one subject")
+                              id = NULL){
   
-  if(plot_excursions == FALSE){
-
-    Y         <- object$Y
-    locs      <- object$predictions$locs
-    id_list   <- object$id_list
-    X.summary <- object$predictions$X.summary
-
-    pInd     <- which(names(locs) == id)#which(object$id == id)
-    pInd_all <- which(id_list == id)
-
-    locs_i <- locs[[pInd]]
-
-    if(length(locs_i) == 1){
-      stop("The subject has 1 measurement, no plot is produced")
-    } 
-
-      mean_i <- X.summary[[pInd]]$Mean
-      llim_i <- X.summary[[pInd]]$quantiles[[1]]$field
-      ulim_i <- X.summary[[pInd]]$quantiles[[2]]$field
-      y_i    <- Y[[pInd_all]]
-
-      x_range <- range(locs_i)
-      y_range <- range(c(mean_i, llim_i, ulim_i, y_i))
-      y_range_inc <- diff(y_range)/100
-
-      Time    <- locs_i
-      Outcome <- y_i
-
-      plot(Time,
-           Outcome,
-           col = col_p,
-           ylim = c(y_range[1] - y_range_inc, y_range[2] + y_range_inc),
-           main = paste0("ID = ", id),
-           ...)
-
-      lines(locs_i, mean_i, col = col_m)
-      lines(locs_i, llim_i, col = col_c)
-      lines(locs_i, ulim_i, col = col_c)
-
-  }else{#plot_excursions = TRUE
-
-    pInd     <- which(names(object$locs) == id)
-    Time        <- object$predictions$locs[[pInd]]
-    Probability <- object$predict$Xderivative.summary[[pInd]]$excursions$P
+  if(is.null(id) == TRUE) id <- names(object$predictions$locs) %>% as.numeric()
+  
+  Y         <- object$Y
+  locs      <- object$predictions$locs
+  id_list   <- object$id_list
+  X.summary <- object$predictions$X.summary
+  
+  pInd     <- which(names(locs) %>% as.numeric() %in% id)
+  pInd_all <- which(id_list %in% id)
+  
+  data_plot <- data.frame(id = rep(id, lapply(pInd, function(i) locs[[i]]) %>% lapply(length) %>% unlist()))
+  data_plot$locs <- lapply(pInd, function(i) locs[[i]]) %>% unlist()  
+  data_plot$mean <- lapply(pInd, function(i) X.summary[[i]]$Mean) %>% unlist()
+  data_plot$llim <- lapply(pInd, function(i) X.summary[[i]]$quantiles[[1]]$field) %>% unlist()
+  data_plot$ulim <- lapply(pInd, function(i) X.summary[[i]]$quantiles[[2]]$field) %>% unlist()
+  data_plot$y    <- lapply(pInd_all, function(i) Y[[i]]) %>% unlist()
+  
+  if(is.null(object$predictions$Xderivative) == TRUE){
+    g <- ggplot(data_plot, aes(x = locs, y = y, group = id))
+    g + geom_point() + facet_wrap(~ id, scales = "free", ncol = floor(sqrt(length(id)))) + 
+      geom_line(aes(y = mean)) + 
+      geom_line(aes(y = ulim), linetype = "dashed") + 
+      geom_line(aes(y = llim), linetype = "dashed") + 
+      labs(x = "Time", y = "Outcome")
+  }else{
+    data$probability <- lapply(pInd, function(i) object$predict$Xderivative.summary[[i]]$excursions$P) %>% unlist()
     
-    if(length(Time) == 1){
-      stop("The subject has 1 measurement, no plot is produced")
-    }
-    
-    plot(Time, Probability, ...)
-
+    g1 <- ggplot(data_plot, aes(x = locs, y = y, group = id)) + 
+      geom_point() + facet_wrap(~ id, scales = "free", ncol = 1) + 
+      geom_line(aes(y = mean)) + 
+      geom_line(aes(y = ulim), linetype = "dashed") + 
+      geom_line(aes(y = llim), linetype = "dashed") + 
+      labs(x = "Time", y = "Outcome")
+    g2 <- ggplot(data_plot, aes(x = locs, y = probability, group = id)) + 
+      geom_point() + facet_wrap(~ id, scales = "free", ncol = 1) + 
+      labs(x = "Time", y = "Probability")
+    grid.arrange(g1, g2, ncol = 2)
   }
-
+  
 }
 

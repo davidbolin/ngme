@@ -112,10 +112,12 @@ predict.ngme <- function(object,
 
   ## when new data were provided
   if(is.null(newdata) == FALSE){
-    
+  
     new_ids    <- unique(newdata[, object$idname])
     n_new_subj <- length(new_ids)
     n_ava_subj <- length(object$Y)
+    
+    if(is.null(id)) id <- new_ids
     
     new_effects <- extract.effects(data = newdata, 
                                    fixed = object$fixed_formula,
