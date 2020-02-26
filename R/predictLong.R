@@ -345,7 +345,7 @@ predictLong <- function( Y,
           pred.ind <- matrix(rep(1,2*dim(locs.pred[[i]])[1]),nrow=1)
           obs.ind <- matrix(rep(1,2*n.pred.i),nrow=1)
         }
-        obs.ind <- obs.ind[,!is.nan(c(Y[[i]])),drop=FALSE] #remove missing observations
+        #obs.ind <- as.matrix(obs.ind[!is.nan(c(Y[[i]]))], nrow = 1) #remove missing observations
       }
   
       obs_list[[i]] <- list(Y=c(Y[[i]]),
