@@ -1,4 +1,4 @@
-rm(list = ls())
+#rm(list = ls())
 graphics.off()
 library(ngme)
 library(INLA)
