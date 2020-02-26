@@ -76,11 +76,10 @@ predictLong <- function( Y,
                          operator_list = NULL,
                          nSim  = 1,
                          nBurnin = 10,   # steps before starting prediction
-                         silent  = FALSE, # print iteration info
+                         silent = FALSE, # print iteration info
                          max.num.threads = 2,
                          repeat.mix = 10,
-                         seed    = NULL
-)
+                         seed = NULL)
 {
   ind.general = 0
   if(type == "LOOCV" || type == "LOOCV2"){
@@ -92,22 +91,25 @@ predictLong <- function( Y,
     pred_type = 1
   } else if(type == 'Smoothing'){
     pred_type = 0
-  } else {
-    stop('Type needs to be either LOOCV, Filter, Smoothing, or Nowcast.')
-  }
+  } 
+  
   use.random.effect = TRUE
   if(is.null(mixedEffect_list$B_random)){
     use.random.effect = FALSE
   }
+  
   if(!use.random.effect && !missing(Brandom.pred)){
     stop("Model not specified using random effects")
   }
+  
   if(type=="Smoothing" && crps && missing(Y.val)){
     warning("CRPS is calculated for smoothing prediction without specifying Y.val. Are you sure this is correct?")
   }
+  
   if(missing(Y.val)){
     Y.val = Y
   }
+
   use.process = TRUE
   if(missing(processes_list) || is.null(processes_list)){
     use.process = FALSE
@@ -240,9 +242,11 @@ predictLong <- function( Y,
   if(sum(abs(unlist(lapply(locs.pred,length))-unlist(lapply(lapply(locs.pred,unique),length))))>0){
     stop("Prediction locations should be unique")
   }
+  
   if(!is.null(predict.derivatives)){
     locs.pred.delta <- locs.pred
   }
+  
   for(i in 1:n.patient){
     if(is.list(locs)){
       li = locs[[i]]
@@ -275,7 +279,8 @@ predictLong <- function( Y,
         
       } else {
         pred.ind <- diag(no)
-        obs.ind <- 1 - diag(no)  
+        obs.ind <- 1 - diag(no) 
+        obs.ind <- obs.ind[,!is.nan(c(Y[[i]]))] 
       }
       
     } else if(type== "Nowcast"){
@@ -339,8 +344,8 @@ predictLong <- function( Y,
         if(bivariate){
           pred.ind <- matrix(rep(1,2*dim(locs.pred[[i]])[1]),nrow=1)
           obs.ind <- matrix(rep(1,2*n.pred.i),nrow=1)
-          obs.ind <- obs.ind[,!is.nan(c(Y[[i]])),drop=FALSE] #remove missing observations
         }
+        obs.ind <- obs.ind[,!is.nan(c(Y[[i]])),drop=FALSE] #remove missing observations
       }
   
       obs_list[[i]] <- list(Y=c(Y[[i]]),
@@ -348,6 +353,7 @@ predictLong <- function( Y,
                             obs_ind = obs.ind,
                             locs = locs[[i]],
                             Bfixed_pred = Bfixed.pred[[i]])
+      
       if(use.process){
         A <- build.A.matrix(operator_list,locs,i)
         Ap <- build.A.matrix(operator_list,locs.pred,i)
@@ -367,8 +373,11 @@ predictLong <- function( Y,
         } else {
           na.ind <- is.na(Y[[i]])
           obs_list[[i]]$A = A
+          obs_list[[i]]$A <- obs_list[[i]]$A[!is.na(Y[[i]][,1]),]
           obs_list[[i]]$Apred = Ap
         }
+      }else{
+        na.ind <- is.na(Y[[i]])
       }
       
       if(use.random.effect){
@@ -503,7 +512,7 @@ predictLong <- function( Y,
       for(c in 1:length(quantiles)){
         c.i <- list()
         c.i$level = quantiles[c]
-        c.i$field <- apply(output$YVec[[i]],1,quantile,probs=c(quantiles[c]))
+        c.i$field <- apply(output$YVec[[i]],1,quantile,probs=c(quantiles[c]), na.rm = TRUE)
         y.list[[c]] = c.i
         c.i$field <- apply(output$XVec[[i]],1,quantile,probs=c(quantiles[c]))
         x.list[[c]] = c.i

@@ -88,6 +88,10 @@ predict.ngme <- function(object,
                             )
                           )
   {
+  
+  if(!(type %in% c("LOOCV", "LOOCV2", "Nowcast", "Filter", "Smoothing"))){
+    stop("type must be one of the following: LOOCV, LOOCV2, Nowcast, Filter, Smoothing")
+  }
 
   controls$seed <- ceiling(10^8 * runif(1))
 
@@ -111,7 +115,7 @@ predict.ngme <- function(object,
   }
 
   ## when new data were provided
-  if(is.null(newdata) == FALSE){
+  if(!is.null(newdata)){
   
     new_ids    <- unique(newdata[, object$idname])
     n_new_subj <- length(new_ids)
@@ -130,13 +134,12 @@ predict.ngme <- function(object,
     object$mixedEffect_list$B_fixed[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_effects$B_fixed
     object$mixedEffect_list$B_random[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_effects$B_random
     
-    if(object$use_process == TRUE){
-      
-      new_locs <- tapply(as.matrix(newdata[, object$call$timeVar]), newdata[, object$idname], function(x) x)
-      
-      object$locs[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_locs
-      names(object$locs)[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_ids
-      
+    new_locs <- tapply(as.matrix(newdata[, object$call$timeVar]), newdata[, object$idname], function(x) x)
+    object$locs[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_locs
+    names(object$locs)[(n_ava_subj + 1): (n_ava_subj + n_new_subj)] <- new_ids
+    
+    if(object$use_process){
+    
       new_operator_list <- create_operator(new_locs,
                                            name = object$operator_type,
                                            common.grid = object$mesh$common.grid,
@@ -160,7 +163,11 @@ predict.ngme <- function(object,
 
   id_list <- as.numeric(names(object$Y))
   if(is.null(id)){
-    id <- id_list
+    if(is.null(newdata) == FALSE){
+      id <- new_ids
+    }else{
+      id <- id_list
+    }  
   }
   pInd <- which(id_list %in% id)
 
@@ -322,9 +329,7 @@ predict.ngme <- function(object,
     stopCluster(cl)
   }
 
-
   preds <- merge.pred.lists(preds.list, pInd)
-
 
   if(controls$silent == FALSE){
     cat("Calculating accuracy measures", "\n")
@@ -422,7 +427,3 @@ merge.pred.lists <- function(preds.list, pInd){
   }
   return(preds)
 }
-
-
-
-
