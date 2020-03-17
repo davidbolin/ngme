@@ -18,7 +18,7 @@ simulateLongPrior(Y, locs, mixedEffect_list, measurment_list,
 
 \item{measurement_list}{measurement error list}
 
-\item{process_list}{process list}
+\item{process_list}{procsess list}
 }
 \value{
 A list of outputs.

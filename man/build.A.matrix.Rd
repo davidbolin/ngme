@@ -4,7 +4,7 @@
 \alias{build.A.matrix}
 \title{Observation matrix computation.}
 \usage{
-build.A.matrix(operator_list, locs, i)
+build.A.matrix(operator_list, locs, i = NULL)
 }
 \arguments{
 \item{operator_list}{A list for the operator created using \code{"create_operator"}.}

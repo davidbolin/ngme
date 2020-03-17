@@ -81,10 +81,9 @@ predictLong <- function( Y,
                          repeat.mix = 10,
                          seed = NULL)
 {
-  ind.general = 0
+  ind.general = 1
   if(type == "LOOCV" || type == "LOOCV2"){
     pred_type = 3
-    ind.general = 1
   }else if(type == "Nowcast"){
     pred_type = 2
   }else if(type=='Filter'){
@@ -285,62 +284,72 @@ predictLong <- function( Y,
       
     } else if(type== "Nowcast"){
       pred.ind <- obs.ind <- NULL
-      ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] < li[1]] #all prediction locations before first obs
-      if(length(ind)>0){
-        pred.ind <- rbind(pred.ind,c(0,length(ind)))
-        obs.ind <- rbind(obs.ind,c(0,0))
+      ind <- rep(0,length(locs.pred[[i]]))
+      ind[locs.pred[[i]] < li[1]] = 1#all prediction locations before first obs
+      if(sum(ind)>0){
+        pred.ind <- rbind(pred.ind,ind)
+        obs.ind <- rbind(obs.ind,rep(0,length(li)))
       }
       # pred.ind shows which values to save for the j:th prediction
       # obs.ind shows which data to use for the j:th prediction
       if(n.pred.i>1){
         for(j in 2:n.pred.i){
           #indices for prediction locatiocs in  [s_(j-1), s_j), should use data up to and including s_(j-1)
-          ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] >= li[j-1]) & (locs.pred[[i]] < li[j])]
-          if(length(ind)>0){
-            pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
-            obs.ind <- rbind(obs.ind,c(0,j-1))
+          ind <- rep(0,length(locs.pred[[i]]))
+          ind[(locs.pred[[i]] >= li[j-1]) & (locs.pred[[i]] < li[j])] = 1
+          if(sum(ind)>0){
+            pred.ind <- rbind(pred.ind,ind) #first index and number of indices.
+            o.ind <- rep(0,length(li))
+            o.ind[1:(j-1)] = 1
+            obs.ind <- rbind(obs.ind,o.ind)
           }
         }
       }
       #do the prediction for all locations in [s_N,max(loc.pred)]
       if(max(locs.pred[[i]])>=max(li)){
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] >= max(li)]
-        pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind)))
-        obs.ind <- rbind(obs.ind,c(0,length(li)))
+        ind <- rep(0,length(locs.pred[[i]]))
+        ind[locs.pred[[i]] >= max(li)] = 1
+        pred.ind <- rbind(pred.ind,ind)
+        obs.ind <- rbind(obs.ind,rep(1,length(li)))
       }
       n.pred.i = dim(pred.ind)[1]
     } else if(type == "Filter"){
         pred.ind <- obs.ind <- NULL
-        ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] <= li[1]] #all prediction locations up to the first obs
-        if(length(ind)>0){ #If there are values to predict up to the first obs
-          pred.ind <- rbind(pred.ind,c(0,length(ind)))
-          obs.ind <- rbind(obs.ind,c(0,0))
+        
+        ind <- rep(0,length(locs.pred[[i]]))
+        ind[locs.pred[[i]] <= li[1]] = 1  #all prediction locations up to the first obs
+        if(sum(ind)>0){ #If there are values to predict up to the first obs
+          pred.ind <- rbind(pred.ind,ind)
+          obs.ind <- rbind(obs.ind,rep(0,length(li)))
         }
         # pred.ind shows which values to save for the j:th prediction
         # obs.ind shows which data to use for the j:th prediction
         if(n.pred.i>1){
           for(j in 2:n.pred.i){
-            ind <- (1:length(locs.pred[[i]]))[(locs.pred[[i]] > li[j-1]) & (locs.pred[[i]] <= li[j])]
-            if(length(ind)>0){
-              pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind))) #first index and number of indices.
-              obs.ind <- rbind(obs.ind,c(0,j-1))
+            ind <- rep(0,length(locs.pred[[i]]))
+            ind[(locs.pred[[i]] > li[j-1]) & (locs.pred[[i]] <= li[j])] = 1
+            if(sum(ind)>0){
+              pred.ind <- rbind(pred.ind,ind) 
+              o.ind <- rep(0,length(li))
+              o.ind[1:(j-1)] = 1
+              obs.ind <- rbind(obs.ind,o.ind)
             }
           }
         }
-        #obs.ind[n.pred.i,] <- c(0,n.pred.i-1)
         if(max(locs.pred[[i]])>max(li)){
-          ind <- (1:length(locs.pred[[i]]))[locs.pred[[i]] > max(li)]
-          pred.ind <- rbind(pred.ind,c(ind[1]-1,length(ind)))
-          obs.ind <- rbind(obs.ind,c(0,length(li)))
+          ind <- rep(0,length(locs.pred[[i]]))
+          ind[locs.pred[[i]] > max(li)] = 1
+          pred.ind <- rbind(pred.ind,ind)
+          obs.ind <- rbind(obs.ind,rep(1,length(li)))
         }
         n.pred.i = dim(pred.ind)[1]
       } else { #Smoothing
         if(is.matrix(locs.pred[[i]])){
-          pred.ind <- matrix(c(0,dim(locs.pred[[i]])[1]),nrow = 1,ncol = 2)
+          pred.ind <- matrix(rep(1,dim(locs.pred[[i]])[1]),nrow = 1)
         } else {
-          pred.ind <- matrix(c(0,length(locs.pred[[i]])),nrow = 1,ncol = 2)
+          pred.ind <- matrix(rep(1,length(locs.pred[[i]])), nrow = 1) 
         }
-        obs.ind  <- matrix(c(0,n.pred.i),nrow = 1,ncol = 2)  
+        obs.ind  <- matrix(rep(1,n.pred.i), nrow = 1)  
         if(bivariate){
           pred.ind <- matrix(rep(1,2*dim(locs.pred[[i]])[1]),nrow=1)
           obs.ind <- matrix(rep(1,2*n.pred.i),nrow=1)
@@ -372,16 +381,23 @@ predictLong <- function( Y,
           measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Bfixed.pred[[i]])[1]/2)))
         } else {
           na.ind <- is.na(Y[[i]])
-          obs_list[[i]]$A = A
-          obs_list[[i]]$A <- obs_list[[i]]$A[!is.na(Y[[i]][,1]),]
+          obs_list[[i]]$A <- A[!is.na(Y[[i]]),]
           obs_list[[i]]$Apred = Ap
+          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind, drop=F]
+          obs_list[[i]]$Y = obs_list[[i]]$Y[!na.ind]
+          if(is.null(dim(locs)) || min(dim(locs))==1){ #time data
+            obs_list[[i]]$locs <- obs_list[[i]]$locs[!na.ind]  
+          } else { # spatial data
+            obs_list[[i]]$locs <- obs_list[[i]]$locs[!na.ind,]  
+          }
         }
       }else{
         na.ind <- is.na(Y[[i]])
       }
       
+      mixedEffect_list$B_fixed[[i]] <- mixedEffect_list$B_fixed[[i]][!na.ind,,drop=FALSE]
       if(use.random.effect){
-        mixedEffect_list$Brandom[[i]] <- mixedEffect_list$Brandom[[i]][!na.ind,]
+        mixedEffect_list$B_random[[i]] <- mixedEffect_list$B_random[[i]][!na.ind,,drop=FALSE]
         #mixedEffect_list$Brandom_pred[[i]] = Brandom.pred[[i]]
         obs_list[[i]]$Brandom_pred = Brandom.pred[[i]]
       }

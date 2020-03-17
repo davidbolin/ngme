@@ -1,8 +1,8 @@
 graphics.off()
 library(ngme)
 
-test.pred = FALSE
-test.est = TRUE
+test.pred = TRUE
+test.est = FALSE
 test.fisher = FALSE
 
 #data options
@@ -10,7 +10,7 @@ n.pers <- 200
 n.obs  <- rep(100,n.pers)#10 + (1:n.pers)
 cutoff = 0.1
 max.dist = 1
-operator.type = "exponential"
+operator.type = "matern"
 process.noise = "Normal"
 process.nu = 0.1
 process.mu = 0.1
@@ -24,7 +24,7 @@ subsample.type = 1
 
 #prediction options
 n.pred <- n.obs[[1]]#10
-pred.type <- "Filter"
+pred.type <- "Smoothing"
 nSim.pred  <- 100 #simulations in prediction
 
 #Fisher options
@@ -83,9 +83,11 @@ processes_list = list(noise = process.noise,
                       nu  = process.nu,
                       mu  = process.mu)
 processes_list$V <- list()
+processes_list$X <- list()
 for(i in 1:length(locs))
 {
   processes_list$V[[i]] <- operator_list$h[[i]]
+  processes_list$X[[i]] <- 0*operator_list$h[[i]]
 }
 ###
 # simulation
@@ -159,6 +161,7 @@ if(test.est){
 
 
 if(test.pred){
+  sim_res$Y[[1]][1:10] = NA
   res <- predictLong( Y = sim_res$Y,
                       pInd = c(1,2),
                       locs.pred = locs.pred,

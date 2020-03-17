@@ -9,8 +9,9 @@ library(gridExtra)
 
 #First estimate stationary model:
 test.pred = TRUE
-test.est = TRUE
-test.cv = TRUE
+test.est = FALSE
+test.cv = FALSE
+test.missing = TRUE
 nIter = 100
 
 noise="Normal"
@@ -116,9 +117,12 @@ if(test.pred){
     Bfixed.pred[[i]] <- matrix(rep(1, dim(locs.pred[[i]])[1]))
   }
   
+  Y <- sim_res$Y
+  if(test.missing){
+    Y[[1]][1:10] = NA
+  }
   
-  
-  res <- predictLong( Y                = sim_res$Y,
+  res <- predictLong( Y                = Y,
                       locs.pred        = locs.pred,
                       Bfixed.pred      = Bfixed.pred,
                       type             = "Smoothing",

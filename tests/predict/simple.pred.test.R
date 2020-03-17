@@ -1,4 +1,3 @@
-library("LDMod")
 n.obs  <- 5
 n <- 10
 mix.dist = "NIG"
