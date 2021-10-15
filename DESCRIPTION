@@ -4,8 +4,8 @@ Title: Linear Mixed Effects Models With Flexible Distributions
 Version: 1.0.0
 Date: 2019-05-21
 Authors@R: c(
-    person("David", "Bolin", email = "davidbolin@gmail.com", role = c("aut")), 
-    person("Jonas", "Wallin", email = "jonas.wallin81@gmail.com", role = c("aut", "cre")), 
+    person("David", "Bolin", email = "davidbolin@gmail.com", role = c("aut", "cre")), 
+    person("Jonas", "Wallin", email = "jonas.wallin81@gmail.com", role = c("aut")), 
     person("Ozgur", "Asar", email = "ozgurasarstat@gmail.com", role = c("aut")),
     person("Peter John", "Diggle", email = "p.diggle@lancaster.ac.uk", role = c("aut")))
 Description: Inference and prediction for linear mixed effects (random effects) models with 
