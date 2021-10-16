@@ -15,6 +15,7 @@
 #'   \dontrun{
 #'   rGIG(...)
 #'   }
+#' @export
 
 rGIG <- function (p, a, b, seed = 0) 
 {

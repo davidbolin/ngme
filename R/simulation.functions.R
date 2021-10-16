@@ -69,6 +69,7 @@ simulate.process <- function(n, operator_list, process_list){
 #' @param sigma (real) scale parameter
 #' @param nu    (real, >0) shape parameter
 #' @param h     (m x 1) (h = 1) discritization vector
+#' @export
 rNIG <- function(n = 1, delta, mu, sigma, nu, h = NULL){
   if(is.null(h))
     h = rep(1,n)

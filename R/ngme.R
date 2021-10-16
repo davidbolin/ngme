@@ -1,7 +1,27 @@
-
-#' @title Parameter estimation.
+#' @title Estimation and prediction for non-Gaussian mixed-effect models
+#' @section Package:
+#' 
+#' The ngme package provides functions for parameter estimation and prediction for non-Gaussian mixed-effect models.
+#' 
+#' @section Function list: 
+#' \code{\link{ngme}}
+#' \code{\link{ngme.spatial}}  
+#' \code{\link{predict.ngme}} 
+#' \code{\link{predict.ngme.spatial}} 
+#' 
+#' @docType package
+#' @name ngme_package
+#' @importFrom Rcpp evalCpp
+#' @useDynLib ngme, .registration = TRUE
+#' 
+#' @name ngme-package
+#' @rdname ngme
 #'
-#' @description We strongly suggest to use \code{\link{ngme.par}} instead of this function.
+NULL
+
+
+#'
+#' We strongly suggest to use \code{\link{ngme.par}} instead of this function.
 #'  Estimates model parameters for longitudianl models using maximum likelihood
 #'   implemented by a computationally efficient stochastic gradient algorithm. 
 #'   See \code{\link{ngme.spatial}} for estimation of spatial models. 
