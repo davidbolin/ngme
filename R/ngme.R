@@ -1,7 +1,8 @@
 
 #' @title Parameter estimation.
 #'
-#' @description Estimates model parameters for longitudianl models using maximum likelihood
+#' @description We strongly suggest to use \code{\link{ngme.par}} instead of this function.
+#'  Estimates model parameters for longitudianl models using maximum likelihood
 #'   implemented by a computationally efficient stochastic gradient algorithm. 
 #'   See \code{\link{ngme.spatial}} for estimation of spatial models. 
 #'
@@ -173,6 +174,7 @@
 #'                               init.fit = fit_normal_normal_normal_fd2
 #'                               )
 #' }
+#' @export
 
 ngme <- function(fixed,
                  random = NULL,

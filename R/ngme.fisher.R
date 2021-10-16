@@ -23,6 +23,7 @@
 #'   data(srft_data)
 #'   ngme(...)
 #'   }
+#'   @export
 
 ngme.fisher <- function(fit,
                         std.threshold = NULL,

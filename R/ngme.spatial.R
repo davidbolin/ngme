@@ -53,6 +53,7 @@
 #' The measurement noise \eqn{e_{ij}} is assumed to be independent between observations and replicates. 
 #' @return A list of outputs.
 #' @seealso \code{\link{predict.ngme.spatial}} 
+#' @export
 
 ngme.spatial <- function(fixed,
                  random = NULL,

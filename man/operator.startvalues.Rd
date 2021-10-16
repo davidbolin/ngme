@@ -4,8 +4,13 @@
 \alias{operator.startvalues}
 \title{Obtain initial values for the operator.}
 \usage{
-operator.startvalues(Y, locs, mixedEffect_list, operator_list,
-  measurement_list)
+operator.startvalues(
+  Y,
+  locs,
+  mixedEffect_list,
+  operator_list,
+  measurement_list
+)
 }
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}

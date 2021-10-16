@@ -4,9 +4,18 @@
 \alias{create_matrices_FD2}
 \title{Create matrices for Finite difference.}
 \usage{
-create_matrices_FD2(locs, common.grid = FALSE, extend = NULL, max.dist,
-  cutoff = 1e-10, n.cores = 1, Y = NULL, loc.Y = NULL,
-  max.dY = -1, nJump = 3)
+create_matrices_FD2(
+  locs,
+  common.grid = FALSE,
+  extend = NULL,
+  max.dist,
+  cutoff = 1e-10,
+  n.cores = 1,
+  Y = NULL,
+  loc.Y = NULL,
+  max.dY = -1,
+  nJump = 3
+)
 }
 \arguments{
 \item{locs}{A numeric list for the meansurement locations.}

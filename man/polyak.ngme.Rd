@@ -4,8 +4,13 @@
 \alias{polyak.ngme}
 \title{Post-processing of ngme parameter estimates}
 \usage{
-polyak.ngme(object, param = "fixed", polyak.rate = 1, plot = TRUE,
-  burnin.end = NULL)
+polyak.ngme(
+  object,
+  param = "fixed",
+  polyak.rate = 1,
+  plot = TRUE,
+  burnin.end = NULL
+)
 }
 \arguments{
 \item{object}{A fitted object returned by the \code{"ngme"} function.}

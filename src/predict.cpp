@@ -572,11 +572,17 @@ List predictLong_cpp(Rcpp::List in_list)
               Rcpp::Rcout << "Save samples\n";
             }
           if(use_process == 1){
+            if(debug){
+              Rcpp::Rcout << "Get A\n";
+            }
             if(ind_general){
               get_submatrix(As_pred[i],pred_ind[i].row(ipred), &Ai);
             } else {
               Ai = As_pred[i].middleRows(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
             }
+          }
+          if(debug){
+            Rcpp::Rcout << "Set random effects\n";
           }
           Eigen::VectorXd random_effect;
           if(use_random_effect == 1){
@@ -601,6 +607,9 @@ List predictLong_cpp(Rcpp::List in_list)
           }
           
           if(use_process == 1){
+            if(debug){
+              Rcpp::Rcout << "Save process\n";
+            }
             AX = Ai * process->Xs[i];
 
             WnoiseVec[i].col(ii-nBurnin) = process->Ws[i]; // this only makes sense for smoothing
@@ -632,14 +641,26 @@ List predictLong_cpp(Rcpp::List in_list)
           }
 
           if(predict_derivative == 1){
+            if(debug){
+              Rcpp::Rcout << "Save derivative\n";
+            }
             Eigen::VectorXd random_effect_1;
             if(use_random_effect == 1){
               random_effect_1= Bfixed_pred_1[i]*mixobj->beta_fixed + Brandom_pred_1[i]*(mixobj->U.col(i)+mixobj->beta_random);
             } else {
               random_effect_1 = Bfixed_pred_1[i]*mixobj->beta_fixed;
             }
-
-            Eigen::VectorXd random_effect_c_1 = random_effect_1.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));
+            Eigen::VectorXd random_effect_c_1;
+            if(ind_general){
+              get_subvector(random_effect_1, pred_ind[i].row(ipred), random_effect_c_1);
+            } else {
+              random_effect_c_1 = random_effect_1.segment(pred_ind[i](ipred,0),pred_ind[i](ipred,1));  
+            }
+            
+            
+            if(debug){
+              Rcpp::Rcout << "Save derivative process\n";
+            }
             if(use_process == 1){
               Eigen::SparseMatrix<double,0,int> Ai_1;
               if(ind_general){
@@ -649,24 +670,30 @@ List predictLong_cpp(Rcpp::List in_list)
               }
               
               Eigen::VectorXd AX_1 = Ai_1 * process->Xs[i];
-              
+              if(debug){
+                Rcpp::Rcout << "here" << ind_general << "\n";
+              }
               if(ind_general){
                 set_subcol(WVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), AX_1 - AX);
+                Rcpp::Rcout << "re_1:" << random_effect_1 << " \n";
+                Rcpp::Rcout << "re_c_1:" << random_effect_c_1 << " \n";
+                Rcpp::Rcout << "re_c:" << random_effect_c << " \n";
                 set_subcol(XVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), random_effect_c_1 + AX_1 - random_effect_c - AX);
               } else {
                 WVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX_1 - AX;
                 XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 + AX_1 - random_effect_c - AX;  
               }
+              Rcpp::Rcout << "here 3 \n";
             } else {
               if(ind_general){
                 set_subcol(XVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), random_effect_c_1 - random_effect_c);
               } else {
                 XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 - random_effect_c;  
               }
-              
             }
           }
         }
+          
         if(timeit){
             time_post += static_cast<double>(clock())/ ticks_per_ms - start_time;
             start_time   = static_cast<double>(clock())/ ticks_per_ms;

@@ -55,7 +55,8 @@
 #'   fit <- ngme.spatial(...)
 #'   predict(fit, ...)
 #'   }
-
+#' @export
+#' @method predict ngme.spatial
 
 predict.ngme.spatial <- function(object,
                                  id = NULL,

@@ -4,14 +4,16 @@
 \name{Orthodont}
 \alias{Orthodont}
 \title{Orthodont data}
-\format{A data frame with 108 rows and 5 columns:
+\format{
+A data frame with 108 rows and 5 columns:
 \describe{
 \item{distance}{outcome variable}
 \item{age}{age of the child}
 \item{Subject}{id as character}
 \item{Sex}{sex of the child}
 \item{id}{id as numeric}
-}}
+}
+}
 \usage{
 Orthodont
 }

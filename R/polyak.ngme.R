@@ -88,33 +88,6 @@ polyak.ngme <- function(object,
     }
     
   } else if(param == "random"){
-    # n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
-    # n.random <- dim(object$mixedEffect_list$beta_random)[2]
-    # names <- colnames(object$ranef_Sigma)
-    # 
-    # pars <- object$mixedEffect_list$betar_vec
-    # colnames(pars) <- names
-    # pars.smooth <- smooth.trajectory(pars,
-    #                                  polyak.rate = polyak.rate,
-    #                                  burnin.end = burnin.end)
-    # object$mixedEffect_list$betar_vec <- pars.smooth$x
-    # object$mixedEffect_list$beta_random <- pars.smooth$xe
-    # 
-    # #add to summaries (with fixed effects)
-    # object$fixed_est_vec[,1:n.random] <- pars.smooth$x
-    # object$fixed_est[1:n.random] <- pars.smooth$xe
-    # 
-    # #add estimate of variance
-    # if(is.null(object$fixed_est_var)){
-    #   n.fixed <- dim(object$mixedEffect_list$beta_fixed)[2]
-    #   object$fixed_est_var <- rep(NA,n.random+n.fixed)
-    #   names(object$fixed_est_var) <- names(object$fixed_est)
-    # }
-    # 
-    # object$fixed_est_var[1:n.random] <- compute.polyak.variance(pars,polyak.rate,i.start = burnin.end)
-    # pars.full <- pars
-    # pars.full.smooth <- pars.smooth$x
-    
     # process the covariance
     
     n.random <- length(object$mixedEffect_list$beta_random)

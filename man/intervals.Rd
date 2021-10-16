@@ -26,6 +26,7 @@ Parameter estimates for random-effects and noise parameters
   fit <- ngme(...)
   intervals(fit)
   }
+  @export
 
 }
 \seealso{

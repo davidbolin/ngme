@@ -51,6 +51,7 @@
 #'                   mesh = list(cutoff = 1/365,max.dist = 1/12,extend = 0.01),
 #'                   controls = list(pSubsample = 0.025,subsample.type = 1))
 #'}
+#'@export
 
 ngme.par <- function(n.cores = 4, 
                      std.lim = 0.1,

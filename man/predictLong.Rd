@@ -4,13 +4,32 @@
 \alias{predictLong}
 \title{Obtain predictions}
 \usage{
-predictLong(Y, locs, pInd, locs.pred, Brandom.pred = NULL, Bfixed.pred,
-  return.samples = FALSE, type = "Filter", quantiles = NULL,
-  predict.derivatives = NULL, excursions = NULL, crps = FALSE,
-  crps.skip = 10, Y.val, mixedEffect_list, measurment_list,
-  processes_list, operator_list = NULL, nSim = 1, nBurnin = 10,
-  silent = FALSE, max.num.threads = 2, repeat.mix = 10,
-  seed = NULL)
+predictLong(
+  Y,
+  locs,
+  pInd,
+  locs.pred,
+  Brandom.pred = NULL,
+  Bfixed.pred,
+  return.samples = FALSE,
+  type = "Filter",
+  quantiles = NULL,
+  predict.derivatives = NULL,
+  excursions = NULL,
+  crps = FALSE,
+  crps.skip = 10,
+  Y.val,
+  mixedEffect_list,
+  measurment_list,
+  processes_list,
+  operator_list = NULL,
+  nSim = 1,
+  nBurnin = 10,
+  silent = FALSE,
+  max.num.threads = 2,
+  repeat.mix = 10,
+  seed = NULL
+)
 }
 \arguments{
 \item{Y}{A numeric list that contains outcome values.}

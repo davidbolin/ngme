@@ -4,9 +4,18 @@
 \alias{ngme.fisher}
 \title{Estimation of Fisher information matrix}
 \usage{
-ngme.fisher(fit, std.threshold = NULL, observed = TRUE,
-  silent = FALSE, n.cores = 1, nSim = 1000, n.rep = 10,
-  nIter = NULL, only.effects = TRUE, nBurnin = 100)
+ngme.fisher(
+  fit,
+  std.threshold = NULL,
+  observed = TRUE,
+  silent = FALSE,
+  n.cores = 1,
+  nSim = 1000,
+  n.rep = 10,
+  nIter = NULL,
+  only.effects = TRUE,
+  nBurnin = 100
+)
 }
 \arguments{
 \item{fit}{An ngme object.}
@@ -43,4 +52,5 @@ Estimates Fisher information matrix for ngme result.
   data(srft_data)
   ngme(...)
   }
+  @export
 }

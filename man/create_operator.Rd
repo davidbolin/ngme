@@ -4,9 +4,17 @@
 \alias{create_operator}
 \title{Create operator components.}
 \usage{
-create_operator(locs, name = "matern", right.boundary = "neumann",
-  left.boundary = "neumann", common.grid = FALSE, extend = NULL,
-  max.dist, cutoff = 1e-10, n.cores = 1)
+create_operator(
+  locs,
+  name = "matern",
+  right.boundary = "neumann",
+  left.boundary = "neumann",
+  common.grid = FALSE,
+  extend = NULL,
+  max.dist,
+  cutoff = 1e-10,
+  n.cores = 1
+)
 }
 \arguments{
 \item{locs}{A numeric list of measurement locations.}

@@ -59,8 +59,6 @@
 #'  }
 #' @return A list of output.
 #'
-#' @details This function is a wrapper function that calls
-#'    \code{"predictLong"} internally.
 #'
 #' @seealso \code{\link{ngme}}
 #' @examples
@@ -68,7 +66,8 @@
 #'   fit <- ngme(...)
 #'   predict(fit, ...)
 #'   }
-
+#' @export
+#' @method predict ngme
 predict.ngme <- function(object,
                          newdata = NULL,
                          id = NULL,
@@ -171,36 +170,11 @@ predict.ngme <- function(object,
   }
   pInd <- which(id_list %in% id)
 
-  #do the prediction in batches
-  # pInd.list <- list()
-  # pInd.tmp <- pInd
-  #
-  # if(length(pInd.tmp)>=controls$batch.size){
-  #   k = 1
-  #   while(length(pInd.tmp)>=controls$batch.size){
-  #     if(length(pInd.tmp)>=controls$batch.size){
-  #       pInd.list[[k]] <- pInd.tmp[1:controls$batch.size]
-  #       if(controls$batch.size<length(pInd.tmp)){
-  #         pInd.tmp <- pInd.tmp[(controls$batch.size+1):length(pInd.tmp)]
-  #       } else {
-  #         pInd.tmp <- NULL
-  #       }
-  #       k = k+1
-  #     } else {
-  #       pInd.list[[k]] <- pInd.tmp
-  #       pInd.tmp <- NULL
-  #     }
-  #   }
-  # } else {
-  #   pInd.list[[1]] <- pInd
-  # }
-
   batch.size <- controls$batch.size
   iterations <- ceiling(length(pInd)/batch.size)
 
   pInd.list <- lapply(1:iterations, function(i) na.omit(pInd[(batch.size*(i - 1) + 1) : (batch.size * i)]))
 
-  # iterations <- length(pInd.list)
 
   if(controls$n.cores == 1){
 
@@ -214,7 +188,6 @@ predict.ngme <- function(object,
         cat("\n")
       }
 
-      #cat(object.size(preds.list,units = "MB",standard = "SI"),"\n")
       if(object$use_process == TRUE){
         preds.list[[i]] <- predictLong(
                            Y                    = object$Y,

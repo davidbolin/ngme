@@ -16,6 +16,7 @@
 #'   fit <- ngme(...)
 #'   intervals(fit)
 #'   }
+#'   @export
 #'
   intervals <- function(object, type = "fixed", level = 0.95){
 
@@ -44,5 +45,6 @@
       class(out) <- "intervals"
       out
     }
-
   }
+  
+ 

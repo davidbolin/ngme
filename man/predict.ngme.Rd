@@ -4,11 +4,16 @@
 \alias{predict.ngme}
 \title{Prediction.}
 \usage{
-\method{predict}{ngme}(object, newdata = NULL, id = NULL,
-  type = "Filter", quantiles = c(0.025, 0.975),
-  controls = list(return.samples = FALSE, predict.derivatives = NULL,
-  excursions = NULL, crps = TRUE, crps.skip = 1, nSim = 1000, nBurnin =
-  100, silent = TRUE, n.cores = 1, batch.size = 100))
+\method{predict}{ngme}(
+  object,
+  newdata = NULL,
+  id = NULL,
+  type = "Filter",
+  quantiles = c(0.025, 0.975),
+  controls = list(return.samples = FALSE, predict.derivatives = NULL, excursions =
+    NULL, crps = TRUE, crps.skip = 1, nSim = 1000, nBurnin = 100, silent = TRUE, n.cores
+    = 1, batch.size = 100)
+)
 }
 \arguments{
 \item{object}{A fitted object obtained by calling \code{"ngme"}.}
@@ -75,10 +80,6 @@ A list of output.
 }
 \description{
 Obtains predicted values based on filtering and smoothing distributions.
-}
-\details{
-This function is a wrapper function that calls
-   \code{"predictLong"} internally.
 }
 \examples{
   \dontrun{

@@ -4,23 +4,32 @@
 \alias{ngme}
 \title{Parameter estimation.}
 \usage{
-ngme(fixed, random = NULL, use.process = FALSE, reffects = "Normal",
-  process = c("Normal", "fd2"), error = "Normal",
-  error_assymetric = FALSE, data, timeVar = NULL, silent = TRUE,
-  nIter = 1000, mesh = list(max.dist = NULL, cutoff = NULL, common.grid
-  = FALSE, extend = NULL, n.cores = 1), controls = list(learning.rate =
-  0.2, polyak.rate = -1, nBurnin = 100, nSim = 2, pSubsample = NULL,
-  nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 = 1,
-  alpha = 0.6, nBurnin.learningrate = NULL, nBurnin.base = 0,
-  subsample.type = 4, pSubsample2 = 0.3, standardize.mixedEffects = FALSE,
-  estimate.fisher = FALSE, individual.sigma = FALSE, iter.start = 0),
-  controls.init = list(learning.rate.init = 0, polyak.rate.init = 0.1,
-  nBurnin.init = 100, nSim.init = 2, nIter.init = 1000, pSubsample.init =
-  0.1, nPar.burnin.init = 0, step0.init = 0.3, alpha.init = 0.3,
-  nBurnin.learningrate.init = NULL, nBurnin.base.init = 0,
-  subsample.type.init = 0, pSubsample2.init = 0.3,
-  standardize.mixedEffects.init = FALSE, individual.sigma.init = FALSE),
-  init.fit = NULL)
+ngme(
+  fixed,
+  random = NULL,
+  use.process = FALSE,
+  reffects = "Normal",
+  process = c("Normal", "fd2"),
+  error = "Normal",
+  error_assymetric = FALSE,
+  data,
+  timeVar = NULL,
+  silent = TRUE,
+  nIter = 1000,
+  mesh = list(max.dist = NULL, cutoff = NULL, common.grid = FALSE, extend = NULL,
+    n.cores = 1),
+  controls = list(learning.rate = 0.2, polyak.rate = -1, nBurnin = 100, nSim = 2,
+    pSubsample = NULL, nPar.burnin = 0, nIter.fisher = 1000, nSim.fisher = 1000, step0 =
+    1, alpha = 0.6, nBurnin.learningrate = NULL, nBurnin.base = 0, subsample.type = 4,
+    pSubsample2 = 0.3, standardize.mixedEffects = FALSE, estimate.fisher = FALSE,
+    individual.sigma = FALSE, iter.start = 0),
+  controls.init = list(learning.rate.init = 0, polyak.rate.init = 0.1, nBurnin.init =
+    100, nSim.init = 2, nIter.init = 1000, pSubsample.init = 0.1, nPar.burnin.init = 0,
+    step0.init = 0.3, alpha.init = 0.3, nBurnin.learningrate.init = NULL,
+    nBurnin.base.init = 0, subsample.type.init = 0, pSubsample2.init = 0.3,
+    standardize.mixedEffects.init = FALSE, individual.sigma.init = FALSE),
+  init.fit = NULL
+)
 }
 \arguments{
 \item{fixed}{A two-sided formula to specify the fixed effects design matrix.}
@@ -159,7 +168,8 @@ in \code{data}.}
 A list of outputs.
 }
 \description{
-Estimates model parameters for longitudianl models using maximum likelihood
+We strongly suggest to use \code{\link{ngme.par}} instead of this function.
+ Estimates model parameters for longitudianl models using maximum likelihood
   implemented by a computationally efficient stochastic gradient algorithm. 
   See \code{\link{ngme.spatial}} for estimation of spatial models.
 }
