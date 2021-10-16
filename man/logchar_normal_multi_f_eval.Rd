@@ -2,7 +2,8 @@
 % Please edit documentation in R/CharFunc.R
 \name{logchar_normal_multi_f_eval}
 \alias{logchar_normal_multi_f_eval}
-\title{calculate exponent in characteristic function.
+\title{calculate exponent in characteristic function for bivariate normal
+
 [f_1(x) f_2(x)] dW(x) where W is a brownian motion}
 \usage{
 logchar_normal_multi_f_eval(x, u_x, u_y, param, f_x, f_y)
@@ -23,6 +24,7 @@ logchar_normal_multi_f_eval(x, u_x, u_y, param, f_x, f_y)
 \item{f_y}{- function kernel}
 }
 \description{
-calculate exponent in characteristic function.
+calculate exponent in characteristic function for bivariate normal
+
 [f_1(x) f_2(x)] dW(x) where W is a brownian motion
 }

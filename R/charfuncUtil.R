@@ -89,13 +89,11 @@ calc_moment_emperical <- function(X, central=F){
   return(moment_transform(c(M1,M2,M3,M4)))
 }
 
-##
 #' log density from char func using fft
 #'
 #' @param logphi   - (function) should return expontial term of the char func
 #' @param n2       - (1x1) power of 2 for number of point evaluations
 #' @param interv   - (2x1) evalution interval 
-###
 characteristic_function_to_density <- function( logphi, n2, interv,
                                                 logphi_prev = NULL){
   n = 2**n2
@@ -134,10 +132,10 @@ meshgrid <- function(x, y = x) {
 }
 
 ##
-#' log density from char func using fft \phi(x,y)
+#' log density from char func using fft \eqn{\phi(x,y)}
 #' on the grid [a_x,b_x] x [a_y, b_y]
 #'
-#' @param logphi   - (function) logphi(x,y) should return log( \phi(x,y)) 
+#' @param logphi   - (function) logphi(x,y) should return \eqn{log( \phi(x,y))}
 #'                              the grid of kron(x,1) and kron(y,1)
 #' @param n2_x     - (1) power of 2 for number of point evaluations of x dir
 #' @param n2_y     - (1) power of 2 for number of point evaluations of y dir

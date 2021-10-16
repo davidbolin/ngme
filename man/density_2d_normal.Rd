@@ -2,8 +2,8 @@
 % Please edit documentation in R/CharFunc.R
 \name{density_2d_normal}
 \alias{density_2d_normal}
-\title{computes density for normal univarate random fields in 2d
-between [interv[0], interv[1]]}
+\title{Density for bivariate Gaussian stochastic process on an interval
+computes density for normal univarate random fields in 2d}
 \usage{
 density_2d_normal(interv, n2, param, maternParam)
 }
@@ -17,6 +17,6 @@ density_2d_normal(interv, n2, param, maternParam)
 \item{maternParam}{- (3 x 1)  nu, tau, kappa}
 }
 \description{
+Density for bivariate Gaussian stochastic process on an interval
 computes density for normal univarate random fields in 2d
-between [interv[0], interv[1]]
 }

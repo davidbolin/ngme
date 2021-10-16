@@ -1,7 +1,8 @@
 
 
-#' Create margninal moment and density for ngme.spatial object
-#' returns density and moments of various components of the model
+#' @title Marginal moments and density for ngme.spatial object
+#' 
+#' @description Returns density and moments of various components of the model
 #' in the form of mean, variance, skewness and kuriotos
 #' @param  obj - ngme.spatial
 #' @param  n2x - number 2^n2x grid point in char func calc
@@ -122,9 +123,7 @@ ngme.spatial.moment <-function(obj, n2x = 7, n2y = 7, sdx = 6, sdy= 6){
   return(res)
 }
 
-#' @title Density for bivariate NIG random fields on a square in R2
-#' 
-#' @description Computes the density for a random field on \eqn{[a_x,b_x] x  [a_y,b_y]}
+#' @title Density for bivariate NIG random fields on R2
 #' 
 #' @param interv_x        - (2x1) [a_x,b_x]
 #' @param interv_y       - (2x1) [a_y,b_y]
@@ -237,10 +236,6 @@ density_2d_nig_multivariate<-function(interv_x,
 
 
 #' @title Density for bivariate Gaussian random fields on a square in R2
-#' 
-#' @description Computes the density for a random field on \eqn{[a_x,b_x] x  [a_y,b_y]}
-#' computes density for normal univarate random fields in 2d
-#' between [a_x,b_x] x  [a_y,b_y]
 #' 
 #' @param interv_x        - (2x1) [a_x,b_x]
 #' @param interv_y       - (2x1) [a_y,b_y]
@@ -370,9 +365,9 @@ density_1d_nig <-function(interv,
   return(characteristic_function_to_density( logphi, n2, interv))
 }
 
-#' @title Density for bivariate NIG stochastic process on an interval
+#' @title Density for NIG random field on R2
 #' 
-#' @description Computes the density for a random field on \eqn{[interv[0], interv[1]]}
+#' @description Computes the density for a random field on
 #' 
 #' 
 #' @param interv       - start and endpoint to evalute density
@@ -397,9 +392,9 @@ density_2d_nig<-function(interv,
   return(characteristic_function_to_density( logphi, n2, interv))
 }
 
-##
+
+#' @title Density for bivariate Gaussian stochastic process on an interval
 #' computes density for normal univarate random fields in 2d
-#' between [interv[0], interv[1]]
 #' 
 #' @param interv       - start and endpoint to evalute density
 #' @param n2           - number of grid points in the interval
@@ -438,12 +433,14 @@ density_1d_normal<-function(interv,
                                              1)}
   return(characteristic_function_to_density( logphi, n2, interv))
 }
-#'
-#' log charateristic function of \int f(x)dW_x assumes f is istorpic!
-#' where W_x brownian sheet
+
+#' @title log-characterisct function of integral
+#' 
+#' @description log charateristic function of \eqn{\int f(x)dW_x} assuming that f is istorpic,
+#' where W_x brownian sheet.
 #'
 #' t           - (vector) location of chara eval
-#' logphi_W    - (function)   evaluates log of char function of f(x)*W(dx)
+#' logphi_W    - (function)   evaluates log of char function of \eqn{f(x)*W(dx)}
 #' maternParam - (3 x 1)  nu, tau, kappa
 #' d           - (1 x 1)  dimension
 logchar_dens_matern <- function(t, 
@@ -475,13 +472,14 @@ logchar_dens_matern <- function(t,
 }
 
 
-#'
-#' log charateristic function of [X,Y] = \int [f_1(x), f_2(x)]dW(x) assumes f is istorpic!
-#' where W_x brownian sheet
+#' @title log-characterisct function of bivariate integral
+#' 
+#' @description log charateristic function of \eqn{[X,Y] = \int [f_1(x), f_2(x)]dW(x)} assuming that f is istorpic,
+#' where W_x brownian sheet.
 #'
 #' t_y           - (vector) location of chara eval
 #' t_x           - (vector) location of chara eval
-#' logphi_W    - (function)   evaluates log of char function of \int [f_1(x), f_2(x)]dW(x)
+#' logphi_W    - (function)   evaluates log of char function of \eqn{\int [f_1(x), f_2(x)]dW(x)}
 #' maternParam_x - (3 x 1)  nu, tau, kappa
 #' maternParam_y - (3 x 1)  nu, tau, kappa
 #' d           - (1 x 1)  dimension
@@ -514,15 +512,15 @@ logchar_dens_multi_matern <- function(t_y,
                            range = c(0,max(range_x,range_y)))
   return(logPhi)
 }
-###
-#' calculate exponent in characteristic function.
-#' \int_{a}^b f(x) W(dx)
+
+#' @title exponent in characteristic function
+#' 
+#' @description Calculate exponent in characteristic function of \eqn{\int_{a}^b f(x) W(dx)}.
 #'
-#' @param u - point where to evalute log(\phi(x))
+#' @param u - point where to evalute \eqn{log(\phi(x))}
 #' @param logphi_W - (function) evaluates log of Char function of f(x)*W(dx)
 #' @param f        - (function) the kernel
 #' @param range    - (2 x 1)    a,b 
-###
 logchar_f_W <- function(u, logphi_W, f, range){
   
   
@@ -542,15 +540,16 @@ logchar_f_W <- function(u, logphi_W, f, range){
   res <- apply(as.matrix(u), 1, int_fun)
   return(res)
 }
-###
-#' calculate exponent in characteristic function.
-#' \int_{a}^b [f_1(x), f_2(x)] W(dx)
+
+
+#' @title exponent in bivariate characteristic function
+#' 
+#' calculate exponent in characteristic function of \eqn{\int_{a}^b [f_1(x), f_2(x)] W(dx)}.
 #'
-#' @param u - point where to evalute log(\phi(x))
-#' @param logphi_W - (function) evaluates log of Char function of [f_1(x), f_2(x)]*W(dx)
+#' @param u - point where to evalute \eqn{log(\phi(x))}
+#' @param logphi_W - (function) evaluates log of Char function of \eqn{[f_1(x), f_2(x)]*W(dx)}
 #' @param f        - (function) the kernel
 #' @param range    - (2 x 1)    a,b 
-###
 logchar_f_multi_W <- function(u_x, u_y, logphi_W, f_x, f_y, range){
  
   
@@ -599,9 +598,10 @@ logchar_f_multi_W <- function(u_x, u_y, logphi_W, f_x, f_y, range){
   res <- apply(cbind(c(mesh_xy$X),c(mesh_xy$Y)), 1, int_fun)
   return(res)
 }
-###
-#' calculate exponent in characteristic function.
-#'
+
+
+
+#' @title calculate exponent in characteristic function.
 #'
 #' @param x -
 #' @param u -
@@ -610,7 +610,6 @@ logchar_f_multi_W <- function(u_x, u_y, logphi_W, f_x, f_y, range){
 #'            - (3) sigma - scale      parameter
 #'            - (4) nu    - shaper     parameter
 #' @param f       - function kernel
-###
 logchar_nig_f_eval<-function(x, u, param, f){
   delta = param[1]
   mu    = param[2]
@@ -625,8 +624,7 @@ logchar_nig_f_eval<-function(x, u, param, f){
 }
 
 
-###
-#' calculate exponent in characteristic function.
+#' @title calculate exponent in characteristic function for normal
 #' f(x) dW(x) where W is a brownian motion
 #'
 #' @param x  - (real) location
@@ -646,8 +644,9 @@ logchar_normal_f_eval <-function(x, u, param, f){
   return(h)
 }
 
-###
-#' calculate exponent in characteristic function.
+
+#' @title calculate exponent in characteristic function for bivariate normal
+#' 
 #' [f_1(x) f_2(x)] dW(x) where W is a brownian motion
 #'
 #' @param x  - (real) location
@@ -658,7 +657,6 @@ logchar_normal_f_eval <-function(x, u, param, f){
 #'                  -  (2) sigma - scale      parameter
 #' @param f_x       - function kernel
 #' @param f_y       - function kernel
-###
 logchar_normal_multi_f_eval <-function(x, u_x, u_y, param, f_x, f_y){
   
   delta = param[1]
@@ -672,13 +670,14 @@ logchar_normal_multi_f_eval <-function(x, u_x, u_y, param, f_x, f_y){
   return(h)
 }
 
-###
-#' calculate exponent in characteristic function.
-#' [f_1(x) f_2(x)] dW(x) where W is a brownian motion
+
+#' @title calculate exponent in characteristic function.
+#' 
+#' @description \eqn{[f_1(x) f_2(x)] dW(x)} where W is a brownian motion
 #'
 #' @param x  - (real) location
 #' @param u_x  - (real) char func value
-#' @param u_y  - (real) char func value´
+#' @param u_y  - (real) char func value
 #' @param param (4 x 1)
 #'            - (1) delta - location   parameter
 #'            - (2) mu    - assymteric parameter
@@ -686,9 +685,8 @@ logchar_normal_multi_f_eval <-function(x, u_x, u_y, param, f_x, f_y){
 #'            - (4) nu    - shaper     parameter
 #' @param f_x       - function kernel
 #' @param f_y       - function kernel
-###
-logchar_nig_multi_f_eval <-function(x, u_x, u_y, param, f_x, f_y){
-  
+#' @name logchar_nig_multi_f_eval
+logchar_nig_multi_f_eval <- function(x, u_x, u_y, param, f_x, f_y){
   delta = param[1]
   mu    = param[2]
   sigma = param[3]
@@ -702,37 +700,34 @@ logchar_nig_multi_f_eval <-function(x, u_x, u_y, param, f_x, f_y){
 }
 
 
-##
-#' kernel function producing the matern covariance
+
+#' @title Matern kernel
 #'
 #' @param x     - (n x 1) distance between points
 #' @param nu    - (>0)    smoothnes
 #' @param tau   - (>0)    precision parameter
 #' @param kappa - (>0)    range-scale parameter
 #' @param d     - (int>0) dimension of x
-#' 
+#'
 #' @return f(x) - (n x 1) kernel evaluted at x
-###
-maternkernel <- function(x, alpha, tau, kappa, d){
-
-    
-    
- c_k =  0.5*(tau/kappa^(1.5)) #tau/kappa
- C = 1/gamma(alpha/2)
- C = C /(c_k * (4*pi)^(d/2) * kappa^(alpha - d) )
- nu = (alpha - d)/2
- if(nu ==0)
-   x[abs(x)<0.001/kappa]= 0.001/kappa
- M = 2^(1-nu) * (kappa*abs(x))^(nu) * besselK(kappa * abs(x) , nu)
- if(nu>0)
-  M[x==0] = 2^(1-nu) * gamma(nu) * 2^(nu-1)
- f = C * M
- return(f)
-   
+#' @name maternkernel
+maternkernel <- function(x, alpha, tau, kappa, d)
+  {
+  c_k =  0.5*(tau/kappa^(1.5)) #tau/kappa
+  C = 1/gamma(alpha/2)
+  C = C /(c_k * (4*pi)^(d/2) * kappa^(alpha - d) )
+  nu = (alpha - d)/2
+  if(nu ==0)
+    x[abs(x)<0.001/kappa]= 0.001/kappa
+  M = 2^(1-nu) * (kappa*abs(x))^(nu) * besselK(kappa * abs(x) , nu)
+  if(nu>0)
+    M[x==0] = 2^(1-nu) * gamma(nu) * 2^(nu-1)
+  f = C * M
+  return(f)
 }
 
-##
-#' kernel function producing the matern covariance
+
+#' @title kernel function producing the Matern covariance
 #'
 #' @param x     - (n x 1) distance between points
 #' @param nu    - (>0)    smoothnes
@@ -741,11 +736,9 @@ maternkernel <- function(x, alpha, tau, kappa, d){
 #' @param d     - (int>0) dimension of x
 #' 
 #' @return f(x) - (n x 1) kernel evaluted at x
-###
-maternkernelMulti <- function(x, alpha, tau, kappa, d){
-  
-  
-  
+#' @name maternkernelMulti
+maternkernelMulti <- function(x, alpha, tau, kappa, d)
+  {
   c_k =  tau/kappa
   C = 1/gamma(alpha/2)
   C = C /(c_k * (4*pi)^(d/2) * kappa^(alpha - d) )
@@ -757,11 +750,10 @@ maternkernelMulti <- function(x, alpha, tau, kappa, d){
     M[x==0] = 2^(1-nu) * gamma(nu) * 2^(nu-1)
   f = C * M
   return(f)
-  
 }
 
-##
-#' the matern correlation function
+
+#' @title Matern correlation function
 #'
 #' @param x     - (n x 1) distance 
 #' @param alpha - (>0)    smoothness
@@ -769,9 +761,9 @@ maternkernelMulti <- function(x, alpha, tau, kappa, d){
 #' @param d     - (int>0) dimension of x
 #' 
 #' @return M(x) - (n x 1) correlation for Matern
-
-###
-materncorr <- function(x, alpha, kappa, d){
+#' @name materncorr
+materncorr <- function(x, alpha, kappa, d)
+  {
   x = abs(x)
   nu = alpha - d/2
   f  = 2^(1-nu)/gamma(nu) * (kappa * x)^nu *  besselK(kappa * x, nu)

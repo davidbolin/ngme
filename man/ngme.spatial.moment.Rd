@@ -2,9 +2,7 @@
 % Please edit documentation in R/CharFunc.R
 \name{ngme.spatial.moment}
 \alias{ngme.spatial.moment}
-\title{Create margninal moment and density for ngme.spatial object
-returns density and moments of various components of the model
-in the form of mean, variance, skewness and kuriotos}
+\title{Marginal moments and density for ngme.spatial object}
 \usage{
 ngme.spatial.moment(obj, n2x = 7, n2y = 7, sdx = 6, sdy = 6)
 }
@@ -20,7 +18,6 @@ ngme.spatial.moment(obj, n2x = 7, n2y = 7, sdx = 6, sdy = 6)
 \item{sdy}{- number of +- standard devations to calc the density around}
 }
 \description{
-Create margninal moment and density for ngme.spatial object
-returns density and moments of various components of the model
+Returns density and moments of various components of the model
 in the form of mean, variance, skewness and kuriotos
 }

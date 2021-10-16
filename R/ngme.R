@@ -1,28 +1,7 @@
-#' @title Estimation and prediction for non-Gaussian mixed-effect models
-#' @section Package:
-#' 
-#' The ngme package provides functions for parameter estimation and prediction for non-Gaussian mixed-effect models.
-#' 
-#' @section Function list: 
-#' \code{\link{ngme}}
-#' \code{\link{ngme.spatial}}  
-#' \code{\link{predict.ngme}} 
-#' \code{\link{predict.ngme.spatial}} 
-#' 
-#' @docType package
-#' @name ngme_package
-#' @importFrom Rcpp evalCpp
-#' @useDynLib ngme, .registration = TRUE
-#' 
-#' @name ngme-package
-#' @rdname ngme
-#'
-NULL
 
-
-#'
-#' We strongly suggest to use \code{\link{ngme.par}} instead of this function.
-#'  Estimates model parameters for longitudianl models using maximum likelihood
+#' @title Maximum likelihood estimation of non-Gaussian longitudinal models
+#' 
+#' @description Estimates model parameters for longitudinal models using maximum likelihood
 #'   implemented by a computationally efficient stochastic gradient algorithm. 
 #'   See \code{\link{ngme.spatial}} for estimation of spatial models. 
 #'
@@ -143,8 +122,8 @@ NULL
 #'  }
 #' @param init.fit A fitted \code{ngme} object with normal distribution for random effects,
 #'  process and error.
-#' @details This function is a user-friendly wrapper that calls the \code{estimateLong} function.
-#'     Generic functions \code{summary}, \code{print} and \code{plot} are available for the
+#' @details We strongly suggest to use \code{\link{ngme.par}} instead of this function, for parallell computations
+#' and automatic stopping criteria. Generic functions \code{summary}, \code{print} and \code{plot} are available for the
 #'     output returned by the function \code{ngme}. For Matern covariance function,
 #'     currently the shape parameter is set to 0.5 which corresponds to exponential correlation
 #'     function.
@@ -153,46 +132,43 @@ NULL
 #' @examples
 #'   \dontrun{
 #'   data(srft_data)
-#'
-#'   # transform pwl to decrese it correlation with bage
-#'   # then center all the covariates for better convergence
-#'   srft_data$pwl2 <- with(srft_data, pwl - bage/1.5)
-#'   srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <-
-#'     scale(srft_data[, c("sex", "bage", "fu", "pwl2")], scale = FALSE)
+#'   
+#'   #Consider a subsample of the data
+#'   rs_id <- sample(unique(srft_data$id), 731, replace = FALSE)
+#'   srft_data_sub <- srft_data[srft_data$id %in% rs_id, ]
 #'
 #'   # fit the model with normal assumption for random effects, process and error
-#'   # covariance function is integrated random walk
-#'   set.seed(123)
-#'   fit_normal_normal_normal_fd2 <- ngme(fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
-#'                                        random = ~ 1|id,
-#'                                        data = srft_data,
-#'                                        reffects = "Normal",
-#'                                        process = c("Normal", "fd2"),
-#'                                        error = "Normal",
-#'                                        timeVar = "fu",
-#'                                        nIter = 20000,
-#'                                        use.process = TRUE,
-#'                                        silent = FALSE,
-#'                                        mesh = list(cutoff = 1/365,
-#'                                                    max.dist = 1/12,
-#'                                                    extend = 0.01
-#'                                                    ),
-#'                                        controls = list(pSubsample = 0.025,
-#'                                                        step0 = 1,
-#'                                                        estimate.fisher = FALSE,
-#'                                                        subsample.type = 1,
-#'                                                        polyak.rate = 0.01,
-#'                                                        alpha = 0.01
-#'                                                        )
-#'                                        )
+#'   fit_normal <- ngme(fixed = log(egfr) ~ sex + bage + fu + pwl,
+#'                      random = ~ 1|id,
+#'                      data = srft_data_sub,
+#'                      reffects = "Normal",
+#'                      process = c("Normal", "fd2"),
+#'                      error = "Normal",
+#'                      timeVar = "fu",
+#'                      nIter = 1000,
+#'                      use.process = TRUE,
+#'                      silent = FALSE,
+#'                      mesh = list(cutoff = 1/365, max.dist = 1/12, extend = 0.01),
+#'                      controls = list(pSubsample = 0.1))
+#'                      
+#'  #Plot trajectories of fixed effect estimates
+#'  plot(fit_normal, param = "fixed")
+#'  
+#'  #plot the other parameter trajectories
+#'  par(mfrow=c(2,2))
+#'  plot(fit_normal, param = "random")
+#'  plot(fit_normal, param = "error")
+#'  plot(fit_normal, param = "process")
+#'                      
 #' # fit the model with NIG assumption for all the random components
-#' set.seed(123)
-#' fit_nig_nig_nig_fd2 <- update(fit_normal_normal_normal_fd2,
-#'                               reffects = "NIG",
-#'                               process = c("NIG", "fd2"),
-#'                               error = "NIG",
-#'                               init.fit = fit_normal_normal_normal_fd2
-#'                               )
+#' fit_nig <- update(fit_normal, 
+#'                   reffects = "NIG",
+#'                   process = c("NIG", "fd2"),
+#'                   error = "NIG",
+#'                   init.fit = fit_normal)
+#'
+#' #plot updated fixed effect estimates
+#' plot(fit_nig,param="fixed")
 #' }
 #' @export
 

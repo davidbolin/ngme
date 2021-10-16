@@ -2,7 +2,7 @@
 % Please edit documentation in R/charfuncUtil.R
 \name{characteristic_function_to_density2d}
 \alias{characteristic_function_to_density2d}
-\title{log density from char func using fft \phi(x,y)
+\title{log density from char func using fft \eqn{\phi(x,y)}
 on the grid [a_x,b_x] x [a_y, b_y]}
 \usage{
 characteristic_function_to_density2d(
@@ -15,7 +15,7 @@ characteristic_function_to_density2d(
 )
 }
 \arguments{
-\item{logphi}{- (function) logphi(x,y) should return log( \phi(x,y)) 
+\item{logphi}{- (function) logphi(x,y) should return \eqn{log( \phi(x,y))}
 the grid of kron(x,1) and kron(y,1)}
 
 \item{n2_x}{- (1) power of 2 for number of point evaluations of x dir}
@@ -27,6 +27,6 @@ the grid of kron(x,1) and kron(y,1)}
 \item{interv_y}{- (2x1) [a_y,b_y]}
 }
 \description{
-log density from char func using fft \phi(x,y)
+log density from char func using fft \eqn{\phi(x,y)}
 on the grid [a_x,b_x] x [a_y, b_y]
 }

@@ -199,14 +199,21 @@ crop.lists <- function(object,ind){
   return(object)
 }
 
-extract.effects <- function(data = NULL, fixed = NULL, random = NULL, idname = idname,
-                            na.action = NULL){
+extract.effects <- function(data = NULL, 
+                            fixed = NULL, 
+                            random = NULL, 
+                            idname = NULL,
+                            na.action = NULL)
+  {
   # response matrix and fixed effects design matrix
   mf_fixed <- model.frame(formula = fixed, data = data,  na.action= na.action)
   y        <- as.matrix(model.extract(mf_fixed, "response"))
   x_fixed_f  <- as.matrix(model.matrix(attr(mf_fixed, "terms"), data = mf_fixed))
   colnames(x_fixed_f)[1] <- gsub("[[:punct:]]", "", colnames(x_fixed_f)[1])  
-  id <- as.factor(data[,idname])
+  id <- NULL
+  if(!is.null(idname)){
+    id <- as.factor(data[,idname])
+  } 
   idlist <- unique(id)
   # excluding the intercept and the covariates that are specified in random
   if(!is.null(random)){

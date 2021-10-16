@@ -1,5 +1,3 @@
-#rm(list = ls())
-graphics.off()
 library(ngme)
 library(INLA)
 library(fields)

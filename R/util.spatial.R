@@ -1,10 +1,10 @@
-#'
+
 #' @title Collects emperical covariances, and cross covarianes
 #'
 #' @description Using bin data to emperical estimate covariances
 #' @param loc  A list of locations      (d x 2)
 #' @param Y    A list of observations   (m x 1-2)
-#' @param Bins right locations of the bins {0},(0,Bins[1]], ... (Bins[n-1], Bins[n]] (Bins[n], \inf)
+#' @param Bins right locations of the bins {0},(0,Bins[1]), ... (Bins[n-1], Bins[n]), (Bins[n], \eqn{\inf})
 #' @param nBins create bins by equally spaced location
 #' @details Standard empirical covariance estimation.
 #' @return A list with bins and values

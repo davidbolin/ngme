@@ -380,10 +380,10 @@ predictLong <- function( Y,
           obs_list[[i]]$locs = rbind(locs1, locs2)
           measurment_list$Bpred[[i]] <- kronecker(diag(2),matrix(rep(1, dim(Bfixed.pred[[i]])[1]/2)))
         } else {
-          na.ind <- is.na(Y[[i]])
-          obs_list[[i]]$A <- A[!is.na(Y[[i]]),]
+          na.ind <- c(is.na(Y[[i]]))
+          obs_list[[i]]$A <- A[!na.ind,]
           obs_list[[i]]$Apred = Ap
-          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind, drop=F]
+          obs_list[[i]]$obs_ind <- obs_list[[i]]$obs_ind[,!na.ind, drop=FALSE]
           obs_list[[i]]$Y = obs_list[[i]]$Y[!na.ind]
           if(is.null(dim(locs)) || min(dim(locs))==1){ #time data
             obs_list[[i]]$locs <- obs_list[[i]]$locs[!na.ind]  

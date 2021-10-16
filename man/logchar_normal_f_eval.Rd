@@ -2,7 +2,7 @@
 % Please edit documentation in R/CharFunc.R
 \name{logchar_normal_f_eval}
 \alias{logchar_normal_f_eval}
-\title{calculate exponent in characteristic function.
+\title{calculate exponent in characteristic function for normal
 f(x) dW(x) where W is a brownian motion}
 \usage{
 logchar_normal_f_eval(x, u, param, f)
@@ -19,6 +19,6 @@ logchar_normal_f_eval(x, u, param, f)
 \item{f}{- function kernel}
 }
 \description{
-calculate exponent in characteristic function.
+calculate exponent in characteristic function for normal
 f(x) dW(x) where W is a brownian motion
 }

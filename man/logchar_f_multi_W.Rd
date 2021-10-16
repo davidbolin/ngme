@@ -2,21 +2,23 @@
 % Please edit documentation in R/CharFunc.R
 \name{logchar_f_multi_W}
 \alias{logchar_f_multi_W}
-\title{calculate exponent in characteristic function.
-\int_{a}^b [f_1(x), f_2(x)] W(dx)}
+\title{exponent in bivariate characteristic function
+
+calculate exponent in characteristic function of \eqn{\int_{a}^b [f_1(x), f_2(x)] W(dx)}.}
 \usage{
 logchar_f_multi_W(u_x, u_y, logphi_W, f_x, f_y, range)
 }
 \arguments{
-\item{logphi_W}{- (function) evaluates log of Char function of [f_1(x), f_2(x)]*W(dx)}
+\item{logphi_W}{- (function) evaluates log of Char function of \eqn{[f_1(x), f_2(x)]*W(dx)}}
 
 \item{range}{- (2 x 1)    a,b}
 
-\item{u}{- point where to evalute log(\phi(x))}
+\item{u}{- point where to evalute \eqn{log(\phi(x))}}
 
 \item{f}{- (function) the kernel}
 }
 \description{
-calculate exponent in characteristic function.
-\int_{a}^b [f_1(x), f_2(x)] W(dx)
+exponent in bivariate characteristic function
+
+calculate exponent in characteristic function of \eqn{\int_{a}^b [f_1(x), f_2(x)] W(dx)}.
 }

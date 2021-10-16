@@ -2,13 +2,12 @@
 % Please edit documentation in R/CharFunc.R
 \name{logchar_f_W}
 \alias{logchar_f_W}
-\title{calculate exponent in characteristic function.
-\int_{a}^b f(x) W(dx)}
+\title{exponent in characteristic function}
 \usage{
 logchar_f_W(u, logphi_W, f, range)
 }
 \arguments{
-\item{u}{- point where to evalute log(\phi(x))}
+\item{u}{- point where to evalute \eqn{log(\phi(x))}}
 
 \item{logphi_W}{- (function) evaluates log of Char function of f(x)*W(dx)}
 
@@ -17,6 +16,5 @@ logchar_f_W(u, logphi_W, f, range)
 \item{range}{- (2 x 1)    a,b}
 }
 \description{
-calculate exponent in characteristic function.
-\int_{a}^b f(x) W(dx)
+Calculate exponent in characteristic function of \eqn{\int_{a}^b f(x) W(dx)}.
 }

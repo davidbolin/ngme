@@ -59,6 +59,15 @@ if(nindv >= 100){
                  nBurnin = 2)
 }
 
+res <- ngme(fixed       = Ya ~ B1 + B2,
+                random      = ~ -1+B3|id,
+                data        = data,
+                reffects    = 'NIG',
+                use.process = FALSE,
+                silent      = FALSE,
+                controls.init = list(nIter.init=500),
+                nIter  = 1000,
+                controls    = control)
 
 res <- ngme.par(n.cores = 5, std.lim = Inf,max.rep = 10,
                 fixed       = Ya ~ B1 + B2,

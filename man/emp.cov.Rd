@@ -11,7 +11,7 @@ emp.cov(loc, Y, Bins = NULL, nBins = 10)
 
 \item{Y}{A list of observations   (m x 1-2)}
 
-\item{Bins}{right locations of the bins {0},(0,Bins[1]], ... (Bins[n-1], Bins[n]] (Bins[n], \inf)}
+\item{Bins}{right locations of the bins {0},(0,Bins[1]), ... (Bins[n-1], Bins[n]), (Bins[n], \eqn{\inf})}
 
 \item{nBins}{create bins by equally spaced location}
 }

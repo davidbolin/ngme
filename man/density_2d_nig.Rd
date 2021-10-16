@@ -2,7 +2,7 @@
 % Please edit documentation in R/CharFunc.R
 \name{density_2d_nig}
 \alias{density_2d_nig}
-\title{Density for bivariate NIG stochastic process on an interval}
+\title{Density for NIG random field on R2}
 \usage{
 density_2d_nig(interv, n2, param, maternParam)
 }
@@ -20,5 +20,5 @@ density_2d_nig(interv, n2, param, maternParam)
 \item{maternParam}{- (3 x 1)  nu, tau, kappa}
 }
 \description{
-Computes the density for a random field on \eqn{[interv[0], interv[1]]}
+Computes the density for a random field on
 }

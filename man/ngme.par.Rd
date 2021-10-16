@@ -52,36 +52,37 @@ Maximum likelihood model estimation using parallel runs of
   stochastic gradient estimation. See \code{\link{ngme}} and \code{\link{ngme.spatial}} for explanation of the model specification.
 }
 \details{
-The function calls \code{\link{ngme}} or \code{\link{ngme.spatial}} internally. See these functions for further information on the actual
+The function calls \code{\link{ngme}} or \code{\link{ngme.spatial}} internally. See these functions for further information 
+on the actual
 model specification. When plots of parameter trajectories are shown, the gray lines show the trajectories of the individual
 runs and the black curve is the estimate obtained by averaging the individual trajectories. The green lines show approximate
-95% confidence bands for the estimate.
+95 percent confidence bands for the estimate.
 }
 \examples{
   \dontrun{
   data(srft_data)
-
-  # transform pwl to decrese it correlation with bage
-  # then center all the covariates for better convergence
-  srft_data$pwl2 <- with(srft_data, pwl - bage/1.5)
-  srft_data[, c("sex_cent", "bage_cent", "fu_cent", "pwl2_cent")] <-
-    scale(srft_data[, c("sex", "bage", "fu", "pwl2")], scale = FALSE)
+  
+  #Consider a subsample of the data
+  rs_id <- sample(unique(srft_data$id), 731, replace = FALSE)
+  srft_data_sub <- srft_data[srft_data$id \%in\% rs_id, ]
 
   # fit the model with normal assumption for random effects, process and error
-  # covariance function is integrated random walk
-  set.seed(123)
-  fit <- ngme.par(n.cores = 5, std.lim = 100,max.rep = 20,
-                  fixed = log(egfr) ~ sex_cent + bage_cent + fu_cent + pwl2_cent,
-                  random = ~ 1|id,
-                  data = srft_data,
-                  reffects = "Normal",
-                  process = c("Normal", "fd2"),
-                  error = "Normal",
-                  timeVar = "fu",
-                  use.process = TRUE,
-                  silent = FALSE,
-                  mesh = list(cutoff = 1/365,max.dist = 1/12,extend = 0.01),
-                  controls = list(pSubsample = 0.025,subsample.type = 1))
+  fit_normal <- ngme.par(fixed = log(egfr) ~ sex + bage + fu + pwl,
+                         random = ~ 1|id,
+                         data = srft_data_sub,
+                         reffects = "Normal",
+                         process = c("Normal", "fd2"),
+                         error = "Normal",
+                         timeVar = "fu",
+                         n.cores = 5, 
+                         std.lim = 100,
+                         max.rep = 20,
+                         nIter = 500,
+                         use.process = TRUE,
+                         silent = FALSE,
+                         mesh = list(cutoff = 1/365, max.dist = 1/12, extend = 0.01),
+                         controls = list(pSubsample = 0.1))
+                     
 }
 }
 \seealso{

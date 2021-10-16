@@ -33,7 +33,5 @@ density_2d_normal_multivariate(
 [[3]] (2)    -   rho, theta}
 }
 \description{
-Computes the density for a random field on \eqn{[a_x,b_x] x  [a_y,b_y]}
-computes density for normal univarate random fields in 2d
-between [a_x,b_x] x  [a_y,b_y]
+Density for bivariate Gaussian random fields on a square in R2
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/CharFunc.R
 \name{density_2d_nig_multivariate}
 \alias{density_2d_nig_multivariate}
-\title{Density for bivariate NIG random fields on a square in R2}
+\title{Density for bivariate NIG random fields on R2}
 \usage{
 density_2d_nig_multivariate(
   interv_x,
@@ -41,5 +41,5 @@ density_2d_nig_multivariate(
 [[3]] (2)    -   rho, theta}
 }
 \description{
-Computes the density for a random field on \eqn{[a_x,b_x] x  [a_y,b_y]}
+Density for bivariate NIG random fields on R2
 }

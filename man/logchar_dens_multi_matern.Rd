@@ -2,15 +2,17 @@
 % Please edit documentation in R/CharFunc.R
 \name{logchar_dens_multi_matern}
 \alias{logchar_dens_multi_matern}
-\title{log charateristic function of [X,Y] = \int [f_1(x), f_2(x)]dW(x) assumes f is istorpic!
-where W_x brownian sheet}
+\title{log-characterisct function of bivariate integral}
 \usage{
 logchar_dens_multi_matern(t_y, t_x, logphi_W, maternParam_x, maternParam_y, d)
 }
 \description{
+log charateristic function of \eqn{[X,Y] = \int [f_1(x), f_2(x)]dW(x)} assuming that f is istorpic,
+where W_x brownian sheet.
+
 t_y           - (vector) location of chara eval
 t_x           - (vector) location of chara eval
-logphi_W    - (function)   evaluates log of char function of \int [f_1(x), f_2(x)]dW(x)
+logphi_W    - (function)   evaluates log of char function of \eqn{\int [f_1(x), f_2(x)]dW(x)}
 maternParam_x - (3 x 1)  nu, tau, kappa
 maternParam_y - (3 x 1)  nu, tau, kappa
 d           - (1 x 1)  dimension
