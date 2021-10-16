@@ -1,5 +1,5 @@
 ---
-title: "ngme: an R package for non-Gaussian longitudinal data analysis"
+title: "ngme: an R package for latent non-Gaussian models"
 author: "Some lads"
 date: "`r Sys.Date()`"
 #output: rmarkdown::html_vignette
@@ -10,16 +10,12 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-# Modelling framework 
+# Introduction 
+The package `ngme` provides functions for estimation and prediction using latent non-Gaussian models. The package has functions for both longitudinal data analysis and for applications in spatial statistics. In this document we go through the framework for longitudinal data analysis. See the vignette for `ngme.spatial` for an introduction to the functions for spatial data analysis.
 
-The modelling frameworks that the package `ngme` 
-provides functions for have the following forms:
-$$
-\begin{aligned}
-Y_{ij} = {\bf x}_{ij}^{\top} {\bf \alpha} + {\bf d}_{ij}^{\top} {\bf U}_i + Z_{ij},
-\end{aligned}
-$$
-and
+# Modelling framework for longitudinal data
+
+The package `ngme` provides functions for mixed effect models of the form
 $$
 \begin{aligned}
 Y_{ij} = {\bf x}_{ij}^{\top} {\bf \alpha} + {\bf d}_{ij}^{\top} {\bf U}_i + W_i(t_{ij}) + Z_{ij}.
@@ -33,25 +29,29 @@ Here,
 - ${\bf \alpha}$ is the matrix of fixed effects coefficients,
 - ${\bf d}_{ij}$ is the matrix of random effects explanatory variables,
 - ${\bf U}_i$ is the matrix of subject-specific and time-invariant random effects coefficients,
-- $W_i(t)$ is subject- and time-spceific random effect, specificed as a stochastic process,
+- $W_i(t)$ is subject- and time-specific random effect, specified as a stochastic process,
 - $Z_{ij}$ is random error.
 
-The `ngme` package includes the function `ngme` for parameter estimation 
-based on maximum likelihood implemented with a computationally efficient 
-stochastic gradient algorithm. Predictions based on either nowcasting, 
-forecastin or 
-smoothing distributions could be obtained using the generic function `predict`. 
-`print`, `summary`, `plot`, `fitted`, `residuals`, `intervals` 
-functions are available as the supplementary. 
- 
-Within `ngme` one can choose to specify the distributions as
+The stochastic process component $W_i(t)$ as well as the random effects ${\bf U}_i$ can be excluded from the model.One can choose to specify the distributions for the different components as
  
 - Normal and Normal-inverse Gaussian (NIG) for ${\bf U}_i$,
 - Normal, NIG, generalised asymmetric Laplace (GAL) and Cauchy for $W_i(t)$,
-- Normal, NIG and t for $Z_{ij}$.
+- Normal, NIG and Student-t for $Z_{ij}$.
 
-Covariance structure of $W_i(t)$ could be specified through 
-integrated Random-Walk or Matern.
+The stochastic process $W_i(t)$ can be specified as an integrated Random-Walk or as a process with a Mat\'ern covariance, specified as the solution to a stochastic ordinary differential equation
+$$
+(\kappa^2 - d/dt)^{\alpha/2}W_i(t) = d L(t).
+$$
+Here $dL$ is Gaussian or non-Gaussian noise.
+
+# Functions
+
+The `ngme` package includes the function `ngme` for parameter estimation 
+based on maximum likelihood implemented with a computationally efficient 
+stochastic gradient algorithm. The package also contains the function `ngme.par` which supports parallel computations and improved diagnostics. 
+
+Predictions based on either nowcasting, forecasting or smoothing distributions could be obtained using the generic function `predict`. `print`, `summary`, `plot`, `fitted`, `residuals`, `intervals` functions are available as the supplementary. 
+
 
 # Data
 
@@ -109,29 +109,21 @@ with
 
 ```{r, echo = TRUE}
    set.seed(123)
-   srft_fit <- ngme(fixed = log(egfr) ~ sex + bage + fu + pwl,
+   srft_fit <- ngme.par(fixed = log(egfr) ~ sex + bage + fu + pwl,
                     random = ~ 1|id,
                     data = srft_data_sub,
                     reffects = "Normal",
                     process = c("Normal", "fd2"),
                     error = "Normal",
                     timeVar = "fu",
-                    nIter = 1000,
+                    nIter = 500,
+                    n.cores = 4,
                     use.process = TRUE,
                     silent = TRUE,
                     mesh = list(cutoff = 1/365,
                                 max.dist = 1/12,
-                                extend = 0.01
-                                ),
-                    controls = list(pSubsample = 0.5,
-                                    step0 = 1,
-                                    estimate.fisher = TRUE,
-                                    nSim.fisher = 10,
-                                    nIter.fisher = 10,
-                                    subsample.type = 1,
-                                    polyak.rate = 0.01,
-                                    alpha = 0.01
-                                    )
+                                extend = 0.01),
+                    controls = list(pSubsample = 0.1)
                     )
 ```
 

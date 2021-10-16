@@ -16,9 +16,9 @@
 #'   fit <- ngme(...)
 #'   intervals(fit)
 #'   }
-#'   @export
-#'
-  intervals <- function(object, type = "fixed", level = 0.95){
+#' 
+#' @export
+intervals <- function(object, type = "fixed", level = 0.95){
 
     if(!summary(object)$estimate_fisher){
       stop("Fisher matrix was not estimated")
