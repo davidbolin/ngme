@@ -11,7 +11,7 @@ vignette: >
 ---
 
 # Introduction 
-The package `ngme` provides functions for estimation and prediction using latent non-Gaussian models. The package has functions for both longitudinal data analysis and for applications in spatial statistics. In this document we go through the framework for longitudinal data analysis. See the vignette for `ngme.spatial` for an introduction to the functions for spatial data analysis.
+The package `ngme` provides functions for estimation and prediction using latent non-Gaussian models. The package has functions for both longitudinal data analysis and for applications in spatial statistics. This document presents the framework for longitudinal data analysis. See the separate vignette for `ngme.spatial` for an introduction to the functions for spatial data analysis.
 
 # Modelling framework for longitudinal data
 
@@ -32,7 +32,7 @@ Here,
 - $W_i(t)$ is subject- and time-specific random effect, specified as a stochastic process,
 - $Z_{ij}$ is random error.
 
-The stochastic process component $W_i(t)$ as well as the random effects ${\bf U}_i$ can be excluded from the model.One can choose to specify the distributions for the different components as
+The stochastic process component $W_i(t)$ as well as the random effects ${\bf U}_i$ can be excluded from the model. One can choose to specify the distributions for the different components as
  
 - Normal and Normal-inverse Gaussian (NIG) for ${\bf U}_i$,
 - Normal, NIG, generalised asymmetric Laplace (GAL) and Cauchy for $W_i(t)$,
@@ -109,7 +109,7 @@ with
 
 ```{r, echo = TRUE}
    set.seed(123)
-   srft_fit <- ngme.par(fixed = log(egfr) ~ sex + bage + fu + pwl,
+   srft_fit <- ngme(fixed = log(egfr) ~ sex + bage + fu + pwl,
                     random = ~ 1|id,
                     data = srft_data_sub,
                     reffects = "Normal",
@@ -117,13 +117,13 @@ with
                     error = "Normal",
                     timeVar = "fu",
                     nIter = 500,
-                    n.cores = 4,
                     use.process = TRUE,
                     silent = TRUE,
                     mesh = list(cutoff = 1/365,
                                 max.dist = 1/12,
                                 extend = 0.01),
-                    controls = list(pSubsample = 0.1)
+                    controls = list(pSubsample = 0.1,
+                                    estimate.fisher = 1)
                     )
 ```
 

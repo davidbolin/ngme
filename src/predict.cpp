@@ -670,20 +670,13 @@ List predictLong_cpp(Rcpp::List in_list)
               }
               
               Eigen::VectorXd AX_1 = Ai_1 * process->Xs[i];
-              if(debug){
-                Rcpp::Rcout << "here" << ind_general << "\n";
-              }
               if(ind_general){
                 set_subcol(WVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), AX_1 - AX);
-                Rcpp::Rcout << "re_1:" << random_effect_1 << " \n";
-                Rcpp::Rcout << "re_c_1:" << random_effect_c_1 << " \n";
-                Rcpp::Rcout << "re_c:" << random_effect_c << " \n";
                 set_subcol(XVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), random_effect_c_1 + AX_1 - random_effect_c - AX);
               } else {
                 WVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = AX_1 - AX;
                 XVec_deriv[i].block(pred_ind[i](ipred,0), ii - nBurnin, pred_ind[i](ipred,1), 1) = random_effect_c_1 + AX_1 - random_effect_c - AX;  
               }
-              Rcpp::Rcout << "here 3 \n";
             } else {
               if(ind_general){
                 set_subcol(XVec_deriv[i], ii-nBurnin, pred_ind[i].row(ipred), random_effect_c_1 - random_effect_c);
