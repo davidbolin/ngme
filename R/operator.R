@@ -73,8 +73,12 @@ build.A.matrix <- function(operator_list, locs, i=NULL)
 
 spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann')
 {
-  if(min(loc)< min(x) || max(loc) > max(x))
-    stop("locations outside support of basis")
+  if(min(loc)< min(x) || max(loc) > max(x)){
+    warning("locations outside support of basis")
+    loc[loc==min(x)] = min(x)
+    loc[loc==max(x)] = max(x)
+  }
+    
 
   if(is.null(right.boundary))
     right.boundary='neumann'
