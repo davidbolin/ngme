@@ -13,7 +13,8 @@ Eigen::VectorXi ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in)
 
   /* Record element identities */
   int *perm;
-  perm  = Calloc(n, int);
+  //perm  = Calloc(n, int);
+  perm = (int*)calloc(n, sizeof(int));
   for (i = 0; i < n; i++)
     perm[i] = i ;
 
@@ -53,7 +54,8 @@ void ProbSampleNoReplace( int nans, Eigen::VectorXd & p_in, std::vector<int> & a
 
   /* Record element identities */
   int *perm;
-  perm  = Calloc(n, int);
+  //perm  = Calloc(n, int);
+  perm = (int*)calloc(n, sizeof(int));
   for (i = 0; i < n; i++)
     perm[i] = i;
 
@@ -94,7 +96,8 @@ void ProbSampleNoReplace( int nans,
 
   /* Record element identities */
   int *perm;
-  perm  = Calloc(n, int);
+  //perm  = Calloc(n, int);
+  perm = (int*)calloc(n, sizeof(int));
   for (i = 0; i < n; i++)
     perm[i] = i ;
 
@@ -138,7 +141,8 @@ int poissonSampling_internal( int nans,
   double U;
   /* Record element identities */
   int *perm;
-  perm  = Calloc(n, int);
+  //perm  = Calloc(n, int);
+  perm = (int*)calloc(n, sizeof(int));
   for (i = 0; i < n; i++)
     perm[i] = i ;
 

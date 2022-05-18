@@ -215,7 +215,7 @@ plot.predict.ngme <- function(object,
       geom_line(aes(y = llim), linetype = "dashed") + 
       labs(x = "Time", y = "Outcome")
   }else{
-    data$probability <- lapply(pInd, function(i) object$predict$Xderivative.summary[[i]]$excursions$P) %>% unlist()
+    data_plot$probability <- lapply(pInd, function(i) object$predict$Xderivative.summary[[i]]$excursions$P) %>% unlist()
     
     g1 <- ggplot(data_plot, aes(x = locs, y = y, group = id)) + 
       geom_point() + facet_wrap(~ id, scales = "free", ncol = 1) + 
