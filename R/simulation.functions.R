@@ -1,39 +1,39 @@
 simulate.ngme <- function(object,id=NULL)
 {
-  
+
   if(!is.null(id)){
     id_list <- as.numeric(names(object$Y))
     ind <- which(id_list %in% id)
     object <- crop.lists(object,ind)
-    
+
   }
-  
+
   sim_object <- simulateLongPrior(Y                 = object$Y,
                                   locs              = object$locs,
                                   mixedEffect_list  = object$mixedEffect_list,
                                   measurment_list   = object$measurementError_list,
                                   processes_list    = object$processes_list,
                                   operator_list     = object$operator_list)
-  
+
   a <- attributes(object$Y)
   for(i in 1:length(sim_object)){
     if(names(sim_object)[i]!="U"){
       attributes(sim_object[[names(sim_object)[i]]]) <- a
     }
   }
-  
+
   return(sim_object)
 }
 #' @title Simulates prior model using processes and operator
-#' 
-#' @description 
-#' 
+#'
+#' @description
+#'
 #' @param n number of simulations
 #' @param process_list procsess list
 #' @param operator_list operator list
 #' @return A list of simulation
 simulate.process <- function(n, operator_list, process_list){
-  
+
   process_list$V <- list()
   process_list$X <- list()
   for(i in 1:length(operator_list$h)){
@@ -61,8 +61,8 @@ simulate.process <- function(n, operator_list, process_list){
 #'              V ~ IG(nu,h^2 nu)
 #'              Z ~ N(0, 1)
 #'              X ~ delta + (V - h) * mu + sqrt(V) * sigma  * Z
-#'               
-#' 
+#'
+#'
 #' @param n number of simulations (if h is not NULL then n is ignored)
 #' @param delta (real) location parameter
 #' @param mu    (real) symmetric parameter
@@ -82,7 +82,7 @@ rNIG <- function(n = 1, delta, mu, sigma, nu, h = NULL){
     mu = rep(mu, n)
   if(length(sigma)!=n)
     sigma = rep(sigma, n)
-  
+
   V =  ngme::rGIG(p = rep(-0.5,n) , nu, h^2 * nu, sample.int(10^6, 1))
   X = h*delta + (V - h) * mu + sqrt(V) * sigma * rnorm(n)
   return(X)
@@ -90,16 +90,16 @@ rNIG <- function(n = 1, delta, mu, sigma, nu, h = NULL){
 
 
 #' @title Simulates data from the prior model.
-#' 
-#' @description 
-#' 
+#'
+#' @description
+#'
 #' @param Y only used to get size of objects
 #' @param locs measurement locations
 #' @param mixedEffect_list mixed effects list
 #' @param measurement_list measurement error list
 #' @param process_list procsess list
 #' @param operator_list operator list
-#' @details STUFF 
+#' @details STUFF
 #' @return A list of outputs.
 #' @examples
 #'   \dontrun{
@@ -117,7 +117,7 @@ simulateLongPrior <- function( Y,
     if(operator_list$type == "matern bivariate")
       bivariate <- TRUE
   }
-  
+
   if(missing(Y)){
     Y <- list()
     for(i in 1:length(locs)){
@@ -139,7 +139,7 @@ simulateLongPrior <- function( Y,
       A <- build.A.matrix(operator_list,locs,i)
       Yi <- Y[[i]]
       locsi = locs[[i]]
-      if(bivariate){ #for bivariate fields, stack observations 
+      if(bivariate){ #for bivariate fields, stack observations
         #do not and remove NaN, simulate all locations
         #A1 <- A[!is.nan(Y[[i]][,1]),]
         #A2 <- A[!is.nan(Y[[i]][,2]),]
@@ -149,7 +149,7 @@ simulateLongPrior <- function( Y,
         #locs1 = locs[[i]][!is.nan(Y[[i]][,1]),]
         #locs2 = locs[[i]][!is.nan(Y[[i]][,2]),]
         locsi <- rbind(locsi,locsi)
-        
+
       }
       obs_list[[i]] <- list(A = A, Y=Yi, locs = locsi)
     }
@@ -179,8 +179,8 @@ simulateLongPrior <- function( Y,
     if(bivariate){
       for(i in 1:length(locs)){
         #reshape Y and remove NaN
-        Yi <- output$Y[[i]] 
-        Yi.star <- output$Ystar[[i]] 
+        Yi <- output$Y[[i]]
+        Yi.star <- output$Ystar[[i]]
         n.i <- length(Yi)
         Yi <- matrix(Yi,n.i/2,2)
         Yi.star <- matrix(Yi.star,n.i/2,2)
@@ -195,7 +195,7 @@ simulateLongPrior <- function( Y,
 }
 
 #' @title Simulating longitudal model using only R functions
-#' 
+#'
 #' @description STUFF
 #'
 #' @param locs list of observation locations
@@ -206,6 +206,7 @@ simulateLongPrior <- function( Y,
 #'   \dontrun{
 #'   simulateLong.R(...)
 #'   }
+#' @export
 simulateLong.R <- function(loc,
                            theta,
                            n = 100,

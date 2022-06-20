@@ -30,7 +30,7 @@ simulateLongPrior(
 A list of outputs.
 }
 \description{
-
+Simulates data from the prior model.
 }
 \details{
 STUFF

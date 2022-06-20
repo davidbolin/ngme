@@ -30,7 +30,6 @@ This is a supplementary function and internally used.
   \dontrun{
   spde.A(...)
   }
-
 }
 \seealso{
 \code{\link{build.A.matrix}}

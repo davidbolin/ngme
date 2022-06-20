@@ -17,5 +17,5 @@
 A list of simulation
 }
 \description{
-
+Simulates prior model using processes and operator
 }

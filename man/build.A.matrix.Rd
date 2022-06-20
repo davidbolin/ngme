@@ -28,7 +28,6 @@ This function is supplementary and internally used.
   \dontrun{
   build.A.matrix(...)
   }
-
 }
 \seealso{
 \code{\link{estimateLong}}

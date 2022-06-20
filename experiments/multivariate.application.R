@@ -4,8 +4,7 @@ library(fields)
 library(ggplot2)
 library(fields)
 library(gridExtra)
-library(RandomFields)
-data(weather)
+load(file='weather.rda')
 
 loc <- weather[,3:4]
 pres <- weather[,1]
@@ -15,9 +14,9 @@ n.obs <- length(pres)
 data <- data.frame(weather)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df = data.frame(x = loc[,1],y=loc[,2],z=temp)
-p2 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 grid.arrange(p1,p2,ncol=2)
 
 ########################################
@@ -61,10 +60,10 @@ plot(res.est.pres$operator_list$kappaVec,type="l",main="process kappa")
 res.pred.pres <-predict(res.est.pres, data = data.pred)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.pres$predictions$X.summary[[1]]$Mean
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 grid.arrange(p1,p2,ncol=2)
 
 
@@ -76,7 +75,7 @@ cat("mae = ", res.cv.pres$median.mae.mean.predictor,"crps =",res.cv.pres$median.
 ########################################
 #same for temp
 ########################################
-  
+
 res.est.temp <- ngme.spatial(temp ~ 1,
                              data = data,
                              location.names = c("lon","lat"),
@@ -97,10 +96,10 @@ plot(res.est.temp$operator_list$kappaVec,type="l",main="process kappa")
 res.pred.temp <-predict(res.est.temp, data = data.pred)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=temp)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.temp$predictions$X.summary[[1]]$Mean
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 grid.arrange(p1,p2,ncol=2)
 
 
@@ -112,7 +111,7 @@ cat("mae = ", res.cv.temp$median.mae.mean.predictor,"crps =",res.cv.temp$median.
 ####################################################
 # Multivariate gaussian
 #################################################
-  
+
 #Fit gaussian model to pressure data
 res.est.gaus <- ngme.spatial(fixed = pres ~ 1,
                              fixed2 = temp ~ 1,
@@ -144,20 +143,20 @@ proj <- inla.mesh.projector(mesh,dims=c(80,80))
 data.pred = data.frame(lon = proj$lattice$loc[,1],
                        lat = proj$lattice$loc[,2])
 
-#compute prediction                         
+#compute prediction
 res.pred.gaus <-predict(res.est.gaus, data = data.pred)
 
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.gaus$predictions$X.summary[[1]]$Mean[,1]
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 df = data.frame(x = loc[,1],y=loc[,2],z=temp)
-p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.gaus$predictions$X.summary[[1]]$Mean[,2]
-p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
 
@@ -181,7 +180,7 @@ res.est.nig.pres <- ngme.spatial(pres ~ 1,
                                              alpha = 0.3),
                              init.fit = res.est.pres)
 
-cat("beta = ", res.est.nig.pres$mixedEffect_list$beta_fixed, 
+cat("beta = ", res.est.nig.pres$mixedEffect_list$beta_fixed,
     "kappa = ", res.est.nig.pres$operator_list$kappa,
     "sigma.e = ", res.est.nig.pres$measurementError_list$sigma,
     "nu = ", res.est.nig.pres$processes_list$nu,
@@ -199,10 +198,10 @@ plot(res.est.nig.pres$processes_list$mu_vec,type="l",main="process mu")
 res.pred.nig.pres <-predict(res.est.nig.pres, data = data.pred)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.nig.pres$predictions$X.summary[[1]]$Mean
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 grid.arrange(p1,p2,ncol=2)
 
 
@@ -213,7 +212,7 @@ cat("mae = ", res.cv.nig.pres$median.mae.mean.predictor,"crps =",res.cv.nig.pres
 ########################################################
 #univariate NIG for temperature
 #######################################################
-  
+
 res.est.nig.temp <- ngme.spatial(temp ~ 1,
                                  data = data,
                                  process = c("NIG","matern"),
@@ -229,7 +228,7 @@ res.est.nig.temp <- ngme.spatial(temp ~ 1,
                                                  alpha = 0.3),
                                  init.fit = res.est.temp)
 
-cat("beta = ", res.est.nig.temp$mixedEffect_list$beta_fixed, 
+cat("beta = ", res.est.nig.temp$mixedEffect_list$beta_fixed,
     "kappa = ", res.est.nig.temp$operator_list$kappa,
     "sigma.e = ", res.est.nig.temp$measurementError_list$sigma,
     "nu = ", res.est.nig.temp$processes_list$nu,
@@ -247,10 +246,10 @@ plot(res.est.nig.temp$processes_list$mu_vec,type="l",main="process mu")
 res.pred.nig.temp <-predict(res.est.nig.temp, data = data.pred)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=temp)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.nig.temp$predictions$X.summary[[1]]$Mean
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 grid.arrange(p1,p2,ncol=2)
 
 
@@ -291,7 +290,7 @@ matplot(cbind(res.est.nig$operator_list$tau1Vec,res.est.nig$operator_list$tau2Ve
 matplot(cbind(res.est.nig$operator_list$kappa1Vec,res.est.nig$operator_list$kappa2Vec),
         type="l",main="process kappa",xlab="",ylab="")
 plot(res.est.nig$operator_list$rhoVec,type="l",main="process rho",xlab="",ylab="")
-plot(res.est.nig$operator_list$thetaVec,type="l",main="process theta",xlab="",ylab="")  
+plot(res.est.nig$operator_list$thetaVec,type="l",main="process theta",xlab="",ylab="")
 matplot(res.est.nig$processes_list$nu_vec, type="l",main="process nu",xlab="",ylab="")
 matplot(res.est.nig$processes_list$mu_vec, type="l",main="process mu",xlab="",ylab="")
 
@@ -300,26 +299,26 @@ res.cv.nig <-predict(res.est.nig, type = "LOOCV")
 
 cat("mae = ", res.cv.nig$median.mae.mean.predictor,"crps =",res.cv.nig$median.crps)
 
-#compute prediction                         
+#compute prediction
 res.pred.nig <-predict(res.est.nig, data = data.pred)
 
 df = data.frame(x = loc[,1],y=loc[,2],z=pres)
-p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p1 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.gaus$predictions$X.summary[[1]]$Mean[,1]
-p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p2 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 
 df = data.frame(x = loc[,1],y=loc[,2],z=temp)
-p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100)) 
+p3 <- ggplot(df) + geom_point(aes(x,y,colour=z), size=1, alpha=1) + scale_colour_gradientn(colours=tim.colors(100))
 df <- expand.grid(x= proj$x, y = proj$y)
 df$z <- res.pred.gaus$predictions$X.summary[[1]]$Mean[,2]
-p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100)) 
+p4 <- ggplot(df, aes(x, y, fill = z)) + geom_raster() + scale_fill_gradientn(colours=tim.colors(100))
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
 
 cat(c(res.cv.nig$median.mae.mean.predictor, res.cv.nig$median.crps))
-      
-  
+
+
 GGi = c(res.cv.pres$median.mae.mean.predictor, res.cv.temp$median.mae.mean.predictor,
         res.cv.pres$median.crps,res.cv.temp$median.crps)
 GGl = c(res.cv.gaus$median.mae.mean.predictor, res.cv.gaus$median.crps)
@@ -333,4 +332,3 @@ results <- data.frame(mae.pres = c(GGi[1],GGl[1],NNi[1],NNg[1]),
                       crps.temp = c(GGi[4],GGl[4],NNi[4],NNg[4]),
                       row.names = c("Gaus indep", "Gauss lower", "NIG indep", "NIG general"))
 print(results)
-  

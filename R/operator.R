@@ -18,7 +18,7 @@
 #'   \dontrun{
 #'   build.A.matrix(...)
 #'   }
-#'
+#'@export
 
 build.A.matrix <- function(operator_list, locs, i=NULL)
 {
@@ -69,7 +69,7 @@ build.A.matrix <- function(operator_list, locs, i=NULL)
 #'   \dontrun{
 #'   spde.A(...)
 #'   }
-#'
+#' @export
 
 spde.A <- function(loc, x, right.boundary = 'neumann', left.boundary = 'neumann')
 {
@@ -210,6 +210,7 @@ out.list <- list(G=G,
 #'   create_operator_matern2D(...)
 #'   }
 #'
+#'@export
 
 create_operator_matern2D <- function(mesh)
 {
